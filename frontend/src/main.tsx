@@ -6,6 +6,5 @@ import App from './App.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
-    {/* TODO: Add additional components here */}
-  </StrictMode>,
+  </StrictMode>
 )
