@@ -1,3 +1,21 @@
+#spring:
+#  application:
+#    name: backend
+
 spring:
   application:
-    name: backend
+    name: LLHelper
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/LL_Helper
+    username: troloko
+    password: 1111
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  flyway:
+    enabled: false
