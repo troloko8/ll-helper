@@ -1,8 +1,6 @@
 package com.llhelper.card_desc.dto.response;
 
 import com.llhelper.card.dto.response.CardResponse;
-import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
