@@ -25,7 +25,10 @@ public class CardServiceImpl implements CardService {
         return new CardResponse(
             card.getId(),
             card.getTitle(),
-            card.getDescription(),
+            card.getDefinition(),
+            card.getSynonyms(),
+            card.getExamples(),
+            card.getTranslation(),
             card.getCreatedAt(),
             card.getUpdatedAt()
         );
@@ -37,7 +40,10 @@ public class CardServiceImpl implements CardService {
             .orElseThrow(() -> new RuntimeException("CardDesc not found: " + request.cardDescId()));
         Card card = new Card();
         card.setTitle(request.title());
-        card.setDescription(request.description());
+        card.setDefinition(request.definition());
+        card.setSynonyms(request.synonyms());
+        card.setExamples(request.examples());
+        card.setTranslation(request.translation());
         card.setCardDesc(cardDesc);
         card.setCreatedAt(LocalDateTime.now());
         card.setUpdatedAt(LocalDateTime.now());
@@ -63,7 +69,10 @@ public class CardServiceImpl implements CardService {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Card not found: " + id));
         card.setTitle(request.title());
-        card.setDescription(request.description());
+        card.setDefinition(request.definition());
+        card.setSynonyms(request.synonyms());
+        card.setExamples(request.examples());
+        card.setTranslation(request.translation());
         card.setUpdatedAt(LocalDateTime.now());
         return toResponse(cardRepository.save(card));
     }

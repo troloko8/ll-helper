@@ -11,9 +11,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -30,7 +33,18 @@ public class Card {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    private String definition;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "synonyms", columnDefinition = "text[]")
+    private List<String> synonyms;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "examples", columnDefinition = "text[]")
+    private List<String> examples;
+
+    @Column
+    private String translation;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

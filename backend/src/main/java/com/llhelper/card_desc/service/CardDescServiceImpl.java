@@ -23,7 +23,10 @@ public class CardDescServiceImpl implements CardDescService {
             .map(card -> new CardResponse(
                 card.getId(),
                 card.getTitle(),
-                card.getDescription(),
+                card.getDefinition(),
+                card.getSynonyms(),
+                card.getExamples(),
+                card.getTranslation(),
                 card.getCreatedAt(),
                 card.getUpdatedAt()
             ))
