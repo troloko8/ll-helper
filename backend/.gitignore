@@ -36,3 +36,10 @@ build/
 .env
 .env.local
 .env.*.local
+
+### MCP ###
+.ai/mcp/mcp.json
+
+### OS ###
+.DS_Store
+Thumbs.db
