@@ -35,6 +35,14 @@ public class CardDesc {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // TODO: Add DB-level CHECK constraint: source_language <> '' (empty string should be disallowed)
+    @Column(nullable = false)
+    private String sourceLanguage;
+
+    // TODO: Add DB-level CHECK constraint: target_language <> '' (empty string should be disallowed)
+    @Column(nullable = false)
+    private String targetLanguage;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

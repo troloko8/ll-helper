@@ -9,6 +9,7 @@ public record CardRequest(
     List<String> synonyms,
     List<String> examples,
     String translation,
-    Long cardDescId
+    Long cardDescId,
+    Boolean autoGenerate
 ) {
 }

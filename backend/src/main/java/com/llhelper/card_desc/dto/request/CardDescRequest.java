@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public record CardDescRequest(
     @NotBlank String title,
-    String description
+    String description,
+    @NotBlank String sourceLanguage,
+    @NotBlank String targetLanguage
 ) {
 }

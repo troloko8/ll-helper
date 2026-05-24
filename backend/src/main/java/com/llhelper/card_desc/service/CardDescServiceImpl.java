@@ -46,6 +46,8 @@ public class CardDescServiceImpl implements CardDescService {
         CardDesc cardDesc = new CardDesc();
         cardDesc.setTitle(request.title());
         cardDesc.setDescription(request.description());
+        cardDesc.setSourceLanguage(request.sourceLanguage());
+        cardDesc.setTargetLanguage(request.targetLanguage());
         cardDesc.setCreatedAt(LocalDateTime.now());
         cardDesc.setUpdatedAt(LocalDateTime.now());
         return toResponse(cardDescRepository.save(cardDesc));
@@ -71,6 +73,8 @@ public class CardDescServiceImpl implements CardDescService {
             .orElseThrow(() -> new RuntimeException("CardDesc not found: " + id));
         cardDesc.setTitle(request.title());
         cardDesc.setDescription(request.description());
+        cardDesc.setSourceLanguage(request.sourceLanguage());
+        cardDesc.setTargetLanguage(request.targetLanguage());
         cardDesc.setUpdatedAt(LocalDateTime.now());
         return toResponse(cardDescRepository.save(cardDesc));
     }

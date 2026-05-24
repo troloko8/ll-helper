@@ -20,3 +20,14 @@ spring:
 jwt:
   secret: ${JWT_SECRET:default-dev-secret-must-be-32-chars-long}
   expiration: ${JWT_EXPIRATION:86400000}
+
+ai:
+  provider: openai
+  request-timeout-seconds: 120
+  max-requests-per-second: 10
+  max-tokens-per-request: 4000
+  max-bulk-size: 100
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}

@@ -1,8 +1,14 @@
 package com.llhelper.common.config;
 
-// TODO: advanced feature — will be configured later
-//import org.springframework.context.annotation.Configuration;
-//
-//@Configuration
-//public class AppConfig {
-//}
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+}

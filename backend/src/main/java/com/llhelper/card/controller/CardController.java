@@ -1,8 +1,10 @@
 package com.llhelper.card.controller;
 
+import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +28,14 @@ public class CardController {
     }
 
     @PostMapping
-    public ResponseEntity<CardResponse> create(@RequestBody CardRequest request) {
+    public ResponseEntity<CardResponse> create(@Valid @RequestBody CardRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cardService.create(request));
+    }
+
+    // TODO: create separate controller for bulk generation, like idea do by 10 words for each requests
+    @PostMapping("/bulk-generate")
+    public ResponseEntity<List<CardResponse>> createBulk(@Valid @RequestBody BulkCardGenerateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(cardService.createBulk(request));
     }
 
     @GetMapping("/{id}")
