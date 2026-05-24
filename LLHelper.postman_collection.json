@@ -21,7 +21,7 @@
                   "var jsonData = pm.response.json();",
                   "var token = jsonData.token || jsonData.accessToken || jsonData.data?.token;",
                   "if (token) {",
-                  "    pm.collectionVariables.set(\"authToken\", token);",
+                  "    pm.environment.set(\"authToken\", token);",
                   "    console.log(\"Token saved:\", token);",
                   "} else {",
                   "    console.log(\"Token not found in response\");",
@@ -46,7 +46,7 @@
               "raw": "{\n  \"email\": \"user@example3.com\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/auth/register",
+              "raw": "{{url}}/auth/register",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -97,7 +97,7 @@
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/auth/login",
+              "raw": "{{url}}/auth/login",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -139,7 +139,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{authToken}}"
               }
             ],
             "body": {
@@ -147,7 +147,7 @@
               "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"username\": \"ivan_petrov\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"uiLanguage\": \"ru\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/users",
+              "raw": "{{url}}/users",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -169,7 +169,7 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "console.log(\"Auth header will be:\", \"Bearer \" + pm.collectionVariables.get(\"authToken\"));"
+                  "console.log(\"Auth header will be:\", \"Bearer \" + pm.environment.get(\"authToken\"));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -202,7 +202,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/users/3",
+              "raw": "{{url}}/users/3",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -247,7 +247,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/users/username/ivan_petrov",
+              "raw": "{{url}}/users/username/ivan_petrov",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -285,7 +285,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{authToken}}"
               }
             ],
             "body": {
@@ -293,7 +293,7 @@
               "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Иванов\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"de\",\n  \"avatarUrl\": \"https://example.com/new-avatar.jpg\",\n  \"uiLanguage\": \"en\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/users/1",
+              "raw": "{{url}}/users/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -325,7 +325,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/users/1",
+              "raw": "{{url}}/users/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -335,6 +335,39 @@
                 "api",
                 "v1",
                 "users",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by Auth ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/users/auth/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "auth",
                 "1"
               ]
             }
@@ -371,7 +404,7 @@
               "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"cardDescId\": 1\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/cards",
+              "raw": "{{url}}/cards",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
@@ -396,7 +429,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/cards",
+              "raw": "{{url}}/cards",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
@@ -421,7 +454,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/cards/1",
+              "raw": "{{url}}/cards/1",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
@@ -455,7 +488,7 @@
               "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"cardDescId\": 1\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/cards/1",
+              "raw": "{{url}}/cards/1",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
@@ -480,11 +513,260 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/v1/cards/1",
+              "raw": "{{url}}/cards/1",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
               "path": ["api", "v1", "cards", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Card with AI Generation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"serendipity\",\n  \"cardDescId\": 1,\n  \"autoGenerate\": true\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "cards"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Generate Cards",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titles\": [\n    \"serendipity\",\n    \"ephemeral\",\n    \"luminous\",\n    \"resilience\",\n    \"mellifluous\"\n  ],\n  \"cardDescId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards/bulk-generate",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "cards", "bulk-generate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CardDescs",
+      "item": [
+        {
+          "name": "Create CardDesc",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words with Russian translations\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/card-descs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "card-descs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get CardDesc by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/card-descs/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "card-descs",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All CardDescs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/card-descs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "card-descs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update CardDesc",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/card-descs/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "card-descs",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete CardDesc",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/card-descs/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "card-descs",
+                "1"
+              ]
             }
           },
           "response": []
