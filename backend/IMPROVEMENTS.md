@@ -20,6 +20,16 @@
 - [ ] Добавить пагинацию для списковых endpoint'ов
 - [ ] Добавить глобальный exception handler (@ControllerAdvice)
 - [ ] Добавить логирование запросов (request/response logging)
+- [ ] **Внедрить Lombok во всех классах с getter/setter/constructor**  
+  Заменить ручные getter/setter и конструкторы на Lombok аннотации:  
+  - `@Getter` / `@Setter` на уровне класса  
+  - `@NoArgsConstructor` / `@AllArgsConstructor` / `@Builder`  
+  - `@Slf4j` вместо `LoggerFactory.getLogger()`  
+  Файлы: все entity, сервисы без `@Slf4j`, DTO-классы (не record)
+
+- [ ] **Валидация AI-generated заголовков карточек перед генерацией**  
+  Проверять заголовки: не пустая строка, не одна буква, не число, не абракадабра (regex для валидных слов)  
+  Файлы: `AiCardGenerationService.java`, `CardServiceImpl.java`
 
 ## Database
 
@@ -54,3 +64,7 @@
   Это даст единый источник правды для API и автоматическую актуальную документацию  
   Файлы: `pom.xml`, `application.yaml`
 - [ ] Описать API endpoints и примеры запросов
+- [ ] **Добавлять Postman-запрос для каждого нового endpoint'а**  
+  Правило: при создании нового endpoint в контроллере, сразу добавлять соответствующий запрос в `LLHelper.postman_collection.json`  
+  Использовать skill: `add-postman-request`  
+  Это обеспечит актуальность API-документации и упростит тестирование
