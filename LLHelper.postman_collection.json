@@ -617,7 +617,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words with Russian translations\"\n}"
+              "raw": "{\n  \"title\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words with Russian translations\"\n}"
             },
             "url": {
               "raw": "{{url}}/card-descs",
@@ -633,7 +633,25 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Create CardDesc - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "url": "{{url}}/card-descs",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words\"\n}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"English Vocabulary\",\n  \"description\": \"Collection of English words\",\n  \"createdAt\": \"2024-01-15T10:30:00\",\n  \"updatedAt\": \"2024-01-15T10:30:00\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T08:00:00\",\n    \"updatedAt\": \"2024-01-12T09:15:00\"\n  },\n  \"isPublic\": true,\n  \"cards\": []\n}"
+            }
+          ]
         },
         {
           "name": "Get CardDesc by ID",
@@ -665,7 +683,19 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Get CardDesc by ID - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{url}}/card-descs/1"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"English Vocabulary\",\n  \"description\": \"Collection of English words\",\n  \"createdAt\": \"2024-01-15T10:30:00\",\n  \"updatedAt\": \"2024-01-15T10:30:00\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T08:00:00\",\n    \"updatedAt\": \"2024-01-12T09:15:00\"\n  },\n  \"isPublic\": true,\n  \"cards\": [\n    {\n      \"id\": 1,\n      \"title\": \"serendipity\",\n      \"definition\": \"a fortunate accident\",\n      \"synonyms\": [\"chance\", \"luck\"],\n      \"examples\": [\"Finding this restaurant was pure serendipity.\"],\n      \"translation\": \"счастливая случайность\",\n      \"createdAt\": \"2024-01-15T10:35:00\",\n      \"updatedAt\": \"2024-01-15T10:35:00\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Get All CardDescs",
@@ -696,7 +726,19 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Get All CardDescs - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{url}}/card-descs"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"description\": \"Collection of English words\",\n    \"createdAt\": \"2024-01-15T10:30:00\",\n    \"updatedAt\": \"2024-01-15T10:30:00\",\n    \"owner\": {\n      \"id\": 1,\n      \"username\": \"ivan_petrov\",\n      \"firstName\": \"Иван\",\n      \"lastName\": \"Петров\",\n      \"nativeLanguage\": \"ru\",\n      \"targetLanguage\": \"en\",\n      \"avatarUrl\": \"https://example.com/avatar.jpg\",\n      \"uiLanguage\": \"ru\",\n      \"createdAt\": \"2024-01-10T08:00:00\",\n      \"updatedAt\": \"2024-01-12T09:15:00\"\n    },\n    \"isPublic\": true,\n    \"cards\": []\n  },\n  {\n    \"id\": 2,\n    \"title\": \"German Basics\",\n    \"description\": \"German words for beginners\",\n    \"createdAt\": \"2024-01-14T14:20:00\",\n    \"updatedAt\": \"2024-01-14T14:20:00\",\n    \"owner\": {\n      \"id\": 2,\n      \"username\": \"maria_s\",\n      \"firstName\": \"Мария\",\n      \"lastName\": \"Сидорова\",\n      \"nativeLanguage\": \"ru\",\n      \"targetLanguage\": \"de\",\n      \"avatarUrl\": null,\n      \"uiLanguage\": \"en\",\n      \"createdAt\": \"2024-01-08T11:00:00\",\n      \"updatedAt\": \"2024-01-08T11:00:00\"\n    },\n    \"isPublic\": false,\n    \"cards\": []\n  }\n]"
+            }
+          ]
         },
         {
           "name": "Update CardDesc",
@@ -720,7 +762,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
+              "raw": "{\n  \"title\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
               "raw": "{{url}}/card-descs/1",
@@ -737,7 +779,25 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Update CardDesc - Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "url": "{{url}}/card-descs/1",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Updated English Vocabulary\",\n  \"description\": \"Updated description\",\n  \"createdAt\": \"2024-01-15T10:30:00\",\n  \"updatedAt\": \"2024-01-15T11:45:00\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T08:00:00\",\n    \"updatedAt\": \"2024-01-12T09:15:00\"\n  },\n  \"isPublic\": true,\n  \"cards\": []\n}"
+            }
+          ]
         },
         {
           "name": "Delete CardDesc",
@@ -768,6 +828,96 @@
                 "1"
               ]
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Learning",
+      "item": [
+        {
+          "name": "Enroll Deck",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": "{{url}}/decks/1/enroll"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Study Cards",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{url}}/decks/1/study/cards"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deck Cards",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{url}}/decks/1/cards"
+          },
+          "response": []
+        },
+        {
+          "name": "Review Card",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userAnswer\": \"blueprint\"\n}"
+            },
+            "url": "{{url}}/cards/1/review"
           },
           "response": []
         }
