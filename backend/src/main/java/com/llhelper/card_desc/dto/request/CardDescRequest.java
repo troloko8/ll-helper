@@ -6,6 +6,7 @@ public record CardDescRequest(
     @NotBlank String title,
     String description,
     @NotBlank String sourceLanguage,
-    @NotBlank String targetLanguage
+    @NotBlank String targetLanguage,
+    Boolean isPublic
 ) {
 }
