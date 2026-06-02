@@ -349,7 +349,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 
 ## ✅ Done Criteria
 
-- [ ]  Есть `docs/architecture/current-architecture.md`
+- [x]  Есть `docs/architecture/current-architecture.md`
 - [ ]  Есть `docs/database/relationships.md`
 - [ ]  Понятно, где content, а где progress
 - [ ]  DTO не возвращают entity наружу

@@ -15,7 +15,7 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
 - `docs/features/learning-mode.md`
-- `docs/roadmap/LL_Helper_Project_Roadmap.md`
+- `docs/roadmap/LL_Helper Project Roadmap.md`
 - `backend/IMPROVEMENTS.md`
 - `backend/CONVENTIONS.md`
 - `backend/AGENTS.md`
