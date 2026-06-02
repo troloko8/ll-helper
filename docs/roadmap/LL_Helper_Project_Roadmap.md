@@ -11,8 +11,8 @@
 
 ### Sprint 0.1 — Architecture Freeze
 
-1. Остановить добавление новых фич
-2. Описать current architecture
+~~1. Остановить добавление новых фич~~
+2. ~~Описать current architecture~~
 3. Описать DB relationships
 4. Описать current learning flow
 5. Описать AI generation flow
@@ -350,7 +350,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 ## ✅ Done Criteria
 
 - [x]  Есть `docs/architecture/current-architecture.md`
-- [ ]  Есть `docs/database/relationships.md`
+- [x]  Есть `docs/database/relationships.md`
 - [ ]  Понятно, где content, а где progress
 - [ ]  DTO не возвращают entity наружу
 - [ ]  Есть mapper layer
