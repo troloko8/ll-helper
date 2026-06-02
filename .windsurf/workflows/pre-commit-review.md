@@ -129,18 +129,28 @@ Output:
 
 ## 6. Database impact
 
-Check whether the change affects:
+Use `docs/database/relationships.md` as the current DB relationship snapshot.
+
+Check whether the changed code affects:
 
 - entities
+- JPA annotations
 - table names
 - column names
+- nullable fields
+- defaults
+- primary keys
 - foreign keys
 - unique constraints
 - indexes
-- cascade behavior
+- check constraints
+- enum values
+- cascade settings
 - orphanRemoval
 - soft delete
 - migrations
+- ID-only logical references
+- copy vs reference decision
 
 If yes:
 
@@ -151,8 +161,10 @@ If yes:
 Output:
 
 - DB impact: yes/no
-- Migration needed: yes/no
-- Relationships doc update needed: yes/no
+- `docs/database/relationships.md` update needed: yes/no
+- Migration needed now: yes/no
+- Migration should be deferred to Sprint 0.3: yes/no
+- Risk: orphaned data / FK violation / duplicate rows / slow query / security issue
 
 ## 7. Tests impact
 

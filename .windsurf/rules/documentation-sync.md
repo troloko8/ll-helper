@@ -15,7 +15,7 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
 - `docs/features/learning-mode.md`
-- `docs/roadmap/LL_Helper Project Roadmap.md`
+- `docs/roadmap/LL_Helper_Project_Roadmap.md`
 - `backend/IMPROVEMENTS.md`
 - `backend/CONVENTIONS.md`
 - `backend/AGENTS.md`
@@ -51,6 +51,21 @@ Update this file when the change affects:
 - delete behavior
 - soft delete behavior
 - copy vs reference decision
+- JPA annotations: `@OneToOne`, `@OneToMany`, `@ManyToOne`, `@ManyToMany`
+- `@JoinColumn`
+- `@Column(nullable = ...)`
+- `@Table(uniqueConstraints = ...)`
+- `@Check`
+- `@ColumnDefault`
+- enum storage strategy
+- ID-only logical references such as `Long userId`, `Long cardId`, `Long deckId`
+- service logic that depends on relationships
+- enroll/review queries
+- delete behavior even if implemented only in service layer
+
+If a change affects entities or database relationships, do not update only `current-architecture.md`.
+
+Also check whether `docs/database/relationships.md` must be updated.
 
 ## When to update `learning-mode.md`
 
