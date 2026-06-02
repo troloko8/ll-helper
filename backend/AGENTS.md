@@ -25,8 +25,8 @@ Apply these conventions for ALL backend code in this repository.
 - Split into `dto/request/` and `dto/response/`
 
 ## Mapper
-- Deferred as an **advanced feature** — do not create mapper classes yet
-- Entity → DTO conversion: private `toResponse()` method inside the service
+- Not yet implemented — entity → DTO conversion is done via private `toResponse()` inside the service
+- Dedicated mapper layer is planned for **Sprint 0.2** (Level 0 Architecture Debt)
 
 ## Naming
 - Packages: `snake_case` for compound words (e.g. `card_desc`)
@@ -37,3 +37,10 @@ Apply these conventions for ALL backend code in this repository.
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `update`
 - **Flyway:** disabled for now
+
+## Core Project Documents
+
+- Roadmap: `docs/roadmap/LL_Helper Project Roadmap.md`
+- Current architecture: `docs/architecture/current-architecture.md`
+
+Before suggesting backend architecture changes, first check the current architecture document.
