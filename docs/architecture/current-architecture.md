@@ -478,7 +478,7 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 
 | Document | Path |
 |----------|------|
-| Roadmap | `docs/roadmap/LL_Helper Project Roadmap.md` |
+| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
 | Conventions | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
 | Improvements backlog | `backend/IMPROVEMENTS.md` |
 | Postman collection | `LLHelper.postman_collection.json` |

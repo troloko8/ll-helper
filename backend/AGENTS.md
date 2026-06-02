@@ -40,7 +40,23 @@ Apply these conventions for ALL backend code in this repository.
 
 ## Core Project Documents
 
-- Roadmap: `docs/roadmap/LL_Helper Project Roadmap.md`
+- Roadmap: `docs/roadmap/LL_Helper_Project_Roadmap.md`
 - Current architecture: `docs/architecture/current-architecture.md`
+- Database relationships: `docs/database/relationships.md`
+
+Before suggesting backend architecture, entity relationships, database constraints, cascade/delete behavior, indexes, learning progress changes, or migrations, check the database relationships document.
 
 Before suggesting backend architecture changes, first check the current architecture document.
+
+## Database Rule
+
+Do not assume that JPA relationships and real PostgreSQL constraints are the same.
+
+When discussing DB behavior, distinguish:
+
+- JPA cascade / orphanRemoval
+- DB foreign keys / ON DELETE behavior
+- service-level ownership checks
+- logical ID references without FK constraints
+
+If entity relationships change, update `docs/database/relationships.md`.
