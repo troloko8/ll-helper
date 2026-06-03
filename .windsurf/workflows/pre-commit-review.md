@@ -11,7 +11,7 @@ Use these documents as context if available:
 - `docs/roadmap/LL_Helper_Project_Roadmap.md`
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
-- `docs/features/learning-mode.md`
+- `docs/features/learning-flow.md`
 - `docs/process/documentation-sync.md`
 - `backend/CONVENTIONS.md`
 - `backend/IMPROVEMENTS.md`
@@ -78,7 +78,7 @@ Required docs may include:
 
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
-- `docs/features/learning-mode.md`
+- `docs/features/learning-flow.md`
 - `backend/AGENTS.md`
 - `backend/CONVENTIONS.md`
 
@@ -92,7 +92,7 @@ Check:
 
 - Were architecture docs updated if architecture changed?
 - Were DB docs updated if entities/relations changed?
-- Was learning-mode doc updated if learning logic changed?
+- Was `docs/features/learning-flow.md` updated if learning logic changed (enroll flow, study selection, review, status transitions, answer checking)?
 - Was roadmap updated if a task was completed?
 - Was improvements/backlog updated if a new issue was found?
 - Was conventions doc updated if a new project convention appeared?

@@ -555,7 +555,7 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | Document | Path |
 |----------|------|
 | Architecture overview | `docs/architecture/current-architecture.md` |
-| Learning mode design | `docs/features/learning-mode.md` |
+| Learning flow design | `docs/features/learning-flow.md` |
 | Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
 | Backend conventions | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
 | Improvements backlog | `backend/IMPROVEMENTS.md` |

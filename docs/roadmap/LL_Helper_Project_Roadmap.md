@@ -12,9 +12,9 @@
 ### Sprint 0.1 — Architecture Freeze
 
 ~~1. Остановить добавление новых фич~~
-2. ~~Описать current architecture~~
-3. Описать DB relationships
-4. Описать current learning flow
+~~2. ~~Описать current architecture~~~~
+~~3. Описать DB relationships~~
+~~4. Описать current learning flow~~ (`docs/features/learning-flow.md`)
 5. Описать AI generation flow
 
 ### Sprint 0.2 — Backend Cleanup

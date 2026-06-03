@@ -24,7 +24,7 @@
 - ✅ CRUD for decks (currently entity is named `CardDesc` — see Known Issues)
 - ✅ CRUD for cards
 - ✅ AI card generation via OpenAI API
-- ✅ Learning Mode: enroll, study, review with progress tracking
+- ✅ Learning Flow: enroll, study, review with progress tracking
 - 🔄 In progress: cleanup, tests, documentation, mapper layer
 
 **Out of scope for Sprint 0.1:**
@@ -476,13 +476,13 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 
 ## References
 
-| Document | Path |
-|----------|------|
-| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
-| Conventions | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
-| Improvements backlog | `backend/IMPROVEMENTS.md` |
-| Postman collection | `LLHelper.postman_collection.json` |
-| Learning mode design | `docs/features/learning-mode.md` |
+| Document             | Path                                          |
+|----------------------|-----------------------------------------------|
+| Roadmap              | `docs/roadmap/LL_Helper_Project_Roadmap.md`   |
+| Conventions          | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
+| Improvements backlog | `backend/IMPROVEMENTS.md`                     |
+| Postman collection   | `LLHelper.postman_collection.json`            |
+| Learning flow design | `docs/features/learning-flow.md`               |
 
 ---
 
