@@ -12,7 +12,7 @@ Use these documents as context if available:
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
 - `docs/features/learning-flow.md`
-- `docs/process/documentation-sync.md`
+- `docs/features/ai-generation-flow.md`
 - `backend/CONVENTIONS.md`
 - `backend/IMPROVEMENTS.md`
 - `backend/AGENTS.md`
@@ -45,7 +45,7 @@ Review changed code for:
 - duplicated logic
 - broken naming
 - missing validation
-- missing ownership checks
+- missing ownership checks (only deck owner can create/generate cards — see `AGENTS.md` Ownership Rule)
 - bad transaction boundaries
 - entity leakage from API
 - controller business logic

@@ -15,17 +15,21 @@
 ~~2. ~~Описать current architecture~~~~
 ~~3. Описать DB relationships~~
 ~~4. Описать current learning flow~~ (`docs/features/learning-flow.md`)
-5. Описать AI generation flow
+~~5. Описать AI generation flow~~ (`docs/features/ai-generation-flow.md`)
 
 ### Sprint 0.2 — Backend Cleanup
 
-1. Проверить UserDeck/UserCard модель
-2. Принять решение: copy vs reference
-3. Добавить/почистить DTO
-4. Добавить mappers
-5. Убрать entity leakage из API
-6. Добавить validation
-7. Добавить GlobalExceptionHandler
+1. 🔴 Добавить ownership check: только owner может создавать/генерировать cards в deck
+2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)
+3. Проверить UserDeck/UserCard модель
+4. Принять решение: copy vs reference (документально)
+5. Добавить/почистить DTO
+6. Добавить mappers
+7. Убрать entity leakage из API
+8. Добавить validation
+9. Исправить RateLimiter reset bug (hardcoded 10)
+10. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
+11. Добавить logging для bulk failures
 
 ### Sprint 0.3 — Database Control
 

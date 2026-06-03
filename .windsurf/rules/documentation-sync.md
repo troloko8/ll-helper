@@ -14,7 +14,8 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 
 - `docs/architecture/current-architecture.md`
 - `docs/database/relationships.md`
-- `docs/features/learning-mode.md`
+- `docs/features/learning-flow.md`
+- `docs/features/ai-generation-flow.md`
 - `docs/roadmap/LL_Helper_Project_Roadmap.md`
 - `backend/IMPROVEMENTS.md`
 - `backend/CONVENTIONS.md`
@@ -67,7 +68,7 @@ If a change affects entities or database relationships, do not update only `curr
 
 Also check whether `docs/database/relationships.md` must be updated.
 
-## When to update `learning-mode.md`
+## When to update `learning-flow.md`
 
 Update this file when the change affects:
 
@@ -79,6 +80,19 @@ Update this file when the change affects:
 - answer checking strategy
 - spaced repetition intervals
 - UserDeckProgress / UserCardProgress behavior
+
+## When to update `ai-generation-flow.md`
+
+Update this file when the change affects:
+
+- AI card generation logic
+- prompt template
+- OpenAI provider implementation
+- rate limiting behavior
+- bulk generation flow
+- AI error handling
+- AI configuration properties
+- ownership checks for card creation/generation
 
 ## When to update Roadmap
 

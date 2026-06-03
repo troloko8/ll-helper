@@ -427,14 +427,29 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 | No `equals`/`hashCode`/`toString` on entities | Avoids lazy-load issues and infinite recursion |
 | Mapper deferred | Currently `toResponse()` in service; dedicated mapper layer planned for Sprint 0.2 |
 
+### Sprint 0.2 Accepted Decisions
+
+| Decision | Details |
+|----------|---------|  
+| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` must check `Objects.equals(cardDesc.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| Bulk AI generation uses partial-success strategy | Sprint 0.2 fix: log failed titles with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Sprint 0.4 / Level 1. |
+| Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented in Sprint 0.2. |
+| Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress will be handled in Sprint 0.3 via restrict/delete strategy and/or FK decisions. |
+
+### Sprint 0.2 Priority Decisions
+
+1. Fix ownership checks before any mapper/DTO cleanup.
+2. Add `GlobalExceptionHandler` before expanding API behavior.
+3. Do not redesign learning UX during Sprint 0.2.
+4. Do not change DB relationship model before Flyway/Sprint 0.3.
+
 ### Open Decisions
 
 | Question | Context | Status |
 |----------|---------|--------|
-| Copy vs Reference for enrolled decks | When a user enrolls a public deck — should progress reference the original cards or copy them? | Under review |
-| Answer checking strategy | Currently: automatic case-insensitive trim match. Does not handle synonyms, typos, or phrase variants. Recommended direction: self-check (Again / Hard / Good / Easy) combined with optional auto-check. | Open |
 | Soft delete for Card / Deck | Add `deleted_at` column or hard delete? | Planned in `IMPROVEMENTS.md` |
 | Synonyms/examples as separate tables | Currently PostgreSQL `text[]` arrays inside `Card` entity | Deferred |
+| Self-check UX for answers | Direction accepted (Again / Hard / Good / Easy), implementation deferred | Post Sprint 0.2 |
 
 ---
 
@@ -483,6 +498,7 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 | Improvements backlog | `backend/IMPROVEMENTS.md`                     |
 | Postman collection   | `LLHelper.postman_collection.json`            |
 | Learning flow design | `docs/features/learning-flow.md`               |
+| AI generation flow   | `docs/features/ai-generation-flow.md`          |
 
 ---
 

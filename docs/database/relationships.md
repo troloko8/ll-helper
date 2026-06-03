@@ -361,13 +361,24 @@ private Long deckId;  // References CardDesc.id
 | **Cons** | Owner edits affect all learners, deletion breaks progress | Data duplication, complexity in sync/merge |
 | **Current Risk** | Deck owner deletes card → orphaned `UserCardProgress` rows (no DB FK protection); FK violation risk after FKs are added | N/A (not implemented) |
 
+### Accepted Decision (Sprint 0.2)
+
+**Accepted for current MVP: Reference model.**
+
+`UserDeckProgress` and `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred.
+
+Current protection strategy:
+- Sprint 0.2: document and enforce service-level ownership checks.
+- Sprint 0.3: decide DB-level FK/delete behavior.
+- Preferred direction: restrict delete if progress exists, unless soft delete is implemented.
+
 ### Decision Timeline
 
 | Sprint | Action |
 |--------|--------|
-| 0.1 | Document current state (reference by ID) |
-| 0.2 | Analyze usage patterns, decide strategy |
-| 0.3 | Implement decision: add FK constraints (reference) or copy logic |
+| 0.1 | ~~Document current state (reference by ID)~~ ✅ |
+| 0.2 | ~~Decide strategy~~ ✅ — Reference accepted. Ownership checks enforced. |
+| 0.3 | Implement: add FK constraints with RESTRICT, or soft delete |
 
 ---
 

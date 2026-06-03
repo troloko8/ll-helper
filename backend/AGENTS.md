@@ -43,10 +43,29 @@ Apply these conventions for ALL backend code in this repository.
 - Roadmap: `docs/roadmap/LL_Helper_Project_Roadmap.md`
 - Current architecture: `docs/architecture/current-architecture.md`
 - Database relationships: `docs/database/relationships.md`
+- Learning flow: `docs/features/learning-flow.md`
+- AI generation flow: `docs/features/ai-generation-flow.md`
 
 Before suggesting backend architecture, entity relationships, database constraints, cascade/delete behavior, indexes, learning progress changes, or migrations, check the database relationships document.
 
 Before suggesting backend architecture changes, first check the current architecture document.
+
+## Ownership Rule
+
+Only the deck owner can create, update, delete, or AI-generate cards inside a deck.
+
+When implementing card creation or generation, always verify:
+
+```text
+if (!Objects.equals(cardDesc.getOwner().getId(), currentUserId)) {
+    throw new AccessDeniedException("Access denied: not deck owner");
+}
+```
+
+This applies to:
+- `POST /api/v1/cards`
+- `POST /api/v1/cards/bulk-generate`
+- Any future endpoint that mutates deck content
 
 ## Database Rule
 
@@ -60,3 +79,7 @@ When discussing DB behavior, distinguish:
 - logical ID references without FK constraints
 
 If entity relationships change, update `docs/database/relationships.md`.
+
+If learning flow logic changes, update `docs/features/learning-flow.md`.
+
+If AI generation logic changes, update `docs/features/ai-generation-flow.md`.

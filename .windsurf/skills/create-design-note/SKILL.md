@@ -6,8 +6,8 @@ description: Creates a design note file for a new feature following the establis
 Create a design note file in `/Users/troloko/LLHelper/ll-helper/docs/features/` following the established template.
 
 ## Template Structure
-
-The file should follow this structure (example: `learning-mode.md`):
+//FIXME later it's probably not design note approach. Maybe need to change the name or sence of this skill
+The file should follow this structure (example: `learning-flow.md`):
 
 ```markdown
 # Feature: {FeatureName}
@@ -146,7 +146,7 @@ Body: { ... }
 ## File Naming
 
 - Use kebab-case: `feature-name.md`
-- Examples: `learning-mode.md`, `user-profile.md`, `spaced-repetition.md`
+- Examples: `learning-flow.md`, `ai-generation-flow.md`, `user-profile.md`
 
 ## Location
 
