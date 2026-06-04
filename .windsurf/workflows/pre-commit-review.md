@@ -96,6 +96,8 @@ Check:
 - Was roadmap updated if a task was completed?
 - Was improvements/backlog updated if a new issue was found?
 - Was conventions doc updated if a new project convention appeared?
+- If security/ownership rules changed in code, was `backend/AGENTS.md` Ownership Rule section updated?
+- If new module/package created, was `docs/architecture/current-architecture.md` package tree updated?
 
 Output:
 
@@ -206,3 +208,67 @@ Required before commit:
 Optional after commit:
 1.
 2.
+```
+
+### Suggested commit message
+
+If verdict is **✅ Ready to commit**, generate a commit message following Conventional Commits format:
+
+**Format:**
+```
+type(scope): brief description
+
+- Bullet point describing change 1
+- Bullet point describing change 2
+- Bullet point describing change 3
+
+Fixes Sprint X.Y Task #N (if applicable)
+```
+
+**Type options:**
+- `feat`: new feature
+- `fix`: bug fix
+- `refactor`: code restructuring without behavior change
+- `docs`: documentation only
+- `test`: adding/updating tests
+- `chore`: tooling, dependencies, config
+- `perf`: performance improvement
+- `style`: code style/formatting
+
+**Scope examples:**
+- `security` — auth, ownership, permissions
+- `learning` — enroll, study, review flow
+- `ai` — card generation, OpenAI integration
+- `deck` — deck CRUD operations
+- `card` — card CRUD operations
+- `api` — endpoint/DTO changes
+- `db` — entity/schema changes
+- `arch` — architecture/structure changes
+
+**Guidelines:**
+- First line max 72 chars
+- Use imperative mood: "add", not "added" or "adds"
+- Bullet points should be specific and technical
+- Reference Sprint task if change completes/fixes roadmap item
+- Include breaking changes with `BREAKING CHANGE:` prefix if needed
+- Mention updated docs if documentation-sync rule triggered
+
+**Example:**
+```
+feat(security): add ownership check for card operations
+
+- Add SecurityUtils.getCurrentUserId() (returns User.id, not AuthUser.id)
+- Ownership check: create/update/delete/bulk-generate cards (deck owner only)
+- Replace CardServiceImpl.getCurrentUserId() with SecurityUtils
+- Replace LearningServiceImpl.getCurrentUserId() with SecurityUtils
+- Add @EntityGraph to CardDescRepository.findWithOwnerById()
+- Add Postman test case for 403 ownership violation
+- Update IMPROVEMENTS.md: JWT userId claim now HIGH priority
+
+Fixes Sprint 0.2 Task #1
+```
+
+Output:
+
+- Suggested commit message (if ready to commit)
+- Brief explanation of type/scope choice
