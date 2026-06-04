@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse register(RegisterRequest request) {
         if (authRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new IllegalStateException("Email already registered");
         }
 
         AuthUser newUser = new AuthUser();

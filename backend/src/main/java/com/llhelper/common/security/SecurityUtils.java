@@ -2,8 +2,10 @@ package com.llhelper.common.security;
 
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
+import com.llhelper.user.entity.User;
 import com.llhelper.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -27,7 +29,7 @@ public class SecurityUtils {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("User is not authenticated");
+            throw new AuthenticationCredentialsNotFoundException("User is not authenticated");
         }
 
         String email = authentication.getName();
@@ -37,6 +39,26 @@ public class SecurityUtils {
 
         return userRepository.findByAuthUserId(authUser.getId())
             .map(user -> user.getId())
+            .orElseThrow(() -> new EntityNotFoundException("User not found for authUserId: " + authUser.getId()));
+    }
+
+    /**
+     * Returns the current authenticated User entity.
+     * TODO: Optimize by caching or adding userId claim to JWT token.
+     */
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationCredentialsNotFoundException("User is not authenticated");
+        }
+
+        String email = authentication.getName();
+
+        AuthUser authUser = authRepository.findByEmail(email)
+            .orElseThrow(() -> new EntityNotFoundException("AuthUser not found: " + email));
+
+        return userRepository.findByAuthUserId(authUser.getId())
             .orElseThrow(() -> new EntityNotFoundException("User not found for authUserId: " + authUser.getId()));
     }
 }

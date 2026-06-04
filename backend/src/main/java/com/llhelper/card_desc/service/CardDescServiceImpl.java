@@ -1,44 +1,27 @@
 package com.llhelper.card_desc.service;
 
-import com.llhelper.auth.entity.AuthUser;
-import com.llhelper.auth.repository.AuthRepository;
 import com.llhelper.card_desc.dto.request.CardDescRequest;
 import com.llhelper.card_desc.dto.response.CardDescResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
-import com.llhelper.user.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CardDescServiceImpl implements CardDescService {
 
     private final CardDescRepository cardDescRepository;
-    private final UserRepository userRepository;
-    private final AuthRepository authRepository;
+    private final SecurityUtils securityUtils;
 
-    public CardDescServiceImpl(CardDescRepository cardDescRepository, UserRepository userRepository, AuthRepository authRepository) {
+    public CardDescServiceImpl(CardDescRepository cardDescRepository, SecurityUtils securityUtils) {
         this.cardDescRepository = cardDescRepository;
-        this.userRepository = userRepository;
-        this.authRepository = authRepository;
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
-        }
-        String email = authentication.getName();
-        AuthUser authUser = authRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("AuthUser not found: " + email));
-        return userRepository.findByAuthUserId(authUser.getId())
-            .orElseThrow(() -> new RuntimeException("User not found for authUserId: " + authUser.getId()));
+        this.securityUtils = securityUtils;
     }
 
     private CardDescResponse toResponse(CardDesc cardDesc) {
@@ -91,14 +74,14 @@ public class CardDescServiceImpl implements CardDescService {
         cardDesc.setIsPublic(request.isPublic() != null ? request.isPublic() : true);
         cardDesc.setCreatedAt(LocalDateTime.now());
         cardDesc.setUpdatedAt(LocalDateTime.now());
-        cardDesc.setOwner(getCurrentUser());
+        cardDesc.setOwner(securityUtils.getCurrentUser());
         return toResponse(cardDescRepository.save(cardDesc));
     }
 
     @Override
     public CardDescResponse getById(Long id) {
         CardDesc cardDesc = cardDescRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("CardDesc not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         return toResponse(cardDesc);
     }
 
@@ -112,7 +95,7 @@ public class CardDescServiceImpl implements CardDescService {
     @Override
     public CardDescResponse update(Long id, CardDescRequest request) {
         CardDesc cardDesc = cardDescRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("CardDesc not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         cardDesc.setTitle(request.title());
         cardDesc.setDescription(request.description());
         cardDesc.setSourceLanguage(request.sourceLanguage());

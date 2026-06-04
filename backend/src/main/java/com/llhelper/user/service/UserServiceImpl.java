@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new EntityNotFoundException("AuthUser not found with email: " + email));
 
         if (userRepository.findByUsername(request.username()).isPresent()) {
-            throw new IllegalArgumentException("Username already taken: " + request.username());
+            throw new IllegalStateException("Username already taken: " + request.username());
         }
 
         User user = new User();

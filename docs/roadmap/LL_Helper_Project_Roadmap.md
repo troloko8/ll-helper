@@ -20,7 +20,7 @@
 ### Sprint 0.2 — Backend Cleanup
 
 ~~1. 🔴 Добавить ownership check: только owner может создавать/генерировать cards в deck~~
-2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)
+~~2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)~~
 3. Проверить UserDeck/UserCard модель
 4. Принять решение: copy vs reference (документально)
 5. Добавить/почистить DTO
