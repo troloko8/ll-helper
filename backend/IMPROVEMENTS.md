@@ -4,10 +4,11 @@
 
 ## Performance
 
-- [ ] **Хранить authUserId в JWT токене как claim**  
-  Сейчас: токен → email → запрос в БД за AuthUser → получаем authUserId  
-  Лучше: токен → authUserId без запроса в БД  
-  Файлы: `JwtService.java`, `JwtAuthenticationFilter.java`
+- [ ] **Хранить userId (User.id) в JWT токене как claim**  
+  Сейчас: токен → email → запрос в БД за AuthUser → запрос в БД за User → получаем userId  
+  Лучше: токен → userId без запросов в БД  
+  Критичность: 🔴 HIGH — `SecurityUtils.getCurrentUserId()` делает 2 DB запроса на каждый защищённый endpoint  
+  Файлы: `JwtService.java`, `JwtAuthenticationFilter.java`, `SecurityUtils.java`
 
 ## Security
 

@@ -314,7 +314,7 @@ ai/
 - [x] Postman collection includes AI endpoints
 - [ ] AI errors are handled by GlobalExceptionHandler (Sprint 0.2)
 - [ ] Bulk failures are reported to client (Sprint 0.2+ logging, full partial response later)
-- [ ] Ownership check exists for AI card generation (Sprint 0.2 — 🔴 critical)
+- [x] Ownership check exists for AI card generation
 - [ ] RateLimiter reset bug fixed (Sprint 0.2)
 - [ ] `validateBulkSize()` actually called in flow (Sprint 0.2)
 

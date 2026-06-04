@@ -9,9 +9,13 @@ import com.llhelper.card.entity.Card;
 import com.llhelper.card.repository.CardRepository;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.common.security.SecurityUtils;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,15 +25,25 @@ public class CardServiceImpl implements CardService {
     private final CardRepository cardRepository;
     private final CardDescRepository cardDescRepository;
     private final AiCardGenerationService aiCardGenerationService;
+    private final SecurityUtils securityUtils;
 
     public CardServiceImpl(
         CardRepository cardRepository,
         CardDescRepository cardDescRepository,
-        AiCardGenerationService aiCardGenerationService
+        AiCardGenerationService aiCardGenerationService,
+        SecurityUtils securityUtils
     ) {
         this.cardRepository = cardRepository;
         this.cardDescRepository = cardDescRepository;
         this.aiCardGenerationService = aiCardGenerationService;
+        this.securityUtils = securityUtils;
+    }
+
+    private void validateDeckOwnership(CardDesc deck) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        if (!Objects.equals(deck.getOwner().getId(), currentUserId)) {
+            throw new AccessDeniedException("Access denied: not deck owner");
+        }
     }
 
     private CardResponse toResponse(Card card) {
@@ -48,8 +62,10 @@ public class CardServiceImpl implements CardService {
     @Override
     @Transactional
     public CardResponse create(CardRequest request) {
-        CardDesc cardDesc = cardDescRepository.findById(request.cardDescId())
-            .orElseThrow(() -> new RuntimeException("CardDesc not found: " + request.cardDescId()));
+        CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
+
+        validateDeckOwnership(cardDesc);
 
         Card card = new Card();
         card.setTitle(request.title());
@@ -81,8 +97,10 @@ public class CardServiceImpl implements CardService {
     @Transactional
     // TODO: probably i want that it was like partial transaction
     public List<CardResponse> createBulk(BulkCardGenerateRequest request) {
-        CardDesc cardDesc = cardDescRepository.findById(request.cardDescId())
-            .orElseThrow(() -> new RuntimeException("CardDesc not found: " + request.cardDescId()));
+        CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
+
+        validateDeckOwnership(cardDesc);
 
         List<CardResponse> results = new ArrayList<>();
 
@@ -118,7 +136,7 @@ public class CardServiceImpl implements CardService {
     @Override
     public CardResponse getById(Long id) {
         Card card = cardRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Card not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
         return toResponse(card);
     }
 
@@ -132,7 +150,11 @@ public class CardServiceImpl implements CardService {
     @Override
     public CardResponse update(Long id, CardRequest request) {
         Card card = cardRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Card not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
+
+        CardDesc deck = card.getCardDesc();
+        validateDeckOwnership(deck);
+
         card.setTitle(request.title());
         card.setDefinition(request.definition());
         card.setSynonyms(request.synonyms());
@@ -144,6 +166,12 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public void delete(Long id) {
+        Card card = cardRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
+
+        CardDesc deck = card.getCardDesc();
+        validateDeckOwnership(deck);
+
         cardRepository.deleteById(id);
     }
 }

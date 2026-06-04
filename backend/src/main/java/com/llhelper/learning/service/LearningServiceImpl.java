@@ -1,11 +1,10 @@
 package com.llhelper.learning.service;
 
-import com.llhelper.auth.entity.AuthUser;
-import com.llhelper.auth.repository.AuthRepository;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.repository.CardRepository;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
@@ -15,8 +14,6 @@ import com.llhelper.learning.enums.CardLearningStatus;
 import com.llhelper.learning.enums.UserDeckStatus;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
-import com.llhelper.user.entity.User;
-import com.llhelper.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -25,8 +22,6 @@ import java.util.stream.Collectors;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,28 +33,12 @@ public class LearningServiceImpl implements LearningService {
     private final UserCardProgressRepository userCardProgressRepository;
     private final CardDescRepository cardDescRepository;
     private final CardRepository cardRepository;
-    private final UserRepository userRepository;
-    private final AuthRepository authRepository;
-
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AccessDeniedException("User not authenticated");
-        }
-
-        String email = authentication.getName();
-        AuthUser authUser = authRepository.findByEmail(email)
-            .orElseThrow(() -> new EntityNotFoundException("AuthUser not found: " + email));
-        User user = userRepository.findByAuthUserId(authUser.getId())
-            .orElseThrow(() -> new EntityNotFoundException("User not found for authUserId: " + authUser.getId()));
-        return user.getId();
-    }
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional
     public void enrollDeck(Long deckId) {
-        Long userId = getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
 
         if (userDeckProgressRepository.existsByUserIdAndDeckId(userId, deckId)) {
             throw new IllegalStateException("Deck already enrolled");
@@ -102,7 +81,7 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getStudyCards(Long deckId) {
-        Long userId = getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
 
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
@@ -146,7 +125,7 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getDeckCards(Long deckId) {
-        Long userId = getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
 
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
@@ -171,7 +150,7 @@ public class LearningServiceImpl implements LearningService {
     @Transactional
     public CardReviewResponse reviewCard(Long cardId, CardReviewRequest request) {
         // FIXME: maybe better to send userId from controller hence from frontend
-        Long userId = getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
 
         Card card = cardRepository.findById(cardId)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + cardId));
