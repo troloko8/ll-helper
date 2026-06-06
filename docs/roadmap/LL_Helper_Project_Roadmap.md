@@ -22,7 +22,7 @@
 ~~1. 🔴 Добавить ownership check: только owner может создавать/генерировать cards в deck~~
 ~~2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)~~
 ~~3. Проверить UserDeck/UserCard модель~~
-4. Принять решение: copy vs reference (документально)
+~~4. Принять решение: copy vs reference (документально)~~
 5. Добавить/почистить DTO
 6. Добавить mappers
 7. Убрать entity leakage из API
@@ -30,6 +30,7 @@
 9. Исправить RateLimiter reset bug (hardcoded 10)
 10. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
 11. Добавить logging для bulk failures
+12. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
 
 ### Sprint 0.3 — Database Control
 
@@ -41,8 +42,13 @@
 6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
 7. Реализовать soft delete или RESTRICT для CardDesc/Card (защита прогресса learners)
 8. Добавить indexes на progress таблицах (idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck)
-9. Проверить и документировать все FK constraints через `information_schema`
+9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)
 10. Переключить `ddl-auto` с `update` на `validate`
+11. Решить стратегию `CascadeType.ALL` на `CardDesc → Cards` (убрать или заменить на explicit cascade)
+12. Определить cascade стратегию при удалении `User` (AuthUser → User → CardDesc → Progress)
+13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
+14. Переименовать таблицу `card_descs → decks` (Flyway migration, после Sprint 0.2 п.12)
+15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`
 
 ### Sprint 0.4 — Testing & Postman
 
@@ -511,7 +517,7 @@ Landing page · Onboarding · Public/private decks · Share deck by link · Copy
 
 ## Backend
 
-`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Rate limiting · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed
+`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Rate limiting · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
 
 ## AI Level 3
 

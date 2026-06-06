@@ -206,6 +206,7 @@ public class LearningServiceImpl implements LearningService {
     }
 
     private DeckCardResponse toDeckCardResponse(UserCardProgress progress, Card card) {
+        // FIXME maybe need to more clearly define the types of progressInfo fields
         DeckCardResponse.CardProgressInfo progressInfo = new DeckCardResponse.CardProgressInfo(
             progress.getStatus(),
             progress.getTimesSeen(),
