@@ -160,7 +160,7 @@ public class LearningServiceImpl implements LearningService {
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deck.getId())
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
-        UserCardProgress cardProgress = userCardProgressRepository.findByUserIdAndCardId(userId, cardId)
+        UserCardProgress cardProgress = userCardProgressRepository.findByUserDeckProgressIdAndCardId(deckProgress.getId(), cardId)
             .orElseThrow(() -> new IllegalStateException("Card progress not found. Please enroll first."));
 
         boolean isCorrect = request.userAnswer().trim().equalsIgnoreCase(card.getTitle().trim());

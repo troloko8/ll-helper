@@ -132,8 +132,8 @@ Requires enrollment. Uses same batch-load pattern as study cards (no N+1).
 3. Resolve parent deck from card.
 4. Find `UserDeckProgress` for this user + deck.
    - If not enrolled → `403 Forbidden`.
-5. Find `UserCardProgress` for this user + card.
-   - If not found → `403 Forbidden` (implies not enrolled).
+5. Find `UserCardProgress` by `userDeckProgressId` + `cardId`.
+   - If not found → `409 Conflict` (implies not enrolled or card not in this deck).
 6. Compare answer: `userAnswer.trim().equalsIgnoreCase(card.title.trim())`.
 7. Update counters:
    - Always: `timesSeen + 1`, `lastReviewedAt = now`.

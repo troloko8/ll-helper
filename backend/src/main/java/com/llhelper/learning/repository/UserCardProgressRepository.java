@@ -6,8 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserCardProgressRepository extends JpaRepository<UserCardProgress, Long> {
-
-    Optional<UserCardProgress> findByUserIdAndCardId(Long userId, Long cardId);
+    Optional<UserCardProgress> findByUserDeckProgressIdAndCardId(Long userDeckProgressId, Long cardId);
 
     List<UserCardProgress> findAllByUserDeckProgressId(Long userDeckProgressId);
 }

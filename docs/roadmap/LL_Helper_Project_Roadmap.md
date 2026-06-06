@@ -21,7 +21,7 @@
 
 ~~1. 🔴 Добавить ownership check: только owner может создавать/генерировать cards в deck~~
 ~~2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)~~
-3. Проверить UserDeck/UserCard модель
+~~3. Проверить UserDeck/UserCard модель~~
 4. Принять решение: copy vs reference (документально)
 5. Добавить/почистить DTO
 6. Добавить mappers
@@ -34,11 +34,15 @@
 ### Sprint 0.3 — Database Control
 
 1. Добавить Flyway
-2. Создать V1 migration
-3. Проверить foreign keys
-4. Добавить unique constraints
-5. Добавить базовые indexes
-6. Задокументировать cascade/delete behavior
+2. Создать V1 migration (текущее состояние схемы как baseline)
+3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
+4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress`
+5. Добавить FK constraints для learning layer (user_deck_progress → card_descs, user_card_progress → cards)
+6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
+7. Реализовать soft delete или RESTRICT для CardDesc/Card (защита прогресса learners)
+8. Добавить indexes на progress таблицах (idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck)
+9. Проверить и документировать все FK constraints через `information_schema`
+10. Переключить `ddl-auto` с `update` на `validate`
 
 ### Sprint 0.4 — Testing & Postman
 
