@@ -58,6 +58,7 @@
 4. Добавить tests на review/progress calculation
 5. Создать AI prompt для обновления Postman
 6. Создать AI prompt для test suggestions
+7. 🔴 Проверить корректность `cardDescId` в `CardResponse` после AI-генерации карты — `Card.cardDescId` является read-only полем (`insertable=false, updatable=false`), Hibernate не заполняет его при `save()` без последующего `findById()`. Нужно убедиться что `toResponse(cardRepository.save(card))` возвращает корректный `cardDescId`, а не `null`
 
 ### Sprint 1.0 — Frontend Skeleton
 
@@ -390,6 +391,13 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 7. See correct/wrong
 8. See progress
 9. Return later and continue
+
+## Deferred from Level 0 (Sprint 0.2)
+
+- Переименовать `CardDesc* → Deck*` в Java коде (entity, package, controller, service, DTO) — таблица БД остаётся `card_descs` до Sprint 0.3
+- Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
+- Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card (например, `GET /cards/{id}` с полной инфой о родительской деке)
+- Добавить `cardCount` в `CardDescListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
 
 ## Backend
 

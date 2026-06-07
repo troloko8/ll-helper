@@ -49,7 +49,7 @@ public class CardController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CardResponse> update(@PathVariable Long id, @RequestBody CardRequest request) {
+    public ResponseEntity<CardResponse> update(@PathVariable Long id, @Valid @RequestBody CardRequest request) {
         return ResponseEntity.ok(cardService.update(id, request));
     }
 

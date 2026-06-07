@@ -1,6 +1,7 @@
 package com.llhelper.card_desc.service;
 
 import com.llhelper.card_desc.dto.request.CardDescRequest;
+import com.llhelper.card_desc.dto.response.CardDescListResponse;
 import com.llhelper.card_desc.dto.response.CardDescResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card_desc.entity.CardDesc;
@@ -24,10 +25,14 @@ public class CardDescServiceImpl implements CardDescService {
         this.securityUtils = securityUtils;
     }
 
+
+    // FIXME not sure about this, beacause for a now we dont need list of decks with inner cards
+    // need to remove and do a toListResponse method as majorly used in getAll method
     private CardDescResponse toResponse(CardDesc cardDesc) {
         List<CardResponse> cards = cardDesc.getCards().stream()
             .map(card -> new CardResponse(
                 card.getId(),
+                cardDesc.getId(),
                 card.getTitle(),
                 card.getDefinition(),
                 card.getSynonyms(),
@@ -64,6 +69,20 @@ public class CardDescServiceImpl implements CardDescService {
         );
     }
 
+    private CardDescListResponse toListResponse(CardDesc cardDesc) {
+        return new CardDescListResponse(
+            cardDesc.getId(),
+            cardDesc.getTitle(),
+            cardDesc.getDescription(),
+            cardDesc.getSourceLanguage(),
+            cardDesc.getTargetLanguage(),
+            cardDesc.getCreatedAt(),
+            cardDesc.getUpdatedAt(),
+            toUserResponse(cardDesc.getOwner()),
+            cardDesc.getIsPublic()
+        );
+    }
+
     @Override
     public CardDescResponse create(CardDescRequest request) {
         CardDesc cardDesc = new CardDesc();
@@ -86,9 +105,9 @@ public class CardDescServiceImpl implements CardDescService {
     }
 
     @Override
-    public List<CardDescResponse> getAll() {
+    public List<CardDescListResponse> getAll() {
         return cardDescRepository.findAll().stream()
-            .map(this::toResponse)
+            .map(this::toListResponse)
             .toList();
     }
 

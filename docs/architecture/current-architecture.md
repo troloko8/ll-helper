@@ -248,23 +248,29 @@ CardService.save(cards)
 
 ## 11. Current API Surface
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/v1/auth/register` | POST | — | Register new user |
-| `/api/v1/auth/login` | POST | — | Login, get JWT |
-| `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD |
-| `/api/v1/card-descs` | GET/POST | JWT | List / create decks |
-| `/api/v1/card-descs/{id}` | GET/PUT/DELETE | JWT | Deck CRUD |
-| `/api/v1/cards` | GET/POST | JWT | List / create cards |
-| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD |
-| `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards |
-| `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck to personal collection |
-| `/api/v1/decks/{id}/study/cards` | GET | JWT | Get up to 10 cards for study |
-| `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress |
-| `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress |
+| Endpoint | Method | Auth | Description | Response DTO |
+|----------|--------|------|-------------|--------------|
+| `/api/v1/auth/register` | POST | — | Register new user | `AuthResponse` |
+| `/api/v1/auth/login` | POST | — | Login, get JWT | `AuthResponse` |
+| `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD | `UserResponse` |
+| `/api/v1/card-descs` | GET | JWT | List decks (lite) | `List<CardDescListResponse>` ⚠️ no cards |
+| `/api/v1/card-descs` | POST | JWT | Create deck | `CardDescResponse` |
+| `/api/v1/card-descs/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `CardDescResponse` (with cards) |
+| `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `cardDescId`) |
+| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD | `CardResponse` (includes `cardDescId`) |
+| `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
+| `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
+| `/api/v1/decks/{id}/study/cards` | GET | JWT | Get up to 10 cards for study | `List<DeckCardResponse>` |
+| `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
+| `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
 
-**Base URL:** `/api/v1`
+**Base URL:** `/api/v1`  
 **Auth:** `Authorization: Bearer <JWT>` on all secured endpoints
+
+**Recent changes (Sprint 0.2):**
+- `GET /card-descs` now returns `CardDescListResponse` (without `cards` array, added `sourceLanguage`, `targetLanguage`)
+- `POST /decks/{id}/enroll` now returns `{ "userDeckId": Long }` instead of void
+- All card endpoints now include `cardDescId` in `CardResponse`
 
 ---
 

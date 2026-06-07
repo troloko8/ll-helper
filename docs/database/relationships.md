@@ -150,6 +150,13 @@ CardDesc.id ──1:N──▶ Card.cardDesc
 | Nullable | No |
 | Cascade | `CascadeType.ALL` (includes REMOVE) |
 | Orphan Removal | Not set (orphan cards possible if removed from list) |
+| **ID-only access** | **`Card.cardDescId` (read-only) — direct access without lazy loading** |
+
+**Pattern:** Card entity uses **hybrid approach** (Sprint 0.2):
+- `cardDescId` field (`insertable = false, updatable = false`) — for fast read-only access to deck ID
+- `cardDesc` relationship (`@ManyToOne LAZY`) — for full deck navigation when needed
+
+This avoids `LazyInitializationException` in response DTOs while keeping the relationship available for ownership checks and other operations.
 
 **⚠️ Risk:** `CascadeType.ALL` includes `REMOVE`. Deleting a Deck deletes all its Cards through JPA. Because progress currently stores `cardId` as a plain `Long` without FK protection, this can leave orphaned `UserCardProgress` rows pointing to deleted cards. If FK constraints are added later, the same operation may become a FK violation unless delete behavior is explicitly defined.
 

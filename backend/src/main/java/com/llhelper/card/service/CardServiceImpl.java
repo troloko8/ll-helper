@@ -46,9 +46,16 @@ public class CardServiceImpl implements CardService {
         }
     }
 
+    private void validateCardOwnership(Card card) {
+        CardDesc deck = cardDescRepository.findWithOwnerById(card.getCardDescId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getCardDescId()));
+        validateDeckOwnership(deck);
+    }
+
     private CardResponse toResponse(Card card) {
         return new CardResponse(
             card.getId(),
+            card.getCardDescId(),
             card.getTitle(),
             card.getDefinition(),
             card.getSynonyms(),
@@ -90,7 +97,11 @@ public class CardServiceImpl implements CardService {
         card.setCardDesc(cardDesc);
         card.setCreatedAt(LocalDateTime.now());
         card.setUpdatedAt(LocalDateTime.now());
-        return toResponse(cardRepository.save(card));
+        Card saved = cardRepository.save(card);
+        // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
+        // Hibernate doesn't populate it after save(), so we set it explicitly
+        saved.setCardDescId(cardDesc.getId());
+        return toResponse(saved);
     }
 
     @Override
@@ -122,7 +133,10 @@ public class CardServiceImpl implements CardService {
                 card.setCreatedAt(LocalDateTime.now());
                 card.setUpdatedAt(LocalDateTime.now());
 
-                results.add(toResponse(cardRepository.save(card)));
+                Card saved = cardRepository.save(card);
+                // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
+                saved.setCardDescId(cardDesc.getId());
+                results.add(toResponse(saved));
             } catch (Exception e) {
                 // TODO: finish the code later
                 // Continue with next card - don't fail entire batch
@@ -152,8 +166,7 @@ public class CardServiceImpl implements CardService {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
-        CardDesc deck = card.getCardDesc();
-        validateDeckOwnership(deck);
+        validateCardOwnership(card);
 
         card.setTitle(request.title());
         card.setDefinition(request.definition());
@@ -169,8 +182,7 @@ public class CardServiceImpl implements CardService {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
-        CardDesc deck = card.getCardDesc();
-        validateDeckOwnership(deck);
+        validateCardOwnership(card);
 
         cardRepository.deleteById(id);
     }

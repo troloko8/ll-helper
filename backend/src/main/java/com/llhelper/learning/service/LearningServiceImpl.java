@@ -8,6 +8,7 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
+import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
@@ -37,7 +38,7 @@ public class LearningServiceImpl implements LearningService {
 
     @Override
     @Transactional
-    public void enrollDeck(Long deckId) {
+    public EnrollResponse enrollDeck(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
 
         if (userDeckProgressRepository.existsByUserIdAndDeckId(userId, deckId)) {
@@ -57,7 +58,7 @@ public class LearningServiceImpl implements LearningService {
         progress.setLastStudiedAt(null);
         progress.setStatus(UserDeckStatus.ACTIVE);
 
-        userDeckProgressRepository.save(progress);
+        UserDeckProgress savedProgress = userDeckProgressRepository.save(progress);
 
         // Create UserCardProgress for all cards in the deck with NEW status
         List<UserCardProgress> cardProgressList = deck.getCards().stream()
@@ -65,7 +66,7 @@ public class LearningServiceImpl implements LearningService {
                 UserCardProgress cardProgress = new UserCardProgress();
                 cardProgress.setUserId(userId);
                 cardProgress.setCardId(card.getId());
-                cardProgress.setUserDeckProgressId(progress.getId());
+                cardProgress.setUserDeckProgressId(savedProgress.getId());
                 cardProgress.setTimesSeen(0);
                 cardProgress.setTimesCorrect(0);
                 cardProgress.setTimesWrong(0);
@@ -76,6 +77,8 @@ public class LearningServiceImpl implements LearningService {
             .collect(Collectors.toList());
 
         userCardProgressRepository.saveAll(cardProgressList);
+
+        return new EnrollResponse(savedProgress.getId());
     }
 
     @Override
@@ -155,9 +158,7 @@ public class LearningServiceImpl implements LearningService {
         Card card = cardRepository.findById(cardId)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + cardId));
 
-        CardDesc deck = card.getCardDesc();
-
-        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deck.getId())
+        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, card.getCardDescId())
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
         UserCardProgress cardProgress = userCardProgressRepository.findByUserDeckProgressIdAndCardId(deckProgress.getId(), cardId)

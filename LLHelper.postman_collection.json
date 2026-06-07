@@ -989,6 +989,21 @@
       "item": [
         {
           "name": "Enroll Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.userDeckId) {",
+                  "    pm.environment.set(\"userDeckId\", jsonData.userDeckId);",
+                  "    console.log(\"UserDeckId saved:\", jsonData.userDeckId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",

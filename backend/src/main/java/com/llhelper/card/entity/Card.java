@@ -52,6 +52,9 @@ public class Card {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "card_desc_id", insertable = false, updatable = false)
+    private Long cardDescId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "card_desc_id", nullable = false)
     private CardDesc cardDesc;
