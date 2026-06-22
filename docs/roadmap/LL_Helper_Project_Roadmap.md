@@ -23,7 +23,7 @@
 ~~2. Добавить GlobalExceptionHandler (AI exceptions, 403, 404, 409, 429)~~
 ~~3. Проверить UserDeck/UserCard модель~~
 ~~4. Принять решение: copy vs reference (документально)~~
-5. Добавить/почистить DTO
+~~5. Добавить/почистить DTO~~
 6. Добавить mappers
 7. Убрать entity leakage из API
 8. Добавить validation
@@ -31,10 +31,11 @@
 10. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
 11. Добавить logging для bulk failures
 12. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
+13. настрой hotkeys для IDE
 
 ### Sprint 0.3 — Database Control
 
-1. Добавить Flyway
+1. Добавить Flyway/liquidBase
 2. Создать V1 migration (текущее состояние схемы как baseline)
 3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
 4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress`
