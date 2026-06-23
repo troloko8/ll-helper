@@ -110,6 +110,7 @@ module/
 ├── service/
 ├── repository/
 ├── entity/
+├── mapper/         ← NEW (Sprint 0.2)
 ├── dto/
 │   ├── request/
 │   └── response/
@@ -184,8 +185,14 @@ Typical secured request:
 4. Controller receives request DTO and delegates to service.
 5. Service executes business logic.
 6. Repository loads/saves entities.
-7. Service maps entity → response DTO via **MapStruct mapper**.
+7. **Mapper** converts entity → response DTO (MapStruct).
 8. Controller returns `ResponseEntity<ResponseDTO>`.
+
+// FIXME: ask later why this addition info looks excessive
+**Mapper layer (Sprint 0.2):**
+- Services no longer contain private `toResponse()` methods
+- MapStruct mappers are injected as Spring beans
+- Example: `CardMapper.toResponse(card)` instead of manual DTO construction
 
 ---
 
@@ -327,19 +334,21 @@ backend/src/main/java/com/llhelper/
 │   ├── service/UserService.java
 │   ├── entity/User.java
 │   ├── repository/UserRepository.java
+│   ├── mapper/UserMapper.java                ← NEW
 │   └── dto/{request, response}/
 ├── card_desc/                                ← will be renamed to deck/
 │   ├── controller/CardDescController.java    ← → DeckController
 │   ├── service/CardDescService.java          ← → DeckService
 │   ├── entity/CardDesc.java                  ← → Deck
 │   ├── repository/CardDescRepository.java    ← → DeckRepository
+│   ├── mapper/CardDescMapper.java            ← NEW
 │   └── dto/{request, response}/             ← → DeckRequest/Response
 ├── card/
 │   ├── controller/CardController.java
 │   ├── service/CardService.java
 │   ├── entity/Card.java
 │   ├── repository/CardRepository.java
-│   ├── mapper/CardMapper.java
+│   ├── mapper/CardMapper.java               ← NEW
 │   └── dto/{request, response}/
 ├── learning/
 │   ├── controller/LearningController.java
@@ -402,16 +411,32 @@ Current `CardDesc` entity and `card_descs` table function as a **Deck** in the d
 
 **Prerequisite:** Flyway must be in place before DB table rename.
 
-### Architecture Debt: Mapper Layer
+### Mapper Layer
 
 **Status:** ✅ Implemented (Sprint 0.2)
 
-MapStruct 1.6.3 is now integrated. Each module has a `mapper/` package with interface-based mappers:
-- `@Mapper(componentModel = "spring")` — auto-injected as Spring beans
-- MapStruct processor runs after Lombok in annotation processing chain
-- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
+MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interface-based mappers.
 
-Old private `toResponse()` methods are being removed from services.
+**Implementation:**
+- `@Mapper(componentModel = "spring")` — auto-injected as Spring beans
+- MapStruct processor runs **after** Lombok in annotation processing chain
+- Mappers are injected into services via constructor injection
+
+**Current mappers:**
+- `CardMapper` — `Card` ↔ `CardResponse` / `CardRequest`
+- `CardDescMapper` — `CardDesc` ↔ `CardDescResponse` / `CardDescListResponse`
+- `UserMapper` — `User` ↔ `UserResponse`, `updateEntity(UpdateUserRequest, User)`
+
+**Service responsibilities updated:**
+- Services no longer contain private `toResponse()` methods
+- Services inject mapper and delegate DTO conversion
+- Example: `cardMapper.toResponse(card)` instead of manual DTO construction
+
+**Benefits:**
+- No manual DTO mapping boilerplate
+- Type-safe compile-time code generation
+- Consistent mapping logic across modules
+- Easy to test (mock mapper in service tests)
 
 ---
 
@@ -420,8 +445,8 @@ Old private `toResponse()` methods are being removed from services.
 1. `CardDesc` naming hides the Deck concept — confusing for new developers and AI agents.
 2. Copy vs reference strategy for enrolling public decks is not finalized.
 3. No Flyway means database schema is not version-controlled.
-4. No `GlobalExceptionHandler` means API error responses may be inconsistent.
-5. No mapper layer means the API contract depends too closely on entity structure.
+4. ~~No `GlobalExceptionHandler` means API error responses may be inconsistent.~~ ✅ Fixed (Sprint 0.2)
+5. ~~No mapper layer means the API contract depends too closely on entity structure.~~ ✅ Fixed (Sprint 0.2)
 6. AI generation saves cards directly without preview — bad AI output can persist to the database.
 7. Deleting a Deck or Card while progress exists has no explicit cascade/restrict strategy defined.
 
@@ -521,3 +546,4 @@ Old private `toResponse()` methods are being removed from services.
 |------|--------|
 | 2026-06-02 | Initial version — Level 0 Architecture Freeze (Sprint 0.1) |
 | 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
+| 2026-06-23 | Mapper layer complete: CardMapper, CardDescMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |

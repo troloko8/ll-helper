@@ -29,6 +29,7 @@ public class CardServiceImpl implements CardService {
     private final SecurityUtils securityUtils;
     private final CardMapper cardMapper;
 
+    // FIXME maybe better lombok in future
     public CardServiceImpl(
         CardRepository cardRepository,
         CardDescRepository cardDescRepository,
@@ -36,7 +37,6 @@ public class CardServiceImpl implements CardService {
         SecurityUtils securityUtils,
         CardMapper cardMapper
     ) {
-        // FIXME maybe better autowired
         this.cardRepository = cardRepository;
         this.cardDescRepository = cardDescRepository;
         this.aiCardGenerationService = aiCardGenerationService;
@@ -60,6 +60,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional
+    // TODO: add later mapper
     public CardResponse create(CardRequest request) {
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
@@ -115,6 +116,7 @@ public class CardServiceImpl implements CardService {
                     cardDesc.getTargetLanguage()
                 );
 
+                // TODO later mapper fo this if possible
                 Card card = new Card();
                 card.setTitle(title);
                 card.setDefinition(aiData.definition());
@@ -160,12 +162,9 @@ public class CardServiceImpl implements CardService {
 
         validateCardOwnership(card);
 
-        card.setTitle(request.title());
-        card.setDefinition(request.definition());
-        card.setSynonyms(request.synonyms());
-        card.setExamples(request.examples());
-        card.setTranslation(request.translation());
+        cardMapper.updateEntity(request, card);
         card.setUpdatedAt(LocalDateTime.now());
+        
         return cardMapper.toResponse(cardRepository.save(card));
     }
 

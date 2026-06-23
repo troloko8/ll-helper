@@ -24,14 +24,23 @@
 ~~3. Проверить UserDeck/UserCard модель~~
 ~~4. Принять решение: copy vs reference (документально)~~
 ~~5. Добавить/почистить DTO~~
-6. Добавить mappers
-7. Убрать entity leakage из API
-8. Добавить validation
-9. Исправить RateLimiter reset bug (hardcoded 10)
-10. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
-11. Добавить logging для bulk failures
-12. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
-13. настрой hotkeys для IDE
+~~6. Добавить mappers~~
+7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**
+   - **Проблема:** Любой аутентифицированный пользователь может изменять/удалять данные других пользователей через `PUT /api/v1/users/{id}` и `DELETE /api/v1/users/{id}`
+   - **Решение:**
+     - Добавить `SecurityUtils` в `UserServiceImpl`
+     - В `updateUser()` и `deleteUser()` проверять: `if (!Objects.equals(user.getId(), securityUtils.getCurrentUserId())) throw new AccessDeniedException(...)`
+     - Добавить тесты на 403 для попытки изменить чужой профиль
+     - Обновить Postman: добавить test case для 403 ownership violation
+   - **Миграция на Level 2:** Заменить императивные проверки на `@PreAuthorize("@userSecurity.isOwner(#id)")`
+8. Добавить Rate limiting на user update операции (защита от abuse)
+9. Убрать entity leakage из API
+10. Добавить validation
+11. Исправить RateLimiter reset bug (hardcoded 10)
+12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
+13. Добавить logging для bulk failures
+14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
+15. настрой hotkeys для IDE
 
 ### Sprint 0.3 — Database Control
 
@@ -399,6 +408,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card (например, `GET /cards/{id}` с полной инфой о родительской деке)
 - Добавить `cardCount` в `CardDescListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
+- **🔴 BREAKING CHANGE:** Добавить `sourceLanguage`, `targetLanguage` в `CardDescResponse` — сейчас закомментированы, но нужны для AI generation на frontend. `CardDescListResponse` уже содержит эти поля. Без них frontend не сможет вызвать AI generation для карточек внутри деки.
 
 ## Backend
 
@@ -419,6 +429,12 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - `nextReviewAt`: wrong → +10 min / correct #1 → +1d / correct #2 → +3d / correct #3 → +7d / mastered → +30d
 
 **AI generation:** generate card by word, generate deck by word list, basic batching, basic validation
+
+**User self-service API:**
+
+- `GET /api/v1/me` — получить профиль текущего пользователя
+- `PUT /api/v1/me` — обновить свой профиль (вместо `PUT /api/v1/users/{id}` с ownership check)
+- `DELETE /api/v1/me` — удалить свой аккаунт
 
 ## Frontend
 
@@ -479,6 +495,16 @@ src/
 
 **Security:** authentication vs authorization, JWT structure, password hashing, Spring Security filter chain, SecurityContext, protected endpoints, ownership checks, CORS
 
+**Security Standards (декларативная безопасность):**
+
+- Использовать `@PreAuthorize` вместо императивных ownership checks
+- Создать security beans: `@Component DeckSecurity`, `@Component UserSecurity`, `@Component CardSecurity`
+- Пример: `@PreAuthorize("@deckSecurity.isOwner(#deckId)")`
+- Централизовать ownership logic в переиспользуемых методах
+- Добавить role-based access: admin может редактировать любые ресурсы
+- Рассмотреть custom `@OwnershipRequired` аннотацию для упрощения
+- **Создать `.windsurf/rules/security-standards.md`** — rule файл с примерами Level 0-1 vs Level 2+ подходов, migration guide, SpEL expressions
+
 **Integration tests (Testcontainers PostgreSQL):** Auth flow · Create/Enroll deck · Generate card · Study/Submit · Get progress · Forbidden access cases
 
 **API Documentation:** OpenAPI/Swagger
@@ -527,6 +553,13 @@ Landing page · Onboarding · Public/private decks · Share deck by link · Copy
 ## Backend
 
 `StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Rate limiting · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
+
+**Admin & Audit:**
+
+- Audit log для всех изменений пользовательских данных (User, Deck, Card)
+- Separate admin API: `/api/v1/admin/users/{id}`, `/api/v1/admin/decks/{id}` с отдельными правами
+- Admin role может редактировать/удалять любые ресурсы
+- Audit log включает: who, what, when, old_value, new_value
 
 ## AI Level 3
 

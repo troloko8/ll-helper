@@ -9,6 +9,9 @@ public record CardDescResponse(
     Long id,
     String title,
     String description,
+//FIXME
+//    String sourceLanguage,
+//    String targetLanguage,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     UserResponse owner,

@@ -6,6 +6,7 @@ import com.llhelper.user.dto.request.CreateUserRequest;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
+import com.llhelper.user.mapper.UserMapper;
 import com.llhelper.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -16,31 +17,37 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final AuthRepository authRepository;
+    private final UserMapper userMapper;
 
-    public UserServiceImpl(UserRepository userRepository, AuthRepository authRepository) {
+    public UserServiceImpl(
+        UserRepository userRepository,
+        AuthRepository authRepository,
+        UserMapper userMapper
+    ) {
         this.userRepository = userRepository;
         this.authRepository = authRepository;
+        this.userMapper = userMapper;
     }
 
     @Override
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
     public UserResponse getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + username));
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
     public UserResponse getUserByAuthUserId(Long authUserId) {
         User user = userRepository.findByAuthUserId(authUserId)
             .orElseThrow(() -> new EntityNotFoundException("User not found with authUserId: " + authUserId));
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -64,7 +71,7 @@ public class UserServiceImpl implements UserService {
         user.setUiLanguage(request.uiLanguage());
 
         User saved = userRepository.save(user);
-        return toResponse(saved);
+        return userMapper.toResponse(saved);
     }
 
     @Override
@@ -73,15 +80,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setNativeLanguage(request.nativeLanguage());
-        user.setTargetLanguage(request.targetLanguage());
-        user.setAvatarUrl(request.avatarUrl());
-        user.setUiLanguage(request.uiLanguage());
+        userMapper.updateEntity(request, user);
 
         User updated = userRepository.save(user);
-        return toResponse(updated);
+        return userMapper.toResponse(updated);
     }
 
     @Override
@@ -93,18 +95,4 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
-    private UserResponse toResponse(User user) {
-        return new UserResponse(
-            user.getId(),
-            user.getUsername(),
-            user.getFirstName(),
-            user.getLastName(),
-            user.getNativeLanguage(),
-            user.getTargetLanguage(),
-            user.getAvatarUrl(),
-            user.getUiLanguage(),
-            user.getCreatedAt(),
-            user.getUpdatedAt()
-        );
-    }
 }
