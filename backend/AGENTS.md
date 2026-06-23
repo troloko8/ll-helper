@@ -25,8 +25,12 @@ Apply these conventions for ALL backend code in this repository.
 - Split into `dto/request/` and `dto/response/`
 
 ## Mapper
-- Not yet implemented — entity → DTO conversion is done via private `toResponse()` inside the service
-- Dedicated mapper layer is planned for **Sprint 0.2** (Level 0 Architecture Debt)
+- **Library:** MapStruct 1.6.3
+- **Pattern:** Interface-based mappers with `@Mapper(componentModel = "spring")`
+- Each module has a `mapper/` package with dedicated mapper interface
+- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
+- MapStruct processor runs **after** Lombok in annotation processing chain
+- Generated implementations are auto-injected as Spring beans
 
 ## Naming
 - Packages: `snake_case` for compound words (e.g. `card_desc`)

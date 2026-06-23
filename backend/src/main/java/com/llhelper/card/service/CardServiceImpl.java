@@ -6,6 +6,7 @@ import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
+import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.repository.CardDescRepository;
@@ -26,17 +27,21 @@ public class CardServiceImpl implements CardService {
     private final CardDescRepository cardDescRepository;
     private final AiCardGenerationService aiCardGenerationService;
     private final SecurityUtils securityUtils;
+    private final CardMapper cardMapper;
 
     public CardServiceImpl(
         CardRepository cardRepository,
         CardDescRepository cardDescRepository,
         AiCardGenerationService aiCardGenerationService,
-        SecurityUtils securityUtils
+        SecurityUtils securityUtils,
+        CardMapper cardMapper
     ) {
+        // FIXME maybe better autowired
         this.cardRepository = cardRepository;
         this.cardDescRepository = cardDescRepository;
         this.aiCardGenerationService = aiCardGenerationService;
         this.securityUtils = securityUtils;
+        this.cardMapper = cardMapper;
     }
 
     private void validateDeckOwnership(CardDesc deck) {
@@ -52,19 +57,6 @@ public class CardServiceImpl implements CardService {
         validateDeckOwnership(deck);
     }
 
-    private CardResponse toResponse(Card card) {
-        return new CardResponse(
-            card.getId(),
-            card.getCardDescId(),
-            card.getTitle(),
-            card.getDefinition(),
-            card.getSynonyms(),
-            card.getExamples(),
-            card.getTranslation(),
-            card.getCreatedAt(),
-            card.getUpdatedAt()
-        );
-    }
 
     @Override
     @Transactional
@@ -101,7 +93,7 @@ public class CardServiceImpl implements CardService {
         // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
         // Hibernate doesn't populate it after save(), so we set it explicitly
         saved.setCardDescId(cardDesc.getId());
-        return toResponse(saved);
+        return cardMapper.toResponse(saved);
     }
 
     @Override
@@ -136,7 +128,7 @@ public class CardServiceImpl implements CardService {
                 Card saved = cardRepository.save(card);
                 // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
                 saved.setCardDescId(cardDesc.getId());
-                results.add(toResponse(saved));
+                results.add(cardMapper.toResponse(saved));
             } catch (Exception e) {
                 // TODO: finish the code later
                 // Continue with next card - don't fail entire batch
@@ -151,13 +143,13 @@ public class CardServiceImpl implements CardService {
     public CardResponse getById(Long id) {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
-        return toResponse(card);
+        return cardMapper.toResponse(card);
     }
 
     @Override
     public List<CardResponse> getAll() {
         return cardRepository.findAll().stream()
-            .map(this::toResponse)
+            .map(cardMapper::toResponse)
             .toList();
     }
 
@@ -174,7 +166,7 @@ public class CardServiceImpl implements CardService {
         card.setExamples(request.examples());
         card.setTranslation(request.translation());
         card.setUpdatedAt(LocalDateTime.now());
-        return toResponse(cardRepository.save(card));
+        return cardMapper.toResponse(cardRepository.save(card));
     }
 
     @Override

@@ -44,6 +44,7 @@
 | **Database** | PostgreSQL, Spring Data JPA (Hibernate) |
 | **Security** | Spring Security, JWT (jjwt 0.12.6) |
 | **AI** | OpenAI API (gpt-4o-mini), WebFlux HTTP client |
+| **Mapper** | MapStruct 1.6.3 |
 | **Build** | Maven |
 | **API Docs** | Postman collection (`LLHelper.postman_collection.json`) |
 | **Frontend** | React + TypeScript + Vite (project initialized with FSD folder structure, no screens yet) |
@@ -183,7 +184,7 @@ Typical secured request:
 4. Controller receives request DTO and delegates to service.
 5. Service executes business logic.
 6. Repository loads/saves entities.
-7. Service maps entity → response DTO via `toResponse()`.
+7. Service maps entity → response DTO via **MapStruct mapper**.
 8. Controller returns `ResponseEntity<ResponseDTO>`.
 
 ---
@@ -338,6 +339,7 @@ backend/src/main/java/com/llhelper/
 │   ├── service/CardService.java
 │   ├── entity/Card.java
 │   ├── repository/CardRepository.java
+│   ├── mapper/CardMapper.java
 │   └── dto/{request, response}/
 ├── learning/
 │   ├── controller/LearningController.java
@@ -372,7 +374,6 @@ backend/src/main/java/com/llhelper/
 | Issue | Priority | Target |
 |-------|----------|--------|
 | `CardDesc` entity represents Deck — misleading name | 🔴 High | Sprint 0.2 |
-| No dedicated mapper layer (`toResponse()` inline in services) | 🔴 High | Sprint 0.2 |
 | No `GlobalExceptionHandler` | 🔴 High | Sprint 0.2 |
 | `ddl-auto=update`, no Flyway — schema not version-controlled | 🔴 High | Sprint 0.3 |
 | Delete Deck/Card with existing progress → FK violation risk | 🔴 High | Sprint 0.3 |
@@ -401,11 +402,16 @@ Current `CardDesc` entity and `card_descs` table function as a **Deck** in the d
 
 **Prerequisite:** Flyway must be in place before DB table rename.
 
-### Architecture Debt: No Mapper Layer
+### Architecture Debt: Mapper Layer
 
-DTOs are currently mapped inside services via private `toResponse()` methods.
+**Status:** ✅ Implemented (Sprint 0.2)
 
-Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet and tracked for Sprint 0.2.
+MapStruct 1.6.3 is now integrated. Each module has a `mapper/` package with interface-based mappers:
+- `@Mapper(componentModel = "spring")` — auto-injected as Spring beans
+- MapStruct processor runs after Lombok in annotation processing chain
+- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
+
+Old private `toResponse()` methods are being removed from services.
 
 ---
 
@@ -441,6 +447,7 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 | Bulk AI generation uses partial-success strategy | Sprint 0.2 fix: log failed titles with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Sprint 0.4 / Level 1. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented in Sprint 0.2. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress will be handled in Sprint 0.3 via restrict/delete strategy and/or FK decisions. |
+| MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
 
 ### Sprint 0.2 Priority Decisions
 
@@ -513,3 +520,4 @@ Level 0 Done Criteria requires a dedicated mapper layer. This is currently unmet
 | Date | Change |
 |------|--------|
 | 2026-06-02 | Initial version — Level 0 Architecture Freeze (Sprint 0.1) |
+| 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
