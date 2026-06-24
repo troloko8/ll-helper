@@ -60,15 +60,13 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional
-    // TODO: add later mapper
     public CardResponse create(CardRequest request) {
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
 
         validateDeckOwnership(cardDesc);
 
-        Card card = new Card();
-        card.setTitle(request.title());
+        Card card = cardMapper.toEntity(request);
 
         if (Boolean.TRUE.equals(request.autoGenerate())) {
             AiCardData aiData = aiCardGenerationService.generateCardData(
@@ -80,11 +78,6 @@ public class CardServiceImpl implements CardService {
             card.setSynonyms(aiData.synonyms());
             card.setExamples(aiData.examples());
             card.setTranslation(aiData.translation());
-        } else {
-            card.setDefinition(request.definition());
-            card.setSynonyms(request.synonyms());
-            card.setExamples(request.examples());
-            card.setTranslation(request.translation());
         }
 
         card.setCardDesc(cardDesc);

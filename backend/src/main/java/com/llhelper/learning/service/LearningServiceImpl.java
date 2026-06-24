@@ -12,7 +12,7 @@ import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
-import com.llhelper.learning.enums.UserDeckStatus;
+import com.llhelper.learning.mapper.LearningMapper;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
 import java.time.LocalDateTime;
@@ -35,6 +35,7 @@ public class LearningServiceImpl implements LearningService {
     private final CardDescRepository cardDescRepository;
     private final CardRepository cardRepository;
     private final SecurityUtils securityUtils;
+    private final LearningMapper learningMapper;
 
     @Override
     @Transactional
@@ -52,28 +53,12 @@ public class LearningServiceImpl implements LearningService {
             throw new AccessDeniedException("Access denied: Deck is not public");
         }
 
-        UserDeckProgress progress = new UserDeckProgress();
-        progress.setUserId(userId);
-        progress.setDeckId(deckId);
-        progress.setLastStudiedAt(null);
-        progress.setStatus(UserDeckStatus.ACTIVE);
-
+        UserDeckProgress progress = learningMapper.toUserDeckProgress(userId, deckId);
         UserDeckProgress savedProgress = userDeckProgressRepository.save(progress);
 
         // Create UserCardProgress for all cards in the deck with NEW status
         List<UserCardProgress> cardProgressList = deck.getCards().stream()
-            .map(card -> {
-                UserCardProgress cardProgress = new UserCardProgress();
-                cardProgress.setUserId(userId);
-                cardProgress.setCardId(card.getId());
-                cardProgress.setUserDeckProgressId(savedProgress.getId());
-                cardProgress.setTimesSeen(0);
-                cardProgress.setTimesCorrect(0);
-                cardProgress.setTimesWrong(0);
-                cardProgress.setCorrectStreak(0);
-                cardProgress.setStatus(CardLearningStatus.NEW);
-                return cardProgress;
-            })
+            .map(card -> learningMapper.toUserCardProgress(userId, card.getId(), savedProgress.getId()))
             .collect(Collectors.toList());
 
         userCardProgressRepository.saveAll(cardProgressList);
@@ -84,6 +69,7 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getStudyCards(Long deckId) {
+        // FIXME DUblicate
         Long userId = securityUtils.getCurrentUserId();
 
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
@@ -110,18 +96,18 @@ public class LearningServiceImpl implements LearningService {
         // Priority 2: NEW cards (if less than 10 learning cards)
         if (learningCards.size() < 10) {
             int remaining = 10 - learningCards.size();
-            
+
             List<UserCardProgress> newCards = allCardProgress.stream()
                 .filter(p -> p.getStatus() == CardLearningStatus.NEW)
                 .sorted(Comparator.comparing(UserCardProgress::getCardId))
                 .limit(remaining)
                 .toList();
-            
+
             learningCards.addAll(newCards);
         }
 
         return learningCards.stream()
-            .map(p -> toDeckCardResponse(p, cardMap.get(p.getCardId())))
+            .map(p -> toDeckCardResponse(cardMap.get(p.getCardId()), p))
             .toList();
     }
 
@@ -134,7 +120,6 @@ public class LearningServiceImpl implements LearningService {
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
         List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
-
         // Get all card IDs for batch loading
         List<Long> cardIds = allCardProgress.stream()
             .map(UserCardProgress::getCardId)
@@ -145,7 +130,7 @@ public class LearningServiceImpl implements LearningService {
             .collect(Collectors.toMap(Card::getId, card -> card));
 
         return allCardProgress.stream()
-            .map(p -> toDeckCardResponse(p, cardMap.get(p.getCardId())))
+            .map(p -> toDeckCardResponse(cardMap.get(p.getCardId()), p))
             .collect(Collectors.toList());
     }
 
@@ -206,24 +191,7 @@ public class LearningServiceImpl implements LearningService {
         }
     }
 
-    private DeckCardResponse toDeckCardResponse(UserCardProgress progress, Card card) {
-        // FIXME maybe need to more clearly define the types of progressInfo fields
-        DeckCardResponse.CardProgressInfo progressInfo = new DeckCardResponse.CardProgressInfo(
-            progress.getStatus(),
-            progress.getTimesSeen(),
-            progress.getTimesCorrect(),
-            progress.getTimesWrong(),
-            progress.getCorrectStreak()
-        );
-
-        return new DeckCardResponse(
-            card.getId(),
-            card.getTitle(),
-            card.getDefinition(),
-            card.getSynonyms(),
-            card.getExamples(),
-            card.getTranslation(),
-            progressInfo
-        );
+    private DeckCardResponse toDeckCardResponse(Card card, UserCardProgress progress) {
+        return learningMapper.toDeckCardResponse(card, progress);
     }
 }

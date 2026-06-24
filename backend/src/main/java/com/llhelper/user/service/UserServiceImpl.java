@@ -70,15 +70,8 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("Username already taken: " + request.username());
         }
 
-        User user = new User();
+        User user = userMapper.toEntity(request);
         user.setAuthUser(authUser);
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setUsername(request.username());
-        user.setNativeLanguage(request.nativeLanguage());
-        user.setTargetLanguage(request.targetLanguage());
-        user.setAvatarUrl(request.avatarUrl());
-        user.setUiLanguage(request.uiLanguage());
 
         User saved = userRepository.save(user);
         return userMapper.toResponse(saved);
