@@ -498,7 +498,8 @@ src/
 - Централизовать ownership logic в переиспользуемых методах
 - Добавить role-based access: admin может редактировать любые ресурсы
 - Рассмотреть custom `@OwnershipRequired` аннотацию для упрощения
-- **Создать `.windsurf/rules/security-standards.md`** — rule файл с примерами Level 0-1 vs Level 2+ подходов, migration guide, SpEL expressions
+- **🔴 Решить N+1 проблему в ownership validation:** текущий подход делает 2 запроса к БД (1 для проверки ownership, 1 для бизнес-логики). Решения: оптимизировать императивный код (загрузить entity один раз), использовать кэш, или AOP для передачи entity в метод.
+- **Создать `.windsurf/rules/security-standards.md`** — rule файл с примерами Level 0-1 vs Level 2+ подходов, migration guide, SpEL expressions, решение N+1 проблемы
 
 **Integration tests (Testcontainers PostgreSQL):** Auth flow · Create/Enroll deck · Generate card · Study/Submit · Get progress · Forbidden access cases
 
