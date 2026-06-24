@@ -62,6 +62,10 @@ public class UserServiceImpl implements UserService {
         AuthUser authUser = authRepository.findByEmail(email)
             .orElseThrow(() -> new EntityNotFoundException("AuthUser not found with email: " + email));
 
+        if (userRepository.findByAuthUserId(authUser.getId()).isPresent()) {
+            throw new IllegalStateException("User already exists");
+        }
+
         if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new IllegalStateException("Username already taken: " + request.username());
         }
