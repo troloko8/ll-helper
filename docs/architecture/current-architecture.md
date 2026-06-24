@@ -260,7 +260,7 @@ CardService.save(cards)
 |----------|--------|------|-------------|--------------|
 | `/api/v1/auth/register` | POST | — | Register new user | `AuthResponse` |
 | `/api/v1/auth/login` | POST | — | Login, get JWT | `AuthResponse` |
-| `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD | `UserResponse` |
+| `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/card-descs` | GET | JWT | List decks (lite) | `List<CardDescListResponse>` ⚠️ no cards |
 | `/api/v1/card-descs` | POST | JWT | Create deck | `CardDescResponse` |
 | `/api/v1/card-descs/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `CardDescResponse` (with cards) |
@@ -469,6 +469,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Decision | Details |
 |----------|---------|  
 | AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` must check `Objects.equals(cardDesc.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses partial-success strategy | Sprint 0.2 fix: log failed titles with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Sprint 0.4 / Level 1. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented in Sprint 0.2. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress will be handled in Sprint 0.3 via restrict/delete strategy and/or FK decisions. |
@@ -547,3 +548,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-02 | Initial version — Level 0 Architecture Freeze (Sprint 0.1) |
 | 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
 | 2026-06-23 | Mapper layer complete: CardMapper, CardDescMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
+| 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |

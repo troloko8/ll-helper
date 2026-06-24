@@ -436,6 +436,101 @@
           "response": []
         },
         {
+          "name": "Update User (403 Forbidden Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Response contains access denied message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Hacker\",\n  \"lastName\": \"Attempt\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/hacker.jpg\",\n  \"uiLanguage\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/users/999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "users", "999"]
+            },
+            "description": "Test: attempt to update another user's profile should return 403 Forbidden. User ID 999 is assumed to be a different user than the authenticated one."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (403 Forbidden Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Response contains access denied message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/users/999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "users", "999"]
+            },
+            "description": "Test: attempt to delete another user's profile should return 403 Forbidden. User ID 999 is assumed to be a different user than the authenticated one."
+          },
+          "response": []
+        },
+        {
           "name": "Get User by Auth ID",
           "request": {
             "auth": {

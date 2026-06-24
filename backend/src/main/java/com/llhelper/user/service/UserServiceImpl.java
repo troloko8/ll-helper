@@ -2,13 +2,16 @@ package com.llhelper.user.service;
 
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
+import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.user.dto.request.CreateUserRequest;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.mapper.UserMapper;
 import com.llhelper.user.repository.UserRepository;
+import java.util.Objects;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,15 +21,18 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final AuthRepository authRepository;
     private final UserMapper userMapper;
+    private final SecurityUtils securityUtils;
 
     public UserServiceImpl(
         UserRepository userRepository,
         AuthRepository authRepository,
-        UserMapper userMapper
+        UserMapper userMapper,
+        SecurityUtils securityUtils
     ) {
         this.userRepository = userRepository;
         this.authRepository = authRepository;
         this.userMapper = userMapper;
+        this.securityUtils = securityUtils;
     }
 
     @Override
@@ -80,6 +86,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
+        validateUserOwnership(user);
+
         userMapper.updateEntity(request, user);
 
         User updated = userRepository.save(user);
@@ -89,10 +97,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found with id: " + id);
-        }
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+
+        validateUserOwnership(user);
+
         userRepository.deleteById(id);
+    }
+
+    private void validateUserOwnership(User user) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        if (!Objects.equals(user.getId(), currentUserId)) {
+            throw new AccessDeniedException("Access denied: not user owner");
+        }
     }
 
 }

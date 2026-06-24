@@ -25,14 +25,7 @@
 ~~4. Принять решение: copy vs reference (документально)~~
 ~~5. Добавить/почистить DTO~~
 ~~6. Добавить mappers~~
-7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**
-   - **Проблема:** Любой аутентифицированный пользователь может изменять/удалять данные других пользователей через `PUT /api/v1/users/{id}` и `DELETE /api/v1/users/{id}`
-   - **Решение:**
-     - Добавить `SecurityUtils` в `UserServiceImpl`
-     - В `updateUser()` и `deleteUser()` проверять: `if (!Objects.equals(user.getId(), securityUtils.getCurrentUserId())) throw new AccessDeniedException(...)`
-     - Добавить тесты на 403 для попытки изменить чужой профиль
-     - Обновить Postman: добавить test case для 403 ownership violation
-   - **Миграция на Level 2:** Заменить императивные проверки на `@PreAuthorize("@userSecurity.isOwner(#id)")`
+~~7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**~~
 8. Добавить Rate limiting на user update операции (защита от abuse)
 9. Убрать entity leakage из API
 10. Добавить validation
@@ -497,7 +490,9 @@ src/
 
 **Security Standards (декларативная безопасность):**
 
-- Использовать `@PreAuthorize` вместо императивных ownership checks
+- Мигрировать с императивных ownership checks на `@PreAuthorize`
+  - `UserServiceImpl.updateUser()` / `deleteUser()` — заменить `validateUserOwnership()` на `@PreAuthorize("@userSecurity.isOwner(#id)")`
+  - `CardServiceImpl.createCard()` / `bulkGenerate()` — заменить `validateDeckOwnership()` на `@PreAuthorize("@deckSecurity.isOwner(#deckId)")`
 - Создать security beans: `@Component DeckSecurity`, `@Component UserSecurity`, `@Component CardSecurity`
 - Пример: `@PreAuthorize("@deckSecurity.isOwner(#deckId)")`
 - Централизовать ownership logic в переиспользуемых методах
