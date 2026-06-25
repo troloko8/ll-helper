@@ -20,6 +20,7 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `backend/IMPROVEMENTS.md`
 - `backend/CONVENTIONS.md`
 - `backend/AGENTS.md`
+- `.windsurf/rules/mapstruct-conventions.md`
 - `LLHelper.postman_collection.json` when API changes
 
 ## When to update `current-architecture.md`
@@ -93,6 +94,21 @@ Update this file when the change affects:
 - AI error handling
 - AI configuration properties
 - ownership checks for card creation/generation
+
+## When to update `mapstruct-conventions.md`
+
+Update this file when:
+
+- New mapper pattern discovered (e.g., multi-source mapping, @Context usage)
+- New edge case found (e.g., circular dependencies, read-only fields)
+- Mapper layer architecture changes
+- New "when NOT to use mapper" case identified
+- Common mistake pattern discovered
+- MapStruct library version upgrade changes behavior
+
+If mapper conventions change, also update:
+- `backend/CONVENTIONS.md` (Mapper section)
+- `backend/AGENTS.md` (Mapper section)
 
 ## When to update Roadmap
 

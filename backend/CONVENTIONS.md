@@ -22,8 +22,11 @@
 - Split into `dto/request/` and `dto/response/`
 
 ## Mapper
-- Deferred as an **advanced feature** (to be implemented later)
-- For now: entity → DTO conversion is done inline via a private `toResponse()` method inside the service
+- **Library:** MapStruct 1.6.3
+- **Pattern:** Interface-based mappers with `@Mapper(componentModel = "spring")`
+- Each module has a `mapper/` package with dedicated mapper interface
+- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
+- **Detailed conventions:** See `.windsurf/rules/mapstruct-conventions.md`
 
 ## Naming
 - Packages: `snake_case` for compound words (e.g. `card_desc`)

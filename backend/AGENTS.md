@@ -31,6 +31,8 @@ Apply these conventions for ALL backend code in this repository.
 - Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
 - MapStruct processor runs **after** Lombok in annotation processing chain
 - Generated implementations are auto-injected as Spring beans
+- **IMPORTANT:** Always use mapper for DTO ↔ Entity conversion. Never write manual mapping in services.
+- **Detailed conventions:** See `.windsurf/rules/mapstruct-conventions.md`
 
 ## Naming
 - Packages: `snake_case` for compound words (e.g. `card_desc`)
