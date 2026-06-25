@@ -69,25 +69,10 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getStudyCards(Long deckId) {
-        // FIXME DUblicate
-        Long userId = securityUtils.getCurrentUserId();
-
-        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
-            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
-
-        List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
-
-        // Get all card IDs for batch loading
-        List<Long> cardIds = allCardProgress.stream()
-            .map(UserCardProgress::getCardId)
-            .collect(Collectors.toList());
-
-        // Load all cards in one query
-        Map<Long, Card> cardMap = cardRepository.findAllById(cardIds).stream()
-            .collect(Collectors.toMap(Card::getId, card -> card));
+        DeckCardsData data = loadDeckCardsWithProgress(deckId);
 
         // Priority 1: LEARNING cards
-        List<UserCardProgress> learningCards = allCardProgress.stream()
+        List<UserCardProgress> learningCards = data.allCardProgress().stream()
             .filter(p -> p.getStatus() == CardLearningStatus.LEARNING)
             .sorted(Comparator.comparing(UserCardProgress::getCardId))
             .limit(10)
@@ -97,7 +82,7 @@ public class LearningServiceImpl implements LearningService {
         if (learningCards.size() < 10) {
             int remaining = 10 - learningCards.size();
 
-            List<UserCardProgress> newCards = allCardProgress.stream()
+            List<UserCardProgress> newCards = data.allCardProgress().stream()
                 .filter(p -> p.getStatus() == CardLearningStatus.NEW)
                 .sorted(Comparator.comparing(UserCardProgress::getCardId))
                 .limit(remaining)
@@ -107,30 +92,17 @@ public class LearningServiceImpl implements LearningService {
         }
 
         return learningCards.stream()
-            .map(p -> toDeckCardResponse(cardMap.get(p.getCardId()), p))
+            .map(p -> toDeckCardResponse(data.cardMap().get(p.getCardId()), p))
             .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getDeckCards(Long deckId) {
-        Long userId = securityUtils.getCurrentUserId();
+        DeckCardsData data = loadDeckCardsWithProgress(deckId);
 
-        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
-            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
-
-        List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
-        // Get all card IDs for batch loading
-        List<Long> cardIds = allCardProgress.stream()
-            .map(UserCardProgress::getCardId)
-            .collect(Collectors.toList());
-
-        // Load all cards in one query
-        Map<Long, Card> cardMap = cardRepository.findAllById(cardIds).stream()
-            .collect(Collectors.toMap(Card::getId, card -> card));
-
-        return allCardProgress.stream()
-            .map(p -> toDeckCardResponse(cardMap.get(p.getCardId()), p))
+        return data.allCardProgress().stream()
+            .map(p -> toDeckCardResponse(data.cardMap().get(p.getCardId()), p))
             .collect(Collectors.toList());
     }
 
@@ -191,7 +163,27 @@ public class LearningServiceImpl implements LearningService {
         }
     }
 
+    private DeckCardsData loadDeckCardsWithProgress(Long deckId) {
+        Long userId = securityUtils.getCurrentUserId();
+
+        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
+            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
+
+        List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
+
+        List<Long> cardIds = allCardProgress.stream()
+            .map(UserCardProgress::getCardId)
+            .collect(Collectors.toList());
+
+        Map<Long, Card> cardMap = cardRepository.findAllById(cardIds).stream()
+            .collect(Collectors.toMap(Card::getId, card -> card));
+
+        return new DeckCardsData(allCardProgress, cardMap);
+    }
+
     private DeckCardResponse toDeckCardResponse(Card card, UserCardProgress progress) {
         return learningMapper.toDeckCardResponse(card, progress);
     }
+
+    private record DeckCardsData(List<UserCardProgress> allCardProgress, Map<Long, Card> cardMap) {}
 }
