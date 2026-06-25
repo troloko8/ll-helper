@@ -21,6 +21,7 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `backend/CONVENTIONS.md`
 - `backend/AGENTS.md`
 - `.windsurf/rules/mapstruct-conventions.md`
+- `.windsurf/rules/entity-conventions.md`
 - `LLHelper.postman_collection.json` when API changes
 
 ## When to update `current-architecture.md`
