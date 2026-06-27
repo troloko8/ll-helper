@@ -26,12 +26,7 @@
 ~~5. Добавить/почистить DTO~~
 ~~6. Добавить mappers~~
 ~~7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**~~
-
-**7.2. 🔴 Добавить ownership check для CardDesc операций (update/delete) — CRITICAL**
-- Проблема: любой пользователь может удалить/изменить чужой deck
-- Файл: `card_desc/service/CardDescServiceImpl.java`
-- Добавить `validateDeckOwnership()` в `update()` и `delete()`
-- Postman тесты на 403 Forbidden
+~~**7.2. 🔴 Добавить ownership check для CardDesc операций (update/delete) — CRITICAL**~~
 
 **8. Добавить Rate limiting на user update операции (защита от abuse)**
 

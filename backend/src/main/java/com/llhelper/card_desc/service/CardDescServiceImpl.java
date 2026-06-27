@@ -10,6 +10,8 @@ import com.llhelper.common.security.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,6 +29,13 @@ public class CardDescServiceImpl implements CardDescService {
         this.cardDescRepository = cardDescRepository;
         this.securityUtils = securityUtils;
         this.cardDescMapper = cardDescMapper;
+    }
+
+    private void validateDeckOwnership(CardDesc deck) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        if (!Objects.equals(deck.getOwner().getId(), currentUserId)) {
+            throw new AccessDeniedException("Access denied: not deck owner");
+        }
     }
 
 
@@ -57,8 +66,10 @@ public class CardDescServiceImpl implements CardDescService {
 
     @Override
     public CardDescResponse update(Long id, CardDescRequest request) {
-        CardDesc cardDesc = cardDescRepository.findById(id)
+        CardDesc cardDesc = cardDescRepository.findWithOwnerById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
+        
+        validateDeckOwnership(cardDesc);
         
         cardDescMapper.updateEntity(request, cardDesc);
         cardDesc.setUpdatedAt(LocalDateTime.now());
@@ -68,6 +79,11 @@ public class CardDescServiceImpl implements CardDescService {
 
     @Override
     public void delete(Long id) {
+        CardDesc cardDesc = cardDescRepository.findWithOwnerById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
+        
+        validateDeckOwnership(cardDesc);
+        
         cardDescRepository.deleteById(id);
     }
 }

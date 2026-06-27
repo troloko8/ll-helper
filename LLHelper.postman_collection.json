@@ -1076,6 +1076,101 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update CardDesc (403 Forbidden Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Response contains access denied message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hacked Deck\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Attempt to modify another user's deck\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/card-descs/999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "card-descs", "999"]
+            },
+            "description": "Test: attempt to update another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete CardDesc (403 Forbidden Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Response contains access denied message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/card-descs/999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "card-descs", "999"]
+            },
+            "description": "Test: attempt to delete another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
+          },
+          "response": []
         }
       ]
     },
