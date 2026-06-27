@@ -37,3 +37,29 @@
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `update`
 - **Flyway:** disabled for now
+
+## Rate Limiting
+
+All mutating endpoints (POST/PUT/DELETE) MUST have rate limiting via `UserRateLimiter`.
+
+**Pattern:**
+```java
+@Transactional
+public Response mutatingOperation(...) {
+    Long currentUserId = securityUtils.getCurrentUserId();
+    
+    // Rate limit BEFORE business logic
+    userRateLimiter.checkLimitByUserId(currentUserId, maxRequests, window);
+    
+    // Ownership check
+    // Business logic
+}
+```
+
+**Guidelines:**
+- Place rate limit check AFTER getting userId, BEFORE ownership check
+- Use reasonable limits (5-20/min for normal ops, 3-5/hour for expensive ops)
+- Email-based for pre-auth endpoints (login/register)
+- TODO (Level 2): Migrate to userId-based when JWT subject changes from email to userId
+
+**See:** `docs/features/rate-limiting-design.md` for full implementation plan

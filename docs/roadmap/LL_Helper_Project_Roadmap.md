@@ -26,10 +26,87 @@
 ~~5. Добавить/почистить DTO~~
 ~~6. Добавить mappers~~
 ~~7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**~~
-8. Добавить Rate limiting на user update операции (защита от abuse)
+
+**7.2. 🔴 Добавить ownership check для CardDesc операций (update/delete) — CRITICAL**
+- Проблема: любой пользователь может удалить/изменить чужой deck
+- Файл: `card_desc/service/CardDescServiceImpl.java`
+- Добавить `validateDeckOwnership()` в `update()` и `delete()`
+- Postman тесты на 403 Forbidden
+
+**8. Добавить Rate limiting на user update операции (защита от abuse)**
+
+Детальный план: `docs/features/rate-limiting-design.md`
+
+**8.1. Исправить RateLimiter reset bug (hardcoded 10)**
+- Файл: `ai/util/RateLimiter.java`
+- Сохранить `maxRequestsPerSecond` в поле, использовать вместо hardcoded `10`
+- Unit test на разные значения `maxRequestsPerSecond`
+
+**8.2. Переместить RateLimitExceededException в common/exception/**
+- Создать: `common/exception/RateLimitExceededException.java`
+- Удалить: nested class из `ai/util/RateLimiter.java`
+- Обновить импорты в `AiCardGenerationService`, `GlobalExceptionHandler`
+
+**8.3. Добавить Caffeine dependency**
+- Файл: `backend/pom.xml`
+- Добавить: `com.github.ben-manes.caffeine:caffeine:3.1.8`
+
+**8.4. Создать UserRateLimiter (per-user, in-memory, Caffeine Cache)**
+- Создать: `common/security/UserRateLimiter.java`
+- Два cache: `userBuckets` (Long), `emailBuckets` (String)
+- TTL: 1 час
+- Методы: `checkLimitByUserId()`, `checkLimitByEmail()`
+- TODO: migrate to userId when JWT subject changes
+
+**8.5. Rate limiting для User.updateUser() — 5 req/min**
+- Файл: `user/service/UserServiceImpl.java`
+- Inject `UserRateLimiter`, вызвать перед ownership check
+
+**8.6. Rate limiting для Auth.login() — 5 req/min**
+- Файл: `auth/service/AuthServiceImpl.java`
+- `checkLimitByEmail()` в начале метода
+
+**8.7. Rate limiting для Auth.register() — 3 req/5min**
+- Файл: `auth/service/AuthServiceImpl.java`
+- `checkLimitByEmail()` в начале метода
+
+**8.8. Rate limiting для Card.create() — 20 req/min**
+- Файл: `card/service/CardServiceImpl.java`
+- `checkLimitByUserId()` перед ownership check
+
+**8.9. Rate limiting для Card.update() — 10 req/min**
+- Файл: `card/service/CardServiceImpl.java`
+
+**8.10. Rate limiting для Card.delete() — 10 req/min**
+- Файл: `card/service/CardServiceImpl.java`
+
+**8.11. Rate limiting для CardDesc.create() — 5 req/hour**
+- Файл: `card_desc/service/CardDescServiceImpl.java`
+
+**8.12. Rate limiting для CardDesc.update() — 10 req/min**
+- Файл: `card_desc/service/CardDescServiceImpl.java`
+- Зависит от задачи 7.2 (ownership check)
+
+**8.13. Rate limiting для CardDesc.delete() — 5 req/hour**
+- Файл: `card_desc/service/CardDescServiceImpl.java`
+- Зависит от задачи 7.2 (ownership check)
+
+**8.14. Добавить @ExceptionHandler для RateLimitExceededException → HTTP 429**
+- Файл: `common/exception/GlobalExceptionHandler.java`
+- Response: `{ "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }`
+
+**8.15. Обновить Postman collection — тесты на HTTP 429**
+- Файл: `LLHelper.postman_collection.json`
+- Тесты на каждый protected endpoint (6+ requests → 429)
+
+**8.16. Обновить документацию**
+- `docs/architecture/current-architecture.md` — секция "Rate Limiting"
+- `docs/roadmap/LL_Helper_Project_Roadmap.md` — отметить задачи как выполненные
+- `backend/CONVENTIONS.md` — правила rate limiting
+
 9. Убрать entity leakage из API
 10. Добавить validation
-11. Исправить RateLimiter reset bug (hardcoded 10)
+~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
 12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
 13. Добавить logging для bulk failures
 14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
@@ -501,6 +578,14 @@ src/
 - **🔴 Решить N+1 проблему в ownership validation:** текущий подход делает 2 запроса к БД (1 для проверки ownership, 1 для бизнес-логики). Решения: оптимизировать императивный код (загрузить entity один раз), использовать кэш, или AOP для передачи entity в метод.
 - **Создать `.windsurf/rules/security-standards.md`** — rule файл с примерами Level 0-1 vs Level 2+ подходов, migration guide, SpEL expressions, решение N+1 проблемы
 
+**Rate Limiting (Advanced):**
+
+- **IP-based rate limiting** — extract IP from `HttpServletRequest`, handle proxy headers (`X-Forwarded-For`, `X-Real-IP`)
+- **Distributed rate limiting (Redis)** — replace Caffeine Cache with Redis, use `INCR` + `EXPIRE`, Lua scripts for atomic operations
+- **Global rate limits** — 100 requests/minute per user (all endpoints), 20 requests/minute per IP (anonymous)
+- **Per-user AI generation limit** — add `userId` parameter to `AiCardGenerationService.generateCardData()`, apply `userRateLimiter.checkLimitByUserId(userId, 10, Duration.ofHours(1))`
+- **Rate limit headers** — add `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` to responses
+
 **Integration tests (Testcontainers PostgreSQL):** Auth flow · Create/Enroll deck · Generate card · Study/Submit · Get progress · Forbidden access cases
 
 **API Documentation:** OpenAPI/Swagger
@@ -548,7 +633,13 @@ Landing page · Onboarding · Public/private decks · Share deck by link · Copy
 
 ## Backend
 
-`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Rate limiting · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
+`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
+
+**Rate Limiting (Production):**
+
+- **Rate limit headers** — `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (follow [IETF draft](https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-ratelimit-headers))
+- **Adaptive rate limiting** — dynamic limits based on system load, circuit breaker for AI provider, backpressure for bulk operations
+- **Monitoring & metrics** — Prometheus metrics (`rate_limit_exceeded_total`, `rate_limit_remaining`), Grafana dashboard, alerting on abuse
 
 **Admin & Audit:**
 

@@ -383,7 +383,9 @@ backend/src/main/java/com/llhelper/
 | Issue | Priority | Target |
 |-------|----------|--------|
 | `CardDesc` entity represents Deck — misleading name | 🔴 High | Sprint 0.2 |
-| No `GlobalExceptionHandler` | 🔴 High | Sprint 0.2 |
+| ~~No `GlobalExceptionHandler`~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
+| **CardDesc operations missing ownership check** | 🔴 **CRITICAL** | **Sprint 0.2 (task 7.2)** |
+| **No rate limiting on user update operations** | 🔴 High | **Sprint 0.2 (task 8)** |
 | `ddl-auto=update`, no Flyway — schema not version-controlled | 🔴 High | Sprint 0.3 |
 | Delete Deck/Card with existing progress → FK violation risk | 🔴 High | Sprint 0.3 |
 | No pagination for list endpoints | 🟡 Medium | Level 2 |
@@ -528,6 +530,70 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ---
 
+## 18. Rate Limiting
+
+> **Status:** Planned (Sprint 0.2 task 8) — design complete, implementation pending
+> **Design note:** `docs/features/rate-limiting-design.md`
+
+### Level 0 Implementation (Sprint 0.2)
+
+**Component:** `UserRateLimiter` (`common/security/`)
+
+**Strategy:** Per-user in-memory rate limiting using Caffeine Cache
+
+**Mechanism:**
+- Token bucket algorithm per user/email
+- Caffeine Cache with 1-hour TTL (auto-cleanup)
+- Separate buckets for `userId` and `email` (pre-auth)
+
+### Protected Endpoints
+
+| Endpoint | Limit | Window | Key | Priority |
+|----------|-------|--------|-----|----------|
+| `PUT /api/v1/users/{id}` | 5 | 1 minute | userId | 🔴 High |
+| `POST /api/v1/auth/login` | 5 | 1 minute | email | 🔴 High |
+| `POST /api/v1/auth/register` | 3 | 5 minutes | email | 🔴 High |
+| `POST /api/v1/cards` | 20 | 1 minute | userId | 🟡 Medium |
+| `PUT /api/v1/cards/{id}` | 10 | 1 minute | userId | 🟢 Low |
+| `DELETE /api/v1/cards/{id}` | 10 | 1 minute | userId | 🟢 Low |
+| `POST /api/v1/card-descs` | 5 | 1 hour | userId | 🟡 Medium |
+| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | userId | 🟢 Low |
+| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
+
+### Error Response
+
+**HTTP Status:** `429 Too Many Requests`
+
+**Body:**
+```json
+{
+  "error": "RATE_LIMIT_EXCEEDED",
+  "message": "Too many requests. Try again later.",
+  "timestamp": "2026-06-25T15:30:00"
+}
+```
+
+### Scope
+
+- **Level 0:** Per-user, in-memory (Caffeine Cache)
+- **Level 2:** Distributed (Redis), IP-based, global limits
+- **Level 3:** Rate limit headers, adaptive limits, metrics
+
+### Known Limitations
+
+- Per-JVM instance (not distributed)
+- Email-based for auth (TODO: migrate to userId when JWT changes)
+- No rate limit headers (`X-RateLimit-*`)
+- AI generation per-user limit deferred (requires userId in service)
+
+### AI Generation Rate Limiting
+
+**Current:** Per-JVM only (`RateLimiter` — 10 req/sec for all users)
+
+**Planned (Level 2):** Per-user limit (10 AI generations/hour) + per-JVM limit
+
+---
+
 ## References
 
 | Document             | Path                                          |
@@ -538,6 +604,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Postman collection   | `LLHelper.postman_collection.json`            |
 | Learning flow design | `docs/features/learning-flow.md`               |
 | AI generation flow   | `docs/features/ai-generation-flow.md`          |
+| Rate limiting design | `docs/features/rate-limiting-design.md`        |
 
 ---
 
@@ -549,3 +616,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
 | 2026-06-23 | Mapper layer complete: CardMapper, CardDescMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
 | 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |
+| 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified CardDesc ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
