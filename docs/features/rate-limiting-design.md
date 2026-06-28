@@ -446,3 +446,4 @@ public class RedisRateLimiter {
 | Date | Change |
 |------|--------|
 | 2026-06-25 | Initial design note — Sprint 0.2 rate limiting plan |
+| 2026-06-28 | Task 8.3 completed — Caffeine 3.1.8 dependency added to pom.xml |

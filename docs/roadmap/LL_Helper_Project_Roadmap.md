@@ -42,9 +42,9 @@
 - ~~Удалить: nested class из `ai/util/RateLimiter.java`~~
 - ~~Обновить импорты в `AiCardGenerationService`, `GlobalExceptionHandler`~~
 
-**8.3. Добавить Caffeine dependency**
-- Файл: `backend/pom.xml`
-- Добавить: `com.github.ben-manes.caffeine:caffeine:3.1.8`
+~~**8.3. Добавить Caffeine dependency**~~
+- ~~Файл: `backend/pom.xml`~~
+- ~~Добавить: `com.github.ben-manes.caffeine:caffeine:3.1.8`~~
 
 **8.4. Создать UserRateLimiter (per-user, in-memory, Caffeine Cache)**
 - Создать: `common/security/UserRateLimiter.java`
