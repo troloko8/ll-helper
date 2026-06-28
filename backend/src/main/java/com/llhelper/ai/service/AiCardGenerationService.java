@@ -15,8 +15,11 @@ public class AiCardGenerationService {
     private final RateLimiter rateLimiter;
     private final AiProperties aiProperties;
 
-    public AiCardGenerationService(OpenAiProvider openAiProvider, RateLimiter rateLimiter,
-                                   AiProperties aiProperties) {
+    public AiCardGenerationService(
+        OpenAiProvider openAiProvider,
+        RateLimiter rateLimiter,
+        AiProperties aiProperties
+    ) {
         this.rateLimiter = rateLimiter;
         this.aiProperties = aiProperties;
         this.aiProvider = openAiProvider;

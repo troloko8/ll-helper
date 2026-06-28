@@ -32,10 +32,10 @@
 
 Детальный план: `docs/features/rate-limiting-design.md`
 
-**8.1. Исправить RateLimiter reset bug (hardcoded 10)**
-- Файл: `ai/util/RateLimiter.java`
-- Сохранить `maxRequestsPerSecond` в поле, использовать вместо hardcoded `10`
-- Unit test на разные значения `maxRequestsPerSecond`
+~~**8.1. Исправить RateLimiter reset bug (hardcoded 10)**~~
+- ~~Файл: `ai/util/RateLimiter.java`~~
+- ~~Сохранить `maxRequestsPerSecond` в поле, использовать вместо hardcoded `10`~~
+- ~~Unit test на разные значения `maxRequestsPerSecond`~~
 
 **8.2. Переместить RateLimitExceededException в common/exception/**
 - Создать: `common/exception/RateLimitExceededException.java`

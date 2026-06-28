@@ -8,10 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimiter {
 
     private final Semaphore requestSemaphore;
+    private final int maxRequestsPerSecond;
     private final AtomicInteger tokensUsed = new AtomicInteger(0);
     private volatile Instant lastReset = Instant.now();
 
     public RateLimiter(int maxRequestsPerSecond) {
+        this.maxRequestsPerSecond = maxRequestsPerSecond;
         this.requestSemaphore = new Semaphore(maxRequestsPerSecond);
     }
 
@@ -33,6 +35,7 @@ public class RateLimiter {
         }
     }
 
+    // FIXME Why it not uses nowhere
     public void validateBulkSize(int size, int maxBulkSize) {
         if (size > maxBulkSize) {
             throw new RateLimitExceededException(
@@ -44,7 +47,7 @@ public class RateLimiter {
     private void resetIfNeeded() {
         Instant now = Instant.now();
         if (Duration.between(lastReset, now).getSeconds() >= 1) {
-            requestSemaphore.release(10 - requestSemaphore.availablePermits());
+            requestSemaphore.release(maxRequestsPerSecond - requestSemaphore.availablePermits());
             lastReset = now;
         }
     }
