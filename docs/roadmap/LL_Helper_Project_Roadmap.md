@@ -37,10 +37,10 @@
 - ~~Сохранить `maxRequestsPerSecond` в поле, использовать вместо hardcoded `10`~~
 - ~~Unit test на разные значения `maxRequestsPerSecond`~~
 
-**8.2. Переместить RateLimitExceededException в common/exception/**
-- Создать: `common/exception/RateLimitExceededException.java`
-- Удалить: nested class из `ai/util/RateLimiter.java`
-- Обновить импорты в `AiCardGenerationService`, `GlobalExceptionHandler`
+~~**8.2. Переместить RateLimitExceededException в common/exception/**~~
+- ~~Создать: `common/exception/RateLimitExceededException.java`~~
+- ~~Удалить: nested class из `ai/util/RateLimiter.java`~~
+- ~~Обновить импорты в `AiCardGenerationService`, `GlobalExceptionHandler`~~
 
 **8.3. Добавить Caffeine dependency**
 - Файл: `backend/pom.xml`

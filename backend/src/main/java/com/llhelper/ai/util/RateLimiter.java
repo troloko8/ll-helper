@@ -1,5 +1,6 @@
 package com.llhelper.ai.util;
 
+import com.llhelper.common.exception.RateLimitExceededException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Semaphore;
@@ -52,9 +53,4 @@ public class RateLimiter {
         }
     }
 
-    public static class RateLimitExceededException extends RuntimeException {
-        public RateLimitExceededException(String message) {
-            super(message);
-        }
-    }
 }

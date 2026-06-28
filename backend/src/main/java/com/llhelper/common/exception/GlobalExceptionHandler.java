@@ -1,7 +1,6 @@
 package com.llhelper.common.exception;
 
 import com.llhelper.ai.exception.AiServiceException;
-import com.llhelper.ai.util.RateLimiter;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -56,8 +55,8 @@ public class GlobalExceptionHandler {
             .body(Map.of("message", "AI service unavailable: " + exception.getMessage()));
     }
 
-    @ExceptionHandler(RateLimiter.RateLimitExceededException.class)
-    public ResponseEntity<Map<String, String>> handleRateLimitExceeded(RateLimiter.RateLimitExceededException exception) {
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, String>> handleRateLimitExceeded(RateLimitExceededException exception) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
             .body(Map.of("message", exception.getMessage()));
     }

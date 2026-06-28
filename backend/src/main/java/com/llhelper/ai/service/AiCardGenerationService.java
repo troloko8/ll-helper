@@ -13,6 +13,7 @@ public class AiCardGenerationService {
 
     private final AiProvider aiProvider;
     private final RateLimiter rateLimiter;
+    // FIXME: why not use?
     private final AiProperties aiProperties;
 
     public AiCardGenerationService(
