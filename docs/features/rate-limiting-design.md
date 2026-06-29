@@ -240,7 +240,7 @@ Middleware/Filter:
 | 8.13 | `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
 
 **Pattern (Level 0 — email key, no extra DB query):**
-```java
+```string(java)
 @Transactional
 public Response mutatingOperation(...) {
     // Rate limit FIRST — cheap, zero DB queries
@@ -450,3 +450,4 @@ public class RedisRateLimiter {
 | 2026-06-28 | Task 8.3 completed — Caffeine 3.1.8 dependency added to pom.xml |
 | 2026-06-28 | Task 8.4 completed — UserRateLimiter created in common/security/ |
 | 2026-06-29 | Task 8.5 completed — rate limiting added to UserServiceImpl.updateUser() via checkLimitByEmail (Level 0). Added getCurrentUserEmail() to SecurityUtils. Updated pattern in design doc. |
+| 2026-06-29 | Task 8.6 completed — rate limiting added to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |

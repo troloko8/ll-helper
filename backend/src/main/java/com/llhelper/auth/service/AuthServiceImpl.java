@@ -6,6 +6,8 @@ import com.llhelper.auth.dto.response.AuthResponse;
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RateLimitAction;
+import com.llhelper.common.security.UserRateLimiter;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,15 +22,24 @@ public class AuthServiceImpl implements AuthService {
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserRateLimiter userRateLimiter;
 
-    public AuthServiceImpl(AuthRepository authRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthServiceImpl(
+        AuthRepository authRepository,
+        PasswordEncoder passwordEncoder,
+        JwtService jwtService,
+        UserRateLimiter userRateLimiter
+    ) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.userRateLimiter = userRateLimiter;
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        userRateLimiter.checkLimitByEmail(request.email(), RateLimitAction.AUTH_LOGIN);
+
         AuthUser authUser = authRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 

@@ -59,9 +59,9 @@
 - ~~Добавить `SecurityUtils.getCurrentUserEmail()` (0 DB queries)~~
 - ~~Использовать `checkLimitByEmail()` (Level 0, пока JWT subject = email)~~
 
-**8.6. Rate limiting для Auth.login() — 5 req/min**
-- Файл: `auth/service/AuthServiceImpl.java`
-- `checkLimitByEmail()` в начале метода
+~~**8.6. Rate limiting для Auth.login() — 5 req/min**~~
+- ~~Файл: `auth/service/AuthServiceImpl.java`~~
+- ~~`checkLimitByEmail(request.email(), AUTH_LOGIN)` первым в методе~~
 
 **8.7. Rate limiting для Auth.register() — 3 req/5min**
 - Файл: `auth/service/AuthServiceImpl.java`
@@ -69,7 +69,7 @@
 
 **8.8. Rate limiting для Card.create() — 20 req/min**
 - Файл: `card/service/CardServiceImpl.java`
-- `checkLimitByUserId()` перед ownership check
+- `checkLimitByEmail()` перед ownership check
 
 **8.9. Rate limiting для Card.update() — 10 req/min**
 - Файл: `card/service/CardServiceImpl.java`
