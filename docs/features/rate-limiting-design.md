@@ -239,19 +239,20 @@ Middleware/Filter:
 | 8.12 | `PUT /api/v1/card-descs/{id}` | 10 | 1 min | userId | 🟢 Low |
 | 8.13 | `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
 
-**Pattern:**
-```string (java)
+**Pattern (Level 0 — email key, no extra DB query):**
+```java
 @Transactional
 public Response mutatingOperation(...) {
-    Long currentUserId = securityUtils.getCurrentUserId();
-    
-    // Rate limit BEFORE business logic
-    userRateLimiter.checkLimitByUserId(currentUserId, maxRequests, window);
-    
-    // Ownership check
-    // Business logic
+    // Rate limit FIRST — cheap, zero DB queries
+    String currentUserEmail = securityUtils.getCurrentUserEmail();
+    userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.PROFILE_UPDATE);
+
+    // Then ownership check and business logic
 }
 ```
+
+> **TODO (after JWT migration):** When JWT subject changes from email to userId,
+> replace `checkLimitByEmail()` with `checkLimitByUserId()` — see `IMPROVEMENTS.md`.
 
 ---
 
@@ -448,3 +449,4 @@ public class RedisRateLimiter {
 | 2026-06-25 | Initial design note — Sprint 0.2 rate limiting plan |
 | 2026-06-28 | Task 8.3 completed — Caffeine 3.1.8 dependency added to pom.xml |
 | 2026-06-28 | Task 8.4 completed — UserRateLimiter created in common/security/ |
+| 2026-06-29 | Task 8.5 completed — rate limiting added to UserServiceImpl.updateUser() via checkLimitByEmail (Level 0). Added getCurrentUserEmail() to SecurityUtils. Updated pattern in design doc. |

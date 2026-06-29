@@ -8,7 +8,8 @@
   Сейчас: токен → email → запрос в БД за AuthUser → запрос в БД за User → получаем userId  
   Лучше: токен → userId без запросов в БД  
   Критичность: 🔴 HIGH — `SecurityUtils.getCurrentUserId()` делает 2 DB запроса на каждый защищённый endpoint  
-  Файлы: `JwtService.java`, `JwtAuthenticationFilter.java`, `SecurityUtils.java`
+  Файлы: `JwtService.java`, `JwtAuthenticationFilter.java`, `SecurityUtils.java`  
+  После миграции токена: раскомментировать `UserRateLimiter.checkLimitByUserId()`, заменить все `checkLimitByEmail()` вызовы на `checkLimitByUserId()` в сервисах, удалить `emailBuckets` логику для authenticated endpoints.
 
 ## Security
 

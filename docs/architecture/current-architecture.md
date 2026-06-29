@@ -532,7 +532,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** In progress (Sprint 0.2 task 8) — design complete, `UserRateLimiter` implemented, endpoint protection pending
+> **Status:** In progress (Sprint 0.2 task 8) — `UserRateLimiter` implemented, `updateUser()` protected, auth endpoints pending
 > **Design note:** `docs/features/rate-limiting-design.md`
 
 ### Level 0 Implementation (Sprint 0.2)
@@ -543,22 +543,23 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 **Mechanism:**
 - Fixed window counter algorithm per user/email
-- Caffeine Cache with 1-hour TTL (auto-cleanup)
-- Separate buckets for `userId` and `email` (pre-auth)
+- Composite cache key: `(subject, RateLimitAction)` — prevents conflicts between actions
+- Caffeine Cache with 2-hour TTL, max 100,000 buckets
+- Level 0: email key (from JWT, 0 DB queries); userId key deferred until JWT migration
 
 ### Protected Endpoints
 
 | Endpoint | Limit | Window | Key | Priority |
 |----------|-------|--------|-----|----------|
-| `PUT /api/v1/users/{id}` | 5 | 1 minute | userId | 🔴 High |
+| `PUT /api/v1/users/{id}` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/login` | 5 | 1 minute | email | 🔴 High |
 | `POST /api/v1/auth/register` | 3 | 5 minutes | email | 🔴 High |
-| `POST /api/v1/cards` | 20 | 1 minute | userId | 🟡 Medium |
-| `PUT /api/v1/cards/{id}` | 10 | 1 minute | userId | 🟢 Low |
-| `DELETE /api/v1/cards/{id}` | 10 | 1 minute | userId | 🟢 Low |
-| `POST /api/v1/card-descs` | 5 | 1 hour | userId | 🟡 Medium |
-| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | userId | 🟢 Low |
-| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
+| `POST /api/v1/cards` | 20 | 1 minute | email | 🟡 Medium |
+| `PUT /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
+| `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
+| `POST /api/v1/card-descs` | 5 | 1 hour | email | 🟡 Medium |
+| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | email | 🟢 Low |
+| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | email | 🟢 Low |
 
 ### Error Response
 
@@ -618,3 +619,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |
 | 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified CardDesc ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
 | 2026-06-28 | Sprint 0.2 tasks 8.1-8.4 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency, created UserRateLimiter. |
+| 2026-06-29 | Sprint 0.2 task 8.5 completed: rate limiting applied to UserServiceImpl.updateUser(). Added SecurityUtils.getCurrentUserEmail() (0 DB queries). Composite key architecture (subject + RateLimitAction). |

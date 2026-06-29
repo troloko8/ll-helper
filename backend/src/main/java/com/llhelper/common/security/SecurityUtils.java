@@ -22,6 +22,20 @@ public class SecurityUtils {
     }
 
     /**
+     * Returns the email of the current authenticated user directly from the JWT token.
+     * Zero DB queries — use this for rate limiting and other cheap pre-checks.
+     */
+    public String getCurrentUserEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationCredentialsNotFoundException("User is not authenticated");
+        }
+
+        return authentication.getName();
+    }
+
+    /**
      * Returns the current authenticated User.id (not AuthUser.id).
      * TODO: Optimize by adding userId claim to JWT token to avoid DB queries.
      */
@@ -38,7 +52,7 @@ public class SecurityUtils {
             .orElseThrow(() -> new EntityNotFoundException("AuthUser not found: " + email));
 
         return userRepository.findByAuthUserId(authUser.getId())
-            .map(user -> user.getId())
+            .map(User::getId)
             .orElseThrow(() -> new EntityNotFoundException("User not found for authUserId: " + authUser.getId()));
     }
 

@@ -2,7 +2,9 @@ package com.llhelper.user.service;
 
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
+import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
+import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.user.dto.request.CreateUserRequest;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
@@ -22,17 +24,20 @@ public class UserServiceImpl implements UserService {
     private final AuthRepository authRepository;
     private final UserMapper userMapper;
     private final SecurityUtils securityUtils;
+    private final UserRateLimiter userRateLimiter;
 
     public UserServiceImpl(
         UserRepository userRepository,
         AuthRepository authRepository,
         UserMapper userMapper,
-        SecurityUtils securityUtils
+        SecurityUtils securityUtils,
+        UserRateLimiter userRateLimiter
     ) {
         this.userRepository = userRepository;
         this.authRepository = authRepository;
         this.userMapper = userMapper;
         this.securityUtils = securityUtils;
+        this.userRateLimiter = userRateLimiter;
     }
 
     @Override
@@ -80,6 +85,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
+        String currentUserEmail = securityUtils.getCurrentUserEmail();
+        userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.PROFILE_UPDATE);
+
         User user = userRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 

@@ -53,9 +53,11 @@
 - ~~Методы: `checkLimitByUserId()`, `checkLimitByEmail()`~~
 - ~~TODO: migrate to userId when JWT subject changes~~
 
-**8.5. Rate limiting для User.updateUser() — 5 req/min**
-- Файл: `user/service/UserServiceImpl.java`
-- Inject `UserRateLimiter`, вызвать перед ownership check
+~~**8.5. Rate limiting для User.updateUser() — 5 req/min**~~
+- ~~Файл: `user/service/UserServiceImpl.java`~~
+- ~~Inject `UserRateLimiter`, вызвать перед ownership check~~
+- ~~Добавить `SecurityUtils.getCurrentUserEmail()` (0 DB queries)~~
+- ~~Использовать `checkLimitByEmail()` (Level 0, пока JWT subject = email)~~
 
 **8.6. Rate limiting для Auth.login() — 5 req/min**
 - Файл: `auth/service/AuthServiceImpl.java`
