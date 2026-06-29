@@ -451,3 +451,4 @@ public class RedisRateLimiter {
 | 2026-06-28 | Task 8.4 completed — UserRateLimiter created in common/security/ |
 | 2026-06-29 | Task 8.5 completed — rate limiting added to UserServiceImpl.updateUser() via checkLimitByEmail (Level 0). Added getCurrentUserEmail() to SecurityUtils. Updated pattern in design doc. |
 | 2026-06-29 | Task 8.6 completed — rate limiting added to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
+| 2026-06-29 | Task 8.7 completed — rate limiting added to AuthServiceImpl.register(). ⚠️ Email key is weak for registration — IP-based limiting (10 req/10min) planned for Level 2. See IMPROVEMENTS.md. |

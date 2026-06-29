@@ -11,6 +11,9 @@ import java.time.Duration;
 public enum RateLimitAction {
 
     AUTH_LOGIN(5, Duration.ofMinutes(1)),
+    // TODO Level 2: AUTH_REGISTER should be rate limited by IP, not by email.
+    // Email-based limit is weak — attacker can register with different emails indefinitely.
+    // Target: 10 requests / 10 minutes per IP. Requires HttpServletRequest injection or filter-level limiting.
     AUTH_REGISTER(3, Duration.ofMinutes(5)),
     PROFILE_UPDATE(5, Duration.ofMinutes(1)),
     CARD_CREATE(20, Duration.ofMinutes(1)),

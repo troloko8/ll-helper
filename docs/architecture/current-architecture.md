@@ -532,7 +532,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** In progress (Sprint 0.2 task 8) — `updateUser()`, `login()` protected; `register()` and card/deck endpoints pending
+> **Status:** In progress (Sprint 0.2 task 8) — `updateUser()`, `login()`, `register()` protected; card/deck endpoints pending
 > **Design note:** `docs/features/rate-limiting-design.md`
 
 ### Level 0 Implementation (Sprint 0.2)
@@ -553,7 +553,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 |----------|-------|--------|-----|----------|
 | `PUT /api/v1/users/{id}` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/login` | 5 | 1 minute | email ✅ | 🔴 High |
-| `POST /api/v1/auth/register` | 3 | 5 minutes | email | 🔴 High |
+| `POST /api/v1/auth/register` | 3 | 5 minutes | email ✅⚠️ | 🔴 High |
 | `POST /api/v1/cards` | 20 | 1 minute | email | 🟡 Medium |
 | `PUT /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
 | `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
@@ -621,3 +621,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-28 | Sprint 0.2 tasks 8.1-8.4 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency, created UserRateLimiter. |
 | 2026-06-29 | Sprint 0.2 task 8.5 completed: rate limiting applied to UserServiceImpl.updateUser(). Added SecurityUtils.getCurrentUserEmail() (0 DB queries). Composite key architecture (subject + RateLimitAction). |
 | 2026-06-29 | Sprint 0.2 task 8.6 completed: rate limiting applied to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
+| 2026-06-29 | Sprint 0.2 task 8.7 completed: rate limiting applied to AuthServiceImpl.register(). ⚠️ Email-based limit is weak for registration — IP-based limiting planned for Level 2. |

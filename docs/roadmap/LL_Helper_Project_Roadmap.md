@@ -63,9 +63,10 @@
 - ~~Файл: `auth/service/AuthServiceImpl.java`~~
 - ~~`checkLimitByEmail(request.email(), AUTH_LOGIN)` первым в методе~~
 
-**8.7. Rate limiting для Auth.register() — 3 req/5min**
-- Файл: `auth/service/AuthServiceImpl.java`
-- `checkLimitByEmail()` в начале метода
+~~**8.7. Rate limiting для Auth.register() — 3 req/5min**~~
+- ~~Файл: `auth/service/AuthServiceImpl.java`~~
+- ~~`checkLimitByEmail(request.email(), AUTH_REGISTER)` первым в методе~~
+- ⚠️ временная защита — обходится через разные email. **Level 2: заменить на IP-based (10 req/10min), см. IMPROVEMENTS.md**
 
 **8.8. Rate limiting для Card.create() — 20 req/min**
 - Файл: `card/service/CardServiceImpl.java`

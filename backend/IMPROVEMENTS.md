@@ -13,7 +13,13 @@
 
 ## Security
 
-- [ ] Добавить rate limiting на auth endpoints (/login, /register)
+- [x] Добавить rate limiting на auth endpoints (/login, /register)
+- [ ] **🔴 КРИТИЧНО: IP-based rate limiting для `/auth/register`**  
+  Сейчас: `AUTH_REGISTER` лимитируется по email — легко обойти, используя разные email'ы  
+  Лучше: лимитировать по IP-адресу (например, 10 запросов / 10 минут с одного IP)  
+  Реализация Level 2: `HttpServletRequest.getRemoteAddr()` в фильтре или перехватчике, отдельный `IpRateLimiter` bean  
+  Пример ключа: `"ip:192.168.1.1"` + `RateLimitAction.AUTH_REGISTER`  
+  Файлы: новый `IpRateLimiter.java`, `AuthServiceImpl.java` или Spring filter
 - [ ] Добавить refresh token mechanism
 - [ ] Включить HTTPS в production
 

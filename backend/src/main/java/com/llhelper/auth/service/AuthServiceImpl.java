@@ -54,6 +54,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
+        // TODO: Email-based rate limiting for register is weak — attacker can use different emails.
+        // Level 2: Replace with IP-based rate limiting (e.g., 10 req/10min per IP).
+        // See IMPROVEMENTS.md and RateLimitAction.AUTH_REGISTER.
+        userRateLimiter.checkLimitByEmail(request.email(), RateLimitAction.AUTH_REGISTER);
+
         if (authRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalStateException("Email already registered");
         }
