@@ -532,7 +532,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** Planned (Sprint 0.2 task 8) — design complete, implementation pending
+> **Status:** In progress (Sprint 0.2 task 8) — design complete, `UserRateLimiter` implemented, endpoint protection pending
 > **Design note:** `docs/features/rate-limiting-design.md`
 
 ### Level 0 Implementation (Sprint 0.2)
@@ -542,7 +542,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 **Strategy:** Per-user in-memory rate limiting using Caffeine Cache
 
 **Mechanism:**
-- Token bucket algorithm per user/email
+- Fixed window counter algorithm per user/email
 - Caffeine Cache with 1-hour TTL (auto-cleanup)
 - Separate buckets for `userId` and `email` (pre-auth)
 
@@ -617,4 +617,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-23 | Mapper layer complete: CardMapper, CardDescMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
 | 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |
 | 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified CardDesc ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
-| 2026-06-28 | Sprint 0.2 tasks 8.1-8.3 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency. |
+| 2026-06-28 | Sprint 0.2 tasks 8.1-8.4 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency, created UserRateLimiter. |

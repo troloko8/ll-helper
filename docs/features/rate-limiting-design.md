@@ -93,7 +93,7 @@ Bucket (inner class)
 
 **Cache TTL:** 1 hour (auto-cleanup via Caffeine)
 
-**Algorithm:** Sliding window with atomic counter
+**Algorithm:** Fixed window counter with atomic operations
 
 ---
 
@@ -240,7 +240,7 @@ Middleware/Filter:
 | 8.13 | `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
 
 **Pattern:**
-```java
+```string (java)
 @Transactional
 public Response mutatingOperation(...) {
     Long currentUserId = securityUtils.getCurrentUserId();
@@ -447,3 +447,4 @@ public class RedisRateLimiter {
 |------|--------|
 | 2026-06-25 | Initial design note — Sprint 0.2 rate limiting plan |
 | 2026-06-28 | Task 8.3 completed — Caffeine 3.1.8 dependency added to pom.xml |
+| 2026-06-28 | Task 8.4 completed — UserRateLimiter created in common/security/ |

@@ -46,12 +46,12 @@
 - ~~Файл: `backend/pom.xml`~~
 - ~~Добавить: `com.github.ben-manes.caffeine:caffeine:3.1.8`~~
 
-**8.4. Создать UserRateLimiter (per-user, in-memory, Caffeine Cache)**
-- Создать: `common/security/UserRateLimiter.java`
-- Два cache: `userBuckets` (Long), `emailBuckets` (String)
-- TTL: 1 час
-- Методы: `checkLimitByUserId()`, `checkLimitByEmail()`
-- TODO: migrate to userId when JWT subject changes
+~~**8.4. Создать UserRateLimiter (per-user, in-memory, Caffeine Cache)**~~
+- ~~Создать: `common/security/UserRateLimiter.java`~~
+- ~~Два cache: `userBuckets` (Long), `emailBuckets` (String)~~
+- ~~TTL: 1 час~~
+- ~~Методы: `checkLimitByUserId()`, `checkLimitByEmail()`~~
+- ~~TODO: migrate to userId when JWT subject changes~~
 
 **8.5. Rate limiting для User.updateUser() — 5 req/min**
 - Файл: `user/service/UserServiceImpl.java`
@@ -500,6 +500,16 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - `GET /api/v1/me` — получить профиль текущего пользователя
 - `PUT /api/v1/me` — обновить свой профиль (вместо `PUT /api/v1/users/{id}` с ownership check)
 - `DELETE /api/v1/me` — удалить свой аккаунт
+
+**Rate Limiting tests:**
+
+- Unit tests для `UserRateLimiter` — проверка корректной работы rate limiting по userId и email
+  - Тест: N запросов в пределах лимита → успех
+  - Тест: N+1 запрос → `RateLimitExceededException`
+  - Тест: разные `RateLimitAction` с разными лимитами работают независимо
+  - Тест: TTL корректно очищает buckets через 1 час
+  - Тест: разные пользователи имеют независимые buckets
+  - Тест: `checkLimitByUserId()` и `checkLimitByEmail()` работают независимо
 
 ## Frontend
 
