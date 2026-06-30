@@ -476,6 +476,8 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 ## Deferred from Level 0 (Sprint 0.2)
 
 - Переименовать `CardDesc* → Deck*` в Java коде (entity, package, controller, service, DTO) — таблица БД остаётся `card_descs` до Sprint 0.3
+- **🔴 Добавить `@Transactional` на `CardServiceImpl.delete()` и `update()`** — оба метода делают несколько DB-запросов без транзакции (findById + findWithOwnerById + deleteById/save). Риск: при partial failure нет rollback
+- **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант B: добавить `card.getCardDescId() == deckId` проверку. Может потребовать рефактор URL на `/decks/{deckId}/cards/{cardId}`
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card (например, `GET /cards/{id}` с полной инфой о родительской деке)
 - Добавить `cardCount` в `CardDescListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
