@@ -452,3 +452,7 @@ public class RedisRateLimiter {
 | 2026-06-29 | Task 8.5 completed — rate limiting added to UserServiceImpl.updateUser() via checkLimitByEmail (Level 0). Added getCurrentUserEmail() to SecurityUtils. Updated pattern in design doc. |
 | 2026-06-29 | Task 8.6 completed — rate limiting added to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
 | 2026-06-29 | Task 8.7 completed — rate limiting added to AuthServiceImpl.register(). ⚠️ Email key is weak for registration — IP-based limiting (10 req/10min) planned for Level 2. See IMPROVEMENTS.md. |
+| 2026-06-30 | Task 8.8 completed — rate limiting added to CardServiceImpl.create() via checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE). |
+| 2026-06-30 | Tasks 8.9-8.10 completed — rate limiting added to CardServiceImpl.update() (CARD_UPDATE) and delete() (CARD_DELETE). |
+| 2026-06-30 | Tasks 8.11-8.13 completed — rate limiting added to CardDescServiceImpl.create() (DECK_CREATE), update() (DECK_UPDATE), delete() (DECK_DELETE). |
+| 2026-06-30 | Task 8.14 completed — GlobalExceptionHandler 429 response updated: { "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }. |

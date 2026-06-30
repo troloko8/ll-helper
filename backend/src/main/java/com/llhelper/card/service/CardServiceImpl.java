@@ -10,7 +10,9 @@ import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
+import com.llhelper.common.security.UserRateLimiter;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ public class CardServiceImpl implements CardService {
     private final AiCardGenerationService aiCardGenerationService;
     private final SecurityUtils securityUtils;
     private final CardMapper cardMapper;
+    private final UserRateLimiter userRateLimiter;
 
     // FIXME maybe better lombok in future
     public CardServiceImpl(
@@ -35,13 +38,15 @@ public class CardServiceImpl implements CardService {
         CardDescRepository cardDescRepository,
         AiCardGenerationService aiCardGenerationService,
         SecurityUtils securityUtils,
-        CardMapper cardMapper
+        CardMapper cardMapper,
+        UserRateLimiter userRateLimiter
     ) {
         this.cardRepository = cardRepository;
         this.cardDescRepository = cardDescRepository;
         this.aiCardGenerationService = aiCardGenerationService;
         this.securityUtils = securityUtils;
         this.cardMapper = cardMapper;
+        this.userRateLimiter = userRateLimiter;
     }
 
     private void validateDeckOwnership(CardDesc deck) {
@@ -61,6 +66,9 @@ public class CardServiceImpl implements CardService {
     @Override
     @Transactional
     public CardResponse create(CardRequest request) {
+        String currentUserEmail = securityUtils.getCurrentUserEmail();
+        userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_CREATE);
+
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
 
@@ -150,6 +158,8 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public CardResponse update(Long id, CardRequest request) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_UPDATE);
+
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
@@ -163,6 +173,8 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public void delete(Long id) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_DELETE);
+
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 

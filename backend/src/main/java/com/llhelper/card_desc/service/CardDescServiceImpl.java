@@ -6,7 +6,9 @@ import com.llhelper.card_desc.dto.response.CardDescResponse;
 import com.llhelper.card_desc.entity.CardDesc;
 import com.llhelper.card_desc.mapper.CardDescMapper;
 import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
+import com.llhelper.common.security.UserRateLimiter;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,15 +22,18 @@ public class CardDescServiceImpl implements CardDescService {
     private final CardDescRepository cardDescRepository;
     private final SecurityUtils securityUtils;
     private final CardDescMapper cardDescMapper;
+    private final UserRateLimiter userRateLimiter;
 
     public CardDescServiceImpl(
         CardDescRepository cardDescRepository,
         SecurityUtils securityUtils,
-        CardDescMapper cardDescMapper
+        CardDescMapper cardDescMapper,
+        UserRateLimiter userRateLimiter
     ) {
         this.cardDescRepository = cardDescRepository;
         this.securityUtils = securityUtils;
         this.cardDescMapper = cardDescMapper;
+        this.userRateLimiter = userRateLimiter;
     }
 
     private void validateDeckOwnership(CardDesc deck) {
@@ -42,6 +47,8 @@ public class CardDescServiceImpl implements CardDescService {
 
     @Override
     public CardDescResponse create(CardDescRequest request) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_CREATE);
+
         CardDesc cardDesc = cardDescMapper.toEntity(request);
         cardDesc.setIsPublic(request.isPublic() != null ? request.isPublic() : true);
         cardDesc.setCreatedAt(LocalDateTime.now());
@@ -66,6 +73,8 @@ public class CardDescServiceImpl implements CardDescService {
 
     @Override
     public CardDescResponse update(Long id, CardDescRequest request) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_UPDATE);
+
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         
@@ -79,6 +88,8 @@ public class CardDescServiceImpl implements CardDescService {
 
     @Override
     public void delete(Long id) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_DELETE);
+
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         

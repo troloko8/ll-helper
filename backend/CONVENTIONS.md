@@ -42,24 +42,31 @@
 
 All mutating endpoints (POST/PUT/DELETE) MUST have rate limiting via `UserRateLimiter`.
 
-**Pattern:**
+**Pattern (Level 0 — authenticated endpoints):**
 ```java
 @Transactional
 public Response mutatingOperation(...) {
-    Long currentUserId = securityUtils.getCurrentUserId();
-    
-    // Rate limit BEFORE business logic
-    userRateLimiter.checkLimitByUserId(currentUserId, maxRequests, window);
-    
-    // Ownership check
+    // Rate limit FIRST — zero DB queries, from JWT token
+    userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.ACTION);
+
+    // Then ownership check and business logic
+}
+```
+
+**Pattern (pre-auth endpoints — login/register):**
+```java
+public AuthResponse login(LoginRequest request) {
+    userRateLimiter.checkLimitByEmail(request.email(), RateLimitAction.AUTH_LOGIN);
+
     // Business logic
 }
 ```
 
 **Guidelines:**
-- Place rate limit check AFTER getting userId, BEFORE ownership check
-- Use reasonable limits (5-20/min for normal ops, 3-5/hour for expensive ops)
-- Email-based for pre-auth endpoints (login/register)
-- TODO (Level 2): Migrate to userId-based when JWT subject changes from email to userId
+- Rate limit is ALWAYS the first call — before any DB query, before ownership check
+- Limits and windows are defined in `RateLimitAction` enum — never hardcode in service layer
+- Use `getCurrentUserEmail()` (0 DB queries) for authenticated endpoints; use `request.email()` for auth endpoints
+- TODO (Level 2): Replace `checkLimitByEmail()` with `checkLimitByUserId()` after JWT subject migrates from email to userId — see `IMPROVEMENTS.md`
+- TODO (Level 2): Replace `checkLimitByEmail(request.email(), AUTH_REGISTER)` with IP-based limiting — see `IMPROVEMENTS.md`
 
 **See:** `docs/features/rate-limiting-design.md` for full implementation plan

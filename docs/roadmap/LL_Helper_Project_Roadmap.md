@@ -68,39 +68,42 @@
 - ~~`checkLimitByEmail(request.email(), AUTH_REGISTER)` первым в методе~~
 - ⚠️ временная защита — обходится через разные email. **Level 2: заменить на IP-based (10 req/10min), см. IMPROVEMENTS.md**
 
-**8.8. Rate limiting для Card.create() — 20 req/min**
-- Файл: `card/service/CardServiceImpl.java`
-- `checkLimitByEmail()` перед ownership check
+~~**8.8. Rate limiting для Card.create() — 20 req/min**~~
+- ~~Файл: `card/service/CardServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE)` перед ownership check~~
 
-**8.9. Rate limiting для Card.update() — 10 req/min**
-- Файл: `card/service/CardServiceImpl.java`
+~~**8.9. Rate limiting для Card.update() — 10 req/min**~~
+- ~~Файл: `card/service/CardServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), CARD_UPDATE)` перед findById~~
 
-**8.10. Rate limiting для Card.delete() — 10 req/min**
-- Файл: `card/service/CardServiceImpl.java`
+~~**8.10. Rate limiting для Card.delete() — 10 req/min**~~
+- ~~Файл: `card/service/CardServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), CARD_DELETE)` перед findById~~
 
-**8.11. Rate limiting для CardDesc.create() — 5 req/hour**
-- Файл: `card_desc/service/CardDescServiceImpl.java`
+~~**8.11. Rate limiting для CardDesc.create() — 5 req/hour**~~
+- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_CREATE)` первым~~
 
-**8.12. Rate limiting для CardDesc.update() — 10 req/min**
-- Файл: `card_desc/service/CardDescServiceImpl.java`
-- Зависит от задачи 7.2 (ownership check)
+~~**8.12. Rate limiting для CardDesc.update() — 10 req/min**~~
+- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_UPDATE)` перед ownership check~~
 
-**8.13. Rate limiting для CardDesc.delete() — 5 req/hour**
-- Файл: `card_desc/service/CardDescServiceImpl.java`
-- Зависит от задачи 7.2 (ownership check)
+~~**8.13. Rate limiting для CardDesc.delete() — 5 req/hour**~~
+- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+- ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_DELETE)` перед ownership check~~
 
-**8.14. Добавить @ExceptionHandler для RateLimitExceededException → HTTP 429**
-- Файл: `common/exception/GlobalExceptionHandler.java`
-- Response: `{ "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }`
+~~**8.14. Добавить @ExceptionHandler для RateLimitExceededException → HTTP 429**~~
+- ~~Файл: `common/exception/GlobalExceptionHandler.java`~~
+- ~~Response: `{ "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }`~~
 
 **8.15. Обновить Postman collection — тесты на HTTP 429**
 - Файл: `LLHelper.postman_collection.json`
 - Тесты на каждый protected endpoint (6+ requests → 429)
 
-**8.16. Обновить документацию**
-- `docs/architecture/current-architecture.md` — секция "Rate Limiting"
-- `docs/roadmap/LL_Helper_Project_Roadmap.md` — отметить задачи как выполненные
-- `backend/CONVENTIONS.md` — правила rate limiting
+~~**8.16. Обновить документацию**~~
+- ~~`docs/architecture/current-architecture.md` — секция "Rate Limiting"~~
+- ~~`docs/roadmap/LL_Helper_Project_Roadmap.md` — отметить задачи как выполненные~~
+- ~~`backend/CONVENTIONS.md` — правила rate limiting~~
 
 9. Убрать entity leakage из API
 10. Добавить validation

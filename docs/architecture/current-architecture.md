@@ -532,7 +532,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** In progress (Sprint 0.2 task 8) — `updateUser()`, `login()`, `register()` protected; card/deck endpoints pending
+> **Status:** ✅ All endpoints protected (Sprint 0.2 task 8.5–8.14 complete). Postman tests pending (8.15).
 > **Design note:** `docs/features/rate-limiting-design.md`
 
 ### Level 0 Implementation (Sprint 0.2)
@@ -554,12 +554,12 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | `PUT /api/v1/users/{id}` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/login` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/register` | 3 | 5 minutes | email ✅⚠️ | 🔴 High |
-| `POST /api/v1/cards` | 20 | 1 minute | email | 🟡 Medium |
-| `PUT /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
-| `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email | 🟢 Low |
-| `POST /api/v1/card-descs` | 5 | 1 hour | email | 🟡 Medium |
-| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | email | 🟢 Low |
-| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | email | 🟢 Low |
+| `POST /api/v1/cards` | 20 | 1 minute | email ✅ | 🟡 Medium |
+| `PUT /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
+| `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
+| `POST /api/v1/card-descs` | 5 | 1 hour | email ✅ | 🟡 Medium |
+| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
+| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | email ✅ | 🟢 Low |
 
 ### Error Response
 
@@ -622,3 +622,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-29 | Sprint 0.2 task 8.5 completed: rate limiting applied to UserServiceImpl.updateUser(). Added SecurityUtils.getCurrentUserEmail() (0 DB queries). Composite key architecture (subject + RateLimitAction). |
 | 2026-06-29 | Sprint 0.2 task 8.6 completed: rate limiting applied to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
 | 2026-06-29 | Sprint 0.2 task 8.7 completed: rate limiting applied to AuthServiceImpl.register(). ⚠️ Email-based limit is weak for registration — IP-based limiting planned for Level 2. |
+| 2026-06-30 | Sprint 0.2 task 8.8 completed: rate limiting applied to CardServiceImpl.create() via checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE). |
+| 2026-06-30 | Sprint 0.2 tasks 8.9-8.10 completed: rate limiting applied to CardServiceImpl.update() and delete(). |
+| 2026-06-30 | Sprint 0.2 tasks 8.11-8.13 completed: rate limiting applied to CardDescServiceImpl.create(), update(), delete(). |
+| 2026-06-30 | Sprint 0.2 task 8.14 completed: GlobalExceptionHandler 429 response enriched with error code and timestamp. |

@@ -2,6 +2,7 @@ package com.llhelper.common.exception;
 
 import com.llhelper.ai.exception.AiServiceException;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +59,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<Map<String, String>> handleRateLimitExceeded(RateLimitExceededException exception) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-            .body(Map.of("message", exception.getMessage()));
+            .body(Map.of(
+                "error", "RATE_LIMIT_EXCEEDED",
+                "message", exception.getMessage(),
+                "timestamp", Instant.now().toString()
+            ));
     }
 }
