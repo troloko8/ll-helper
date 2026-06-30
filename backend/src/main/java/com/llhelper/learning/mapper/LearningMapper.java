@@ -1,9 +1,11 @@
 package com.llhelper.learning.mapper;
 
 import com.llhelper.card.entity.Card;
+import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
+import com.llhelper.learning.enums.CardLearningStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
@@ -53,4 +55,11 @@ public interface LearningMapper {
     @Mapping(target = "timesWrong", source = "timesWrong")
     @Mapping(target = "correctStreak", source = "correctStreak")
     DeckCardResponse.CardProgressInfo toCardProgressInfo(UserCardProgress progress);
+
+    @Mapping(target = "correct", source = "isCorrect")
+    @Mapping(target = "correctAnswer", source = "card.title")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "correctStreak", source = "progress.correctStreak")
+    @Mapping(target = "totalCorrect", source = "progress.timesCorrect")
+    CardReviewResponse toCardReviewResponse(boolean isCorrect, Card card, CardLearningStatus status, UserCardProgress progress);
 }

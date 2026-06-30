@@ -1,8 +1,10 @@
 package com.llhelper.card.mapper;
 
+import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
+import com.llhelper.card_desc.entity.CardDesc;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -33,4 +35,16 @@ public interface CardMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(CardRequest request, @MappingTarget Card card);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "title", source = "title")
+    @Mapping(target = "definition", source = "aiCardData.definition")
+    @Mapping(target = "synonyms", source = "aiCardData.synonyms")
+    @Mapping(target = "examples", source = "aiCardData.examples")
+    @Mapping(target = "translation", source = "aiCardData.translation")
+    @Mapping(target = "cardDesc", source = "cardDesc")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "cardDescId", ignore = true)
+    Card fromAiData(String title, AiCardData aiCardData, CardDesc cardDesc);
 }

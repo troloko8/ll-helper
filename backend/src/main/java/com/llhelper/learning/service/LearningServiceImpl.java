@@ -142,13 +142,7 @@ public class LearningServiceImpl implements LearningService {
         deckProgress.setLastStudiedAt(LocalDateTime.now());
         userDeckProgressRepository.save(deckProgress);
 
-        return new CardReviewResponse(
-            isCorrect,
-            card.getTitle(),
-            newStatus,
-            cardProgress.getCorrectStreak(),
-            cardProgress.getTimesCorrect()
-        );
+        return learningMapper.toCardReviewResponse(isCorrect, card, newStatus, cardProgress);
     }
 
     private CardLearningStatus calculateStatus(UserCardProgress progress) {

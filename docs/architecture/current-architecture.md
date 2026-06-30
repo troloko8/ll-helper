@@ -2,9 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.1 — Architecture Freeze
-> **Last updated:** 2026-06-02
-> **Status:** Draft v0.1 — current backend architecture audit
+> **Sprint:** Sprint 0.2 — Backend Cleanup
+> **Last updated:** 2026-06-30
+> **Status:** Draft v0.2 — entity leakage removed, mapper layer complete
 
 ---
 

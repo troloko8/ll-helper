@@ -105,7 +105,11 @@
 - ~~`docs/roadmap/LL_Helper_Project_Roadmap.md` — отметить задачи как выполненные~~
 - ~~`backend/CONVENTIONS.md` — правила rate limiting~~
 
-9. Убрать entity leakage из API
+~~9. Убрать entity leakage из API~~
+- ~~Раскомментировать `sourceLanguage`, `targetLanguage` в `CardDescResponse`~~
+- ~~Добавить `@Transactional(readOnly = true)` на `CardDescServiceImpl.getById()` и `getAll()`~~
+- ~~Перенести ручное создание `Card` в `CardServiceImpl.createBulk()` в `CardMapper.fromAiData()`~~
+- ~~Перенести ручное создание `CardReviewResponse` в `LearningMapper.toCardReviewResponse()`~~
 10. Добавить validation
 ~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
 12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
@@ -481,7 +485,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card (например, `GET /cards/{id}` с полной инфой о родительской деке)
 - Добавить `cardCount` в `CardDescListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
-- **🔴 BREAKING CHANGE:** Добавить `sourceLanguage`, `targetLanguage` в `CardDescResponse` — сейчас закомментированы, но нужны для AI generation на frontend. `CardDescListResponse` уже содержит эти поля. Без них frontend не сможет вызвать AI generation для карточек внутри деки.
+- ~~**🔴 BREAKING CHANGE:** Добавить `sourceLanguage`, `targetLanguage` в `CardDescResponse`~~ — выполнено в Sprint 0.2 Task 9
 
 ## Backend
 
@@ -502,6 +506,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - `nextReviewAt`: wrong → +10 min / correct #1 → +1d / correct #2 → +3d / correct #3 → +7d / mastered → +30d
 
 **AI generation:** generate card by word, generate deck by word list, basic batching, basic validation
+- [ ] Добавить корректные DTO для AI generation req/res — сейчас `BulkCardGenerateRequest` возвращает `List<CardResponse>` (общий DTO), вместо этого должен быть специализированный `BulkGenerateResponse` со статусом для каждого тайтла (success/failed/reason). Аналогично для single generation: `AiCardGenerateRequest` и `AiCardGenerateResponse`
 
 **User self-service API:**
 

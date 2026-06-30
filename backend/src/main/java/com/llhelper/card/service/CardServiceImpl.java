@@ -117,14 +117,7 @@ public class CardServiceImpl implements CardService {
                     cardDesc.getTargetLanguage()
                 );
 
-                // TODO later mapper fo this if possible
-                Card card = new Card();
-                card.setTitle(title);
-                card.setDefinition(aiData.definition());
-                card.setSynonyms(aiData.synonyms());
-                card.setExamples(aiData.examples());
-                card.setTranslation(aiData.translation());
-                card.setCardDesc(cardDesc);
+                Card card = cardMapper.fromAiData(title, aiData, cardDesc);
                 card.setCreatedAt(LocalDateTime.now());
                 card.setUpdatedAt(LocalDateTime.now());
 

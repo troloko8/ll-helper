@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CardDescServiceImpl implements CardDescService {
@@ -58,6 +59,7 @@ public class CardDescServiceImpl implements CardDescService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CardDescResponse getById(Long id) {
         CardDesc cardDesc = cardDescRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
@@ -65,6 +67,7 @@ public class CardDescServiceImpl implements CardDescService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CardDescListResponse> getAll() {
         return cardDescRepository.findAll().stream()
             .map(cardDescMapper::toListResponse)
