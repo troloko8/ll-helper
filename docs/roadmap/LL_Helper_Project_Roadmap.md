@@ -110,7 +110,7 @@
 - ~~Добавить `@Transactional(readOnly = true)` на `CardDescServiceImpl.getById()` и `getAll()`~~
 - ~~Перенести ручное создание `Card` в `CardServiceImpl.createBulk()` в `CardMapper.fromAiData()`~~
 - ~~Перенести ручное создание `CardReviewResponse` в `LearningMapper.toCardReviewResponse()`~~
-10. Добавить validation
+~~10. Добавить validation~~
 ~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
 12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
 13. Добавить logging для bulk failures

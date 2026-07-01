@@ -26,7 +26,7 @@
 ## Architecture
 
 - [ ] Добавить пагинацию для списковых endpoint'ов
-- [ ] Добавить глобальный exception handler (@ControllerAdvice)
+- [x] Добавить глобальный exception handler (@ControllerAdvice)
 - [ ] Добавить логирование запросов (request/response logging)
 - [ ] **Внедрить Lombok во всех классах с getter/setter/constructor**  
   Заменить ручные getter/setter и конструкторы на Lombok аннотации:  
