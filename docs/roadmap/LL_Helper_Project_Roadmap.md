@@ -113,7 +113,7 @@
 ~~10. Добавить validation~~
 ~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
 ~~12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`~~
-13. Добавить logging для bulk failures
+~~13. Добавить logging для bulk failures~~
 14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
 15. настрой hotkeys для IDE
 
@@ -507,6 +507,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 
 **AI generation:** generate card by word, generate deck by word list, basic batching, basic validation
 - [ ] Добавить корректные DTO для AI generation req/res — сейчас `BulkCardGenerateRequest` возвращает `List<CardResponse>` (общий DTO), вместо этого должен быть специализированный `BulkGenerateResponse` со статусом для каждого тайтла (success/failed/reason). Аналогично для single generation: `AiCardGenerateRequest` и `AiCardGenerateResponse`
+- [ ] Вернуть partial response для bulk failures — `BulkGenerateResponse` содержит `created[]` (CardResponse) и `failed[]` (title + reason). Пользователь видит, какие карточки не создались и почему, вместо silent skip.
 
 **User self-service API:**
 
@@ -651,7 +652,16 @@ Landing page · Onboarding · Public/private decks · Share deck by link · Copy
 
 ## Backend
 
-`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Better logs · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
+`StudySession` entity · `StudySessionAnswer` entity · AI generation history · AI prompt versioning · Refresh tokens · Monitoring basics · Pagination everywhere · Soft delete where needed · Copy/fork модель для enrolled decks (snapshot при enroll, изоляция от изменений owner'а)
+
+**Logging (API-wide):**
+
+- Полноценное логирование для всех API endpoints: входящие запросы (method, path, query, userId), исходящие ответы (status, duration)
+- Structured logging (JSON) с единым форматом для production
+- Correlation ID / Request ID через MDC для всех логов в рамках одного запроса
+- Логирование ключевых событий: auth, AI generation, bulk failures, ownership violations, rate limit exceed, ошибки
+- Отдельный лог-уровень для внешних вызовов OpenAI (latency, tokens, retry count)
+- Централизованный сбор логов (ELK / Loki / CloudWatch) — выбрать стек и настроить
 
 **Rate Limiting (Production):**
 
@@ -698,7 +708,8 @@ Pull request template:
 
 - [ ]  Можно дать приложение 10–30 пользователям
 - [ ]  Есть стабильный deploy
-- [ ]  Есть basic monitoring / logging
+- [ ]  Есть полноценное логирование всех API (structured logs, correlation ID, centralized log collection)
+- [ ]  Есть basic monitoring / metrics
 - [ ]  Есть backups
 - [ ]  Есть public/private/share/copy flow
 - [ ]  AI generation не ломает user experience

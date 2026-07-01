@@ -18,10 +18,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class CardServiceImpl implements CardService {
 
@@ -111,6 +113,7 @@ public class CardServiceImpl implements CardService {
         validateDeckOwnership(cardDesc);
 
         List<CardResponse> results = new ArrayList<>();
+        List<String> failedTitles = new ArrayList<>();
 
         for (String title : request.titles()) {
             try {
@@ -129,10 +132,14 @@ public class CardServiceImpl implements CardService {
                 saved.setCardDescId(cardDesc.getId());
                 results.add(cardMapper.toResponse(saved));
             } catch (Exception e) {
-                // TODO: finish the code later
-                // Continue with next card - don't fail entire batch
-                // In production, you might want to log this or collect failed titles
+                failedTitles.add(title);
+                log.debug("Failed to generate card for title='{}' in deckId={}", title, cardDesc.getId(), e);
             }
+        }
+
+        if (!failedTitles.isEmpty()) {
+            log.warn("Bulk generation completed. Created: {}, Failed: {}. Failed titles: {}",
+                results.size(), failedTitles.size(), failedTitles);
         }
 
         return results;
