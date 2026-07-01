@@ -1,28 +1,23 @@
 package com.llhelper.ai.service;
 
-import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.ai.exception.AiServiceException;
 import com.llhelper.ai.provider.AiProvider;
 import com.llhelper.ai.provider.OpenAiProvider;
-import com.llhelper.ai.util.RateLimiter;
+import com.llhelper.ai.util.AiRateLimiter;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AiCardGenerationService {
 
     private final AiProvider aiProvider;
-    private final RateLimiter rateLimiter;
-    // FIXME: why not use?
-    private final AiProperties aiProperties;
+    private final AiRateLimiter rateLimiter;
 
     public AiCardGenerationService(
         OpenAiProvider openAiProvider,
-        RateLimiter rateLimiter,
-        AiProperties aiProperties
+        AiRateLimiter rateLimiter
     ) {
         this.rateLimiter = rateLimiter;
-        this.aiProperties = aiProperties;
         this.aiProvider = openAiProvider;
     }
 

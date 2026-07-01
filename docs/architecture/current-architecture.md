@@ -240,7 +240,7 @@ Return result (correct/incorrect, new status, streak)
 POST /api/v1/cards/bulk-generate
         │
         ▼
-RateLimiter.acquirePermit()
+AiRateLimiter.acquirePermit()
         │
         ▼
 OpenAiProvider.generate(title, sourceLanguage, targetLanguage)
@@ -291,7 +291,7 @@ CardService.save(cards)
 | `AiCardGenerationService` | Orchestration, rate limiting |
 | `OpenAiProvider` | HTTP client to OpenAI API (WebFlux) |
 | `AiResponseParser` | JSON response parsing and validation |
-| `RateLimiter` | Local request permit guard |
+| `AiRateLimiter` | Local request permit guard |
 | `AiProperties` | Config loaded from `application.yaml` |
 
 ### Configuration
@@ -365,7 +365,7 @@ backend/src/main/java/com/llhelper/
 │   ├── provider/OpenAiProvider.java
 │   ├── config/AiProperties.java
 │   ├── dto/AiCardData.java
-│   └── util/RateLimiter.java
+│   └── util/AiRateLimiter.java
 └── common/
     ├── security/
     │   ├── JwtService.java
@@ -589,7 +589,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ### AI Generation Rate Limiting
 
-**Current:** Per-JVM only (`RateLimiter` — 10 req/sec for all users)
+**Current:** Per-JVM only (`AiRateLimiter` — 10 req/sec for all users)
 
 **Planned (Level 2):** Per-user limit (10 AI generations/hour) + per-JVM limit
 

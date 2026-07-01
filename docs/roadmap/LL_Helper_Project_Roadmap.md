@@ -112,7 +112,7 @@
 - ~~Перенести ручное создание `CardReviewResponse` в `LearningMapper.toCardReviewResponse()`~~
 ~~10. Добавить validation~~
 ~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
-12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`
+~~12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`~~
 13. Добавить logging для bulk failures
 14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
 15. настрой hotkeys для IDE

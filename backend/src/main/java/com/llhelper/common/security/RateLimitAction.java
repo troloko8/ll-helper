@@ -17,6 +17,7 @@ public enum RateLimitAction {
     AUTH_REGISTER(3, Duration.ofMinutes(5)),
     PROFILE_UPDATE(5, Duration.ofMinutes(1)),
     CARD_CREATE(20, Duration.ofMinutes(1)),
+    CARD_BULK_GENERATE(3, Duration.ofMinutes(1)),
     CARD_UPDATE(10, Duration.ofMinutes(1)),
     CARD_DELETE(10, Duration.ofMinutes(1)),
     DECK_CREATE(5, Duration.ofHours(1)),

@@ -1,6 +1,6 @@
 package com.llhelper.ai.config;
 
-import com.llhelper.ai.util.RateLimiter;
+import com.llhelper.ai.util.AiRateLimiter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class AiConfig {
 
     @Bean
-    public RateLimiter rateLimiter(AiProperties aiProperties) {
-        return new RateLimiter(aiProperties.getMaxRequestsPerSecond());
+    public AiRateLimiter aiRateLimiter(AiProperties aiProperties) {
+        return new AiRateLimiter(aiProperties.getMaxRequestsPerSecond(), aiProperties.getMaxTokensPerRequest());
     }
 }

@@ -780,6 +780,58 @@
           "response": []
         },
         {
+          "name": "Bulk Generate Cards (429 Rate Limit Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 429 Too Many Requests\", function () {",
+                  "    pm.response.to.have.status(429);",
+                  "});",
+                  "pm.test(\"Response contains rate limit message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Rate limit exceeded\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titles\": [\n    \"serendipity\"\n  ],\n  \"cardDescId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards/bulk-generate",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "cards", "bulk-generate"]
+            },
+            "description": "Send this request more than 3 times within 1 minute to trigger CARD_BULK_GENERATE rate limit (429)"
+          },
+          "response": []
+        },
+        {
           "name": "Create Card (403 Ownership Test)",
           "event": [
             {

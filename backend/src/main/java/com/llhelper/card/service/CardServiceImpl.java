@@ -102,6 +102,9 @@ public class CardServiceImpl implements CardService {
     @Transactional
     // TODO: probably i want that it was like partial transaction
     public List<CardResponse> createBulk(BulkCardGenerateRequest request) {
+        String currentUserEmail = securityUtils.getCurrentUserEmail();
+        userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE);
+
         CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
 

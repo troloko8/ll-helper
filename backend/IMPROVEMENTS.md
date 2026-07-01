@@ -35,6 +35,14 @@
   - `@Slf4j` вместо `LoggerFactory.getLogger()`  
   Файлы: все entity, сервисы без `@Slf4j`, DTO-классы (не record)
 
+- [ ] **Добавить общий timeout на bulk-генерацию карточек**
+  Сейчас: `requestTimeoutSeconds=120` действует на **каждый отдельный** OpenAI-запрос.
+  При 100 карточках в bulk — потенциально до 100×120с = ~3.3 часа на один запрос клиента.
+  Лучше: добавить `maxBulkTimeoutSeconds` (например, 120с на весь batch), прерывать оставшиеся вызовы по истечении.
+  Реализация: `CompletableFuture` + `orTimeout()` или ограничение на стороне WebFlux.
+  Файлы: `CardServiceImpl.createBulk()`, `AiProperties.java`
+  Уровень: Level 1
+
 - [ ] **Валидация AI-generated заголовков карточек перед генерацией**  
   Проверять заголовки: не пустая строка, не одна буква, не число, не абракадабра (regex для валидных слов)  
   Файлы: `AiCardGenerationService.java`, `CardServiceImpl.java`

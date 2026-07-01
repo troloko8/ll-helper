@@ -51,9 +51,9 @@ This document does not define prompt versioning, AI provider abstraction, genera
 | OpenAI Provider | `OpenAiProvider` | HTTP call to OpenAI, JSON response parsing |
 | AI Response DTO | `AiCardData` | Record: definition, synonyms, examples, translation |
 | Configuration | `AiProperties` | Config via `@ConfigurationProperties(prefix = "ai")` |
-| Rate Limiter | `RateLimiter` | Semaphore-based, per JVM, resets every 1 second |
+| Rate Limiter | `AiRateLimiter` | Semaphore-based, per JVM, resets every 1 second |
 | AI Exception | `AiServiceException` | RuntimeException for all AI errors |
-| Rate Limit Exception | `RateLimitExceededException` | Nested in `RateLimiter`, thrown on limit/token/bulk violations |
+| Rate Limit Exception | `RateLimitExceededException` | Thrown by `AiRateLimiter` on permit timeout or token limit |
 
 ---
 
@@ -107,8 +107,12 @@ CardController.create(CardRequest)
 ```text
 CardController.createBulk(BulkCardGenerateRequest)
   └── CardServiceImpl.createBulk()
+        ├── UserRateLimiter.checkLimitByEmail(CARD_BULK_GENERATE)
+        │     └── If exceeded → RateLimitExceededException → 429
         ├── Find CardDesc (deck) by cardDescId
-        │     └── If not found → RuntimeException
+        │     └── If not found → EntityNotFoundException → 404
+        ├── validateDeckOwnership() — only deck owner allowed
+        │     └── If not owner → AccessDeniedException → 403
         └── For each title in titles[]:
               ├── AiCardGenerationService.generateCardData(title, srcLang, tgtLang)
               ├── Create Card entity with AI-generated fields
@@ -203,7 +207,7 @@ All settings via `@ConfigurationProperties(prefix = "ai")` in `AiProperties`:
 | `ai.openai.model` | `"gpt-4o-mini"` | Model name |
 | `ai.openai.base-url` | `"https://api.openai.com/v1"` | API base URL |
 
-> **Note:** `ai.max-bulk-size` is defined in config but validated only by `@Size` on the DTO, not by `RateLimiter.validateBulkSize()` in the service flow.
+> **Note:** `ai.max-bulk-size` is validated by `@Size(max=100)` on `BulkCardGenerateRequest.titles` via Jakarta Validation. Single source of truth — the DTO annotation.
 
 ---
 
@@ -211,13 +215,14 @@ All settings via `@ConfigurationProperties(prefix = "ai")` in `AiProperties`:
 
 ### Implementation
 
-`RateLimiter` — non-Spring-managed POJO, created as `@Bean` in `AiConfig`.
+`AiRateLimiter` — non-Spring-managed POJO, created as `@Bean` in `AiConfig`.
 
 - **Mechanism:** `Semaphore(maxRequestsPerSecond)` — 10 permits default
 - **Acquire timeout:** 5 seconds → `RateLimitExceededException` on timeout
 - **Reset:** Every 1 second, releases permits back to max (10)
-- **Token guard:** Rejects if `estimatedTokens > 4000`
-- **Bulk guard:** `validateBulkSize()` exists but **not called** in current flow
+- **Token guard:** Rejects if `estimatedTokens > aiProperties.maxTokensPerRequest` (default: 4000)
+- **Bulk guard:** `@Size(max=100)` on `BulkCardGenerateRequest.titles` via Jakarta Validation
+- **Per-user bulk rate limit:** `CARD_BULK_GENERATE` — 3 requests / 1 minute per user
 
 ### Token Estimation
 
@@ -265,6 +270,7 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 
 - **Prompt quality:** Placeholder-level prompt with typos and vague instructions.
 - **No preview:** AI output is saved directly to DB — bad AI output persists without user review.
+- **Bulk total timeout:** `requestTimeoutSeconds=120` applies per OpenAI call. For 100 titles: up to 100×120s = ~3.3 hours per single client request. No global bulk timeout exists. Fix planned for Level 1 — see `IMPROVEMENTS.md`.
 - **Bulk silent failures:** Client receives only successful cards; failed titles vanish without trace.
 - **Bulk transaction:** All titles in one `@Transactional` — if DB save fails mid-batch, partial rollback behaviour depends on exception type.
 - **No retry logic:** Failed OpenAI calls not retried.
@@ -273,7 +279,7 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 - **Availability double-check:** `isAvailable()` is checked in both `AiCardGenerationService` and `OpenAiProvider` — redundant.
 - **No ownership check:** Accepted Sprint 0.2 priority fix. Only deck owner may create/generate cards in a deck. See `current-architecture.md` §16 Sprint 0.2 Accepted Decisions.
 - **`AiCardData` naming:** DTO not clearly marked as response (TODO in code).
-- **`ai.max-bulk-size` unused:** Config exists but `validateBulkSize()` is never called in the actual flow.
+- **`validateTokenCount()` fixed:** Token limit now read from `AiProperties.maxTokensPerRequest` (default: 4000). Configurable via `ai.max-tokens-per-request`.
 - **`response_format: json_object`:** Relies on OpenAI honouring JSON mode — no fallback if non-JSON returned.
 
 ---
@@ -283,7 +289,7 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 ```text
 ai/
 ├── config/
-│   ├── AiConfig.java            — @Bean for RateLimiter
+│   ├── AiConfig.java            — @Bean for AiRateLimiter
 │   └── AiProperties.java        — @ConfigurationProperties(prefix = "ai")
 ├── dto/
 │   └── AiCardData.java          — Response record (definition, synonyms, examples, translation)
@@ -295,7 +301,7 @@ ai/
 ├── service/
 │   └── AiCardGenerationService.java — Orchestration: availability + rate limit + generate
 └── util/
-    └── RateLimiter.java          — Semaphore-based rate limiter + RateLimitExceededException
+    └── AiRateLimiter.java        — Semaphore-based rate limiter + RateLimitExceededException
 ```
 
 **Callers (outside `ai/` module):**
@@ -316,7 +322,8 @@ ai/
 - [ ] Bulk failures are reported to client (Sprint 0.2+ logging, full partial response later)
 - [x] Ownership check exists for AI card generation
 - [ ] RateLimiter reset bug fixed (Sprint 0.2)
-- [ ] `validateBulkSize()` actually called in flow (Sprint 0.2)
+- [x] Bulk size validated via `@Size(max=100)` on `BulkCardGenerateRequest.titles`
+- [x] Per-user rate limit on bulk generation (`CARD_BULK_GENERATE`: 3 req/min)
 
 ---
 

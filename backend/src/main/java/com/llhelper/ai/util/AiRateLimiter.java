@@ -5,16 +5,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-public class RateLimiter {
+
+public class AiRateLimiter {
 
     private final Semaphore requestSemaphore;
     private final int maxRequestsPerSecond;
-    private final AtomicInteger tokensUsed = new AtomicInteger(0);
+    private final int maxTokensPerRequest;
     private volatile Instant lastReset = Instant.now();
 
-    public RateLimiter(int maxRequestsPerSecond) {
+    public AiRateLimiter(int maxRequestsPerSecond, int maxTokensPerRequest) {
         this.maxRequestsPerSecond = maxRequestsPerSecond;
+        this.maxTokensPerRequest = maxTokensPerRequest;
         this.requestSemaphore = new Semaphore(maxRequestsPerSecond);
     }
 
@@ -31,16 +32,9 @@ public class RateLimiter {
     }
 
     public void validateTokenCount(int estimatedTokens) {
-        if (estimatedTokens > 4000) {
-            throw new RateLimitExceededException("Request too large. Maximum 4000 tokens allowed.");
-        }
-    }
-
-    // FIXME Why it not uses nowhere
-    public void validateBulkSize(int size, int maxBulkSize) {
-        if (size > maxBulkSize) {
+        if (estimatedTokens > maxTokensPerRequest) {
             throw new RateLimitExceededException(
-                "Bulk size exceeds maximum of " + maxBulkSize + " cards"
+                "Request too large. Maximum " + maxTokensPerRequest + " tokens allowed."
             );
         }
     }
