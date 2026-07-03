@@ -115,7 +115,7 @@
 ~~12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`~~
 ~~13. Добавить logging для bulk failures~~
 ~~14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — с rename таблицы `card_descs → decks` вручную~~
-15. настрой hotkeys для IDE
+~~15. настрой hotkeys для IDE~~
 
 ### Sprint 0.3 — Database Control
 
