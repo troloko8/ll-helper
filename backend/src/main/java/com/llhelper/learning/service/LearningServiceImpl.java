@@ -2,8 +2,8 @@ package com.llhelper.learning.service;
 
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.repository.CardRepository;
-import com.llhelper.card_desc.entity.CardDesc;
-import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.deck.entity.Deck;
+import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
@@ -32,7 +32,7 @@ public class LearningServiceImpl implements LearningService {
 
     private final UserDeckProgressRepository userDeckProgressRepository;
     private final UserCardProgressRepository userCardProgressRepository;
-    private final CardDescRepository cardDescRepository;
+    private final DeckRepository deckRepository;
     private final CardRepository cardRepository;
     private final SecurityUtils securityUtils;
     private final LearningMapper learningMapper;
@@ -46,7 +46,7 @@ public class LearningServiceImpl implements LearningService {
             throw new IllegalStateException("Deck already enrolled");
         }
 
-        CardDesc deck = cardDescRepository.findById(deckId)
+        Deck deck = deckRepository.findById(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
         if (!Boolean.TRUE.equals(deck.getIsPublic())) {
@@ -115,7 +115,7 @@ public class LearningServiceImpl implements LearningService {
         Card card = cardRepository.findById(cardId)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + cardId));
 
-        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, card.getCardDescId())
+        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, card.getDeckId())
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
         UserCardProgress cardProgress = userCardProgressRepository.findByUserDeckProgressIdAndCardId(deckProgress.getId(), cardId)

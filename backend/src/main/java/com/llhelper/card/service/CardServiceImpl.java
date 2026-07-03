@@ -8,8 +8,8 @@ import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
-import com.llhelper.card_desc.entity.CardDesc;
-import com.llhelper.card_desc.repository.CardDescRepository;
+import com.llhelper.deck.entity.Deck;
+import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CardServiceImpl implements CardService {
 
     private final CardRepository cardRepository;
-    private final CardDescRepository cardDescRepository;
+    private final DeckRepository deckRepository;
     private final AiCardGenerationService aiCardGenerationService;
     private final SecurityUtils securityUtils;
     private final CardMapper cardMapper;
@@ -37,21 +37,21 @@ public class CardServiceImpl implements CardService {
     // FIXME maybe better lombok in future
     public CardServiceImpl(
         CardRepository cardRepository,
-        CardDescRepository cardDescRepository,
+        DeckRepository deckRepository,
         AiCardGenerationService aiCardGenerationService,
         SecurityUtils securityUtils,
         CardMapper cardMapper,
         UserRateLimiter userRateLimiter
     ) {
         this.cardRepository = cardRepository;
-        this.cardDescRepository = cardDescRepository;
+        this.deckRepository = deckRepository;
         this.aiCardGenerationService = aiCardGenerationService;
         this.securityUtils = securityUtils;
         this.cardMapper = cardMapper;
         this.userRateLimiter = userRateLimiter;
     }
 
-    private void validateDeckOwnership(CardDesc deck) {
+    private void validateDeckOwnership(Deck deck) {
         Long currentUserId = securityUtils.getCurrentUserId();
         if (!Objects.equals(deck.getOwner().getId(), currentUserId)) {
             throw new AccessDeniedException("Access denied: not deck owner");
@@ -59,8 +59,8 @@ public class CardServiceImpl implements CardService {
     }
 
     private void validateCardOwnership(Card card) {
-        CardDesc deck = cardDescRepository.findWithOwnerById(card.getCardDescId())
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getCardDescId()));
+        Deck deck = deckRepository.findWithOwnerById(card.getDeckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getDeckId()));
         validateDeckOwnership(deck);
     }
 
@@ -71,18 +71,18 @@ public class CardServiceImpl implements CardService {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_CREATE);
 
-        CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
+        Deck deck = deckRepository.findWithOwnerById(request.deckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
 
-        validateDeckOwnership(cardDesc);
+        validateDeckOwnership(deck);
 
         Card card = cardMapper.toEntity(request);
 
         if (Boolean.TRUE.equals(request.autoGenerate())) {
             AiCardData aiData = aiCardGenerationService.generateCardData(
                 request.title(),
-                cardDesc.getSourceLanguage(),
-                cardDesc.getTargetLanguage()
+                deck.getSourceLanguage(),
+                deck.getTargetLanguage()
             );
             card.setDefinition(aiData.definition());
             card.setSynonyms(aiData.synonyms());
@@ -90,13 +90,13 @@ public class CardServiceImpl implements CardService {
             card.setTranslation(aiData.translation());
         }
 
-        card.setCardDesc(cardDesc);
+        card.setDeck(deck);
         card.setCreatedAt(LocalDateTime.now());
         card.setUpdatedAt(LocalDateTime.now());
         Card saved = cardRepository.save(card);
-        // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
+        // Manual sync: deckId is read-only (insertable=false, updatable=false)
         // Hibernate doesn't populate it after save(), so we set it explicitly
-        saved.setCardDescId(cardDesc.getId());
+        saved.setDeckId(deck.getId());
         return cardMapper.toResponse(saved);
     }
 
@@ -107,10 +107,10 @@ public class CardServiceImpl implements CardService {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE);
 
-        CardDesc cardDesc = cardDescRepository.findWithOwnerById(request.cardDescId())
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.cardDescId()));
+        Deck deck = deckRepository.findWithOwnerById(request.deckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
 
-        validateDeckOwnership(cardDesc);
+        validateDeckOwnership(deck);
 
         List<CardResponse> results = new ArrayList<>();
         List<String> failedTitles = new ArrayList<>();
@@ -119,21 +119,21 @@ public class CardServiceImpl implements CardService {
             try {
                 AiCardData aiData = aiCardGenerationService.generateCardData(
                     title,
-                    cardDesc.getSourceLanguage(),
-                    cardDesc.getTargetLanguage()
+                    deck.getSourceLanguage(),
+                    deck.getTargetLanguage()
                 );
 
-                Card card = cardMapper.fromAiData(title, aiData, cardDesc);
+                Card card = cardMapper.fromAiData(title, aiData, deck);
                 card.setCreatedAt(LocalDateTime.now());
                 card.setUpdatedAt(LocalDateTime.now());
 
                 Card saved = cardRepository.save(card);
-                // Manual sync: cardDescId is read-only (insertable=false, updatable=false)
-                saved.setCardDescId(cardDesc.getId());
+                // Manual sync: deckId is read-only (insertable=false, updatable=false)
+                saved.setDeckId(deck.getId());
                 results.add(cardMapper.toResponse(saved));
             } catch (Exception e) {
                 failedTitles.add(title);
-                log.debug("Failed to generate card for title='{}' in deckId={}", title, cardDesc.getId(), e);
+                log.debug("Failed to generate card for title='{}' in deckId={}", title, deck.getId(), e);
             }
         }
 

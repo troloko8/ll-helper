@@ -3,7 +3,7 @@
 ## Architecture
 - **Style:** Modular monolith on Spring Boot
 - **Organization:** `package-by-feature`
-- Each module (`card`, `card_desc`, `auth`, etc.) contains:
+- Each module (`card`, `deck`, `auth`, etc.) contains:
   - `controller/`
   - `service/`
   - `repository/`
@@ -29,9 +29,9 @@
 - **Detailed conventions:** See `.windsurf/rules/mapstruct-conventions.md`
 
 ## Naming
-- Packages: `snake_case` for compound words (e.g. `card_desc`)
-- Classes: `PascalCase` (e.g. `CardDesc`, `CardDescResponse`)
-- REST endpoints: `kebab-case` (e.g. `/api/v1/card-descs`)
+- Packages: `snake_case` for compound words (e.g. `deck`)
+- Classes: `PascalCase` (e.g. `Deck`, `DeckResponse`)
+- REST endpoints: `kebab-case` (e.g. `/api/v1/decks`)
 
 ## Database
 - **DBMS:** PostgreSQL

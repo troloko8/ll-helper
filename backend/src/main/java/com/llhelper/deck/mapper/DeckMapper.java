@@ -1,10 +1,10 @@
-package com.llhelper.card_desc.mapper;
+package com.llhelper.deck.mapper;
 
 import com.llhelper.card.mapper.CardMapper;
-import com.llhelper.card_desc.dto.request.CardDescRequest;
-import com.llhelper.card_desc.dto.response.CardDescListResponse;
-import com.llhelper.card_desc.dto.response.CardDescResponse;
-import com.llhelper.card_desc.entity.CardDesc;
+import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckListResponse;
+import com.llhelper.deck.dto.response.DeckResponse;
+import com.llhelper.deck.entity.Deck;
 import com.llhelper.user.mapper.UserMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,25 +13,25 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.stereotype.Component;
 
 /**
- * MapStruct mapper for CardDesc (Deck) entity.
- * Converts between CardDesc entity and DTOs (CardDescRequest/CardDescResponse/CardDescListResponse).
+ * MapStruct mapper for Deck (Deck) entity.
+ * Converts between Deck entity and DTOs (DeckRequest/DeckResponse/DeckListResponse).
  * Uses CardMapper and UserMapper for nested mappings.
  * Generated implementation is auto-injected as Spring bean.
  */
 @Component
 @Mapper(componentModel = "spring", uses = {CardMapper.class, UserMapper.class})
-public interface CardDescMapper {
+public interface DeckMapper {
 
-    CardDescResponse toResponse(CardDesc cardDesc);
+    DeckResponse toResponse(Deck deck);
 
-    CardDescListResponse toListResponse(CardDesc cardDesc);
+    DeckListResponse toListResponse(Deck deck);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "owner", ignore = true)
     @Mapping(target = "cards", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    CardDesc toEntity(CardDescRequest request);
+    Deck toEntity(DeckRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "owner", ignore = true)
@@ -39,5 +39,5 @@ public interface CardDescMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "isPublic", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntity(CardDescRequest request, @MappingTarget CardDesc cardDesc);
+    void updateEntity(DeckRequest request, @MappingTarget Deck deck);
 }

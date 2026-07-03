@@ -19,7 +19,7 @@ public record CardRequest(
     @Size(max = 200, message = "Translation must be less than 200 characters")
     String translation,
     @Positive
-    @NotNull Long cardDescId,
+    @NotNull Long deckId,
     Boolean autoGenerate
 ) {
 }

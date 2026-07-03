@@ -1,4 +1,4 @@
-package com.llhelper.card_desc.entity;
+package com.llhelper.deck.entity;
 
 import com.llhelper.card.entity.Card;
 import com.llhelper.user.entity.User;
@@ -26,8 +26,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "card_descs")
-public class CardDesc {
+@Table(name = "decks")
+public class Deck {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,14 +53,14 @@ public class CardDesc {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "cardDesc", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Card> cards = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
         name = "owner_id",
         nullable = false,
-        foreignKey = @ForeignKey(name = "fk_card_descs_owner")
+        foreignKey = @ForeignKey(name = "fk_decks_owner")
     )
     private User owner;
 

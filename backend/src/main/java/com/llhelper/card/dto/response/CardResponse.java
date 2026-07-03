@@ -5,7 +5,7 @@ import java.util.List;
 
 public record CardResponse(
     Long id,
-    Long cardDescId,
+    Long deckId,
     String title,
     String definition,
     List<String> synonyms,

@@ -1,10 +1,10 @@
-package com.llhelper.card_desc.dto.request;
+package com.llhelper.deck.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record CardDescRequest(
+public record DeckRequest(
     @Size(min = 1, max = 100, message = "title must be between 1 and 100 characters")
     @NotBlank String title,
     @Size(max = 500, message = "Description must be less than 500 characters")

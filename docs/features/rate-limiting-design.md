@@ -26,7 +26,7 @@ This document defines the implementation plan for **Level 0** (per-user, in-memo
 1. **No rate limiting on user update operations** — any authenticated user can spam `PUT /api/v1/users/{id}` requests
 2. **No rate limiting on auth endpoints** — brute force attacks possible on login/register
 3. **AI generation has per-JVM limit only** — one user can exhaust permits for all users
-4. **CardDesc operations missing ownership check** — any user can delete/update any deck (CRITICAL)
+4. **Deck operations missing ownership check** — any user can delete/update any deck (CRITICAL)
 
 ### Security Risks
 
@@ -49,13 +49,13 @@ This document defines the implementation plan for **Level 0** (per-user, in-memo
 - `POST /api/v1/cards` — 20 req/min per user
 - `PUT /api/v1/cards/{id}` — 10 req/min per user
 - `DELETE /api/v1/cards/{id}` — 10 req/min per user
-- `POST /api/v1/card-descs` — 5 req/hour per user
-- `PUT /api/v1/card-descs/{id}` — 10 req/min per user
-- `DELETE /api/v1/card-descs/{id}` — 5 req/hour per user
+- `POST /api/v1/decks` — 5 req/hour per user
+- `PUT /api/v1/decks/{id}` — 10 req/min per user
+- `DELETE /api/v1/decks/{id}` — 5 req/hour per user
 
 ✅ **HTTP 429 Too Many Requests** response
 ✅ **Fix existing `RateLimiter` reset bug** (hardcoded 10)
-✅ **Fix CardDesc ownership check** (SECURITY CRITICAL)
+✅ **Fix Deck ownership check** (SECURITY CRITICAL)
 
 ### Level 0 — Out of Scope (Deferred)
 
@@ -135,23 +135,23 @@ Middleware/Filter:
 
 ### Sprint 0.2 Tasks
 
-#### **Task 7.2: Fix CardDesc Ownership Check (CRITICAL)**
+#### **Task 7.2: Fix Deck Ownership Check (CRITICAL)**
 
 **Priority:** 🔴 SECURITY CRITICAL
 
 **Problem:** Any user can update/delete any deck
 
-**Files:** `card_desc/service/CardDescServiceImpl.java`
+**Files:** `deck/service/DeckServiceImpl.java`
 
 **Changes:**
-1. Add `validateDeckOwnership(CardDesc deck)` method
+1. Add `validateDeckOwnership(Deck deck)` method
 2. Call in `update(Long id, ...)` after `findById()`
 3. Call in `delete(Long id)` after `findById()`
 
 **Tests (Postman):**
 - User A creates deck
-- User B tries `PUT /api/v1/card-descs/{id}` → 403 Forbidden
-- User B tries `DELETE /api/v1/card-descs/{id}` → 403 Forbidden
+- User B tries `PUT /api/v1/decks/{id}` → 403 Forbidden
+- User B tries `DELETE /api/v1/decks/{id}` → 403 Forbidden
 
 ---
 
@@ -235,9 +235,9 @@ Middleware/Filter:
 | 8.8 | `POST /api/v1/cards` | 20 | 1 min | userId | 🟡 Medium |
 | 8.9 | `PUT /api/v1/cards/{id}` | 10 | 1 min | userId | 🟢 Low |
 | 8.10 | `DELETE /api/v1/cards/{id}` | 10 | 1 min | userId | 🟢 Low |
-| 8.11 | `POST /api/v1/card-descs` | 5 | 1 hour | userId | 🟡 Medium |
-| 8.12 | `PUT /api/v1/card-descs/{id}` | 10 | 1 min | userId | 🟢 Low |
-| 8.13 | `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | userId | 🟢 Low |
+| 8.11 | `POST /api/v1/decks` | 5 | 1 hour | userId | 🟡 Medium |
+| 8.12 | `PUT /api/v1/decks/{id}` | 10 | 1 min | userId | 🟢 Low |
+| 8.13 | `DELETE /api/v1/decks/{id}` | 5 | 1 hour | userId | 🟢 Low |
 
 **Pattern (Level 0 — email key, no extra DB query):**
 ```string(java)
@@ -454,5 +454,5 @@ public class RedisRateLimiter {
 | 2026-06-29 | Task 8.7 completed — rate limiting added to AuthServiceImpl.register(). ⚠️ Email key is weak for registration — IP-based limiting (10 req/10min) planned for Level 2. See IMPROVEMENTS.md. |
 | 2026-06-30 | Task 8.8 completed — rate limiting added to CardServiceImpl.create() via checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE). |
 | 2026-06-30 | Tasks 8.9-8.10 completed — rate limiting added to CardServiceImpl.update() (CARD_UPDATE) and delete() (CARD_DELETE). |
-| 2026-06-30 | Tasks 8.11-8.13 completed — rate limiting added to CardDescServiceImpl.create() (DECK_CREATE), update() (DECK_UPDATE), delete() (DECK_DELETE). |
+| 2026-06-30 | Tasks 8.11-8.13 completed — rate limiting added to DeckServiceImpl.create() (DECK_CREATE), update() (DECK_UPDATE), delete() (DECK_DELETE). |
 | 2026-06-30 | Task 8.14 completed — GlobalExceptionHandler 429 response updated: { "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }. |

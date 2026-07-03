@@ -1,9 +1,9 @@
-package com.llhelper.card_desc.dto.response;
+package com.llhelper.deck.dto.response;
 
 import com.llhelper.user.dto.response.UserResponse;
 import java.time.LocalDateTime;
 
-public record CardDescListResponse(
+public record DeckListResponse(
     Long id,
     String title,
     String description,

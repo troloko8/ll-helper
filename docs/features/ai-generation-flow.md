@@ -77,7 +77,7 @@ AI generation is **not a standalone endpoint** — it is embedded in the Card mo
 ```text
 CardController.create(CardRequest)
   └── CardServiceImpl.create()
-        ├── Find CardDesc (deck) by cardDescId
+        ├── Find Deck (deck) by deckId
         │     └── If not found → RuntimeException
         ├── Check autoGenerate flag
         │     ├── [true] → AiCardGenerationService.generateCardData()
@@ -109,7 +109,7 @@ CardController.createBulk(BulkCardGenerateRequest)
   └── CardServiceImpl.createBulk()
         ├── UserRateLimiter.checkLimitByEmail(CARD_BULK_GENERATE)
         │     └── If exceeded → RateLimitExceededException → 429
-        ├── Find CardDesc (deck) by cardDescId
+        ├── Find Deck (deck) by deckId
         │     └── If not found → EntityNotFoundException → 404
         ├── validateDeckOwnership() — only deck owner allowed
         │     └── If not owner → AccessDeniedException → 403

@@ -21,7 +21,7 @@
 **Level 0 — Stable Backend Foundation**
 
 - ✅ Spring Boot backend with JWT authentication
-- ✅ CRUD for decks (currently entity is named `CardDesc` — see Known Issues)
+- ✅ CRUD for decks
 - ✅ CRUD for cards
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
@@ -96,7 +96,7 @@ The backend follows a **package-by-feature** (domain-oriented modular monolith) 
 |--------|---------|----------------|
 | `auth` | `com.llhelper.auth` | Registration, login, JWT |
 | `user` | `com.llhelper.user` | User profile |
-| `card_desc` | `com.llhelper.card_desc` | Decks (misleading name — see Known Issues) |
+| `deck` | `com.llhelper.deck` | Deck content management |
 | `card` | `com.llhelper.card` | Cards |
 | `learning` | `com.llhelper.learning` | Enrollment, study, progress |
 | `ai` | `com.llhelper.ai` | Card generation via OpenAI |
@@ -124,15 +124,15 @@ module/
 ### Content Layer
 
 ```text
-AuthUser ──1:1──▶ User ──1:N──▶ CardDesc (Deck) ──1:N──▶ Card
+AuthUser ──1:1──▶ User ──1:N──▶ Deck ──1:N──▶ Card
 ```
 
 | Entity | Table | Key Fields |
 |--------|-------|------------|
 | `AuthUser` | `auth_users` | email (unique), passwordHash, role |
 | `User` | `users` | firstName, lastName, username (unique), nativeLanguage, targetLanguage, uiLanguage |
-| `CardDesc` | `card_descs` | title, description, sourceLanguage, targetLanguage, isPublic, owner → User |
-| `Card` | `cards` | title, definition, synonyms[], examples[], translation, cardDesc → CardDesc |
+| `Deck` | `decks` | title, description, sourceLanguage, targetLanguage, isPublic, owner → User |
+| `Card` | `cards` | title, definition, synonyms[], examples[], translation, deck → Deck |
 
 ### Learning Layer
 
@@ -140,7 +140,7 @@ AuthUser ──1:1──▶ User ──1:N──▶ CardDesc (Deck) ──1:N─
 User ──1:N──▶ UserDeckProgress ──1:N──▶ UserCardProgress
                     │                           │
                     ▼                           ▼
-               CardDesc (Deck)               Card
+               Deck               Card
 ```
 
 | Entity | Table | Key Fields |
@@ -159,7 +159,7 @@ User ──1:N──▶ UserDeckProgress ──1:N──▶ UserCardProgress
 
 | Aspect | Content Layer | Learning Layer |
 |--------|---------------|----------------|
-| **Entities** | CardDesc (Deck), Card | UserDeckProgress, UserCardProgress |
+| **Entities** | Deck (Deck), Card | UserDeckProgress, UserCardProgress |
 | **Lifecycle** | Created by deck owner | Created on enroll |
 | **Mutability** | Modified by owner | Modified on review |
 | **Access control** | Public/private via `isPublic` | Enrolled users only |
@@ -261,11 +261,11 @@ CardService.save(cards)
 | `/api/v1/auth/register` | POST | — | Register new user | `AuthResponse` |
 | `/api/v1/auth/login` | POST | — | Login, get JWT | `AuthResponse` |
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
-| `/api/v1/card-descs` | GET | JWT | List decks (lite) | `List<CardDescListResponse>` ⚠️ no cards |
-| `/api/v1/card-descs` | POST | JWT | Create deck | `CardDescResponse` |
-| `/api/v1/card-descs/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `CardDescResponse` (with cards) |
-| `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `cardDescId`) |
-| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD | `CardResponse` (includes `cardDescId`) |
+| `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards |
+| `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
+| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `DeckResponse` (with cards) |
+| `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |
+| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study/cards` | GET | JWT | Get up to 10 cards for study | `List<DeckCardResponse>` |
@@ -276,9 +276,9 @@ CardService.save(cards)
 **Auth:** `Authorization: Bearer <JWT>` on all secured endpoints
 
 **Recent changes (Sprint 0.2):**
-- `GET /card-descs` now returns `CardDescListResponse` (without `cards` array, added `sourceLanguage`, `targetLanguage`)
+- `GET /decks` now returns `DeckListResponse` (without `cards` array, added `sourceLanguage`, `targetLanguage`)
 - `POST /decks/{id}/enroll` now returns `{ "userDeckId": Long }` instead of void
-- All card endpoints now include `cardDescId` in `CardResponse`
+- All card endpoints now include `deckId` in `CardResponse`
 
 ---
 
@@ -336,12 +336,12 @@ backend/src/main/java/com/llhelper/
 │   ├── repository/UserRepository.java
 │   ├── mapper/UserMapper.java                ← NEW
 │   └── dto/{request, response}/
-├── card_desc/                                ← will be renamed to deck/
-│   ├── controller/CardDescController.java    ← → DeckController
-│   ├── service/CardDescService.java          ← → DeckService
-│   ├── entity/CardDesc.java                  ← → Deck
-│   ├── repository/CardDescRepository.java    ← → DeckRepository
-│   ├── mapper/CardDescMapper.java            ← NEW
+├── deck/                                ← will be renamed to deck/
+│   ├── controller/DeckController.java    ← → DeckController
+│   ├── service/DeckService.java          ← → DeckService
+│   ├── entity/Deck.java                  ← → Deck
+│   ├── repository/DeckRepository.java    ← → DeckRepository
+│   ├── mapper/DeckMapper.java            ← NEW
 │   └── dto/{request, response}/             ← → DeckRequest/Response
 ├── card/
 │   ├── controller/CardController.java
@@ -382,9 +382,9 @@ backend/src/main/java/com/llhelper/
 
 | Issue | Priority | Target |
 |-------|----------|--------|
-| `CardDesc` entity represents Deck — misleading name | 🔴 High | Sprint 0.2 |
+| ~~`CardDesc` entity represented Deck — misleading name~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
 | ~~No `GlobalExceptionHandler`~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
-| **CardDesc operations missing ownership check** | 🔴 **CRITICAL** | **Sprint 0.2 (task 7.2)** |
+| **Deck operations missing ownership check** | 🔴 **CRITICAL** | **Sprint 0.2 (task 7.2)** |
 | **No rate limiting on user update operations** | 🔴 High | **Sprint 0.2 (task 8)** |
 | `ddl-auto=update`, no Flyway — schema not version-controlled | 🔴 High | Sprint 0.3 |
 | Delete Deck/Card with existing progress → FK violation risk | 🔴 High | Sprint 0.3 |
@@ -395,11 +395,11 @@ backend/src/main/java/com/llhelper/
 | JWT subject is `email`, not `userId` — extra DB lookup per request | 🟢 Low | Post Level 0 |
 | Lombok not consistently applied across all classes | 🟢 Low | Sprint 0.2 |
 
-### Naming Issue: CardDesc represents Deck
+### Naming Issue: CardDesc → Deck rename
 
-Current `CardDesc` entity and `card_descs` table function as a **Deck** in the domain model, but the name is misleading — it reads as "card description".
+**Status:** ✅ Fixed (Sprint 0.2)
 
-**Planned refactor (Sprint 0.2, after Flyway is in place):**
+The `CardDesc` entity and `card_descs` table name were misleading — they read as "card description" while representing a **Deck** in the domain model. The Java package, classes, DTOs, REST endpoints, and database table were renamed to `Deck` / `decks`. The DB table rename was performed manually outside of Flyway; Flyway migration control remains a Sprint 0.3 task.
 
 | Before | After |
 |--------|-------|
@@ -410,8 +410,6 @@ Current `CardDesc` entity and `card_descs` table function as a **Deck** in the d
 | `CardDescService/Repository` | `DeckService/Repository` |
 | `CardDescRequest/Response` | `DeckRequest/Response` |
 | `card_desc/` package | `deck/` package |
-
-**Prerequisite:** Flyway must be in place before DB table rename.
 
 ### Mapper Layer
 
@@ -426,7 +424,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 **Current mappers:**
 - `CardMapper` — `Card` ↔ `CardResponse` / `CardRequest`
-- `CardDescMapper` — `CardDesc` ↔ `CardDescResponse` / `CardDescListResponse`
+- `DeckMapper` — `Deck` ↔ `DeckResponse` / `DeckListResponse`
 - `UserMapper` — `User` ↔ `UserResponse`, `updateEntity(UpdateUserRequest, User)`
 
 **Service responsibilities updated:**
@@ -444,7 +442,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 15. Architecture Risks
 
-1. `CardDesc` naming hides the Deck concept — confusing for new developers and AI agents.
+1. ~~`CardDesc` naming hid the Deck concept~~ — ✅ Fixed in Sprint 0.2 (renamed to `Deck`).
 2. Copy vs reference strategy for enrolling public decks is not finalized.
 3. No Flyway means database schema is not version-controlled.
 4. ~~No `GlobalExceptionHandler` means API error responses may be inconsistent.~~ ✅ Fixed (Sprint 0.2)
@@ -470,7 +468,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 | Decision | Details |
 |----------|---------|  
-| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` must check `Objects.equals(cardDesc.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` must check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses partial-success strategy | Sprint 0.2 fix: log failed titles with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Sprint 0.4 / Level 1. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented in Sprint 0.2. |
@@ -505,7 +503,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 - DTO cleanup
 - `GlobalExceptionHandler`
 - Validation cleanup
-- `CardDesc` → `Deck` rename (after Flyway)
+- ~~`CardDesc` → `Deck` rename~~ — ✅ Done (Sprint 0.2, DB table renamed manually)
 
 **Level 2 — Portfolio-ready:**
 - Flyway + `ddl-auto=validate`
@@ -557,9 +555,9 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | `POST /api/v1/cards` | 20 | 1 minute | email ✅ | 🟡 Medium |
 | `PUT /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
 | `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
-| `POST /api/v1/card-descs` | 5 | 1 hour | email ✅ | 🟡 Medium |
-| `PUT /api/v1/card-descs/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
-| `DELETE /api/v1/card-descs/{id}` | 5 | 1 hour | email ✅ | 🟢 Low |
+| `POST /api/v1/decks` | 5 | 1 hour | email ✅ | 🟡 Medium |
+| `PUT /api/v1/decks/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
+| `DELETE /api/v1/decks/{id}` | 5 | 1 hour | email ✅ | 🟢 Low |
 
 ### Error Response
 
@@ -615,14 +613,14 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 |------|--------|
 | 2026-06-02 | Initial version — Level 0 Architecture Freeze (Sprint 0.1) |
 | 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
-| 2026-06-23 | Mapper layer complete: CardMapper, CardDescMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
+| 2026-06-23 | Mapper layer complete: CardMapper, DeckMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
 | 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |
-| 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified CardDesc ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
+| 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified Deck ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
 | 2026-06-28 | Sprint 0.2 tasks 8.1-8.4 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency, created UserRateLimiter. |
 | 2026-06-29 | Sprint 0.2 task 8.5 completed: rate limiting applied to UserServiceImpl.updateUser(). Added SecurityUtils.getCurrentUserEmail() (0 DB queries). Composite key architecture (subject + RateLimitAction). |
 | 2026-06-29 | Sprint 0.2 task 8.6 completed: rate limiting applied to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
 | 2026-06-29 | Sprint 0.2 task 8.7 completed: rate limiting applied to AuthServiceImpl.register(). ⚠️ Email-based limit is weak for registration — IP-based limiting planned for Level 2. |
 | 2026-06-30 | Sprint 0.2 task 8.8 completed: rate limiting applied to CardServiceImpl.create() via checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE). |
 | 2026-06-30 | Sprint 0.2 tasks 8.9-8.10 completed: rate limiting applied to CardServiceImpl.update() and delete(). |
-| 2026-06-30 | Sprint 0.2 tasks 8.11-8.13 completed: rate limiting applied to CardDescServiceImpl.create(), update(), delete(). |
+| 2026-06-30 | Sprint 0.2 tasks 8.11-8.13 completed: rate limiting applied to DeckServiceImpl.create(), update(), delete(). |
 | 2026-06-30 | Sprint 0.2 task 8.14 completed: GlobalExceptionHandler 429 response enriched with error code and timestamp. |

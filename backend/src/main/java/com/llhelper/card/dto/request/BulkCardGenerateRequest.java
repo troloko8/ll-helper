@@ -13,6 +13,6 @@ public record BulkCardGenerateRequest(
 
     @NotNull
     @Positive
-    Long cardDescId
+    Long deckId
 ) {
 }

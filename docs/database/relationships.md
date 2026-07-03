@@ -42,7 +42,7 @@ This document describes the current database schema and entity relationships for
 |--------|-------|-------|---------|
 | `AuthUser` | `auth_users` | Auth | Authentication credentials |
 | `User` | `users` | Auth/User | User profile data |
-| `CardDesc` | `card_descs` | Content | Deck of cards (naming issue — represents "Deck") |
+| `Deck` | `decks` | Content | Deck of cards (naming issue — represents "Deck") |
 | `Card` | `cards` | Content | Individual flashcard |
 | `UserDeckProgress` | `user_deck_progress` | Learning | User's progress on a deck |
 | `UserCardProgress` | `user_card_progress` | Learning | User's progress on individual cards |
@@ -67,12 +67,12 @@ This document describes the current database schema and entity relationships for
 │                            CONTENT LAYER                                     │
 │                                                                              │
 │  ┌─────────────────┐         1:N         ┌─────────────┐                    │
-│  │    CardDesc     │────────────────────▶│    Card     │                    │
+│  │    Deck     │────────────────────▶│    Card     │                    │
 │  │    ("Deck")     │   cascade: ALL      │             │                    │
 │  └─────────────────┘                       └─────────────┘                    │
 │           ▲                                  │                              │
 │           │ N:1                              │ N:1                           │
-│           │ owner                            │ card_desc_id                  │
+│           │ owner                            │ deck_id                  │
 │     ┌─────┴─────┐                            │ (FK, not null)               │
 │     │   User    │                            │                               │
 │     └───────────┘                            └───────────────────────────────┘
@@ -86,7 +86,7 @@ This document describes the current database schema and entity relationships for
 │                       │                           │                          │
 │                       │ (deckId)                  │ (cardId)                 │
 │                       ▼                           ▼                          │
-│                   CardDesc                      Card                         │
+│                   Deck                      Card                         │
 │                   (by ID, not FK)              (by ID, not FK)              │
 │                                                                              │
 │  Note: Progress entities currently store IDs as Long, not JPA relationships. │
@@ -117,44 +117,44 @@ AuthUser.id ──1:1──▶ User.authUser
 | Cascade | None |
 | Ownership | User entity owns the relationship |
 
-### 4.2 User → CardDesc (1:N) — "User owns Decks"
+### 4.2 User → Deck (1:N) — "User owns Decks"
 
 ```text
-User.id ──1:N──▶ CardDesc.owner
+User.id ──1:N──▶ Deck.owner
          @ManyToOne(fetch = LAZY, optional = false)
          @JoinColumn(name = "owner_id", nullable = false,
-                     foreignKey = @ForeignKey(name = "fk_card_descs_owner"))
+                     foreignKey = @ForeignKey(name = "fk_decks_owner"))
 ```
 
 | Aspect | Current State |
 |--------|---------------|
-| JPA Relation | `@ManyToOne` in `CardDesc`; no inverse `@OneToMany` collection in `User` |
-| FK Column | `card_descs.owner_id` |
+| JPA Relation | `@ManyToOne` in `Deck`; no inverse `@OneToMany` collection in `User` |
+| FK Column | `decks.owner_id` |
 | Nullable | No |
 | Cascade | None |
-| FK Name | `fk_card_descs_owner` (Hibernate naming) |
+| FK Name | `fk_decks_owner` (Hibernate naming) |
 
-### 4.3 CardDesc → Card (1:N) — "Deck contains Cards"
+### 4.3 Deck → Card (1:N) — "Deck contains Cards"
 
 ```text
-CardDesc.id ──1:N──▶ Card.cardDesc
-           @OneToMany(mappedBy = "cardDesc", cascade = ALL, fetch = LAZY)
+Deck.id ──1:N──▶ Card.deck
+           @OneToMany(mappedBy = "deck", cascade = ALL, fetch = LAZY)
            @ManyToOne(fetch = LAZY, optional = false)
-           @JoinColumn(name = "card_desc_id", nullable = false)
+           @JoinColumn(name = "deck_id", nullable = false)
 ```
 
 | Aspect | Current State |
 |--------|---------------|
-| JPA Relation | Bidirectional: `@OneToMany` in CardDesc, `@ManyToOne` in Card |
-| FK Column | `cards.card_desc_id` |
+| JPA Relation | Bidirectional: `@OneToMany` in Deck, `@ManyToOne` in Card |
+| FK Column | `cards.deck_id` |
 | Nullable | No |
 | Cascade | `CascadeType.ALL` (includes REMOVE) |
 | Orphan Removal | Not set (orphan cards possible if removed from list) |
-| **ID-only access** | **`Card.cardDescId` (read-only) — direct access without lazy loading** |
+| **ID-only access** | **`Card.deckId` (read-only) — direct access without lazy loading** |
 
 **Pattern:** Card entity uses **hybrid approach** (Sprint 0.2):
-- `cardDescId` field (`insertable = false, updatable = false`) — for fast read-only access to deck ID
-- `cardDesc` relationship (`@ManyToOne LAZY`) — for full deck navigation when needed
+- `deckId` field (`insertable = false, updatable = false`) — for fast read-only access to deck ID
+- `deck` relationship (`@ManyToOne LAZY`) — for full deck navigation when needed
 
 This avoids `LazyInitializationException` in response DTOs while keeping the relationship available for ownership checks and other operations.
 
@@ -190,10 +190,10 @@ UserDeckProgress.id ──1:N──▶ UserCardProgress.userDeckProgressId
 | FK in DB | No explicit FK constraint |
 | Rationale | Keeps the model simple while copy vs reference is unresolved; no DB protection against orphaned references |
 
-### 5.3 UserDeckProgress → CardDesc (N:1 logical) — "Progress refers to Deck"
+### 5.3 UserDeckProgress → Deck (N:1 logical) — "Progress refers to Deck"
 
 ```text
-UserDeckProgress.deckId ──N:1 (logical)──▶ CardDesc.id
+UserDeckProgress.deckId ──N:1 (logical)──▶ Deck.id
                        Stored as Long ID
 ```
 
@@ -253,12 +253,12 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 | `auth_users` | `role` | `NOT NULL` (with `@ColumnDefault`) |
 | `users` | `username` | `UNIQUE`, `NOT NULL` |
 | `users` | `auth_user_id` | `NOT NULL` (implied) |
-| `card_descs` | `title` | `NOT NULL` |
-| `card_descs` | `source_language` | `NOT NULL` |
-| `card_descs` | `target_language` | `NOT NULL` |
-| `card_descs` | `owner_id` | `NOT NULL` |
+| `decks` | `title` | `NOT NULL` |
+| `decks` | `source_language` | `NOT NULL` |
+| `decks` | `target_language` | `NOT NULL` |
+| `decks` | `owner_id` | `NOT NULL` |
 | `cards` | `title` | `NOT NULL` |
-| `cards` | `card_desc_id` | `NOT NULL` |
+| `cards` | `deck_id` | `NOT NULL` |
 | `user_deck_progress` | `user_id` | `NOT NULL` |
 | `user_deck_progress` | `deck_id` | `NOT NULL` |
 | `user_deck_progress` | `status` | `NOT NULL` |
@@ -271,8 +271,8 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 
 | FK Name | From Table | From Column | To Table | To Column |
 |---------|------------|-------------|----------|-----------|
-| `fk_card_descs_owner` | `card_descs` | `owner_id` | `users` | `id` |
-| (auto-generated) | `cards` | `card_desc_id` | `card_descs` | `id` |
+| `fk_decks_owner` | `decks` | `owner_id` | `users` | `id` |
+| (auto-generated) | `cards` | `deck_id` | `decks` | `id` |
 
 ---
 
@@ -307,7 +307,7 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 | `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status |
 | `idx_ucp_user_card` | `user_card_progress` | `user_id, card_id` | Fast card lookup (if using user+card unique) |
 | `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries |
-| `idx_cards_deck` | `cards` | `card_desc_id` | Fast card lookup by deck (for deck deletion check) |
+| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) |
 
 **Current State:** Only `users` table has indexes (see Known Issues). `user_card_progress` has commented-out index definitions.
 
@@ -320,8 +320,8 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 | Relationship | Current Cascade | On Delete |
 |--------------|-----------------|-----------|
 | AuthUser → User | None | User deleted → AuthUser remains (orphan) |
-| User → CardDesc | None | CardDesc stays (but has `owner_id` FK) |
-| CardDesc → Card | `CascadeType.ALL` | **Cards deleted when Deck deleted** |
+| User → Deck | None | Deck stays (but has `owner_id` FK) |
+| Deck → Card | `CascadeType.ALL` | **Cards deleted when Deck deleted** |
 | User → UserDeckProgress | None (logical by ID) | Progress stays, references orphaned IDs |
 | UserDeckProgress → UserCardProgress | None (logical by ID) | Card progress stays if deck progress deleted |
 
@@ -330,7 +330,7 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 | Scenario | Options | Status |
 |----------|---------|--------|
 | Delete User | Cascade delete all User data? Restrict if content exists? | **Open** |
-| Delete CardDesc (Deck) | Cascade delete Cards (current) + Progress? Restrict if progress exists? Soft delete? | **Open** — orphaned progress risk now; FK violation risk after FKs are added |
+| Delete Deck | Cascade delete Cards (current) + Progress? Restrict if progress exists? Soft delete? | **Open** — orphaned progress risk now; FK violation risk after FKs are added |
 | Delete Card | Cascade delete UserCardProgress? Restrict if progress exists? | **Open** — orphaned progress risk now; FK violation risk after FKs are added |
 | Delete UserDeckProgress | Cascade delete UserCardProgress? Orphan card progress? | **Open** |
 
@@ -338,7 +338,7 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 
 | Entity | Soft Delete Candidate | Rationale |
 |--------|----------------------|-----------|
-| `CardDesc` | **Yes** | Content deletion affects enrolled users |
+| `Deck` | **Yes** | Content deletion affects enrolled users |
 | `Card` | **Yes** | Card deletion affects learning progress |
 | `User` | Maybe | User deletion affects owned content |
 | Progress entities | No | Progress is transient/resettable |
@@ -357,7 +357,7 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 private Long cardId;  // References Card.id
 
 @Column(nullable = false)
-private Long deckId;  // References CardDesc.id
+private Long deckId;  // References Deck.id
 ```
 
 ### Implications
@@ -396,7 +396,7 @@ Current protection strategy:
 ```text
 AuthUser (credentials)
     └── User (profile)
-            ├── CardDesc[] (owned decks)
+            ├── Deck[] (owned decks)
             │       └── Card[] (deck cards)
             └── UserDeckProgress[] (enrolled decks)
                     └── UserCardProgress[] (card progress)
@@ -408,8 +408,8 @@ AuthUser (credentials)
 |----------|-------------|-------------|-------------|
 | `AuthUser` | `id` (self) | N/A | Self only (via JWT) |
 | `User` | `authUser.id` | N/A | Self only |
-| `CardDesc` | `owner` | `isPublic` | Owner: full. Others: read if `isPublic=true` |
-| `Card` | via `cardDesc.owner` | via `cardDesc.isPublic` | Same as parent Deck |
+| `Deck` | `owner` | `isPublic` | Owner: full. Others: read if `isPublic=true` |
+| `Card` | via `deck.owner` | via `deck.isPublic` | Same as parent Deck |
 | `UserDeckProgress` | `userId` | N/A | User with matching `userId` only |
 | `UserCardProgress` | `userId` | N/A | User with matching `userId` only |
 
@@ -433,7 +433,7 @@ AuthUser (credentials)
 | **No unique constraint on `(user_id, deck_id)`** | Duplicate enrollments possible | 0.3 |
 | **No unique constraint on card progress** | Duplicate card progress rows possible | 0.3 |
 | **Progress entities use IDs, no FK constraints** | Orphaned progress possible if content deleted | 0.3 |
-| **CardDesc cascade deletes Cards** | Deleting deck deletes cards → breaks learner progress | 0.3 |
+| **Deck cascade deletes Cards** | Deleting deck deletes cards → breaks learner progress | 0.3 |
 
 ### 12.2 High Priority
 
@@ -450,8 +450,8 @@ AuthUser (credentials)
 |-------|--------|------------|
 | **No soft delete** | Hard deletes break referential integrity | 0.3 or later |
 | **No cascade strategy defined for User deletion** | User deletion leaves orphaned data | 0.3 |
-| **CardDesc Java/API naming** | Entity, package, controller, DTO naming should become `Deck` | 0.2 |
-| **`card_descs` table naming** | DB table rename to `decks` requires Flyway migration — must happen after Flyway is introduced | 0.3 |
+| **Deck Java/API naming** | Entity, package, controller, DTO naming should become `Deck` | 0.2 |
+| **`decks` table naming** | DB table rename to `decks` requires Flyway migration — must happen after Flyway is introduced | 0.3 |
 
 ---
 
@@ -476,16 +476,16 @@ ALTER TABLE user_card_progress
 CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
 CREATE INDEX idx_ucp_deck_status ON user_card_progress(user_deck_progress_id, status);
 CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
-CREATE INDEX idx_cards_deck ON cards(card_desc_id);
+CREATE INDEX idx_cards_deck ON cards(deck_id);
 
 -- Foreign keys (if choosing Reference strategy)
 -- ALTER TABLE user_deck_progress ADD CONSTRAINT fk_udp_deck
---     FOREIGN KEY (deck_id) REFERENCES card_descs(id) ON DELETE ...;
+--     FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE ...;
 -- ALTER TABLE user_card_progress ADD CONSTRAINT fk_ucp_card
 --     FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE ...;
 
 -- CHECK constraints (PostgreSQL 12+)
--- ALTER TABLE card_descs ADD CONSTRAINT chk_source_language
+-- ALTER TABLE decks ADD CONSTRAINT chk_source_language
 --     CHECK (source_language <> '');
 ```
 
@@ -493,7 +493,7 @@ CREATE INDEX idx_cards_deck ON cards(card_desc_id);
 
 1. **Copy vs Reference:** Decide and document before adding FKs
 2. **Delete behavior:** RESTRICT vs CASCADE vs SET NULL for each relationship
-3. **Soft delete:** Implement for CardDesc/Card before enabling strict constraints
+3. **Soft delete:** Implement for Deck/Card before enabling strict constraints
 
 ---
 

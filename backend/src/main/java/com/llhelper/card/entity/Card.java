@@ -1,6 +1,6 @@
 package com.llhelper.card.entity;
 
-import com.llhelper.card_desc.entity.CardDesc;
+import com.llhelper.deck.entity.Deck;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -52,10 +52,10 @@ public class Card {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "card_desc_id", insertable = false, updatable = false)
-    private Long cardDescId;
+    @Column(name = "deck_id", insertable = false, updatable = false)
+    private Long deckId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "card_desc_id", nullable = false)
-    private CardDesc cardDesc;
+    @JoinColumn(name = "deck_id", nullable = false)
+    private Deck deck;
 }

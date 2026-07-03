@@ -590,7 +590,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"cardDescId\": 1\n}"
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"deckId\": 1\n}"
             },
             "url": {
               "raw": "{{url}}/cards",
@@ -674,7 +674,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"cardDescId\": 1\n}"
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"deckId\": 1\n}"
             },
             "url": {
               "raw": "{{url}}/cards/1",
@@ -733,7 +733,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"serendipity\",\n  \"cardDescId\": 1,\n  \"autoGenerate\": true\n}"
+              "raw": "{\n  \"title\": \"serendipity\",\n  \"deckId\": 1,\n  \"autoGenerate\": true\n}"
             },
             "url": {
               "raw": "{{url}}/cards",
@@ -767,7 +767,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titles\": [\n    \"serendipity\",\n    \"ephemeral\",\n    \"luminous\",\n    \"resilience\",\n    \"mellifluous\"\n  ],\n  \"cardDescId\": 1\n}"
+              "raw": "{\n  \"titles\": [\n    \"serendipity\",\n    \"ephemeral\",\n    \"luminous\",\n    \"resilience\",\n    \"mellifluous\"\n  ],\n  \"deckId\": 1\n}"
             },
             "url": {
               "raw": "{{url}}/cards/bulk-generate",
@@ -818,7 +818,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titles\": [\n    \"serendipity\"\n  ],\n  \"cardDescId\": 1\n}"
+              "raw": "{\n  \"titles\": [\n    \"serendipity\"\n  ],\n  \"deckId\": 1\n}"
             },
             "url": {
               "raw": "{{url}}/cards/bulk-generate",
@@ -870,7 +870,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"test\",\n  \"cardDescId\": 999,\n  \"autoGenerate\": false,\n  \"definition\": \"test\"\n}",
+              "raw": "{\n  \"title\": \"test\",\n  \"deckId\": 999,\n  \"autoGenerate\": false,\n  \"definition\": \"test\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -891,10 +891,10 @@
       ]
     },
     {
-      "name": "CardDescs",
+      "name": "Decks",
       "item": [
         {
-          "name": "Create CardDesc",
+          "name": "Create Deck",
           "request": {
             "auth": {
               "type": "bearer",
@@ -918,7 +918,7 @@
               "raw": "{\n  \"title\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words with Russian translations\"\n}"
             },
             "url": {
-              "raw": "{{url}}/card-descs",
+              "raw": "{{url}}/decks",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -927,19 +927,19 @@
               "path": [
                 "api",
                 "v1",
-                "card-descs"
+                "decks"
               ]
             }
           },
           "response": [
             {
-              "name": "Create CardDesc - Success",
+              "name": "Create Deck - Success",
               "originalRequest": {
                 "method": "POST",
                 "header": [
                   {"key": "Content-Type", "value": "application/json"}
                 ],
-                "url": "{{url}}/card-descs",
+                "url": "{{url}}/decks",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"title\": \"English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Collection of English words\"\n}"
@@ -952,7 +952,7 @@
           ]
         },
         {
-          "name": "Get CardDesc by ID",
+          "name": "Get Deck by ID",
           "request": {
             "auth": {
               "type": "bearer",
@@ -967,7 +967,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/card-descs/1",
+              "raw": "{{url}}/decks/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -976,18 +976,18 @@
               "path": [
                 "api",
                 "v1",
-                "card-descs",
+                "decks",
                 "1"
               ]
             }
           },
           "response": [
             {
-              "name": "Get CardDesc by ID - Success",
+              "name": "Get Deck by ID - Success",
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{url}}/card-descs/1"
+                "url": "{{url}}/decks/1"
               },
               "status": "OK",
               "code": 200,
@@ -996,7 +996,7 @@
           ]
         },
         {
-          "name": "Get All CardDescs",
+          "name": "Get All Decks",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1011,7 +1011,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/card-descs",
+              "raw": "{{url}}/decks",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1020,17 +1020,17 @@
               "path": [
                 "api",
                 "v1",
-                "card-descs"
+                "decks"
               ]
             }
           },
           "response": [
             {
-              "name": "Get All CardDescs - Success",
+              "name": "Get All Decks - Success",
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{url}}/card-descs"
+                "url": "{{url}}/decks"
               },
               "status": "OK",
               "code": 200,
@@ -1039,7 +1039,7 @@
           ]
         },
         {
-          "name": "Update CardDesc",
+          "name": "Update Deck",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1063,7 +1063,7 @@
               "raw": "{\n  \"title\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
-              "raw": "{{url}}/card-descs/1",
+              "raw": "{{url}}/decks/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1072,20 +1072,20 @@
               "path": [
                 "api",
                 "v1",
-                "card-descs",
+                "decks",
                 "1"
               ]
             }
           },
           "response": [
             {
-              "name": "Update CardDesc - Success",
+              "name": "Update Deck - Success",
               "originalRequest": {
                 "method": "PUT",
                 "header": [
                   {"key": "Content-Type", "value": "application/json"}
                 ],
-                "url": "{{url}}/card-descs/1",
+                "url": "{{url}}/decks/1",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"title\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Updated description\"\n}"
@@ -1098,7 +1098,7 @@
           ]
         },
         {
-          "name": "Delete CardDesc",
+          "name": "Delete Deck",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1113,7 +1113,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{url}}/card-descs/1",
+              "raw": "{{url}}/decks/1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1122,7 +1122,7 @@
               "path": [
                 "api",
                 "v1",
-                "card-descs",
+                "decks",
                 "1"
               ]
             }
@@ -1130,7 +1130,7 @@
           "response": []
         },
         {
-          "name": "Update CardDesc (403 Forbidden Test)",
+          "name": "Update Deck (403 Forbidden Test)",
           "event": [
             {
               "listen": "test",
@@ -1171,18 +1171,18 @@
               "raw": "{\n  \"title\": \"Hacked Deck\",\n  \"sourceLanguage\": \"en\",\n  \"targetLanguage\": \"ru\",\n  \"description\": \"Attempt to modify another user's deck\"\n}"
             },
             "url": {
-              "raw": "{{url}}/card-descs/999",
+              "raw": "{{url}}/decks/999",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "v1", "card-descs", "999"]
+              "path": ["api", "v1", "decks", "999"]
             },
             "description": "Test: attempt to update another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
           },
           "response": []
         },
         {
-          "name": "Delete CardDesc (403 Forbidden Test)",
+          "name": "Delete Deck (403 Forbidden Test)",
           "event": [
             {
               "listen": "test",
@@ -1214,11 +1214,11 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{url}}/card-descs/999",
+              "raw": "{{url}}/decks/999",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "v1", "card-descs", "999"]
+              "path": ["api", "v1", "decks", "999"]
             },
             "description": "Test: attempt to delete another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
           },

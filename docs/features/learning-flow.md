@@ -45,7 +45,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 | Concept | Entity | Description |
 |---|---|---|
-| Deck | `CardDesc` | Content collection (Java name pending rename to `Deck` in Sprint 0.2) |
+| Deck | `Deck` | Content collection |
 | Card | `Card` | Individual learning item |
 | Enrollment | `UserDeckProgress` | User's enrollment state for a deck |
 | Card Progress | `UserCardProgress` | User's learning state for a single card in an enrolled deck |

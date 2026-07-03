@@ -26,7 +26,7 @@
 ~~5. Добавить/почистить DTO~~
 ~~6. Добавить mappers~~
 ~~7. 🔴 Добавить ownership check для User операций (update/delete) — **SECURITY CRITICAL**~~
-~~**7.2. 🔴 Добавить ownership check для CardDesc операций (update/delete) — CRITICAL**~~
+~~**7.2. 🔴 Добавить ownership check для Deck операций (update/delete) — CRITICAL**~~
 
 **8. Добавить Rate limiting на user update операции (защита от abuse)**
 
@@ -80,16 +80,16 @@
 - ~~Файл: `card/service/CardServiceImpl.java`~~
 - ~~`checkLimitByEmail(getCurrentUserEmail(), CARD_DELETE)` перед findById~~
 
-~~**8.11. Rate limiting для CardDesc.create() — 5 req/hour**~~
-- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+~~**8.11. Rate limiting для Deck.create() — 5 req/hour**~~
+- ~~Файл: `deck/service/DeckServiceImpl.java`~~
 - ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_CREATE)` первым~~
 
-~~**8.12. Rate limiting для CardDesc.update() — 10 req/min**~~
-- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+~~**8.12. Rate limiting для Deck.update() — 10 req/min**~~
+- ~~Файл: `deck/service/DeckServiceImpl.java`~~
 - ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_UPDATE)` перед ownership check~~
 
-~~**8.13. Rate limiting для CardDesc.delete() — 5 req/hour**~~
-- ~~Файл: `card_desc/service/CardDescServiceImpl.java`~~
+~~**8.13. Rate limiting для Deck.delete() — 5 req/hour**~~
+- ~~Файл: `deck/service/DeckServiceImpl.java`~~
 - ~~`checkLimitByEmail(getCurrentUserEmail(), DECK_DELETE)` перед ownership check~~
 
 ~~**8.14. Добавить @ExceptionHandler для RateLimitExceededException → HTTP 429**~~
@@ -106,15 +106,15 @@
 - ~~`backend/CONVENTIONS.md` — правила rate limiting~~
 
 ~~9. Убрать entity leakage из API~~
-- ~~Раскомментировать `sourceLanguage`, `targetLanguage` в `CardDescResponse`~~
-- ~~Добавить `@Transactional(readOnly = true)` на `CardDescServiceImpl.getById()` и `getAll()`~~
+- ~~Раскомментировать `sourceLanguage`, `targetLanguage` в `DeckResponse`~~
+- ~~Добавить `@Transactional(readOnly = true)` на `DeckServiceImpl.getById()` и `getAll()`~~
 - ~~Перенести ручное создание `Card` в `CardServiceImpl.createBulk()` в `CardMapper.fromAiData()`~~
 - ~~Перенести ручное создание `CardReviewResponse` в `LearningMapper.toCardReviewResponse()`~~
 ~~10. Добавить validation~~
 ~~11. Исправить RateLimiter reset bug (hardcoded 10)~~ — включено в задачу 8.1
 ~~12. Вызвать `validateBulkSize()` в `CardServiceImpl.createBulk()`~~
 ~~13. Добавить logging для bulk failures~~
-14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — без rename таблицы
+~~14. Переименовать `CardDesc → Deck` в Java (entity, package, controller, DTO) — с rename таблицы `card_descs → decks` вручную~~
 15. настрой hotkeys для IDE
 
 ### Sprint 0.3 — Database Control
@@ -123,16 +123,16 @@
 2. Создать V1 migration (текущее состояние схемы как baseline)
 3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
 4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress`
-5. Добавить FK constraints для learning layer (user_deck_progress → card_descs, user_card_progress → cards)
+5. Добавить FK constraints для learning layer (user_deck_progress → decks, user_card_progress → cards)
 6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
-7. Реализовать soft delete или RESTRICT для CardDesc/Card (защита прогресса learners)
+7. Реализовать soft delete или RESTRICT для Deck/Card (защита прогресса learners)
 8. Добавить indexes на progress таблицах (idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck)
 9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)
 10. Переключить `ddl-auto` с `update` на `validate`
-11. Решить стратегию `CascadeType.ALL` на `CardDesc → Cards` (убрать или заменить на explicit cascade)
-12. Определить cascade стратегию при удалении `User` (AuthUser → User → CardDesc → Progress)
+11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)
+12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)
 13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
-14. Переименовать таблицу `card_descs → decks` (Flyway migration, после Sprint 0.2 п.12)
+~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, без Flyway)~~
 15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`
 
 ### Sprint 0.4 — Testing & Postman
@@ -143,7 +143,7 @@
 4. Добавить tests на review/progress calculation
 5. Создать AI prompt для обновления Postman
 6. Создать AI prompt для test suggestions
-7. 🔴 Проверить корректность `cardDescId` в `CardResponse` после AI-генерации карты — `Card.cardDescId` является read-only полем (`insertable=false, updatable=false`), Hibernate не заполняет его при `save()` без последующего `findById()`. Нужно убедиться что `toResponse(cardRepository.save(card))` возвращает корректный `cardDescId`, а не `null`
+7. 🔴 Проверить корректность `deckId` в `CardResponse` после AI-генерации карты — `Card.deckId` является read-only полем (`insertable=false, updatable=false`), Hibernate не заполняет его при `save()` без последующего `findById()`. Нужно убедиться что `toResponse(cardRepository.save(card))` возвращает корректный `deckId`, а не `null`
 
 ### Sprint 1.0 — Frontend Skeleton
 
@@ -479,12 +479,12 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 
 ## Deferred from Level 0 (Sprint 0.2)
 
-- Переименовать `CardDesc* → Deck*` в Java коде (entity, package, controller, service, DTO) — таблица БД остаётся `card_descs` до Sprint 0.3
+- ~~Переименовать `CardDesc* → Deck*` в Java коде (entity, package, controller, service, DTO) — таблица БД переименована в `decks` вручную~~
 - **🔴 Добавить `@Transactional` на `CardServiceImpl.delete()` и `update()`** — оба метода делают несколько DB-запросов без транзакции (findById + findWithOwnerById + deleteById/save). Риск: при partial failure нет rollback
-- **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант B: добавить `card.getCardDescId() == deckId` проверку. Может потребовать рефактор URL на `/decks/{deckId}/cards/{cardId}`
+- **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант B: добавить `card.getDeckId() == deckId` проверку. Может потребовать рефактор URL на `/decks/{deckId}/cards/{cardId}`
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card (например, `GET /cards/{id}` с полной инфой о родительской деке)
-- Добавить `cardCount` в `CardDescListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
+- Добавить `cardCount` в `DeckListResponse` — использовать `@Formula` в entity или отдельный query для эффективного подсчёта карточек без загрузки всего списка
 - ~~**🔴 BREAKING CHANGE:** Добавить `sourceLanguage`, `targetLanguage` в `CardDescResponse`~~ — выполнено в Sprint 0.2 Task 9
 
 ## Backend
