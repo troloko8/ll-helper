@@ -41,8 +41,8 @@ Apply these conventions for ALL backend code in this repository.
 
 ## Database
 - **DBMS:** PostgreSQL
-- **ddl-auto:** `update`
-- **Flyway:** disabled for now
+- **ddl-auto:** `validate`
+- **Migrations:** Liquibase (V1 baseline created, incremental migrations planned for Sprint 0.3)
 
 ## Core Project Documents
 

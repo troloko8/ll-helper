@@ -2,9 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.1 — Architecture Freeze
-> **Last updated:** 2026-06-02
-> **Status:** Documentation only — schema changes deferred to Sprint 0.3
+> **Sprint:** Sprint 0.3 — Database Control
+> **Last updated:** 2026-07-05
+> **Status:** V1 baseline migration created with Liquibase; incremental constraints pending
 
 ---
 
@@ -13,12 +13,12 @@
 | Source | Status |
 |--------|--------|
 | JPA entity annotations | Reviewed |
-| PostgreSQL actual schema | Not fully verified — to verify |
-| `information_schema.columns` | To verify |
-| `information_schema.referential_constraints` | To verify |
-| `pg_indexes` | To verify |
+| PostgreSQL actual schema | ✅ Verified |
+| `information_schema.columns` | ✅ Verified |
+| `information_schema.referential_constraints` | ✅ Verified |
+| `pg_indexes` | ✅ Verified |
 
-**Note:** Until a Flyway baseline is created, this document describes the best-known current state based on entity annotations and Hibernate-generated schema. The actual DB schema must be verified in PostgreSQL before Sprint 0.3 migrations are written.
+**Note:** V1 Liquibase baseline migration has been created based on verified PostgreSQL schema (2026-07-04). `ddl-auto` is switched to `validate`. Incremental migrations (unique constraints, additional indexes, soft delete) are pending.
 
 ---
 
@@ -26,13 +26,13 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Sprint 0.1 Architecture Freeze — document current state, defer schema changes.
+**Scope:** Sprint 0.3 — V1 Liquibase baseline created; current schema state documented. Incremental changes pending.
 
 **Not in this document:**
-- Flyway migrations (Sprint 0.3)
-- Index implementation (Sprint 0.3)
-- Constraint enforcement (Sprint 0.3)
-- Cascade/delete behavior implementation (Sprint 0.3)
+- Incremental Liquibase migrations after V1 (Sprint 0.3)
+- Full index implementation (Sprint 0.3)
+- Unique constraint enforcement on progress tables (Sprint 0.3)
+- Soft delete / cascade behavior implementation (Sprint 0.3)
 
 ---
 
@@ -89,10 +89,10 @@ This document describes the current database schema and entity relationships for
 │                   Deck                      Card                         │
 │                   (by ID, not FK)              (by ID, not FK)              │
 │                                                                              │
-│  Note: Progress entities currently store IDs as Long, not JPA relationships. │
-│        This keeps the model simple while copy vs reference is unresolved,   │
-│        but it also means the database does not protect these references      │
-│        from becoming orphaned.                                              │
+│  Note: Progress entities store IDs as Long (logical references). V1 baseline│
+│        adds FK constraints on user_deck_progress.deck_id and                 │
+│        user_card_progress.card_id/user_deck_progress_id with RESTRICT delete│
+│        rules to prevent orphaned references. Soft delete strategy is pending.│
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -174,8 +174,8 @@ User.id ──1:N──▶ UserDeckProgress.userId
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long userId` field |
-| FK in DB | No explicit FK constraint |
-| Rationale | Keeps the model simple while copy vs reference is unresolved; no DB protection against orphaned references |
+| FK in DB | No FK on `user_id` (logical reference) |
+| Rationale | Logical reference to avoid cross-module coupling; orphaned user risk handled at service level |
 
 ### 5.2 UserDeckProgress → UserCardProgress (1:N) — "Deck progress contains Card progress"
 
@@ -187,8 +187,8 @@ UserDeckProgress.id ──1:N──▶ UserCardProgress.userDeckProgressId
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long userDeckProgressId` field |
-| FK in DB | No explicit FK constraint |
-| Rationale | Keeps the model simple while copy vs reference is unresolved; no DB protection against orphaned references |
+| FK in DB | `fk_ucp_user_deck_progress` (added in V1 baseline) |
+| Rationale | DB-level protection while keeping JPA model simple |
 
 ### 5.3 UserDeckProgress → Deck (N:1 logical) — "Progress refers to Deck"
 
@@ -200,8 +200,8 @@ UserDeckProgress.deckId ──N:1 (logical)──▶ Deck.id
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long deckId` field |
-| FK in DB | No explicit FK constraint |
-| Implication | Can reference deck that no longer exists |
+| FK in DB | `fk_udp_deck` (added in V1 baseline) |
+| Implication | RESTRICT delete prevents deck deletion while enrollments exist |
 
 ### 5.4 UserCardProgress → Card (N:1 logical) — "Progress refers to Card"
 
@@ -213,8 +213,8 @@ UserCardProgress.cardId ──N:1 (logical)──▶ Card.id
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long cardId` field |
-| FK in DB | No explicit FK constraint |
-| Implication | Can reference card that no longer exists |
+| FK in DB | `fk_ucp_card` (added in V1 baseline) |
+| Implication | RESTRICT delete prevents card deletion while progress exists |
 
 ### 5.5 UserCardProgress → User (N:1 logical) — "Progress belongs to User"
 
@@ -232,17 +232,14 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 
 ## 6. Current Constraints
 
-### 6.1 Hibernate `@Check` Constraints
+### 6.1 DB `CHECK` Constraints (V1 Baseline)
 
 | Entity | Constraint | Enforcement |
 |--------|------------|-------------|
-| `UserDeckProgress` | `status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')` | Generated as DB `CHECK` if Hibernate applied it during schema creation |
-| `UserCardProgress` | `status IN ('NEW', 'LEARNING', 'REVIEWING', 'MASTERED')` | Generated as DB `CHECK` if Hibernate applied it during schema creation |
+| `UserDeckProgress` | `status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')` | `chk_user_deck_progress_status` (added in V1 baseline) |
+| `UserCardProgress` | `status IN ('NEW', 'LEARNING', 'REVIEWING', 'MASTERED')` | `chk_user_card_progress_status` (added in V1 baseline) |
 
-**Note:** `org.hibernate.annotations.@Check` instructs Hibernate to include a `CHECK` constraint in the generated DDL. Whether it actually exists in the current database depends on when and how Hibernate generated the schema. With `ddl-auto=update`, Hibernate may not retroactively add constraints to existing tables. The actual presence of these constraints must be verified via:
-```sql
-SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'public';
-```
+**Note:** `org.hibernate.annotations.@Check` is used on entities for documentation, but actual DB enforcement comes from Liquibase V1 baseline. With `ddl-auto=validate`, Hibernate only validates schema against entities; it does not generate or modify constraints.
 
 ### 6.2 Column Constraints
 
@@ -267,18 +264,24 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 | `user_card_progress` | `user_deck_progress_id` | `NOT NULL` |
 | `user_card_progress` | `status` | `NOT NULL` |
 
-### 6.3 Foreign Key Constraints (Hibernate Generated)
+### 6.3 Foreign Key Constraints (V1 Baseline)
 
-| FK Name | From Table | From Column | To Table | To Column |
-|---------|------------|-------------|----------|-----------|
-| `fk_decks_owner` | `decks` | `owner_id` | `users` | `id` |
-| (auto-generated) | `cards` | `deck_id` | `decks` | `id` |
+| FK Name | From Table | From Column | To Table | To Column | On Delete | On Update |
+|---------|------------|-------------|----------|-----------|-----------|-----------|
+| `fk_decks_owner` | `decks` | `owner_id` | `users` | `id` | NO ACTION | NO ACTION |
+| `fk_cards_deck` | `cards` | `deck_id` | `decks` | `id` | NO ACTION | NO ACTION |
+| `fk_users_auth_user` | `users` | `auth_user_id` | `auth_users` | `id` | NO ACTION | NO ACTION |
+| `fk_udp_deck` | `user_deck_progress` | `deck_id` | `decks` | `id` | RESTRICT | RESTRICT |
+| `fk_ucp_card` | `user_card_progress` | `card_id` | `cards` | `id` | RESTRICT | RESTRICT |
+| `fk_ucp_user_deck_progress` | `user_card_progress` | `user_deck_progress_id` | `user_deck_progress` | `id` | RESTRICT | RESTRICT |
+
+**Note:** `fk_decks_owner`, `fk_cards_deck`, and `fk_users_auth_user` are created as inline FK constraints in V1 (`createTable` column constraints), which do not specify `onDelete` in PostgreSQL → default is `NO ACTION`. The other three FKs use `addForeignKeyConstraint` with explicit `onDelete: RESTRICT`. The first group should be migrated to `RESTRICT` via `addForeignKeyConstraint` in Sprint 0.3 (roadmap tasks 16–17).
 
 ---
 
 ## 7. Required Future Unique Constraints
 
-**Target Sprint:** 0.3 (Flyway migration)
+**Target Sprint:** 0.3 (Liquibase incremental migration after V1 baseline)
 
 | Constraint | Tables/Columns | Business Rule |
 |------------|----------------|---------------|
@@ -298,18 +301,21 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 
 ## 8. Required Future Indexes
 
-**Target Sprint:** 0.3 (Flyway migration)
+**Target Sprint:** 0.3 (Liquibase incremental migration after V1 baseline)
 
-| Index | Table | Columns | Purpose |
-|-------|-------|---------|---------|
-| `idx_udp_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint |
-| `idx_udp_user_status` | `user_deck_progress` | `user_id, status` | List active/paused decks for user |
-| `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status |
-| `idx_ucp_user_card` | `user_card_progress` | `user_id, card_id` | Fast card lookup (if using user+card unique) |
-| `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries |
-| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) |
+| Index | Table | Columns | Purpose | Status |
+|-------|-------|---------|---------|--------|
+| `idx_udp_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint | Pending |
+| `idx_udp_user_status` | `user_deck_progress` | `user_id, status` | List active/paused decks for user | Pending |
+| `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status | ✅ Added in V1 baseline |
+| `idx_ucp_user_card` | `user_card_progress` | `user_id, card_id` | Fast card lookup (unique) | ✅ Added in V1 baseline |
+| `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending |
+| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) | Pending |
 
-**Current State:** Only `users` table has indexes (see Known Issues). `user_card_progress` has commented-out index definitions.
+**Current State (after V1 baseline):**
+- `users` table: `idx_user_auth`, `idx_user_username` (unique)
+- `user_card_progress`: `idx_ucp_user_deck`, `idx_ucp_user_card` (unique)
+- `idx_udp_user_status`, `idx_ucp_deck_status`, `idx_ucp_next_review`, `idx_cards_deck` are pending in Sprint 0.3.
 
 ---
 
@@ -321,7 +327,7 @@ SELECT * FROM information_schema.check_constraints WHERE constraint_schema = 'pu
 |--------------|-----------------|-----------|
 | AuthUser → User | None | User deleted → AuthUser remains (orphan) |
 | User → Deck | None | Deck stays (but has `owner_id` FK) |
-| Deck → Card | `CascadeType.ALL` | **Cards deleted when Deck deleted** |
+| Deck → Card | `CascadeType.ALL` (JPA) | **Cards deleted when Deck deleted** at JPA level; DB FK `fk_cards_deck` currently uses NO ACTION (to be migrated to RESTRICT in Sprint 0.3) |
 | User → UserDeckProgress | None (logical by ID) | Progress stays, references orphaned IDs |
 | UserDeckProgress → UserCardProgress | None (logical by ID) | Card progress stays if deck progress deleted |
 
@@ -451,47 +457,41 @@ AuthUser (credentials)
 | **No soft delete** | Hard deletes break referential integrity | 0.3 or later |
 | **No cascade strategy defined for User deletion** | User deletion leaves orphaned data | 0.3 |
 | **Deck Java/API naming** | Entity, package, controller, DTO naming should become `Deck` | 0.2 |
-| **`decks` table naming** | DB table rename to `decks` requires Flyway migration — must happen after Flyway is introduced | 0.3 |
+| ~~**`decks` table naming**~~ | ~~DB table rename to `decks`~~ — ✅ Done manually in Sprint 0.2 | ~~0.3~~ |
 
 ---
 
 ## 13. Sprint 0.3 TODO
 
-When Flyway is enabled (`ddl-auto=validate`), implement:
+With Liquibase enabled (`ddl-auto=validate`), the following incremental migrations are planned after V1 baseline:
 
 ### 13.1 Migrations Required
 
 ```sql
--- V1__baseline.sql (current state)
--- V2__add_constraints_and_indexes.sql (Sprint 0.3)
+-- V1__baseline_schema.yaml — CREATED (current state)
+-- V2__add_constraints_and_indexes.yaml (Sprint 0.3)
 
--- Unique constraints
+-- Unique constraints (pending)
 ALTER TABLE user_deck_progress
     ADD CONSTRAINT unique_user_deck UNIQUE (user_id, deck_id);
 
 ALTER TABLE user_card_progress
     ADD CONSTRAINT unique_deck_card UNIQUE (user_deck_progress_id, card_id);
 
--- Indexes
+-- Indexes (pending)
 CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
 CREATE INDEX idx_ucp_deck_status ON user_card_progress(user_deck_progress_id, status);
 CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
 CREATE INDEX idx_cards_deck ON cards(deck_id);
 
--- Foreign keys (if choosing Reference strategy)
--- ALTER TABLE user_deck_progress ADD CONSTRAINT fk_udp_deck
---     FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE ...;
--- ALTER TABLE user_card_progress ADD CONSTRAINT fk_ucp_card
---     FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE ...;
-
--- CHECK constraints (PostgreSQL 12+)
+-- CHECK constraints for language non-empty (pending)
 -- ALTER TABLE decks ADD CONSTRAINT chk_source_language
 --     CHECK (source_language <> '');
 ```
 
 ### 13.2 Decisions Required Before Sprint 0.3
 
-1. **Copy vs Reference:** Decide and document before adding FKs
+1. ~~**Copy vs Reference:** Decide and document before adding FKs~~ ✅ Reference accepted in Sprint 0.2
 2. **Delete behavior:** RESTRICT vs CASCADE vs SET NULL for each relationship
 3. **Soft delete:** Implement for Deck/Card before enabling strict constraints
 
@@ -585,3 +585,5 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | Date | Change |
 |------|--------|
 | 2026-06-02 | Initial version — Sprint 0.1 Architecture Freeze |
+| 2026-07-04 | Updated for Sprint 0.3: V1 Liquibase baseline created, DB schema verified, FK constraints and CHECK constraints documented. |
+| 2026-07-05 | Corrected FK delete rules in section 6.3: inline FKs (`fk_decks_owner`, `fk_cards_deck`, `fk_users_auth_user`) use NO ACTION, not RESTRICT. |

@@ -49,7 +49,7 @@
 
 ## Database
 
-- [ ] Включить Flyway для миграций
+- [x] Настроить Liquibase для миграций (V1 baseline создан)
 - [ ] Добавить индексы на часто используемые поля (email, username)
 - [ ] **Реализовать created_at через PostgreSQL DEFAULT**  
   Сейчас: используется `@PrePersist` в Java коде для установки `createdAt`  
@@ -67,7 +67,7 @@
   Сейчас: языки хранятся как `VARCHAR` (nativeLanguage, targetLanguage, uiLanguage)
   Лучше: создать PostgreSQL `ENUM` тип (`CREATE TYPE language AS ENUM ('ru', 'en', 'de', ...)`)
   и использовать `@Enumerated(EnumType.STRING)` в Java с соответствующим `enum Language`
-  Файлы: `User.java`, новый `Language.java` enum, миграция Flyway
+  Файлы: `User.java`, новый `Language.java` enum, миграция Liquibase
 
 - [ ] **Добавить уровень сложности слова и деки (CEFR: A1–C2)**
   Добавить поле `level` (enum: A1, A2, B1, B2, C1, C2) для `Card` и `CardDesc`

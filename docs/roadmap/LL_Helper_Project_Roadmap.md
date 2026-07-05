@@ -119,21 +119,63 @@
 
 ### Sprint 0.3 — Database Control
 
-1. Добавить Flyway/liquidBase
-2. Создать V1 migration (текущее состояние схемы как baseline)
-3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
+~~1. Добавить Liquibase~~
+~~2. Создать V1 migration (текущее состояние схемы как baseline)~~
+
+**🔴 Критические проблемы безопасности и производительности:**
+
+**Проблема №1: Отсутствие unique constraint на enrollment**
+- **Риск:** Двойная запись пользователя на один deck → дублированный progress
+- **Решение:** Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
+- **Приоритет:** 🔴 CRITICAL — ломает бизнес-логику обучения
+
+**Проблема №2: Неполная FK политика**
+- **Риск:** user_id в progress таблицах не защищен FK → orphaned records при удалении пользователя
+- **Решение:** Добавить FK constraints:
+  - `user_deck_progress.user_id → users.id`
+  - `user_card_progress.user_id → users.id`
+- **Приоритет:** 🔴 HIGH — целостность данных
+
+**Проблема №3: Недостаточно индексов для learning flow**
+- **Риск:** Медленные запросы на study endpoints, особенно при spaced repetition
+- **Решение:** Добавить индексы:
+  - `idx_decks_owner(owner_id)` — для deck ownership queries
+  - `idx_cards_deck(deck_id)` — для deck deletion checks
+  - `idx_udp_user_status(user_id, status)` — для user deck list
+  - `idx_ucp_due_cards(user_deck_progress_id, status, next_review_at)` — **ключевой для spaced repetition**
+- **Приоритет:** 🟡 MEDIUM — производительность
+
+**Плановые задачи:**
+3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress` (Проблема №1)
 4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress`
-5. Добавить FK constraints для learning layer (user_deck_progress → decks, user_card_progress → cards)
+5. Добавить FK constraints для learning layer:
+   - ~~user_deck_progress → decks, user_card_progress → cards~~ (сделано в V1)
+   - **user_deck_progress.user_id → users.id** (Проблема №2)
+   - **user_card_progress.user_id → users.id** (Проблема №2)
 6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
 7. Реализовать soft delete или RESTRICT для Deck/Card (защита прогресса learners)
-8. Добавить indexes на progress таблицах (idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck)
-9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)
-10. Переключить `ddl-auto` с `update` на `validate`
+8. Добавить indexes на progress таблицах:
+   - ~~idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck~~ (частично в V1)
+   - **idx_decks_owner, idx_ucp_due_cards** (Проблема №3)
+~~9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)~~
+~~10. Переключить `ddl-auto` с `update` на `validate`~~
 11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)
 12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)
 13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
-~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, без Flyway)~~
+~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, до Liquibase)~~
 15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`
+16. **Исправить FK delete rules на RESTRICT** для `fk_cards_deck`, `fk_decks_owner`, `fk_users_auth_user` (сейчас в БД `NO ACTION`)
+17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия
+18. **Добавить CHECK constraints** на неотрицательные счётчики в `user_card_progress` (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`)
+19. **Решить конфликт unique constraint для `user_card_progress`**: в БД сейчас `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), а в плане `UNIQUE(user_deck_progress_id, card_id)` — нужно выбрать правильную бизнес-семантику
+20. **Удалить дублирующий индекс** `idx_user_auth` на `users.auth_user_id` (оставить `uk_users_auth_user_id`)
+21. **Синхронизировать имена индексов/constraint**: entity `User` ожидает `idx_user_username`, а в БД constraint называется `uk_users_username`
+22. **Добавить `@ForeignKey` аннотацию в `Card` entity** для `fk_cards_deck` (сейчас FK неявный, в отличие от `Deck`)
+23. **Добавить `@Index` аннотации в `UserDeckProgress` / `UserCardProgress` entities** для соответствия физической схеме БД
+24. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint раньше, чтобы не допустить пустых строк
+25. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java
+
+> **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
 
 ### Sprint 0.4 — Testing & Postman
 
@@ -163,6 +205,17 @@
 4. Enroll deck UI
 5. Study mode UI
 6. Progress UI
+
+### Sprint 1.2 — Architecture Documentation
+
+1. Создать ER-диаграмму текущей схемы БД
+   - Формат: Mermaid (интеграция в Markdown)
+   - Разместить в `docs/database/relationships.md`
+   - Показать двухслойную архитектуру: Content Layer + Learning Layer
+   - Отметить FK constraints с RESTRICT правилами
+   - Визуализировать cascade риски (Deck → Cards)
+2. Обновить `docs/architecture/current-architecture.md` с ссылкой на ER-диаграмму
+3. Подготовить архитектурную схему для портфолио/собеседований
 
 ---
 
@@ -195,7 +248,7 @@
 
 - PostgreSQL basics: tables, foreign keys, unique constraints, not null, basic indexes
 - Basic SQL: SELECT / JOIN / WHERE
-- Flyway basics
+- Liquibase basics
 
 ### API
 
@@ -286,7 +339,7 @@
 
 ### Database
 
-- Flyway properly, `ddl-auto=validate`
+- Liquibase properly, `ddl-auto=validate`
 - Indexes, unique constraints, FK, cascade strategy
 - Query performance basics
 
@@ -454,7 +507,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - [ ]  Понятно, где content, а где progress
 - [ ]  DTO не возвращают entity наружу
 - [ ]  Есть mapper layer
-- [ ]  Есть Flyway V1
+- [x]  Есть Liquibase V1 baseline
 - [ ]  Есть GlobalExceptionHandler
 - [ ]  Есть validation
 - [ ]  Есть Postman collection
@@ -576,7 +629,7 @@ src/
 
 **Architecture cleanup:** чистая доменная структура, clean service responsibilities, transaction boundaries, no fat controllers, no entity leakage, consistent DTOs/naming
 
-**Database quality:** Flyway fully adopted, `ddl-auto=validate`, indexes, unique constraints, FK checked, cascade strategy documented
+**Database quality:** Liquibase fully adopted, `ddl-auto=validate`, indexes, unique constraints, FK checked, cascade strategy documented
 
 - `unique user_deck(user_id, deck_id)`
 - `unique user_card(user_deck_id, card_id)`
@@ -634,7 +687,7 @@ Semi-automated Postman: AI получает controller files → обновля�
 - [ ]  Проект запускается через Docker Compose
 - [ ]  Есть README уровня "другой dev может запустить"
 - [ ]  Есть Swagger / OpenAPI документация
-- [ ]  Есть Flyway migrations
+- [ ]  Есть Liquibase migrations
 - [ ]  Есть integration tests
 - [ ]  Есть CI build/test
 - [ ]  Есть frontend с нормальным UX

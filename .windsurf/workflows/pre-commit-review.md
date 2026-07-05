@@ -157,7 +157,7 @@ Check whether the changed code affects:
 If yes:
 
 - `docs/database/relationships.md` must be updated
-- Flyway migration may be required
+- Liquibase migration may be required
 - roadmap/database tasks may need update
 
 Output:

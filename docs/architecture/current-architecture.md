@@ -2,9 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.2 — Backend Cleanup
-> **Last updated:** 2026-06-30
-> **Status:** Draft v0.2 — entity leakage removed, mapper layer complete
+> **Sprint:** Sprint 0.3 — Database Control
+> **Last updated:** 2026-07-05
+> **Status:** Draft v0.3 — Liquibase foundation added, V1 baseline migration created, Flyway references removed
 
 ---
 
@@ -25,11 +25,12 @@
 - ✅ CRUD for cards
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
-- 🔄 In progress: cleanup, tests, documentation, mapper layer
+- ✅ Mapper layer, rate limiting, ownership checks completed (Sprint 0.2)
+- 🔄 In progress: database migrations, schema control (Sprint 0.3)
 
 **Out of scope for Sprint 0.1:**
 - Frontend screens (Level 1)
-- Flyway migrations (Sprint 0.3)
+- Liquibase migrations (Sprint 0.3, in progress)
 - OpenAPI/Swagger (Level 2)
 - Docker/CI (Level 2)
 - Refresh tokens, auth rate limiting (Level 3)
@@ -41,7 +42,7 @@
 | Layer | Technology |
 |-------|------------|
 | **Backend** | Java 21, Spring Boot 4.0.6 |
-| **Database** | PostgreSQL, Spring Data JPA (Hibernate) |
+| **Database** | PostgreSQL, Spring Data JPA (Hibernate), Liquibase |
 | **Security** | Spring Security, JWT (jjwt 0.12.6) |
 | **AI** | OpenAI API (gpt-4o-mini), WebFlux HTTP client |
 | **Mapper** | MapStruct 1.6.3 |
@@ -386,7 +387,7 @@ backend/src/main/java/com/llhelper/
 | ~~No `GlobalExceptionHandler`~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
 | **Deck operations missing ownership check** | 🔴 **CRITICAL** | **Sprint 0.2 (task 7.2)** |
 | **No rate limiting on user update operations** | 🔴 High | **Sprint 0.2 (task 8)** |
-| `ddl-auto=update`, no Flyway — schema not version-controlled | 🔴 High | Sprint 0.3 |
+| ~~`ddl-auto=update`, no migration tool — schema not version-controlled~~ | ~~🔴 High~~ | ~~Sprint 0.3~~ ✅ Liquibase + V1 baseline added |
 | Delete Deck/Card with existing progress → FK violation risk | 🔴 High | Sprint 0.3 |
 | No pagination for list endpoints | 🟡 Medium | Level 2 |
 | `createdAt` via `@PrePersist` instead of DB DEFAULT | 🟡 Medium | Sprint 0.3 |
@@ -399,7 +400,7 @@ backend/src/main/java/com/llhelper/
 
 **Status:** ✅ Fixed (Sprint 0.2)
 
-The `CardDesc` entity and `card_descs` table name were misleading — they read as "card description" while representing a **Deck** in the domain model. The Java package, classes, DTOs, REST endpoints, and database table were renamed to `Deck` / `decks`. The DB table rename was performed manually outside of Flyway; Flyway migration control remains a Sprint 0.3 task.
+The `CardDesc` entity and `card_descs` table name were misleading — they read as "card description" while representing a **Deck** in the domain model. The Java package, classes, DTOs, REST endpoints, and database table were renamed to `Deck` / `decks`. The DB table rename was performed manually before Liquibase was introduced; Liquibase V1 baseline captures the current schema, and incremental migrations are planned for Sprint 0.3.
 
 | Before | After |
 |--------|-------|
@@ -444,7 +445,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 1. ~~`CardDesc` naming hid the Deck concept~~ — ✅ Fixed in Sprint 0.2 (renamed to `Deck`).
 2. Copy vs reference strategy for enrolling public decks is not finalized.
-3. No Flyway means database schema is not version-controlled.
+3. Liquibase foundation added; incremental schema migrations still pending (Sprint 0.3).
 4. ~~No `GlobalExceptionHandler` means API error responses may be inconsistent.~~ ✅ Fixed (Sprint 0.2)
 5. ~~No mapper layer means the API contract depends too closely on entity structure.~~ ✅ Fixed (Sprint 0.2)
 6. AI generation saves cards directly without preview — bad AI output can persist to the database.
@@ -480,7 +481,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 1. Fix ownership checks before any mapper/DTO cleanup.
 2. Add `GlobalExceptionHandler` before expanding API behavior.
 3. Do not redesign learning UX during Sprint 0.2.
-4. Do not change DB relationship model before Flyway/Sprint 0.3.
+4. Do not change DB relationship model before Liquibase incremental migrations/Sprint 0.3.
 
 ### Open Decisions
 
@@ -506,7 +507,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 - ~~`CardDesc` → `Deck` rename~~ — ✅ Done (Sprint 0.2, DB table renamed manually)
 
 **Level 2 — Portfolio-ready:**
-- Flyway + `ddl-auto=validate`
+- Liquibase + `ddl-auto=validate` (foundation in Sprint 0.3)
 - OpenAPI/Swagger
 - Docker Compose
 - GitHub Actions CI/CD
@@ -624,3 +625,5 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-30 | Sprint 0.2 tasks 8.9-8.10 completed: rate limiting applied to CardServiceImpl.update() and delete(). |
 | 2026-06-30 | Sprint 0.2 tasks 8.11-8.13 completed: rate limiting applied to DeckServiceImpl.create(), update(), delete(). |
 | 2026-06-30 | Sprint 0.2 task 8.14 completed: GlobalExceptionHandler 429 response enriched with error code and timestamp. |
+| 2026-07-04 | Sprint 0.3 foundation: added Liquibase dependency, created V1 baseline migration, switched `ddl-auto` to `validate`. |
+| 2026-07-05 | Sprint 0.3 cleanup: removed Flyway references, corrected relationships.md FK delete rules, removed empty V2 SQL file. |
