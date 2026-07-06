@@ -146,8 +146,8 @@
 - **Приоритет:** 🟡 MEDIUM — производительность
 
 **Плановые задачи:**
-3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress` (Проблема №1)
-4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress`
+~~3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress` (Проблема №1) — V2 migration~~
+~~4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress` — V3 migration~~
 5. Добавить FK constraints для learning layer:
    - ~~user_deck_progress → decks, user_card_progress → cards~~ (сделано в V1)
    - **user_deck_progress.user_id → users.id** (Проблема №2)
@@ -167,7 +167,7 @@
 16. **Исправить FK delete rules на RESTRICT** для `fk_cards_deck`, `fk_decks_owner`, `fk_users_auth_user` (сейчас в БД `NO ACTION`)
 17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия
 18. **Добавить CHECK constraints** на неотрицательные счётчики в `user_card_progress` (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`)
-19. **Решить конфликт unique constraint для `user_card_progress`**: в БД сейчас `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), а в плане `UNIQUE(user_deck_progress_id, card_id)` — нужно выбрать правильную бизнес-семантику
+~~19. **Решить конфликт unique constraint для `user_card_progress`**: удалён `idx_ucp_user_card` (UNIQUE(user_id, card_id)), добавлен `uk_user_card_progress_deck_card` (UNIQUE(user_deck_progress_id, card_id)) — V3 migration~~
 20. **Удалить дублирующий индекс** `idx_user_auth` на `users.auth_user_id` (оставить `uk_users_auth_user_id`)
 21. **Синхронизировать имена индексов/constraint**: entity `User` ожидает `idx_user_username`, а в БД constraint называется `uk_users_username`
 22. **Добавить `@ForeignKey` аннотацию в `Card` entity** для `fk_cards_deck` (сейчас FK неявный, в отличие от `Deck`)

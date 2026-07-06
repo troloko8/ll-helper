@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: V2-1
+      author: llhelper
+      comment: Add UNIQUE(user_id, deck_id) constraint on user_deck_progress to prevent duplicate enrollments
+      changes:
+        - addUniqueConstraint:
+            tableName: user_deck_progress
+            columnNames: user_id, deck_id
+            constraintName: uk_user_deck_progress_user_deck

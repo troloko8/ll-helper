@@ -295,7 +295,11 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 
 > Do not add both `UNIQUE(user_deck_progress_id, card_id)` and `UNIQUE(user_id, card_id)` unless the final learning model requires it. If the same card can appear in multiple enrolled decks for the same user, `UNIQUE(user_id, card_id)` would incorrectly block that.
 
-**Current State:** Not enforced. Duplicate enrollments possible at DB level (handled in service layer for now).
+**Current State:**
+- `UNIQUE(user_id, deck_id)` on `user_deck_progress` — ✅ Added in V2 migration (`uk_user_deck_progress_user_deck`)
+- `UNIQUE(user_deck_progress_id, card_id)` on `user_card_progress` — ✅ Added in V3 migration (`uk_user_card_progress_deck_card`)
+
+**Note:** V1 had an incorrect `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`) that blocked learning the same card in multiple enrolled decks. Removed in V3.
 
 ---
 
@@ -436,8 +440,8 @@ AuthUser (credentials)
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **No unique constraint on `(user_id, deck_id)`** | Duplicate enrollments possible | 0.3 |
-| **No unique constraint on card progress** | Duplicate card progress rows possible | 0.3 |
+| ~~**No unique constraint on `(user_id, deck_id)`**~~ | ~~Duplicate enrollments possible~~ | ✅ Fixed in V2 migration |
+| ~~**No unique constraint on card progress**~~ | ~~Duplicate card progress rows possible~~ | ✅ Fixed in V3 migration |
 | **Progress entities use IDs, no FK constraints** | Orphaned progress possible if content deleted | 0.3 |
 | **Deck cascade deletes Cards** | Deleting deck deletes cards → breaks learner progress | 0.3 |
 
@@ -469,14 +473,13 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 
 ```sql
 -- V1__baseline_schema.yaml — CREATED (current state)
--- V2__add_constraints_and_indexes.yaml (Sprint 0.3)
+-- V2__enrollment_unique_constraint.yaml — CREATED (Sprint 0.3)
+-- V3__card_progress_unique_constraint.yaml — CREATED (Sprint 0.3)
 
--- Unique constraints (pending)
-ALTER TABLE user_deck_progress
-    ADD CONSTRAINT unique_user_deck UNIQUE (user_id, deck_id);
-
-ALTER TABLE user_card_progress
-    ADD CONSTRAINT unique_deck_card UNIQUE (user_deck_progress_id, card_id);
+-- Unique constraints
+-- ✅ DONE (V2): ALTER TABLE user_deck_progress ADD CONSTRAINT uk_user_deck_progress_user_deck UNIQUE (user_id, deck_id);
+-- ✅ DONE (V3): DROP INDEX idx_ucp_user_card (incorrect UNIQUE(user_id, card_id));
+-- ✅ DONE (V3): ALTER TABLE user_card_progress ADD CONSTRAINT uk_user_card_progress_deck_card UNIQUE (user_deck_progress_id, card_id);
 
 -- Indexes (pending)
 CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
@@ -587,3 +590,5 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-06-02 | Initial version — Sprint 0.1 Architecture Freeze |
 | 2026-07-04 | Updated for Sprint 0.3: V1 Liquibase baseline created, DB schema verified, FK constraints and CHECK constraints documented. |
 | 2026-07-05 | Corrected FK delete rules in section 6.3: inline FKs (`fk_decks_owner`, `fk_cards_deck`, `fk_users_auth_user`) use NO ACTION, not RESTRICT. |
+| 2026-07-06 | V2 migration created: added `UNIQUE(user_id, deck_id)` on `user_deck_progress` (`uk_user_deck_progress_user_deck`). Updated Known Issues and Sprint 0.3 TODO. |
+| 2026-07-06 | V3 migration created: dropped incorrect `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), added correct `UNIQUE(user_deck_progress_id, card_id)` (`uk_user_card_progress_deck_card`) on `user_card_progress`. Resolved roadmap task 19. |

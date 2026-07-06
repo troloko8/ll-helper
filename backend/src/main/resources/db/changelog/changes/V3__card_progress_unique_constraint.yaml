@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: V3-1
+      author: llhelper
+      comment: Drop incorrect UNIQUE(user_id, card_id) index on user_card_progress — blocks learning same card in multiple decks
+      changes:
+        - dropIndex:
+            tableName: user_card_progress
+            indexName: idx_ucp_user_card
+
+  - changeSet:
+      id: V3-2
+      author: llhelper
+      comment: Add correct UNIQUE(user_deck_progress_id, card_id) on user_card_progress — one card progress per enrollment per card
+      changes:
+        - addUniqueConstraint:
+            tableName: user_card_progress
+            columnNames: user_deck_progress_id, card_id
+            constraintName: uk_user_card_progress_deck_card

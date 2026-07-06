@@ -1,26 +1,25 @@
 package com.llhelper.learning.entity;
 
 import com.llhelper.learning.enums.UserDeckStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Check;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "user_deck_progress")
-@Check(constraints = "status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')")
+@Table(
+    name = "user_deck_progress",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_user_deck_progress_user_deck",
+        columnNames = {"user_id", "deck_id"}
+    ),
+    check = @CheckConstraint(constraint = "status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')")
+)
 public class UserDeckProgress {
 
     @Id

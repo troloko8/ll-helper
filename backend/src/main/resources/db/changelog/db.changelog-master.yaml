@@ -1,3 +1,7 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/V1__baseline_schema.yaml
+  - include:
+      file: db/changelog/changes/V2__enrollment_unique_constraint.yaml
+  - include:
+      file: db/changelog/changes/V3__card_progress_unique_constraint.yaml
