@@ -176,8 +176,8 @@ User.id ──1:N──▶ UserDeckProgress.userId
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long userId` field |
-| FK in DB | No FK on `user_id` (logical reference) |
-| Rationale | Logical reference to avoid cross-module coupling; orphaned user risk handled at service level |
+| FK in DB | `fk_udp_user` (added in V4 migration) |
+| Rationale | Logical reference to avoid cross-module coupling; RESTRICT delete prevents deletion of users with active enrollments |
 
 ### 5.2 UserDeckProgress → UserCardProgress (1:N) — "Deck progress contains Card progress"
 
@@ -228,7 +228,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | Aspect | Current State |
 |--------|---------------|
 | JPA Relation | None — stored as `Long userId` field |
-| FK in DB | No explicit FK constraint |
+| FK in DB | `fk_ucp_user` (added in V4 migration) |
 
 ---
 
@@ -275,7 +275,9 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `fk_users_auth_user` | `users` | `auth_user_id` | `auth_users` | `id` | NO ACTION | NO ACTION |
 | `fk_udp_deck` | `user_deck_progress` | `deck_id` | `decks` | `id` | RESTRICT | RESTRICT |
 | `fk_ucp_card` | `user_card_progress` | `card_id` | `cards` | `id` | RESTRICT | RESTRICT |
-| `fk_ucp_user_deck_progress` | `user_card_progress` | `user_deck_progress_id` | `user_deck_progress` | `id` | RESTRICT | RESTRICT |
+| `fk_ucp_user_deck_progress` | `user_card_progress` | `user_deck_progress_id` | `user_deck_progress` | `id` | CASCADE | RESTRICT |
+| `fk_udp_user` | `user_deck_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
+| `fk_ucp_user` | `user_card_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 
 **Note:** `fk_decks_owner`, `fk_cards_deck`, and `fk_users_auth_user` are created as inline FK constraints in V1 (`createTable` column constraints), which do not specify `onDelete` in PostgreSQL → default is `NO ACTION`. The other three FKs use `addForeignKeyConstraint` with explicit `onDelete: RESTRICT`. The first group should be migrated to `RESTRICT` via `addForeignKeyConstraint` in Sprint 0.3 (roadmap tasks 16–17).
 
@@ -444,7 +446,7 @@ AuthUser (credentials)
 |-------|--------|------------|
 | ~~**No unique constraint on `(user_id, deck_id)`**~~ | ~~Duplicate enrollments possible~~ | ✅ Fixed in V2 migration |
 | ~~**No unique constraint on card progress**~~ | ~~Duplicate card progress rows possible~~ | ✅ Fixed in V3 migration |
-| **Progress entities use IDs, no FK constraints** | Orphaned progress possible if content deleted | 0.3 |
+| ~~**Progress entities use IDs, no FK constraints**~~ | ~~Orphaned progress possible if content deleted~~ | ✅ Partial fix: `fk_udp_user` + `fk_ucp_user` added in V4; deck/card FKs in V1 |
 | **Deck cascade deletes Cards** | Deleting deck deletes cards → breaks learner progress | 0.3 |
 
 ### 12.2 High Priority
@@ -477,6 +479,12 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- V1__baseline_schema.yaml — CREATED (current state)
 -- V2__enrollment_unique_constraint.yaml — CREATED (Sprint 0.3)
 -- V3__card_progress_unique_constraint.yaml — CREATED (Sprint 0.3)
+-- V4__learning_user_fk_constraints.yaml — CREATED (Sprint 0.3)
+
+-- FK constraints on user_id
+-- ✅ DONE (V4): ALTER TABLE user_deck_progress ADD CONSTRAINT fk_udp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+-- ✅ DONE (V4): ALTER TABLE user_card_progress ADD CONSTRAINT fk_ucp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+-- ✅ DONE (V4): ALTER TABLE user_card_progress DROP CONSTRAINT fk_ucp_user_deck_progress; ADD CONSTRAINT fk_ucp_user_deck_progress FOREIGN KEY (user_deck_progress_id) REFERENCES user_deck_progress(id) ON DELETE CASCADE;
 
 -- Unique constraints
 -- ✅ DONE (V2): ALTER TABLE user_deck_progress ADD CONSTRAINT uk_user_deck_progress_user_deck UNIQUE (user_id, deck_id);
@@ -594,3 +602,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-05 | Corrected FK delete rules in section 6.3: inline FKs (`fk_decks_owner`, `fk_cards_deck`, `fk_users_auth_user`) use NO ACTION, not RESTRICT. |
 | 2026-07-06 | V2 migration created: added `UNIQUE(user_id, deck_id)` on `user_deck_progress` (`uk_user_deck_progress_user_deck`). Updated Known Issues and Sprint 0.3 TODO. |
 | 2026-07-06 | V3 migration created: dropped incorrect `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), added correct `UNIQUE(user_deck_progress_id, card_id)` (`uk_user_card_progress_deck_card`) on `user_card_progress`. Resolved roadmap task 19. |
+| 2026-07-06 | V4 migration created: added FK `fk_udp_user` + `fk_ucp_user` (`user_id → users.id`) with CASCADE delete. Changed `fk_ucp_user_deck_progress` from RESTRICT to CASCADE. Delete chain: `users → user_deck_progress → user_card_progress`. |

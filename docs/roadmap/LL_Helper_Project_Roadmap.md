@@ -148,10 +148,10 @@
 **Плановые задачи:**
 ~~3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress` (Проблема №1) — V2 migration~~
 ~~4. Добавить `UNIQUE(user_deck_progress_id, card_id)` на `user_card_progress` — V3 migration~~
-5. Добавить FK constraints для learning layer:
+~~5. Добавить FK constraints для learning layer:~~
    - ~~user_deck_progress → decks, user_card_progress → cards~~ (сделано в V1)
-   - **user_deck_progress.user_id → users.id** (Проблема №2)
-   - **user_card_progress.user_id → users.id** (Проблема №2)
+   - ~~**user_deck_progress.user_id → users.id** (Проблема №2)~~ — V4 migration, ON DELETE CASCADE
+   - ~~**user_card_progress.user_id → users.id** (Проблема №2)~~ — V4 migration, ON DELETE CASCADE
 6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
 7. Реализовать soft delete или RESTRICT для Deck/Card (защита прогресса learners)
 8. Добавить indexes на progress таблицах:
@@ -160,7 +160,7 @@
 ~~9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)~~
 ~~10. Переключить `ddl-auto` с `update` на `validate`~~
 11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)
-12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)
+~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4. Deck→Progress и AuthUser→User открыты (задачи 6, 13)
 13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
 ~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, до Liquibase)~~
 15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`

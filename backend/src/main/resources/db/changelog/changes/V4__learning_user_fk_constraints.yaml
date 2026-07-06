@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: V4-1
+      author: llhelper
+      comment: Add FK user_deck_progress.user_id → users.id with cascade delete
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: user_deck_progress
+            baseColumnNames: user_id
+            constraintName: fk_udp_user
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+
+  - changeSet:
+      id: V4-2
+      author: llhelper
+      comment: Add FK user_card_progress.user_id → users.id with cascade delete
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: user_card_progress
+            baseColumnNames: user_id
+            constraintName: fk_ucp_user
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+
+  - changeSet:
+      id: V4-3
+      author: llhelper
+      comment: Change fk_ucp_user_deck_progress from RESTRICT to CASCADE — when deck progress deleted, cascade to card progress
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: user_card_progress
+            constraintName: fk_ucp_user_deck_progress
+        - addForeignKeyConstraint:
+            baseTableName: user_card_progress
+            baseColumnNames: user_deck_progress_id
+            constraintName: fk_ucp_user_deck_progress
+            referencedTableName: user_deck_progress
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
