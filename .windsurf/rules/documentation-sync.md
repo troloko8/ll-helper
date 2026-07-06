@@ -22,6 +22,8 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `backend/AGENTS.md`
 - `.windsurf/rules/mapstruct-conventions.md`
 - `.windsurf/rules/entity-conventions.md`
+- `.windsurf/rules/database-schema-ownership.md`
+- `docs/database/schema-ownership.md`
 - `LLHelper.postman_collection.json` when API changes
 
 ## When to update `current-architecture.md`
@@ -110,6 +112,22 @@ Update this file when:
 If mapper conventions change, also update:
 - `backend/CONVENTIONS.md` (Mapper section)
 - `backend/AGENTS.md` (Mapper section)
+
+## When to update `database-schema-ownership.md`
+
+Update this file when the change affects:
+
+- database schema constraints (unique, check, not null, foreign key)
+- indexes
+- default values
+- enum database constraints
+- JPA annotations that describe schema (`@Table(uniqueConstraints = ...)`, `@Table(indexes = ...)`, `@Index`, `@UniqueConstraint`, `@Check`, `@CheckConstraint`, `@ColumnDefault`)
+- Hibernate DDL mode (`ddl-auto`)
+- Liquibase migration structure or conventions
+
+If a change affects entities or database schema, also update:
+- `docs/database/relationships.md`
+- `.windsurf/rules/entity-conventions.md`
 
 ## When to update Roadmap
 

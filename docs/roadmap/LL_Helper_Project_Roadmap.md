@@ -171,9 +171,10 @@
 20. **Удалить дублирующий индекс** `idx_user_auth` на `users.auth_user_id` (оставить `uk_users_auth_user_id`)
 21. **Синхронизировать имена индексов/constraint**: entity `User` ожидает `idx_user_username`, а в БД constraint называется `uk_users_username`
 22. **Добавить `@ForeignKey` аннотацию в `Card` entity** для `fk_cards_deck` (сейчас FK неявный, в отличие от `Deck`)
-23. **Добавить `@Index` аннотации в `UserDeckProgress` / `UserCardProgress` entities** для соответствия физической схеме БД
-24. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint раньше, чтобы не допустить пустых строк
-25. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java
+~~23. **Добавить `@Index` аннотации в `UserDeckProgress` / `UserCardProgress` entities** для соответствия физической схеме БД~~ — **НЕАКТУАЛЬНО:** Liquibase ownership policy установлена — entity не должны содержать `@Index`, `@UniqueConstraint`, `@CheckConstraint`. См. `docs/database/schema-ownership.md`
+~~24. **Убрать дублирующие DB constraints из entity классов (Liquibase — единственный источник истины)**~~ — ✅ **ВЫПОЛНЕНО** (2026-07-06): удалены `@Table(uniqueConstraints, indexes, check)` из `UserCardProgress`, `UserDeckProgress`, `User`; удалён `@ColumnDefault` из `AuthUser`. Создан `docs/database/schema-ownership.md` (полная версия) и `.windsurf/rules/database-schema-ownership.md` (краткая версия).
+25. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint раньше, чтобы не допустить пустых строк
+26. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java
 
 > **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
 

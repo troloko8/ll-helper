@@ -12,14 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(
-    name = "user_deck_progress",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_user_deck_progress_user_deck",
-        columnNames = {"user_id", "deck_id"}
-    ),
-    check = @CheckConstraint(constraint = "status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')")
-)
+@Table(name = "user_deck_progress")
 public class UserDeckProgress {
 
     @Id

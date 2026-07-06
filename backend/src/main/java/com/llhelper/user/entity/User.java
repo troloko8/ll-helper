@@ -12,7 +12,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -24,14 +23,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(
-    name = "users",
-    // FIXME check if indexes are needed for postgress here beacuse it's shuold be indexed by default
-    indexes = {
-        @Index(name = "idx_user_username", columnList = "username", unique = true),
-        @Index(name = "idx_user_auth", columnList = "auth_user_id")
-    }
-)
+@Table(name = "users")
 public class User {
 
     @Id
@@ -48,7 +40,7 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String username;
 
     @Column(nullable = false)

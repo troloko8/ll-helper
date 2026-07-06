@@ -84,6 +84,8 @@ When discussing DB behavior, distinguish:
 - service-level ownership checks
 - logical ID references without FK constraints
 
+**Schema ownership:** Liquibase owns the DB schema. Hibernate/JPA entities must describe only the Java-to-DB mapping. Do not define DB constraints, indexes, defaults, or check constraints in entity classes. See `.windsurf/rules/database-schema-ownership.md` for the full policy.
+
 If entity relationships change, update `docs/database/relationships.md`.
 
 If learning flow logic changes, update `docs/features/learning-flow.md`.

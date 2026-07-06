@@ -594,6 +594,78 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ---
 
+## 19. Database Schema Management
+
+> **Status:** ✅ Liquibase ownership policy established (Sprint 0.3)
+> **Detailed guide:** `docs/database/schema-ownership.md`
+> **Quick reference:** `.windsurf/rules/database-schema-ownership.md`
+
+### Schema Ownership
+
+- **Liquibase** owns the DB schema (structure, constraints, indexes, defaults)
+- **Hibernate/JPA** owns the Java-to-DB mapping (how Java objects map to tables)
+- Hibernate must **not** create, update, or evolve the database schema
+
+### Hibernate DDL Mode
+
+**Current:** `ddl-auto: validate`
+
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+```
+
+**Why validate:**
+- Hibernate verifies that entity mappings match the Liquibase-managed database schema
+- If they don't match, Hibernate fails on startup → immediate feedback
+- No risk of accidental schema changes
+- Forces use of Liquibase for all schema changes
+
+### Entity Responsibilities
+
+JPA entities describe **mapping only**, not schema:
+
+**Allowed:**
+- `@Entity`, `@Table(name = "...")`
+- `@Column(name = "...", nullable = false, length = ...)`
+- `@Enumerated(EnumType.STRING)`
+- Relationship annotations (`@ManyToOne`, etc.)
+
+**Forbidden:**
+- `@Table(uniqueConstraints = ...)`, `@Table(indexes = ...)`
+- `@Check`, `@CheckConstraint`, `@Index`, `@UniqueConstraint`
+- `@ColumnDefault`
+
+### Liquibase Responsibilities
+
+All database structure and integrity rules must be defined in Liquibase migrations:
+
+- Tables, columns, types
+- `NOT NULL`, `UNIQUE`, `CHECK`, `FOREIGN KEY` constraints
+- Indexes
+- Default values
+- Enum validation constraints
+- Triggers, views, functions, procedures
+
+### Migration Workflow
+
+When adding/changing an entity field:
+
+1. Update the Java entity mapping
+2. Create a Liquibase changeset for the database column
+3. Add DB-level constraints/indexes/defaults in Liquibase
+4. Do not rely on Hibernate auto-DDL
+
+### Current Migrations
+
+- **V1:** Baseline schema (all tables, constraints, indexes as of 2026-07-04)
+- **V2:** Unique constraint on `user_deck_progress(user_id, deck_id)`
+- **V3:** Unique constraint on `user_card_progress(user_deck_progress_id, card_id)`
+
+---
+
 ## References
 
 | Document             | Path                                          |
@@ -605,6 +677,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Learning flow design | `docs/features/learning-flow.md`               |
 | AI generation flow   | `docs/features/ai-generation-flow.md`          |
 | Rate limiting design | `docs/features/rate-limiting-design.md`        |
+| DB schema ownership  | `docs/database/schema-ownership.md`            |
 
 ---
 
@@ -627,3 +700,4 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | 2026-06-30 | Sprint 0.2 task 8.14 completed: GlobalExceptionHandler 429 response enriched with error code and timestamp. |
 | 2026-07-04 | Sprint 0.3 foundation: added Liquibase dependency, created V1 baseline migration, switched `ddl-auto` to `validate`. |
 | 2026-07-05 | Sprint 0.3 cleanup: removed Flyway references, corrected relationships.md FK delete rules, removed empty V2 SQL file. |
+| 2026-07-06 | Sprint 0.3: established Liquibase schema ownership policy. Removed duplicate DB constraints from entities (UserCardProgress, UserDeckProgress, User, AuthUser). Created `docs/database/schema-ownership.md` (detailed guide) and `.windsurf/rules/database-schema-ownership.md` (quick reference). |

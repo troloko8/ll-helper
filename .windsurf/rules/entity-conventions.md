@@ -58,6 +58,8 @@ private LocalDateTime updatedAt;
 - Currently: `@PrePersist` / `@PreUpdate` methods in entity
 - Future (Sprint 0.3): PostgreSQL `DEFAULT CURRENT_TIMESTAMP`
 
+**Note:** `nullable = false` in entity annotations is for mapping clarity only. The real `NOT NULL` constraints and defaults must be defined in Liquibase.
+
 ## Relationships
 
 **Before adding JPA relationships (`@OneToMany`, `@ManyToOne`, etc.):**
@@ -92,14 +94,11 @@ After creating entity, create corresponding mapper:
 
 ## Validation
 
-Use JPA/Bean Validation annotations:
+Use JPA/Bean Validation annotations for mapping clarity:
 
 ```java
 @Column(nullable = false)
 private String title;
-
-@Column(unique = true, nullable = false)
-private String email;
 
 @Enumerated(EnumType.STRING)
 @Column(nullable = false)
@@ -108,11 +107,16 @@ private Status status;
 
 **Do NOT use:**
 - `@NotNull` / `@NotBlank` on entity (use on DTO request)
+- `@Column(unique = true)` — unique constraints belong in Liquibase, not entities
+- `@Table(uniqueConstraints = ...)`, `@Table(indexes = ...)`, `@Index`, `@CheckConstraint`, `@ColumnDefault` — all DB schema constraints belong in Liquibase
 - Entity validation belongs in service layer or DTO
+
+See `.windsurf/rules/database-schema-ownership.md` for the full source-of-truth policy.
 
 ## References
 
 - **Lombok conventions:** `backend/CONVENTIONS.md` (section "JPA Entity")
 - **Mapper conventions:** `.windsurf/rules/mapstruct-conventions.md`
+- **DB schema ownership:** `.windsurf/rules/database-schema-ownership.md`
 - **DB relationships:** `docs/database/relationships.md`
 - **Package structure:** `docs/architecture/current-architecture.md` (section 6)

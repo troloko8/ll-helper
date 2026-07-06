@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.ColumnDefault;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,15 +26,13 @@ public class AuthUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String passwordHash;
 
     @Column(nullable = false)
-    @ColumnDefault("'USER'")
-    // FIXME SQL responsibility
     private String role = "USER";
 
     @Column(nullable = false, updatable = false)

@@ -3,8 +3,10 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Sprint:** Sprint 0.3 — Database Control
-> **Last updated:** 2026-07-05
+> **Last updated:** 2026-07-06
 > **Status:** V1 baseline migration created with Liquibase; incremental constraints pending
+
+> **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
 
 ---
 
