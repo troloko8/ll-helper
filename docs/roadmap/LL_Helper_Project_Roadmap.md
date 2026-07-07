@@ -159,11 +159,11 @@
 ~~10. Переключить `ddl-auto` с `update` на `validate`~~
 ~~11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)~~ — оставлен, выровнен с DB CASCADE в V5
 ~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4; Deck→Progress CASCADE в V5 (задача 6 ✅). AuthUser→User отложено на Level 1 (задача 13)
-13. ~~Исправить orphan: удаление `AuthUser` не каскадирует на `User`~~ — **отложено на Level 1** (неактуально до реализации `DELETE /api/v1/me`)
+13. ~~Исправить orphan: удаление `AuthUser` не каскадирует на `User`~~ — **отложено на Level 1** (неактуально до реализации `DELETE /api/v1/me`; вместе с `fk_decks_owner` и soft delete)
 ~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, до Liquibase)~~
 ~~15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`~~ — ✅ реализовано: Java enum `Language` + `@Enumerated(STRING)` + DB CHECK constraints (V6 migration)
-16. **Исправить FK delete rules** для `fk_decks_owner`, `fk_users_auth_user` (сейчас `NO ACTION`; `fk_cards_deck` уже CASCADE в V5)
-17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия
+~~16. **Исправить FK delete rules** для `fk_decks_owner`, `fk_users_auth_user` (сейчас `NO ACTION`; `fk_cards_deck` уже CASCADE в V5)~~ — **отложено на Level 1**: `fk_users_auth_user` + `fk_decks_owner` решаются вместе при реализации `DELETE /api/v1/me` + soft delete (задача 13)
+~~17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия~~ — **частично выполнено**: V4–V6 используют explicit FK style; V1 inline FK (`fk_users_auth_user`, `fk_decks_owner`, `fk_cards_deck`) не переписываем (migration immutability); будущие миграции (V7+) должны использовать только explicit FK (см. `.windsurf/rules/database-schema-ownership.md` → Liquibase migration conventions)
 18. **Добавить CHECK constraints** на неотрицательные счётчики в `user_card_progress` (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`)
 ~~19. **Решить конфликт unique constraint для `user_card_progress`**: удалён `idx_ucp_user_card` (UNIQUE(user_id, card_id)), добавлен `uk_user_card_progress_deck_card` (UNIQUE(user_deck_progress_id, card_id)) — V3 migration~~
 20. **Удалить дублирующий индекс** `idx_user_auth` на `users.auth_user_id` (оставить `uk_users_auth_user_id`)
@@ -566,7 +566,11 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - `GET /api/v1/me` — получить профиль текущего пользователя
 - `PUT /api/v1/me` — обновить свой профиль (вместо `PUT /api/v1/users/{id}` с ownership check)
 - `DELETE /api/v1/me` — удалить свой аккаунт
-- При `DELETE /api/v1/me`: добавить FK CASCADE `fk_users_auth_user` (AuthUser → User) или service-уровень транзакция: удалить User и AuthUser вместе (Sprint 0.3, задача 13)
+- При `DELETE /api/v1/me`: решить FK delete rules для `fk_users_auth_user` (AuthUser → User) и `fk_decks_owner` (User → Deck). Варианты:
+  - Soft delete: User/AuthUser/Deck помечаются как deleted, FK остаются NO ACTION
+  - Hard delete + CASCADE: `fk_users_auth_user` CASCADE (AuthUser удаляется с User), `fk_decks_owner` CASCADE (колоды удаляются с User)
+  - Hard delete + RESTRICT: запретить удаление User если есть колоды
+  - Рекомендация: soft delete (Sprint 0.3 задачи 13, 16)
 
 **Rate Limiting tests:**
 
