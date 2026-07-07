@@ -152,19 +152,19 @@
    - ~~user_deck_progress → decks, user_card_progress → cards~~ (сделано в V1)
    - ~~**user_deck_progress.user_id → users.id** (Проблема №2)~~ — V4 migration, ON DELETE CASCADE
    - ~~**user_card_progress.user_id → users.id** (Проблема №2)~~ — V4 migration, ON DELETE CASCADE
-6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck
-7. Реализовать soft delete или RESTRICT для Deck/Card (защита прогресса learners)
+~~6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck~~ — **CASCADE принят для MVP (V5 migration)**; soft delete отложен на Level 1
+~~7. Реализовать CASCADE delete для Deck/Card (защита целостности + удаление прогресса) — V5 migration~~
 8. Добавить indexes на progress таблицах:
    - ~~idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck~~ (частично в V1)
    - **idx_decks_owner, idx_ucp_due_cards** (Проблема №3)
 ~~9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)~~
 ~~10. Переключить `ddl-auto` с `update` на `validate`~~
-11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)
-~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4. Deck→Progress и AuthUser→User открыты (задачи 6, 13)
+~~11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)~~ — оставлен, выровнен с DB CASCADE в V5
+~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4; Deck→Progress CASCADE в V5 (задача 6 ✅). AuthUser→User открыто (задача 13)
 13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
 ~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, до Liquibase)~~
 15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`
-16. **Исправить FK delete rules на RESTRICT** для `fk_cards_deck`, `fk_decks_owner`, `fk_users_auth_user` (сейчас в БД `NO ACTION`)
+16. **Исправить FK delete rules** для `fk_decks_owner`, `fk_users_auth_user` (сейчас `NO ACTION`; `fk_cards_deck` уже CASCADE в V5)
 17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия
 18. **Добавить CHECK constraints** на неотрицательные счётчики в `user_card_progress` (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`)
 ~~19. **Решить конфликт unique constraint для `user_card_progress`**: удалён `idx_ucp_user_card` (UNIQUE(user_id, card_id)), добавлен `uk_user_card_progress_deck_card` (UNIQUE(user_deck_progress_id, card_id)) — V3 migration~~

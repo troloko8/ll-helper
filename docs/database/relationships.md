@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Sprint:** Sprint 0.3 — Database Control
-> **Last updated:** 2026-07-06
+> **Last updated:** 2026-07-07
 > **Status:** V1 baseline migration created with Liquibase; incremental constraints pending
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
@@ -20,7 +20,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1 Liquibase baseline migration has been created based on verified PostgreSQL schema (2026-07-04). `ddl-auto` is switched to `validate`. Incremental migrations (unique constraints, additional indexes, soft delete) are pending.
+**Note:** V1–V5 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: indexes, language enum, AuthUser→User cascade.
 
 ---
 
@@ -266,20 +266,20 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `user_card_progress` | `user_deck_progress_id` | `NOT NULL` |
 | `user_card_progress` | `status` | `NOT NULL` |
 
-### 6.3 Foreign Key Constraints (V1 Baseline)
+### 6.3 Foreign Key Constraints (Current State — V5)
 
 | FK Name | From Table | From Column | To Table | To Column | On Delete | On Update |
 |---------|------------|-------------|----------|-----------|-----------|-----------|
 | `fk_decks_owner` | `decks` | `owner_id` | `users` | `id` | NO ACTION | NO ACTION |
-| `fk_cards_deck` | `cards` | `deck_id` | `decks` | `id` | NO ACTION | NO ACTION |
+| `fk_cards_deck` | `cards` | `deck_id` | `decks` | `id` | **CASCADE** | RESTRICT |
 | `fk_users_auth_user` | `users` | `auth_user_id` | `auth_users` | `id` | NO ACTION | NO ACTION |
-| `fk_udp_deck` | `user_deck_progress` | `deck_id` | `decks` | `id` | RESTRICT | RESTRICT |
-| `fk_ucp_card` | `user_card_progress` | `card_id` | `cards` | `id` | RESTRICT | RESTRICT |
+| `fk_udp_deck` | `user_deck_progress` | `deck_id` | `decks` | `id` | **CASCADE** | RESTRICT |
+| `fk_ucp_card` | `user_card_progress` | `card_id` | `cards` | `id` | **CASCADE** | RESTRICT |
 | `fk_ucp_user_deck_progress` | `user_card_progress` | `user_deck_progress_id` | `user_deck_progress` | `id` | CASCADE | RESTRICT |
 | `fk_udp_user` | `user_deck_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 | `fk_ucp_user` | `user_card_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 
-**Note:** `fk_decks_owner`, `fk_cards_deck`, and `fk_users_auth_user` are created as inline FK constraints in V1 (`createTable` column constraints), which do not specify `onDelete` in PostgreSQL → default is `NO ACTION`. The other three FKs use `addForeignKeyConstraint` with explicit `onDelete: RESTRICT`. The first group should be migrated to `RESTRICT` via `addForeignKeyConstraint` in Sprint 0.3 (roadmap tasks 16–17).
+**Note:** `fk_decks_owner` and `fk_users_auth_user` remain `NO ACTION` (inline FK in V1 baseline). `fk_cards_deck`, `fk_udp_deck`, `fk_ucp_card` migrated to CASCADE in V5. Delete chain: `decks → cards → user_card_progress` and `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1.
 
 ---
 
@@ -335,18 +335,21 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 |--------------|-----------------|-----------|
 | AuthUser → User | None | User deleted → AuthUser remains (orphan) |
 | User → Deck | None | Deck stays (but has `owner_id` FK) |
-| Deck → Card | `CascadeType.ALL` (JPA) | **Cards deleted when Deck deleted** at JPA level; DB FK `fk_cards_deck` currently uses NO ACTION (to be migrated to RESTRICT in Sprint 0.3) |
-| User → UserDeckProgress | None (logical by ID) | Progress stays, references orphaned IDs |
-| UserDeckProgress → UserCardProgress | None (logical by ID) | Card progress stays if deck progress deleted |
+| Deck → Card | `CascadeType.ALL` (JPA) + `fk_cards_deck` CASCADE | **Cards deleted when Deck deleted** — aligned at JPA and DB level (V5) |
+| User → UserDeckProgress | None (logical by ID), `fk_udp_user` CASCADE | Progress cascade-deleted when User deleted (V4) |
+| UserDeckProgress → UserCardProgress | `fk_ucp_user_deck_progress` CASCADE | Card progress cascade-deleted when deck progress deleted (V4) |
+| Deck → UserDeckProgress | `fk_udp_deck` CASCADE | Enrollment cascade-deleted when Deck deleted (V5) |
+| Card → UserCardProgress | `fk_ucp_card` CASCADE | Card progress cascade-deleted when Card deleted (V5) |
 
-### 9.2 Unresolved Decisions (Sprint 0.3)
+### 9.2 Delete Behavior Decisions (Sprint 0.3)
 
-| Scenario | Options | Status |
-|----------|---------|--------|
-| Delete User | Cascade delete all User data? Restrict if content exists? | **Open** |
-| Delete Deck | Cascade delete Cards (current) + Progress? Restrict if progress exists? Soft delete? | **Open** — orphaned progress risk now; FK violation risk after FKs are added |
-| Delete Card | Cascade delete UserCardProgress? Restrict if progress exists? | **Open** — orphaned progress risk now; FK violation risk after FKs are added |
-| Delete UserDeckProgress | Cascade delete UserCardProgress? Orphan card progress? | **Open** |
+| Scenario | Decision | Status |
+|----------|----------|--------|
+| Delete User | CASCADE: User → UserDeckProgress → UserCardProgress (V4) | ✅ **Resolved** |
+| Delete Deck | CASCADE: Deck → Cards → UserCardProgress; Deck → UserDeckProgress → UserCardProgress (V5) | ✅ **Resolved** — CASCADE accepted for MVP; soft delete deferred to Level 1 |
+| Delete Card | CASCADE: Card → UserCardProgress (V5) | ✅ **Resolved** |
+| Delete UserDeckProgress | CASCADE: UserDeckProgress → UserCardProgress (V4) | ✅ **Resolved** |
+| Delete AuthUser | AuthUser → User: NO ACTION (orphan risk remains) | **Open** — roadmap task 13 |
 
 ### 9.3 Soft Delete Option
 
@@ -480,11 +483,15 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- V2__enrollment_unique_constraint.yaml — CREATED (Sprint 0.3)
 -- V3__card_progress_unique_constraint.yaml — CREATED (Sprint 0.3)
 -- V4__learning_user_fk_constraints.yaml — CREATED (Sprint 0.3)
+-- V5__cascade_delete_deck_card.yaml — CREATED (Sprint 0.3)
 
 -- FK constraints on user_id
 -- ✅ DONE (V4): ALTER TABLE user_deck_progress ADD CONSTRAINT fk_udp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 -- ✅ DONE (V4): ALTER TABLE user_card_progress ADD CONSTRAINT fk_ucp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 -- ✅ DONE (V4): ALTER TABLE user_card_progress DROP CONSTRAINT fk_ucp_user_deck_progress; ADD CONSTRAINT fk_ucp_user_deck_progress FOREIGN KEY (user_deck_progress_id) REFERENCES user_deck_progress(id) ON DELETE CASCADE;
+-- ✅ DONE (V5): DROP + re-add fk_udp_deck ON DELETE CASCADE (was RESTRICT);
+-- ✅ DONE (V5): DROP + re-add fk_ucp_card ON DELETE CASCADE (was RESTRICT);
+-- ✅ DONE (V5): DROP + re-add fk_cards_deck ON DELETE CASCADE (was NO ACTION) — aligns DB with JPA CascadeType.ALL;
 
 -- Unique constraints
 -- ✅ DONE (V2): ALTER TABLE user_deck_progress ADD CONSTRAINT uk_user_deck_progress_user_deck UNIQUE (user_id, deck_id);
@@ -603,3 +610,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-06 | V2 migration created: added `UNIQUE(user_id, deck_id)` on `user_deck_progress` (`uk_user_deck_progress_user_deck`). Updated Known Issues and Sprint 0.3 TODO. |
 | 2026-07-06 | V3 migration created: dropped incorrect `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), added correct `UNIQUE(user_deck_progress_id, card_id)` (`uk_user_card_progress_deck_card`) on `user_card_progress`. Resolved roadmap task 19. |
 | 2026-07-06 | V4 migration created: added FK `fk_udp_user` + `fk_ucp_user` (`user_id → users.id`) with CASCADE delete. Changed `fk_ucp_user_deck_progress` from RESTRICT to CASCADE. Delete chain: `users → user_deck_progress → user_card_progress`. |
+| 2026-07-07 | V5 migration created: CASCADE delete for `fk_udp_deck`, `fk_ucp_card`, `fk_cards_deck`. Decision: CASCADE accepted for MVP (Sprint 0.3); soft delete deferred to Level 1. Full delete chains established. |

@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: V5-1
+      author: llhelper
+      comment: Change fk_udp_deck from RESTRICT to CASCADE — when deck deleted, cascade delete user_deck_progress
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: user_deck_progress
+            constraintName: fk_udp_deck
+        - addForeignKeyConstraint:
+            baseTableName: user_deck_progress
+            baseColumnNames: deck_id
+            constraintName: fk_udp_deck
+            referencedTableName: decks
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+
+  - changeSet:
+      id: V5-2
+      author: llhelper
+      comment: Change fk_ucp_card from RESTRICT to CASCADE — when card deleted, cascade delete user_card_progress
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: user_card_progress
+            constraintName: fk_ucp_card
+        - addForeignKeyConstraint:
+            baseTableName: user_card_progress
+            baseColumnNames: card_id
+            constraintName: fk_ucp_card
+            referencedTableName: cards
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+
+  - changeSet:
+      id: V5-3
+      author: llhelper
+      comment: Change fk_cards_deck from NO ACTION to CASCADE — align DB behavior with JPA CascadeType.ALL (deck delete removes cards)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: cards
+            constraintName: fk_cards_deck
+        - addForeignKeyConstraint:
+            baseTableName: cards
+            baseColumnNames: deck_id
+            constraintName: fk_cards_deck
+            referencedTableName: decks
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT

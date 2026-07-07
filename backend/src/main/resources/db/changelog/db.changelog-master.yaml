@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/V3__card_progress_unique_constraint.yaml
   - include:
       file: db/changelog/changes/V4__learning_user_fk_constraints.yaml
+  - include:
+      file: db/changelog/changes/V5__cascade_delete_deck_card.yaml
