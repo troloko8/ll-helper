@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: V7-1
+      author: llhelper
+      comment: Add CHECK constraints on user_card_progress counters to prevent negative values
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: >
+              ALTER TABLE user_card_progress
+              ADD CONSTRAINT chk_ucp_times_seen_non_negative CHECK (times_seen >= 0);
+        - sql:
+            dbms: postgresql
+            sql: >
+              ALTER TABLE user_card_progress
+              ADD CONSTRAINT chk_ucp_times_correct_non_negative CHECK (times_correct >= 0);
+        - sql:
+            dbms: postgresql
+            sql: >
+              ALTER TABLE user_card_progress
+              ADD CONSTRAINT chk_ucp_times_wrong_non_negative CHECK (times_wrong >= 0);
+        - sql:
+            dbms: postgresql
+            sql: >
+              ALTER TABLE user_card_progress
+              ADD CONSTRAINT chk_ucp_correct_streak_non_negative CHECK (correct_streak >= 0);

@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changes/V5__cascade_delete_deck_card.yaml
   - include:
       file: db/changelog/changes/V6__language_enum_decks.yaml
+  - include:
+      file: db/changelog/changes/V7__card_progress_check_constraints.yaml

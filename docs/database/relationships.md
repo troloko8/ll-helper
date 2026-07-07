@@ -20,7 +20,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1–V5 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: indexes, language enum, AuthUser→User cascade.
+**Note:** V1–V7 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: indexes, AuthUser→User cascade.
 
 ---
 
@@ -240,6 +240,10 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 |--------|------------|-------------|
 | `UserDeckProgress` | `status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')` | `chk_user_deck_progress_status` (added in V1 baseline) |
 | `UserCardProgress` | `status IN ('NEW', 'LEARNING', 'REVIEWING', 'MASTERED')` | `chk_user_card_progress_status` (added in V1 baseline) |
+| `UserCardProgress` | `times_seen >= 0` | `chk_ucp_times_seen_non_negative` (added in V7) |
+| `UserCardProgress` | `times_correct >= 0` | `chk_ucp_times_correct_non_negative` (added in V7) |
+| `UserCardProgress` | `times_wrong >= 0` | `chk_ucp_times_wrong_non_negative` (added in V7) |
+| `UserCardProgress` | `correct_streak >= 0` | `chk_ucp_correct_streak_non_negative` (added in V7) |
 | `Deck` | `source_language IN ('EN','RU','DE',...)` | `chk_decks_source_language` (added in V6) |
 | `Deck` | `target_language IN ('EN','RU','DE',...)` | `chk_decks_target_language` (added in V6) |
 
@@ -508,6 +512,11 @@ CREATE INDEX idx_ucp_deck_status ON user_card_progress(user_deck_progress_id, st
 CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
 CREATE INDEX idx_cards_deck ON cards(deck_id);
 
+-- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_seen_non_negative CHECK (times_seen >= 0);
+-- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_correct_non_negative CHECK (times_correct >= 0);
+-- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_wrong_non_negative CHECK (times_wrong >= 0);
+-- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_correct_streak_non_negative CHECK (correct_streak >= 0);
+
 -- CHECK constraints for language non-empty (pending)
 -- ALTER TABLE decks ADD CONSTRAINT chk_source_language
 --     CHECK (source_language <> '');
@@ -616,3 +625,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-06 | V4 migration created: added FK `fk_udp_user` + `fk_ucp_user` (`user_id → users.id`) with CASCADE delete. Changed `fk_ucp_user_deck_progress` from RESTRICT to CASCADE. Delete chain: `users → user_deck_progress → user_card_progress`. |
 | 2026-07-07 | V5 migration created: CASCADE delete for `fk_udp_deck`, `fk_ucp_card`, `fk_cards_deck`. Decision: CASCADE accepted for MVP (Sprint 0.3); soft delete deferred to Level 1. Full delete chains established. |
 | 2026-07-07 | V6 migration created: Language enum for `decks.source_language`/`target_language`. Removed `defaultValue ''`, added CHECK constraints. Java enum `Language` in `common/model/`. Deck entity + DTOs updated. |
+| 2026-07-07 | V7 migration created: CHECK constraints on `user_card_progress` counters (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`) to prevent negative values. |
