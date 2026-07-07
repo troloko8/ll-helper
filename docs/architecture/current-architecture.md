@@ -368,6 +368,8 @@ backend/src/main/java/com/llhelper/
 │   ├── dto/AiCardData.java
 │   └── util/AiRateLimiter.java
 └── common/
+    ├── model/
+    │   └── Language.java          ← shared enum (ISO 639-1 codes)
     ├── security/
     │   ├── JwtService.java
     │   ├── JwtAuthenticationFilter.java
@@ -701,3 +703,4 @@ When adding/changing an entity field:
 | 2026-07-04 | Sprint 0.3 foundation: added Liquibase dependency, created V1 baseline migration, switched `ddl-auto` to `validate`. |
 | 2026-07-05 | Sprint 0.3 cleanup: removed Flyway references, corrected relationships.md FK delete rules, removed empty V2 SQL file. |
 | 2026-07-06 | Sprint 0.3: established Liquibase schema ownership policy. Removed duplicate DB constraints from entities (UserCardProgress, UserDeckProgress, User, AuthUser). Created `docs/database/schema-ownership.md` (detailed guide) and `.windsurf/rules/database-schema-ownership.md` (quick reference). |
+| 2026-07-07 | Sprint 0.3: added `common/model/Language.java` enum (ISO 639-1). Deck entity/DTOs migrated from `String` to `Language`. V6 migration: DROP DEFAULT + CHECK constraints on `decks.source_language`/`target_language`. |

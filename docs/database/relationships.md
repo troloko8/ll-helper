@@ -240,6 +240,8 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 |--------|------------|-------------|
 | `UserDeckProgress` | `status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')` | `chk_user_deck_progress_status` (added in V1 baseline) |
 | `UserCardProgress` | `status IN ('NEW', 'LEARNING', 'REVIEWING', 'MASTERED')` | `chk_user_card_progress_status` (added in V1 baseline) |
+| `Deck` | `source_language IN ('EN','RU','DE',...)` | `chk_decks_source_language` (added in V6) |
+| `Deck` | `target_language IN ('EN','RU','DE',...)` | `chk_decks_target_language` (added in V6) |
 
 **Note:** `org.hibernate.annotations.@Check` is used on entities for documentation, but actual DB enforcement comes from Liquibase V1 baseline. With `ddl-auto=validate`, Hibernate only validates schema against entities; it does not generate or modify constraints.
 
@@ -253,8 +255,8 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `users` | `username` | `UNIQUE`, `NOT NULL` |
 | `users` | `auth_user_id` | `NOT NULL` (implied) |
 | `decks` | `title` | `NOT NULL` |
-| `decks` | `source_language` | `NOT NULL` |
-| `decks` | `target_language` | `NOT NULL` |
+| `decks` | `source_language` | `NOT NULL`, enum CHECK (`chk_decks_source_language`), no default (V6) |
+| `decks` | `target_language` | `NOT NULL`, enum CHECK (`chk_decks_target_language`), no default (V6) |
 | `decks` | `owner_id` | `NOT NULL` |
 | `cards` | `title` | `NOT NULL` |
 | `cards` | `deck_id` | `NOT NULL` |
@@ -492,6 +494,8 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- ✅ DONE (V5): DROP + re-add fk_udp_deck ON DELETE CASCADE (was RESTRICT);
 -- ✅ DONE (V5): DROP + re-add fk_ucp_card ON DELETE CASCADE (was RESTRICT);
 -- ✅ DONE (V5): DROP + re-add fk_cards_deck ON DELETE CASCADE (was NO ACTION) — aligns DB with JPA CascadeType.ALL;
+-- ✅ DONE (V6): DROP DEFAULT '' from decks.source_language / target_language;
+-- ✅ DONE (V6): ADD CONSTRAINT chk_decks_source_language / chk_decks_target_language CHECK (enum values);
 
 -- Unique constraints
 -- ✅ DONE (V2): ALTER TABLE user_deck_progress ADD CONSTRAINT uk_user_deck_progress_user_deck UNIQUE (user_id, deck_id);
@@ -611,3 +615,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-06 | V3 migration created: dropped incorrect `UNIQUE(user_id, card_id)` (`idx_ucp_user_card`), added correct `UNIQUE(user_deck_progress_id, card_id)` (`uk_user_card_progress_deck_card`) on `user_card_progress`. Resolved roadmap task 19. |
 | 2026-07-06 | V4 migration created: added FK `fk_udp_user` + `fk_ucp_user` (`user_id → users.id`) with CASCADE delete. Changed `fk_ucp_user_deck_progress` from RESTRICT to CASCADE. Delete chain: `users → user_deck_progress → user_card_progress`. |
 | 2026-07-07 | V5 migration created: CASCADE delete for `fk_udp_deck`, `fk_ucp_card`, `fk_cards_deck`. Decision: CASCADE accepted for MVP (Sprint 0.3); soft delete deferred to Level 1. Full delete chains established. |
+| 2026-07-07 | V6 migration created: Language enum for `decks.source_language`/`target_language`. Removed `defaultValue ''`, added CHECK constraints. Java enum `Language` in `common/model/`. Deck entity + DTOs updated. |

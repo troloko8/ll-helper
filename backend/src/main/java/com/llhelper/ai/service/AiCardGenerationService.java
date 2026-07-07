@@ -5,6 +5,7 @@ import com.llhelper.ai.exception.AiServiceException;
 import com.llhelper.ai.provider.AiProvider;
 import com.llhelper.ai.provider.OpenAiProvider;
 import com.llhelper.ai.util.AiRateLimiter;
+import com.llhelper.common.model.Language;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,7 +22,7 @@ public class AiCardGenerationService {
         this.aiProvider = openAiProvider;
     }
 
-    public AiCardData generateCardData(String title, String sourceLanguage, String targetLanguage) {
+    public AiCardData generateCardData(String title, Language sourceLanguage, Language targetLanguage) {
         if (!aiProvider.isAvailable()) {
             throw new AiServiceException("AI provider is not available. Check API configuration.");
         }

@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changes/V4__learning_user_fk_constraints.yaml
   - include:
       file: db/changelog/changes/V5__cascade_delete_deck_card.yaml
+  - include:
+      file: db/changelog/changes/V6__language_enum_decks.yaml

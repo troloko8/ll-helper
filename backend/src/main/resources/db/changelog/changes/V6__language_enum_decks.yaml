@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: V6-0
+      author: llhelper
+      comment: Normalize invalid language values to 'EN' before applying CHECK constraints (handles legacy '' or lowercase values)
+      changes:
+        - sql:
+            sql: >
+              UPDATE decks
+              SET source_language = 'EN'
+              WHERE source_language NOT IN ('EN','RU','DE','FR','ES','IT','PT','ZH','JA','KO','AR','PL','UK','NL','SV','NO','DA','FI','TR','HE')
+                 OR source_language IS NULL;
+        - sql:
+            sql: >
+              UPDATE decks
+              SET target_language = 'EN'
+              WHERE target_language NOT IN ('EN','RU','DE','FR','ES','IT','PT','ZH','JA','KO','AR','PL','UK','NL','SV','NO','DA','FI','TR','HE')
+                 OR target_language IS NULL;
+
+  - changeSet:
+      id: V6-1
+      author: llhelper
+      comment: Remove empty string default from decks.source_language (was defaultValue '' in V1 baseline)
+      changes:
+        - sql:
+            sql: ALTER TABLE decks ALTER COLUMN source_language DROP DEFAULT;
+
+  - changeSet:
+      id: V6-2
+      author: llhelper
+      comment: Remove empty string default from decks.target_language (was defaultValue '' in V1 baseline)
+      changes:
+        - sql:
+            sql: ALTER TABLE decks ALTER COLUMN target_language DROP DEFAULT;
+
+  - changeSet:
+      id: V6-3
+      author: llhelper
+      comment: Add CHECK constraint — source_language must be a valid Language enum value
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE decks ADD CONSTRAINT chk_decks_source_language
+              CHECK (source_language IN ('EN','RU','DE','FR','ES','IT','PT','ZH','JA','KO','AR','PL','UK','NL','SV','NO','DA','FI','TR','HE'));
+
+  - changeSet:
+      id: V6-4
+      author: llhelper
+      comment: Add CHECK constraint — target_language must be a valid Language enum value
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE decks ADD CONSTRAINT chk_decks_target_language
+              CHECK (target_language IN ('EN','RU','DE','FR','ES','IT','PT','ZH','JA','KO','AR','PL','UK','NL','SV','NO','DA','FI','TR','HE'));

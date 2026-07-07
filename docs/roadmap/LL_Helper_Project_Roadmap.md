@@ -154,16 +154,14 @@
    - ~~**user_card_progress.user_id → users.id** (Проблема №2)~~ — V4 migration, ON DELETE CASCADE
 ~~6. Принять решение по delete behavior (RESTRICT vs CASCADE vs soft delete) для Card/Deck~~ — **CASCADE принят для MVP (V5 migration)**; soft delete отложен на Level 1
 ~~7. Реализовать CASCADE delete для Deck/Card (защита целостности + удаление прогресса) — V5 migration~~
-8. Добавить indexes на progress таблицах:
-   - ~~idx_udp_user_status, idx_ucp_deck_status, idx_ucp_next_review, idx_cards_deck~~ (частично в V1)
-   - **idx_decks_owner, idx_ucp_due_cards** (Проблема №3)
+8. ~~Добавить pending indexes~~ — **отложено на Level 2** (не критично для MVP; критичные unique constraints и FK уже добавлены). Оставшиеся: `idx_decks_owner`, `idx_ucp_due_cards` + pending из V1
 ~~9. Проверить реальную DB схему через `information_schema` (nullable, FK, indexes, constraints)~~
 ~~10. Переключить `ddl-auto` с `update` на `validate`~~
 ~~11. Решить стратегию `CascadeType.ALL` на `Deck → Cards` (убрать или заменить на explicit cascade)~~ — оставлен, выровнен с DB CASCADE в V5
-~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4; Deck→Progress CASCADE в V5 (задача 6 ✅). AuthUser→User открыто (задача 13)
-13. Исправить orphan: удаление `AuthUser` не каскадирует на `User`
+~~12. Определить cascade стратегию при удалении `User` (AuthUser → User → Deck → Progress)~~ — **частично**: User → UserDeckProgress → UserCardProgress CASCADE в V4; Deck→Progress CASCADE в V5 (задача 6 ✅). AuthUser→User отложено на Level 1 (задача 13)
+13. ~~Исправить orphan: удаление `AuthUser` не каскадирует на `User`~~ — **отложено на Level 1** (неактуально до реализации `DELETE /api/v1/me`)
 ~~14. Переименовать таблицу `card_descs → decks` (выполнено вручную, до Liquibase)~~
-15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`
+~~15. Рассмотреть language enum вместо VARCHAR для `sourceLanguage`/`targetLanguage`~~ — ✅ реализовано: Java enum `Language` + `@Enumerated(STRING)` + DB CHECK constraints (V6 migration)
 16. **Исправить FK delete rules** для `fk_decks_owner`, `fk_users_auth_user` (сейчас `NO ACTION`; `fk_cards_deck` уже CASCADE в V5)
 17. **Перейти от inline FK к `addForeignKeyConstraint`** в Liquibase для поддержки `onDelete: RESTRICT` и единообразия
 18. **Добавить CHECK constraints** на неотрицательные счётчики в `user_card_progress` (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`)
@@ -173,7 +171,7 @@
 22. **Добавить `@ForeignKey` аннотацию в `Card` entity** для `fk_cards_deck` (сейчас FK неявный, в отличие от `Deck`)
 ~~23. **Добавить `@Index` аннотации в `UserDeckProgress` / `UserCardProgress` entities** для соответствия физической схеме БД~~ — **НЕАКТУАЛЬНО:** Liquibase ownership policy установлена — entity не должны содержать `@Index`, `@UniqueConstraint`, `@CheckConstraint`. См. `docs/database/schema-ownership.md`
 ~~24. **Убрать дублирующие DB constraints из entity классов (Liquibase — единственный источник истины)**~~ — ✅ **ВЫПОЛНЕНО** (2026-07-06): удалены `@Table(uniqueConstraints, indexes, check)` из `UserCardProgress`, `UserDeckProgress`, `User`; удалён `@ColumnDefault` из `AuthUser`. Создан `docs/database/schema-ownership.md` (полная версия) и `.windsurf/rules/database-schema-ownership.md` (краткая версия).
-25. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint раньше, чтобы не допустить пустых строк
+~~25. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint~~ — ✅ выполнено в V6: DROP DEFAULT + enum CHECK constraint
 26. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java
 
 > **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
@@ -568,6 +566,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - `GET /api/v1/me` — получить профиль текущего пользователя
 - `PUT /api/v1/me` — обновить свой профиль (вместо `PUT /api/v1/users/{id}` с ownership check)
 - `DELETE /api/v1/me` — удалить свой аккаунт
+- При `DELETE /api/v1/me`: добавить FK CASCADE `fk_users_auth_user` (AuthUser → User) или service-уровень транзакция: удалить User и AuthUser вместе (Sprint 0.3, задача 13)
 
 **Rate Limiting tests:**
 
@@ -635,6 +634,13 @@ src/
 - `unique user_deck(user_id, deck_id)`
 - `unique user_card(user_deck_id, card_id)`
 - `index cards(deck_id)`, `index user_cards(user_deck_id)`, `index user_cards(next_review_at)`
+
+**Индексация БД (перенесено из Sprint 0.3, задача 8):**
+
+- `idx_decks_owner(owner_id)` — для `GET /decks` (все колоды пользователя)
+- `idx_udp_user_status(user_id, status)` — для списка активных деков пользователя
+- `idx_ucp_due_cards(user_deck_progress_id, status, next_review_at)` — **ключевой для spaced repetition** (`GET /study-cards`)
+- `idx_ucp_next_review(user_deck_progress_id, next_review_at)` — для scheduled review queries
 
 **Security:** authentication vs authorization, JWT structure, password hashing, Spring Security filter chain, SecurityContext, protected endpoints, ownership checks, CORS
 

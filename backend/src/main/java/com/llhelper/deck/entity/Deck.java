@@ -2,9 +2,12 @@ package com.llhelper.deck.entity;
 
 import com.llhelper.card.entity.Card;
 import com.llhelper.user.entity.User;
+import com.llhelper.common.model.Language;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -39,13 +42,13 @@ public class Deck {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // TODO: Add DB-level CHECK constraint: source_language <> '' (empty string should be disallowed)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String sourceLanguage;
+    private Language sourceLanguage;
 
-    // TODO: Add DB-level CHECK constraint: target_language <> '' (empty string should be disallowed)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String targetLanguage;
+    private Language targetLanguage;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

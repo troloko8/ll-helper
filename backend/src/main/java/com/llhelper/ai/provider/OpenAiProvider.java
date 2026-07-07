@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.ai.exception.AiServiceException;
+import com.llhelper.common.model.Language;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +74,12 @@ private static final String PROMPT_TEMPLATE = """
     }
 
     @Override
-    public AiCardData generate(String title, String sourceLanguage, String targetLanguage) {
+    public AiCardData generate(String title, Language sourceLanguage, Language targetLanguage) {
         if (!isAvailable()) {
             throw new AiServiceException("OpenAI API key is not configured");
         }
 
-        String prompt = String.format(PROMPT_TEMPLATE, title, sourceLanguage, targetLanguage);
+        String prompt = String.format(PROMPT_TEMPLATE, title, sourceLanguage.name(), targetLanguage.name());
 
         // TODO: sort this config out later
         Map<String, Object> requestBody = Map.of(
