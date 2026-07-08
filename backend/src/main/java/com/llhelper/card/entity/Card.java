@@ -4,6 +4,7 @@ import com.llhelper.deck.entity.Deck;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -56,6 +57,10 @@ public class Card {
     private Long deckId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "deck_id", nullable = false)
+    @JoinColumn(
+        name = "deck_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_cards_deck")
+    )
     private Deck deck;
 }
