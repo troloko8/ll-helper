@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/V6__language_enum_decks.yaml
   - include:
       file: db/changelog/changes/V7__card_progress_check_constraints.yaml
+  - include:
+      file: db/changelog/changes/V8__remove_duplicate_user_auth_index.yaml

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: V8-1
+      author: llhelper
+      comment: Remove duplicate index idx_user_auth on users.auth_user_id (uk_users_auth_user_id already provides indexing)
+      preConditions:
+        - onFail: MARK_RAN
+        - indexExists:
+            tableName: users
+            indexName: idx_user_auth
+      changes:
+        - dropIndex:
+            tableName: users
+            indexName: idx_user_auth
