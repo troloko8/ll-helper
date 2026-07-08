@@ -92,6 +92,38 @@ Allowed enum values must be enforced in Liquibase through a database-level const
 - Database-side defaults must be defined in Liquibase when the database must guarantee them.
 - **Do not use** `@ColumnDefault` in entities.
 
+## Database Naming Conventions
+
+Use explicit snake_case names for database constraints and indexes.
+
+**Recommended patterns:**
+
+- Primary key: `pk_<table>`
+- Unique constraint: `uk_<table>_<column_or_columns>`
+- Foreign key: `fk_<child_table>_<parent_table_or_relation>`
+- Index: `idx_<table>_<column_or_columns>`
+- Check constraint: `chk_<table>_<rule_or_column>`
+
+**Examples:**
+
+- `pk_users`
+- `uk_users_username`
+- `fk_user_card_progress_user`
+- `fk_user_card_progress_card`
+- `idx_user_card_progress_user_deck_status`
+- `chk_user_card_progress_status`
+
+**Prefer full table names over unclear abbreviations.**
+
+**Legacy names from old migrations do not need to be renamed unless there is a real reason.** Use the new convention for new migrations.
+
+**Legacy exceptions (V1–V8):**
+- Primary keys: `users_pkey` instead of `pk_users` (PostgreSQL default)
+- Foreign keys: `fk_udp_user`, `fk_ucp_card` instead of full names
+- Indexes: `idx_ucp_user_deck` instead of full names
+- Do not rename for style only — migration immutability applies
+- Future migrations (V9+) should use standard patterns above
+
 ## Liquibase migration conventions
 
 ### Migration immutability
