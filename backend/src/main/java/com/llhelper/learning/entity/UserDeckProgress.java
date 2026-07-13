@@ -3,7 +3,7 @@ package com.llhelper.learning.entity;
 import com.llhelper.learning.enums.UserDeckStatus;
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,7 +25,8 @@ public class UserDeckProgress {
     @Column(nullable = false)
     private Long deckId;
 
-    private LocalDateTime lastStudiedAt;
+    @Column(name = "last_studied_at")
+    private Instant lastStudiedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

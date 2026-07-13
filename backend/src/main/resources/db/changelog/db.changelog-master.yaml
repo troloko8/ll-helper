@@ -17,3 +17,5 @@ databaseChangeLog:
       file: db/changelog/changes/V8__remove_duplicate_user_auth_index.yaml
   - include:
       file: db/changelog/changes/V9__migrate_to_timestamptz.yaml
+  - include:
+      file: db/changelog/changes/V10__convert_learning_progress_timestamps_to_timestamptz.yaml

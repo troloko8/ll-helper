@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: V10-1
+      author: llhelper
+      comment: Convert learning progress timestamps from TIMESTAMP to TIMESTAMPTZ with explicit timezone
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE user_deck_progress
+                ALTER COLUMN last_studied_at TYPE timestamptz
+                USING last_studied_at AT TIME ZONE 'Asia/Jerusalem';
+              
+              ALTER TABLE user_card_progress
+                ALTER COLUMN last_reviewed_at TYPE timestamptz
+                USING last_reviewed_at AT TIME ZONE 'Asia/Jerusalem',
+                ALTER COLUMN next_review_at TYPE timestamptz
+                USING next_review_at AT TIME ZONE 'Asia/Jerusalem';

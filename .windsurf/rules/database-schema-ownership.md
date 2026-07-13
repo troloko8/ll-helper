@@ -96,6 +96,8 @@ Allowed enum values must be enforced in Liquibase through a database-level const
 
 Technical timestamps must use UTC-safe storage.
 
+**Note:** When migrating existing `timestamp` columns to `timestamptz`, see section "Migrating existing TIMESTAMP to TIMESTAMPTZ" below.
+
 **PostgreSQL columns:**
 - Use `timestamptz` (TIMESTAMP WITH TIME ZONE)
 - **Never** use `timestamp` without time zone for technical timestamps
@@ -128,6 +130,80 @@ private Instant updatedAt;
 **Display:**
 - Convert to user's local timezone only at API/UI level
 - Backend always stores and processes timestamps in UTC
+
+### Business timestamps vs Technical timestamps
+
+**Technical timestamps** (`created_at`, `updated_at`):
+- Managed by database (DEFAULT + triggers)
+- Use `Instant` + `timestamptz`
+- Mark as `insertable = false, updatable = false`
+- Never set manually in application code
+
+**Business timestamps** (`last_reviewed_at`, `last_studied_at`, `next_review_at`):
+- Managed by application business logic
+- Use `Instant` + `timestamptz` for UTC-safe storage
+- **Do NOT** mark as `insertable = false, updatable = false`
+- **Do NOT** add database DEFAULT or triggers
+- Set explicitly in service layer when business event occurs
+
+Example:
+```java
+// Technical timestamp — database-managed
+@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+private Instant createdAt;
+
+// Business timestamp — application-managed
+@Column(name = "last_reviewed_at")
+private Instant lastReviewedAt;
+```
+
+### Migrating existing TIMESTAMP to TIMESTAMPTZ
+
+When converting existing `timestamp` columns to `timestamptz`, **always use explicit `AT TIME ZONE`** to ensure predictable conversion.
+
+**❌ UNSAFE — do NOT use `modifyDataType`:**
+
+```yaml
+- modifyDataType:
+    tableName: user_card_progress
+    columnName: last_reviewed_at
+    newDataType: TIMESTAMPTZ
+```
+
+**Why unsafe:**
+- PostgreSQL interprets `timestamp` → `timestamptz` based on `session timezone`
+- Different sessions may convert the same data differently
+- No guarantee of consistent conversion
+
+**✅ SAFE — use explicit `AT TIME ZONE`:**
+
+```yaml
+- changeSet:
+    id: V10-1
+    author: llhelper
+    comment: Convert learning progress timestamps to timestamptz with explicit timezone
+    changes:
+      - sql:
+          dbms: postgresql
+          sql: |
+            ALTER TABLE user_deck_progress
+              ALTER COLUMN last_studied_at TYPE timestamptz
+              USING last_studied_at AT TIME ZONE 'Asia/Jerusalem';
+            
+            ALTER TABLE user_card_progress
+              ALTER COLUMN last_reviewed_at TYPE timestamptz
+              USING last_reviewed_at AT TIME ZONE 'Asia/Jerusalem',
+              ALTER COLUMN next_review_at TYPE timestamptz
+              USING next_review_at AT TIME ZONE 'Asia/Jerusalem';
+```
+
+**Why safe:**
+- Explicit timezone ensures all values are interpreted consistently
+- Use the timezone where the old `timestamp` values were created
+- If old values were created via `LocalDateTime.now()` in Israel → use `'Asia/Jerusalem'`
+- If old values were created in UTC → use `'UTC'`
+
+**Important:** Choose the timezone based on **where the application was running** when old timestamp values were created, not where it will run in the future.
 
 ## Database Naming Conventions
 

@@ -272,6 +272,31 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `user_card_progress` | `user_deck_progress_id` | `NOT NULL` |
 | `user_card_progress` | `status` | `NOT NULL` |
 
+### 6.2.1 Timestamp Columns
+
+All timestamp columns use `timestamptz` (TIMESTAMP WITH TIME ZONE) and `java.time.Instant` for UTC-safe storage.
+
+**Technical timestamps** (database-managed via DEFAULT + triggers):
+- `auth_users.created_at`, `auth_users.updated_at`
+- `users.created_at`, `users.updated_at`
+- `decks.created_at`, `decks.updated_at`
+- `cards.created_at`, `cards.updated_at`
+
+Entity mapping: `@Column(name = "created_at", nullable = false, insertable = false, updatable = false)`
+
+**Business timestamps** (application-managed):
+- `user_deck_progress.last_studied_at` — set when user studies cards from deck
+- `user_card_progress.last_reviewed_at` — set when user reviews specific card
+- `user_card_progress.next_review_at` — calculated by spaced repetition algorithm
+
+Entity mapping: `@Column(name = "last_reviewed_at")` (without `insertable=false, updatable=false`)
+
+**Migration history:**
+- V9: technical timestamps migrated from `timestamp` to `timestamptz` with DEFAULT + triggers
+- V10: business timestamps migrated from `timestamp` to `timestamptz` using explicit `AT TIME ZONE 'Asia/Jerusalem'`
+
+See `docs/database/schema-ownership.md` → "Business timestamps vs Technical timestamps" for detailed rules.
+
 ### 6.3 Foreign Key Constraints (Current State — V5)
 
 | FK Name | From Table | From Column | To Table | To Column | On Delete | On Update |
@@ -626,3 +651,6 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-07 | V5 migration created: CASCADE delete for `fk_udp_deck`, `fk_ucp_card`, `fk_cards_deck`. Decision: CASCADE accepted for MVP (Sprint 0.3); soft delete deferred to Level 1. Full delete chains established. |
 | 2026-07-07 | V6 migration created: Language enum for `decks.source_language`/`target_language`. Removed `defaultValue ''`, added CHECK constraints. Java enum `Language` in `common/model/`. Deck entity + DTOs updated. |
 | 2026-07-07 | V7 migration created: CHECK constraints on `user_card_progress` counters (`times_seen >= 0`, `times_correct >= 0`, `times_wrong >= 0`, `correct_streak >= 0`) to prevent negative values. |
+| 2026-07-13 | V8 migration created: Removed duplicate index `idx_user_auth` on `users.auth_user_id` (unique constraint `uk_users_auth_user_id` already creates index). Added preconditions for idempotency. |
+| 2026-07-13 | V9 migration created: Migrated technical timestamps (`created_at`, `updated_at`) from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`. Added DEFAULT CURRENT_TIMESTAMP and triggers for auto-update. Entities updated to `java.time.Instant` with `insertable=false, updatable=false`. |
+| 2026-07-13 | V10 migration created: Migrated business timestamps (`last_studied_at`, `last_reviewed_at`, `next_review_at`) from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using explicit `AT TIME ZONE 'Asia/Jerusalem'`. Entities updated to `Instant` without `insertable/updatable=false` (application-managed). Added section 6.2.1 "Timestamp Columns". |

@@ -490,6 +490,8 @@ defaultValue: 0  # Database default
 
 Technical timestamps (`created_at`, `updated_at`) must use UTC-safe storage and database-managed defaults.
 
+**Note:** When migrating existing `timestamp` columns to `timestamptz`, see section "Migrating existing TIMESTAMP to TIMESTAMPTZ" below.
+
 ### PostgreSQL columns
 
 Use `timestamptz` (TIMESTAMP WITH TIME ZONE), never `timestamp` without timezone:
@@ -621,6 +623,108 @@ public DeckResponse create(DeckRequest request) {
 `LocalDateTime` is acceptable for user-facing datetime fields (e.g., `event_date`, `scheduled_at`) where timezone is not critical or handled separately.
 
 Technical timestamps must always use `Instant` + `timestamptz`.
+
+### Business timestamps vs Technical timestamps
+
+**Technical timestamps** (`created_at`, `updated_at`):
+- Managed by database (DEFAULT + triggers)
+- Use `Instant` + `timestamptz`
+- Mark as `insertable = false, updatable = false`
+- Never set manually in application code
+
+**Business timestamps** (`last_reviewed_at`, `last_studied_at`, `next_review_at`):
+- Managed by application business logic
+- Use `Instant` + `timestamptz` for UTC-safe storage
+- **Do NOT** mark as `insertable = false, updatable = false`
+- **Do NOT** add database DEFAULT or triggers
+- Set explicitly in service layer when business event occurs
+
+Example:
+
+```java
+// Technical timestamp — database-managed
+@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+private Instant createdAt;
+
+// Business timestamp — application-managed
+@Column(name = "last_reviewed_at")
+private Instant lastReviewedAt;
+```
+
+Service layer:
+
+```java
+// ✅ GOOD — business logic sets business timestamp
+cardProgress.setLastReviewedAt(Instant.now());
+cardProgressRepository.save(cardProgress);
+
+// ❌ BAD — never manually set technical timestamp
+deck.setCreatedAt(Instant.now());  // Database handles this
+```
+
+### Migrating existing TIMESTAMP to TIMESTAMPTZ
+
+When converting existing `timestamp` columns to `timestamptz`, **always use explicit `AT TIME ZONE`** to ensure predictable conversion.
+
+**❌ UNSAFE — do NOT use Liquibase `modifyDataType`:**
+
+```yaml
+- modifyDataType:
+    tableName: user_card_progress
+    columnName: last_reviewed_at
+    newDataType: TIMESTAMPTZ
+```
+
+**Why unsafe:**
+- Liquibase `modifyDataType` delegates conversion to PostgreSQL
+- PostgreSQL interprets `timestamp` → `timestamptz` based on `session timezone` setting
+- Different database sessions may convert the same data differently
+- No guarantee of consistent conversion across environments
+
+**✅ SAFE — use raw SQL with explicit `AT TIME ZONE`:**
+
+```yaml
+- changeSet:
+    id: V10-1
+    author: llhelper
+    comment: Convert learning progress timestamps to timestamptz with explicit timezone
+    changes:
+      - sql:
+          dbms: postgresql
+          sql: |
+            ALTER TABLE user_deck_progress
+              ALTER COLUMN last_studied_at TYPE timestamptz
+              USING last_studied_at AT TIME ZONE 'Asia/Jerusalem';
+            
+            ALTER TABLE user_card_progress
+              ALTER COLUMN last_reviewed_at TYPE timestamptz
+              USING last_reviewed_at AT TIME ZONE 'Asia/Jerusalem',
+              ALTER COLUMN next_review_at TYPE timestamptz
+              USING next_review_at AT TIME ZONE 'Asia/Jerusalem';
+```
+
+**Why safe:**
+- Explicit `AT TIME ZONE` ensures all values are interpreted consistently
+- The timezone should match where the old `timestamp` values were created
+- If old values were created via `LocalDateTime.now()` in Israel → use `'Asia/Jerusalem'`
+- If old values were created in UTC → use `'UTC'`
+- Conversion is deterministic and repeatable across all environments
+
+**Important:** Choose the timezone based on **where the application was running** when old timestamp values were created, not where it will run in the future.
+
+**Example decision process:**
+
+1. Old data was created by `LocalDateTime.now()` in Israel → use `'Asia/Jerusalem'`
+2. Old data was created by `Instant.now()` (already UTC) → use `'UTC'`
+3. Unknown/mixed → audit existing data first, then decide
+
+**Migration checklist:**
+
+- [ ] Identify timezone where old timestamp values were created
+- [ ] Use raw SQL with `ALTER COLUMN ... USING ... AT TIME ZONE`
+- [ ] Test migration on copy of production data
+- [ ] Verify converted values match expectations
+- [ ] Do NOT use `modifyDataType` for timezone-sensitive conversions
 
 ### API response format
 

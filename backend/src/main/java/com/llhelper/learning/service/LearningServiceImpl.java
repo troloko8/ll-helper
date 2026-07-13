@@ -15,7 +15,7 @@ import com.llhelper.learning.enums.CardLearningStatus;
 import com.llhelper.learning.mapper.LearningMapper;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +124,7 @@ public class LearningServiceImpl implements LearningService {
         boolean isCorrect = request.userAnswer().trim().equalsIgnoreCase(card.getTitle().trim());
 
         cardProgress.setTimesSeen(cardProgress.getTimesSeen() + 1);
-        cardProgress.setLastReviewedAt(LocalDateTime.now());
+        cardProgress.setLastReviewedAt(Instant.now());
 
         if (isCorrect) {
             cardProgress.setTimesCorrect(cardProgress.getTimesCorrect() + 1);
@@ -139,7 +139,7 @@ public class LearningServiceImpl implements LearningService {
 
         userCardProgressRepository.save(cardProgress);
 
-        deckProgress.setLastStudiedAt(LocalDateTime.now());
+        deckProgress.setLastStudiedAt(Instant.now());
         userDeckProgressRepository.save(deckProgress);
 
         return learningMapper.toCardReviewResponse(isCorrect, card, newStatus, cardProgress);
