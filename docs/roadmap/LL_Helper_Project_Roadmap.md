@@ -130,21 +130,16 @@
 - ~~**Race condition:** `existsByUserIdAndDeckId` check не атомарен~~ — исправлено через `DataIntegrityViolationException` handling в `LearningServiceImpl.enrollDeck()`
 - **Приоритет:** ~~🔴 CRITICAL~~ → ✅ DONE
 
-**Проблема №2: Неполная FK политика**
-- **Риск:** user_id в progress таблицах не защищен FK → orphaned records при удалении пользователя
-- **Решение:** Добавить FK constraints:
-  - `user_deck_progress.user_id → users.id`
-  - `user_card_progress.user_id → users.id`
-- **Приоритет:** 🔴 HIGH — целостность данных
+~~**Проблема №2: Неполная FK политика**~~ — ✅ **РЕШЕНО**
+- ~~**Риск:** user_id в progress таблицах не защищен FK → orphaned records при удалении пользователя~~
+- ~~**Решение:** Добавить FK constraints:~~
+  - ~~`user_deck_progress.user_id → users.id`~~ — ✅ V4 migration (`fk_udp_user`, ON DELETE CASCADE)
+  - ~~`user_card_progress.user_id → users.id`~~ — ✅ V4 migration (`fk_ucp_user`, ON DELETE CASCADE)
+- **Приоритет:** ~~🔴 HIGH~~ → ✅ DONE
 
-**Проблема №3: Недостаточно индексов для learning flow**
-- **Риск:** Медленные запросы на study endpoints, особенно при spaced repetition
-- **Решение:** Добавить индексы:
-  - `idx_decks_owner(owner_id)` — для deck ownership queries
-  - `idx_cards_deck(deck_id)` — для deck deletion checks
-  - `idx_udp_user_status(user_id, status)` — для user deck list
-  - `idx_ucp_due_cards(user_deck_progress_id, status, next_review_at)` — **ключевой для spaced repetition**
-- **Приоритет:** 🟡 MEDIUM — производительность
+~~**Проблема №3: Недостаточно индексов для learning flow**~~ — **ОТЛОЖЕНО на Level 2**
+- **Приоритет:** ~~🟡 MEDIUM~~ → **Level 2** (не критично для MVP; критичные unique constraints и FK уже добавлены)
+- **Текущее состояние:** V1 baseline добавил `idx_ucp_user_deck`, `idx_ucp_user_card` (unique). Остальные индексы перенесены в Level 2 (см. секцию "Индексация БД")
 
 **Плановые задачи:**
 ~~3. Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress` (Проблема №1) — V2 migration~~
@@ -643,12 +638,15 @@ src/
 - `unique user_card(user_deck_id, card_id)`
 - `index cards(deck_id)`, `index user_cards(user_deck_id)`, `index user_cards(next_review_at)`
 
-**Индексация БД (перенесено из Sprint 0.3, задача 8):**
+**Индексация БД (перенесено из Sprint 0.3, Проблема №3):**
 
 - `idx_decks_owner(owner_id)` — для `GET /decks` (все колоды пользователя)
+- `idx_cards_deck(deck_id)` — для deck deletion checks и `GET /decks/{id}/cards`
 - `idx_udp_user_status(user_id, status)` — для списка активных деков пользователя
 - `idx_ucp_due_cards(user_deck_progress_id, status, next_review_at)` — **ключевой для spaced repetition** (`GET /study-cards`)
 - `idx_ucp_next_review(user_deck_progress_id, next_review_at)` — для scheduled review queries
+
+**Когда добавлять:** после сбора реальных slow query logs, `EXPLAIN ANALYZE` на production данных, или при > 1000 пользователей / > 10,000 cards.
 
 **Security:** authentication vs authorization, JWT structure, password hashing, Spring Security filter chain, SecurityContext, protected endpoints, ownership checks, CORS
 
