@@ -175,15 +175,77 @@
 
 > **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
 
-### Sprint 0.4 — Testing & Postman
+### Sprint 0.4 — Testing & Postman (Level 0 Minimum)
 
-1. Обновить Postman collection
-2. Добавить unit tests на learning logic
-3. Добавить tests на AI parser
-4. Добавить tests на review/progress calculation
-5. Создать AI prompt для обновления Postman
-6. Создать AI prompt для test suggestions
-7. 🔴 Проверить корректность `deckId` в `CardResponse` после AI-генерации карты — `Card.deckId` является read-only полем (`insertable=false, updatable=false`), Hibernate не заполняет его при `save()` без последующего `findById()`. Нужно убедиться что `toResponse(cardRepository.save(card))` возвращает корректный `deckId`, а не `null`
+**Цель:** Минимальные тесты + Postman для демонстрации проекта. Без rocket science (integration tests, coverage → Level 2).
+
+**Группа 1: Unit Tests (5 тестов — критичная логика)**
+
+1. **Learning progress test** — `LearningServiceTest.reviewCard_correctAnswer_shouldUpdateStatus()`
+   - Проверка: `NEW` + correct answer → `LEARNING`, `timesCorrect++`, `correctStreak++`
+   - Без DB, чистый unit test с Mockito
+
+2. **Review calculation test** — `LearningServiceTest.reviewCard_wrongAnswer_shouldResetStreak()`
+   - Проверка: wrong answer → `timesWrong++`, `correctStreak = 0`
+   - Без DB, mock repository
+
+3. **AI parser valid JSON test** — `AiResponseParserTest.parseResponse_validJson_shouldReturnAiCardData()`
+   - Проверка: корректный JSON → `AiCardData`
+   - Без OpenAI, hardcoded JSON string
+
+4. **AI parser invalid JSON test** — `AiResponseParserTest.parseResponse_invalidJson_shouldThrowException()`
+   - Проверка: некорректный JSON → exception
+   - Без OpenAI, hardcoded broken JSON
+
+5. **RateLimiter test** — `RateLimiterTest.checkLimit_exceedsMaxRequests_shouldThrowException()`
+   - Проверка: 10 requests OK, 11th → `RateLimitExceededException`
+   - Без Spring, без Caffeine, чистый unit test
+
+**Группа 2: Postman (базовые проверки)**
+
+6. **Обновить Postman collection** — проверить все endpoints из `current-architecture.md`
+   - Добавить недостающие endpoints (если есть)
+   - Без сложных тестов, просто корректные requests
+
+7. **Postman: Happy path tests (200/201)**
+   - Auth: `POST /auth/register` → 201, `POST /auth/login` → 200
+   - Deck: `POST /decks` → 201, `GET /decks` → 200
+   - Card: `POST /cards` → 201, `GET /cards/{id}` → 200
+   - Learning: `POST /learning/enroll/{deckId}` → 200
+   - Без assertions, просто проверка status code
+
+8. **Postman: Error cases (400/403/404/409)**
+   - 400: `POST /auth/register` с пустым email → 400
+   - 403: User B пытается update deck User A → 403
+   - 404: `GET /decks/999999` → 404
+   - 409: Enroll deck дважды → 409
+   - Минимум — по 1 тесту на каждый статус
+
+9. **Postman: Rate limiting tests (429)**
+   - `POST /auth/login` 6 раз подряд → 429 на 6-м
+   - `POST /cards` 21 раз подряд → 429 на 21-м
+   - Без сложных сценариев, просто проверка лимита
+
+**Группа 3: Критичные долги**
+
+10. **Smoke test для Liquibase migrations**
+    - Запустить: `./mvnw liquibase:update` на чистой БД
+    - Проверить: нет ошибок, все constraints работают
+    - Без автоматизации, ручная проверка достаточно для Level 0
+
+11. **Проверить все 500 ошибки → специфические HTTP коды**
+    - Найти: `throw new RuntimeException` в коде
+    - Заменить: на `IllegalArgumentException` (400), `IllegalStateException` (409), `EntityNotFoundException` (404)
+    - Проверить: `GlobalExceptionHandler` обрабатывает все типы
+    - Без тестов, просто code review + manual testing
+
+**Группа 4: Documentation**
+
+12. **Обновить roadmap: отметить Sprint 0.4 как завершённый**
+    - Отметить все задачи Sprint 0.4
+    - Проверить Level 0 Done Criteria
+
+**Итого: 12 задач, ~8-9 часов работы**
 
 ### Sprint 1.0 — Frontend Skeleton
 
@@ -528,7 +590,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 8. See progress
 9. Return later and continue
 
-## Deferred from Level 0 (Sprint 0.2)
+## Backend improvements
 
 - ~~Переименовать `CardDesc* → Deck*` в Java коде (entity, package, controller, service, DTO) — таблица БД переименована в `decks` вручную~~
 - **🔴 Добавить `@Transactional` на `CardServiceImpl.delete()` и `update()`** — оба метода делают несколько DB-запросов без транзакции (findById + findWithOwnerById + deleteById/save). Риск: при partial failure нет rollback
@@ -600,16 +662,37 @@ src/
 
 **Пока без:** Redux, Storybook, e2e tests, микрофронтендов
 
-## AI Workflow Level 1
+## Performance
 
-Создать `/ai-workflows/` с промптами:
+- **🔴 HIGH: JWT userId claim** — `SecurityUtils.getCurrentUserId()` делает 2 DB queries на каждый endpoint
+  - Изменить: `JwtService.generateToken()` — добавить `userId` claim
+  - Изменить: `JwtAuthenticationFilter` — извлекать `userId` из токена
+  - Изменить: `SecurityUtils.getCurrentUserId()` — читать из `SecurityContext` (0 DB queries)
+  - **Breaking change:** старые токены перестанут работать → users должны re-login
+  - Обновить: `UserRateLimiter` — заменить `checkLimitByEmail()` на `checkLimitByUserId()`
 
-- `design-note.prompt.md`
-- `postman-update.prompt.md`
-- `test-suggestion.prompt.md`
-- `code-review.prompt.md`
+## Security
 
-Перед коммитом: git diff → скопировать дифф → AI review → обновить design note → обновить Postman → попросить AI предложить тесты
+- **🔴 CRITICAL: IP-based rate limiting для `/auth/register`**
+  - Создать: `IpRateLimiter.java` (аналогично `UserRateLimiter`)
+  - Изменить: `AuthServiceImpl.register()` — добавить `ipRateLimiter.checkLimit(ip, AUTH_REGISTER)`
+  - Extract IP: `HttpServletRequest.getRemoteAddr()` или `X-Forwarded-For` header
+  - Limit: 10 requests / 10 minutes per IP
+
+## Database
+
+- **Migration rollback tests** — документировать какие миграции rollback-safe
+  - V2-V10: проверить `liquibase:rollback` команду
+  - Если rollback невозможен — добавить комментарий в migration
+
+## AI Workflow
+
+Создать `.windsurf/prompts/` с промптами:
+
+- `update-postman.md` — автоматизация обновления Postman collection
+- `suggest-tests.md` — генерация test suggestions
+- `design-note.md` — создание design notes
+- `code-review.md` — pre-commit review
 
 ## ✅ Done Criteria
 
@@ -672,6 +755,12 @@ src/
 - **Rate limit headers** — add `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` to responses
 
 **Integration tests (Testcontainers PostgreSQL):** Auth flow · Create/Enroll deck · Generate card · Study/Submit · Get progress · Forbidden access cases
+
+**Testing:**
+- Integration tests с Testcontainers PostgreSQL
+- Security tests (ownership violations, 403 cases)
+- Coverage reports (JaCoCo)
+- Migration rollback tests
 
 **API Documentation:** OpenAPI/Swagger
 
