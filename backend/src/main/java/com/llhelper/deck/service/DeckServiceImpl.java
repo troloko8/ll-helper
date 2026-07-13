@@ -9,8 +9,9 @@ import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
+import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,6 +25,9 @@ public class DeckServiceImpl implements DeckService {
     private final SecurityUtils securityUtils;
     private final DeckMapper deckMapper;
     private final UserRateLimiter userRateLimiter;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public DeckServiceImpl(
         DeckRepository deckRepository,
@@ -47,15 +51,16 @@ public class DeckServiceImpl implements DeckService {
 
 
     @Override
+    @Transactional
     public DeckResponse create(DeckRequest request) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_CREATE);
 
         Deck deck = deckMapper.toEntity(request);
         deck.setIsPublic(request.isPublic() != null ? request.isPublic() : true);
-        deck.setCreatedAt(LocalDateTime.now());
-        deck.setUpdatedAt(LocalDateTime.now());
         deck.setOwner(securityUtils.getCurrentUser());
-        return deckMapper.toResponse(deckRepository.save(deck));
+        Deck saved = deckRepository.saveAndFlush(deck);
+        entityManager.refresh(saved);
+        return deckMapper.toResponse(saved);
     }
 
     @Override
@@ -75,6 +80,7 @@ public class DeckServiceImpl implements DeckService {
     }
 
     @Override
+    @Transactional
     public DeckResponse update(Long id, DeckRequest request) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_UPDATE);
 
@@ -84,9 +90,9 @@ public class DeckServiceImpl implements DeckService {
         validateDeckOwnership(deck);
         
         deckMapper.updateEntity(request, deck);
-        deck.setUpdatedAt(LocalDateTime.now());
-        
-        return deckMapper.toResponse(deckRepository.save(deck));
+        Deck saved = deckRepository.saveAndFlush(deck);
+        entityManager.refresh(saved);
+        return deckMapper.toResponse(saved);
     }
 
     @Override

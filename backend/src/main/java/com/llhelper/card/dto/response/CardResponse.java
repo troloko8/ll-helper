@@ -1,6 +1,6 @@
 package com.llhelper.card.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record CardResponse(
@@ -11,7 +11,7 @@ public record CardResponse(
     List<String> synonyms,
     List<String> examples,
     String translation,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Instant createdAt,
+    Instant updatedAt
 ) {
 }

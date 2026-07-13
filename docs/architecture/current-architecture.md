@@ -281,6 +281,19 @@ CardService.save(cards)
 - `POST /decks/{id}/enroll` now returns `{ "userDeckId": Long }` instead of void
 - All card endpoints now include `deckId` in `CardResponse`
 
+**Recent changes (Sprint 0.3):**
+- All timestamps now use `java.time.Instant` (ISO-8601 with UTC)
+- API responses return timestamps in format: `2024-01-15T07:30:00Z`
+- Database stores timestamps as `timestamptz` (UTC-safe)
+- Timestamps managed by PostgreSQL (DEFAULT + triggers), not Java
+
+**Timestamp Format:**
+- **Format:** ISO-8601 with UTC timezone (`YYYY-MM-DDTHH:mm:ssZ`)
+- **Example:** `"createdAt": "2024-01-15T07:30:00Z"`
+- **Backend:** Always returns UTC timestamps
+- **Client responsibility:** Convert to user's local timezone for display
+- **Database:** `timestamptz` columns with `DEFAULT CURRENT_TIMESTAMP` and auto-update triggers
+
 ---
 
 ## 12. AI Generation Module

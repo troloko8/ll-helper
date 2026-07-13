@@ -1,6 +1,6 @@
 package com.llhelper.user.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record UserResponse(
     Long id,
@@ -11,7 +11,7 @@ public record UserResponse(
     String targetLanguage,
     String avatarUrl,
     String uiLanguage,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Instant createdAt,
+    Instant updatedAt
 ) {
 }

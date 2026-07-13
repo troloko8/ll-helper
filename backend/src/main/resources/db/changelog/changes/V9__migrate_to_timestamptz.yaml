@@ -1,0 +1,93 @@
+databaseChangeLog:
+  - changeSet:
+      id: V9-1
+      author: llhelper
+      comment: Convert timestamp columns to timestamptz for UTC-safe storage
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE auth_users 
+                ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'Asia/Jerusalem',
+                ALTER COLUMN updated_at TYPE timestamptz USING updated_at AT TIME ZONE 'Asia/Jerusalem';
+              
+              ALTER TABLE users 
+                ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'Asia/Jerusalem',
+                ALTER COLUMN updated_at TYPE timestamptz USING updated_at AT TIME ZONE 'Asia/Jerusalem';
+              
+              ALTER TABLE decks 
+                ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'Asia/Jerusalem',
+                ALTER COLUMN updated_at TYPE timestamptz USING updated_at AT TIME ZONE 'Asia/Jerusalem';
+              
+              ALTER TABLE cards 
+                ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'Asia/Jerusalem',
+                ALTER COLUMN updated_at TYPE timestamptz USING updated_at AT TIME ZONE 'Asia/Jerusalem';
+
+  - changeSet:
+      id: V9-2
+      author: llhelper
+      comment: Add DEFAULT CURRENT_TIMESTAMP for created_at and updated_at columns
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              ALTER TABLE auth_users 
+                ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,
+                ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+              
+              ALTER TABLE users 
+                ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,
+                ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+              
+              ALTER TABLE decks 
+                ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,
+                ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+              
+              ALTER TABLE cards 
+                ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,
+                ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+
+  - changeSet:
+      id: V9-3
+      author: llhelper
+      comment: Create trigger function for auto-updating updated_at column
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              CREATE OR REPLACE FUNCTION update_updated_at_column()
+              RETURNS TRIGGER AS $$
+              BEGIN
+                  NEW.updated_at = CURRENT_TIMESTAMP;
+                  RETURN NEW;
+              END;
+              $$ LANGUAGE plpgsql;
+
+  - changeSet:
+      id: V9-4
+      author: llhelper
+      comment: Create triggers for auto-updating updated_at on all tables
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE TRIGGER trg_auth_users_updated_at 
+                BEFORE UPDATE ON auth_users
+                FOR EACH ROW 
+                EXECUTE FUNCTION update_updated_at_column();
+              
+              CREATE TRIGGER trg_users_updated_at 
+                BEFORE UPDATE ON users
+                FOR EACH ROW 
+                EXECUTE FUNCTION update_updated_at_column();
+              
+              CREATE TRIGGER trg_decks_updated_at 
+                BEFORE UPDATE ON decks
+                FOR EACH ROW 
+                EXECUTE FUNCTION update_updated_at_column();
+              
+              CREATE TRIGGER trg_cards_updated_at 
+                BEFORE UPDATE ON cards
+                FOR EACH ROW 
+                EXECUTE FUNCTION update_updated_at_column();

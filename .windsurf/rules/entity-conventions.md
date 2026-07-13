@@ -47,18 +47,24 @@ Every entity MUST have:
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
 
-@Column(nullable = false, updatable = false)
-private LocalDateTime createdAt;
+@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+private Instant createdAt;
 
-@Column(nullable = false)
-private LocalDateTime updatedAt;
+@Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+private Instant updatedAt;
 ```
 
-**Timestamp initialization:**
-- Currently: `@PrePersist` / `@PreUpdate` methods in entity
-- Future (Sprint 0.3): PostgreSQL `DEFAULT CURRENT_TIMESTAMP`
+**Timestamp handling:**
+- Use `java.time.Instant` for technical timestamps (`created_at`, `updated_at`)
+- **Never** use `LocalDateTime` for persisted technical timestamps
+- Mark timestamp fields as `insertable = false, updatable = false` — PostgreSQL manages them via DEFAULT and triggers
+- **Do not** use `@PrePersist` / `@PreUpdate` for technical timestamps
+- **Do not** manually set `createdAt` / `updatedAt` in service layer
+- Database handles all timestamp logic via Liquibase-defined defaults and triggers
 
-**Note:** `nullable = false` in entity annotations is for mapping clarity only. The real `NOT NULL` constraints and defaults must be defined in Liquibase.
+**Note:** `nullable = false` in entity annotations is for mapping clarity only. The real `NOT NULL` constraints, defaults, and triggers must be defined in Liquibase.
+
+See `.windsurf/rules/database-schema-ownership.md` → Timestamp rule for full details.
 
 ## Relationships
 

@@ -92,6 +92,43 @@ Allowed enum values must be enforced in Liquibase through a database-level const
 - Database-side defaults must be defined in Liquibase when the database must guarantee them.
 - **Do not use** `@ColumnDefault` in entities.
 
+## Timestamp rule
+
+Technical timestamps must use UTC-safe storage.
+
+**PostgreSQL columns:**
+- Use `timestamptz` (TIMESTAMP WITH TIME ZONE)
+- **Never** use `timestamp` without time zone for technical timestamps
+
+**Java type:**
+- Use `java.time.Instant` for `created_at` and `updated_at`
+- **Never** use `LocalDateTime` for persisted technical timestamps
+- `LocalDateTime` is acceptable for user-facing datetime fields (e.g., `event_date`, `scheduled_at`)
+
+**Entity mapping:**
+```java
+@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+private Instant createdAt;
+
+@Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+private Instant updatedAt;
+```
+
+**Database defaults and triggers:**
+- DB defaults/triggers must be defined in Liquibase only
+- Use `DEFAULT CURRENT_TIMESTAMP` for `timestamptz` columns
+- Use `NEW.updated_at = CURRENT_TIMESTAMP` in updated_at triggers
+- **Do not** use `CURRENT_TIMESTAMP AT TIME ZONE 'UTC'` with `timestamptz` (redundant)
+
+**Do not:**
+- Do not use `@PrePersist` / `@PreUpdate` for technical timestamps
+- Do not manually set `createdAt` / `updatedAt` in service layer
+- Database handles all timestamp logic
+
+**Display:**
+- Convert to user's local timezone only at API/UI level
+- Backend always stores and processes timestamps in UTC
+
 ## Database Naming Conventions
 
 Use explicit snake_case names for database constraints and indexes.

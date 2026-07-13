@@ -13,8 +13,9 @@ import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
+import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,9 @@ public class CardServiceImpl implements CardService {
     private final SecurityUtils securityUtils;
     private final CardMapper cardMapper;
     private final UserRateLimiter userRateLimiter;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // FIXME maybe better lombok in future
     public CardServiceImpl(
@@ -91,12 +95,8 @@ public class CardServiceImpl implements CardService {
         }
 
         card.setDeck(deck);
-        card.setCreatedAt(LocalDateTime.now());
-        card.setUpdatedAt(LocalDateTime.now());
-        Card saved = cardRepository.save(card);
-        // Manual sync: deckId is read-only (insertable=false, updatable=false)
-        // Hibernate doesn't populate it after save(), so we set it explicitly
-        saved.setDeckId(deck.getId());
+        Card saved = cardRepository.saveAndFlush(card);
+        entityManager.refresh(saved);
         return cardMapper.toResponse(saved);
     }
 
@@ -124,12 +124,9 @@ public class CardServiceImpl implements CardService {
                 );
 
                 Card card = cardMapper.fromAiData(title, aiData, deck);
-                card.setCreatedAt(LocalDateTime.now());
-                card.setUpdatedAt(LocalDateTime.now());
 
-                Card saved = cardRepository.save(card);
-                // Manual sync: deckId is read-only (insertable=false, updatable=false)
-                saved.setDeckId(deck.getId());
+                Card saved = cardRepository.saveAndFlush(card);
+                entityManager.refresh(saved);
                 results.add(cardMapper.toResponse(saved));
             } catch (Exception e) {
                 failedTitles.add(title);
@@ -160,6 +157,7 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
+    @Transactional
     public CardResponse update(Long id, CardRequest request) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_UPDATE);
 
@@ -169,9 +167,9 @@ public class CardServiceImpl implements CardService {
         validateCardOwnership(card);
 
         cardMapper.updateEntity(request, card);
-        card.setUpdatedAt(LocalDateTime.now());
-        
-        return cardMapper.toResponse(cardRepository.save(card));
+        Card saved = cardRepository.saveAndFlush(card);
+        entityManager.refresh(saved);
+        return cardMapper.toResponse(saved);
     }
 
     @Override

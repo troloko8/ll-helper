@@ -172,7 +172,7 @@
 ~~23. **Добавить `@Index` аннотации в `UserDeckProgress` / `UserCardProgress` entities** для соответствия физической схеме БД~~ — **НЕАКТУАЛЬНО:** Liquibase ownership policy установлена — entity не должны содержать `@Index`, `@UniqueConstraint`, `@CheckConstraint`. См. `docs/database/schema-ownership.md`
 ~~24. **Убрать дублирующие DB constraints из entity классов (Liquibase — единственный источник истины)**~~ — ✅ **ВЫПОЛНЕНО** (2026-07-06): удалены `@Table(uniqueConstraints, indexes, check)` из `UserCardProgress`, `UserDeckProgress`, `User`; удалён `@ColumnDefault` из `AuthUser`. Создан `docs/database/schema-ownership.md` (полная версия) и `.windsurf/rules/database-schema-ownership.md` (краткая версия).
 ~~25. **Убрать `defaultValue: ''`** для `decks.source_language` / `target_language` или добавить CHECK constraint~~ — ✅ выполнено в V6: DROP DEFAULT + enum CHECK constraint
-26. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java
+~~26. **Перенести `created_at` / `updated_at` на PostgreSQL DEFAULT / trigger** — сейчас timestamps зависят только от `@PrePersist` / `@PreUpdate` в Java~~ — ✅ выполнено в V9: конвертация в `timestamptz`, добавлены DEFAULT CURRENT_TIMESTAMP и triggers для auto-update; entities обновлены на `java.time.Instant` с `insertable=false, updatable=false`; удалены `@PrePersist/@PreUpdate` и ручная установка timestamps из services; добавлена Timestamp Rule в `.windsurf/rules/database-schema-ownership.md` и `.windsurf/rules/entity-conventions.md`
 
 > **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
 

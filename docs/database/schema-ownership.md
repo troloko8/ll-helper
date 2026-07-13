@@ -71,7 +71,13 @@ public class UserCardProgress {
     @Column(name = "times_correct", nullable = false)
     private Integer timesCorrect = 0;
 
-    private LocalDateTime nextReviewAt;
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+    private Instant updatedAt;
+
+    private LocalDateTime nextReviewAt;  // user-facing datetime, not technical timestamp
 }
 ```
 
@@ -479,6 +485,155 @@ And in Liquibase:
 ```yaml
 defaultValue: 0  # Database default
 ```
+
+## Timestamp Rule
+
+Technical timestamps (`created_at`, `updated_at`) must use UTC-safe storage and database-managed defaults.
+
+### PostgreSQL columns
+
+Use `timestamptz` (TIMESTAMP WITH TIME ZONE), never `timestamp` without timezone:
+
+```yaml
+- column:
+    name: created_at
+    type: timestamptz
+    constraints:
+      nullable: false
+    defaultValue: CURRENT_TIMESTAMP
+
+- column:
+    name: updated_at
+    type: timestamptz
+    constraints:
+      nullable: false
+    defaultValue: CURRENT_TIMESTAMP
+```
+
+### Java entity fields
+
+Use `java.time.Instant` for technical timestamps, never `LocalDateTime`:
+
+```java
+@Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+private Instant createdAt;
+
+@Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
+private Instant updatedAt;
+```
+
+**Why `insertable = false, updatable = false`:**
+- Prevents Hibernate from managing timestamps
+- Database handles all timestamp logic via DEFAULT and triggers
+- Ensures consistency even with direct SQL queries
+
+### Database triggers
+
+Create trigger function and triggers for auto-updating `updated_at`:
+
+```yaml
+- changeSet:
+    id: create-update-timestamp-trigger
+    author: llhelper
+    changes:
+      - sql:
+          dbms: postgresql
+          splitStatements: false
+          sql: |
+            CREATE OR REPLACE FUNCTION update_updated_at_column()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.updated_at = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+- changeSet:
+    id: add-update-timestamp-triggers
+    author: llhelper
+    changes:
+      - sql:
+          dbms: postgresql
+          sql: |
+            CREATE TRIGGER trg_table_name_updated_at
+              BEFORE UPDATE ON table_name
+              FOR EACH ROW
+              EXECUTE FUNCTION update_updated_at_column();
+```
+
+**Important:** Use `splitStatements: false` for PL/pgSQL function creation to prevent Liquibase from splitting on semicolons.
+
+### What NOT to do
+
+**Do not use `@PrePersist` / `@PreUpdate` for technical timestamps:**
+
+```java
+// ❌ BAD
+@PrePersist
+protected void onCreate() {
+    this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
+}
+
+@PreUpdate
+protected void onUpdate() {
+    this.updatedAt = LocalDateTime.now();
+}
+```
+
+**Do not manually set timestamps in service layer:**
+
+```java
+// ❌ BAD
+deck.setCreatedAt(LocalDateTime.now());
+deck.setUpdatedAt(LocalDateTime.now());
+```
+
+**Do not use `LocalDateTime` for persisted technical timestamps:**
+
+```java
+// ❌ BAD
+@Column(nullable = false)
+private LocalDateTime createdAt;
+```
+
+### Reading DB-generated timestamps
+
+Since timestamps are `insertable=false, updatable=false`, Hibernate doesn't populate them after `save()`.
+
+To get DB-generated timestamps in response DTOs:
+
+```java
+@Transactional
+public DeckResponse create(DeckRequest request) {
+    Deck deck = deckMapper.toEntity(request);
+    deck.setOwner(securityUtils.getCurrentUser());
+    
+    Deck saved = deckRepository.saveAndFlush(deck);
+    entityManager.refresh(saved);  // SELECT from DB to get timestamps
+    
+    return deckMapper.toResponse(saved);
+}
+```
+
+### User-facing datetime fields
+
+`LocalDateTime` is acceptable for user-facing datetime fields (e.g., `event_date`, `scheduled_at`) where timezone is not critical or handled separately.
+
+Technical timestamps must always use `Instant` + `timestamptz`.
+
+### API response format
+
+Java `Instant` serializes to ISO-8601 with UTC:
+
+```json
+{
+  "createdAt": "2024-01-15T07:30:00Z",
+  "updatedAt": "2024-01-15T08:45:00Z"
+}
+```
+
+**Client responsibility:** Convert to user's local timezone for display.
 
 ## Enum Mapping Rule
 
