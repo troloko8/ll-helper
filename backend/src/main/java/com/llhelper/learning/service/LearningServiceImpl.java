@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +43,6 @@ public class LearningServiceImpl implements LearningService {
     public EnrollResponse enrollDeck(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
 
-        if (userDeckProgressRepository.existsByUserIdAndDeckId(userId, deckId)) {
-            throw new IllegalStateException("Deck already enrolled");
-        }
-
         Deck deck = deckRepository.findById(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
@@ -53,17 +50,27 @@ public class LearningServiceImpl implements LearningService {
             throw new AccessDeniedException("Access denied: Deck is not public");
         }
 
-        UserDeckProgress progress = learningMapper.toUserDeckProgress(userId, deckId);
-        UserDeckProgress savedProgress = userDeckProgressRepository.save(progress);
+        try {
+            UserDeckProgress progress = learningMapper.toUserDeckProgress(userId, deckId);
+            UserDeckProgress savedProgress = userDeckProgressRepository.save(progress);
 
-        // Create UserCardProgress for all cards in the deck with NEW status
-        List<UserCardProgress> cardProgressList = deck.getCards().stream()
-            .map(card -> learningMapper.toUserCardProgress(userId, card.getId(), savedProgress.getId()))
-            .collect(Collectors.toList());
+            // Create UserCardProgress for all cards in the deck with NEW status
+            List<UserCardProgress> cardProgressList = deck.getCards().stream()
+                .map(card -> learningMapper.toUserCardProgress(userId, card.getId(), savedProgress.getId()))
+                .collect(Collectors.toList());
 
-        userCardProgressRepository.saveAll(cardProgressList);
+            userCardProgressRepository.saveAll(cardProgressList);
 
-        return new EnrollResponse(savedProgress.getId());
+            return new EnrollResponse(savedProgress.getId());
+        } catch (DataIntegrityViolationException e) {
+            // Check if this is specifically the duplicate enrollment constraint
+            String message = e.getMessage();
+            if (message != null && message.contains("uk_user_deck_progress_user_deck")) {
+                throw new IllegalStateException("Deck already enrolled");
+            }
+            // Other data integrity violations should be propagated
+            throw e;
+        }
     }
 
     @Override

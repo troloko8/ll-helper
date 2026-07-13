@@ -124,10 +124,11 @@
 
 **🔴 Критические проблемы безопасности и производительности:**
 
-**Проблема №1: Отсутствие unique constraint на enrollment**
-- **Риск:** Двойная запись пользователя на один deck → дублированный progress
-- **Решение:** Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`
-- **Приоритет:** 🔴 CRITICAL — ломает бизнес-логику обучения
+~~**Проблема №1: Отсутствие unique constraint на enrollment**~~ — ✅ **РЕШЕНО**
+- ~~**Риск:** Двойная запись пользователя на один deck → дублированный progress~~
+- ~~**Решение:** Добавить `UNIQUE(user_id, deck_id)` на `user_deck_progress`~~ — V2 migration
+- ~~**Race condition:** `existsByUserIdAndDeckId` check не атомарен~~ — исправлено через `DataIntegrityViolationException` handling в `LearningServiceImpl.enrollDeck()`
+- **Приоритет:** ~~🔴 CRITICAL~~ → ✅ DONE
 
 **Проблема №2: Неполная FK политика**
 - **Риск:** user_id в progress таблицах не защищен FK → orphaned records при удалении пользователя
