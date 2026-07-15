@@ -179,27 +179,41 @@
 
 **Цель:** Минимальные тесты + Postman для демонстрации проекта. Без rocket science (integration tests, coverage → Level 2).
 
-**Группа 1: Unit Tests (5 тестов — критичная логика)**
+**Группа 1: Unit Tests (критичная бизнес-логика)**
 
-1. **Learning progress test** — `LearningServiceTest.reviewCard_correctAnswer_shouldUpdateStatus()`
-   - Проверка: `NEW` + correct answer → `LEARNING`, `timesCorrect++`, `correctStreak++`
-   - Без DB, чистый unit test с Mockito
+**1.1. LearningServiceImpl tests** — `LearningServiceImplTest.java`
+   - `enroll_shouldCreateProgress_whenNotEnrolled()` — успешный enroll
+   - `enroll_shouldThrowConflict_whenAlreadyEnrolled()` — повторный enroll → 409
+   - `enroll_shouldThrowNotFound_whenDeckDoesNotExist()` — deck не существует → 404
+   - `review_shouldIncrementCorrect_whenResultIsCorrect()` — correct answer → `timesCorrect++`, `correctStreak++`
+   - `review_shouldResetStreak_whenResultIsWrong()` — wrong answer → `timesWrong++`, `correctStreak = 0`
+   - `review_shouldCalculateNextReview_basedOnDifficulty()` — проверка расчёта `nextReviewAt`
+   - `review_shouldThrowNotFound_whenProgressDoesNotExist()` — progress не существует → 404
+   - `review_shouldTransitionToLearning_whenNewCardReviewed()` — `NEW` → `LEARNING`
+   - `review_shouldTransitionToMastered_whenThresholdReached()` — достижение `MASTERED`
+   - **Требование:** внедрить `Clock` injection в `LearningServiceImpl` для точного тестирования `nextReviewAt`
 
-2. **Review calculation test** — `LearningServiceTest.reviewCard_wrongAnswer_shouldResetStreak()`
-   - Проверка: wrong answer → `timesWrong++`, `correctStreak = 0`
-   - Без DB, mock repository
+**1.2. UserRateLimiter tests** — `UserRateLimiterTest.java`
+   - `tryConsume_shouldAllow_whenUnderLimit()` — запросы в пределах лимита → успех
+   - `tryConsume_shouldThrow_whenOverLimit()` — превышение лимита → `RateLimitExceededException`
+   - `tryConsume_shouldSeparateBuckets_forDifferentUsers()` — разные пользователи → независимые buckets
+   - `tryConsume_shouldSeparateBuckets_forDifferentActions()` — разные `RateLimitAction` → независимые buckets
+   - `reset_shouldClearBucket_butCurrentlyDoesNot()` — демонстрация известного бага (тест падает, документирует проблему)
 
-3. **AI parser valid JSON test** — `AiResponseParserTest.parseResponse_validJson_shouldReturnAiCardData()`
-   - Проверка: корректный JSON → `AiCardData`
-   - Без OpenAI, hardcoded JSON string
+**1.3. Ownership checks tests** — security-critical
+   - `DeckServiceImplTest.update_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может update deck
+   - `DeckServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может delete deck
+   - `CardServiceImplTest.create_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может create card
+   - `CardServiceImplTest.generateBulk_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может generate cards
+   - `UserServiceImplTest.update_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может update себя
+   - `UserServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может delete себя
 
-4. **AI parser invalid JSON test** — `AiResponseParserTest.parseResponse_invalidJson_shouldThrowException()`
-   - Проверка: некорректный JSON → exception
-   - Без OpenAI, hardcoded broken JSON
+**1.4. Bulk validation test** — `CardServiceImplTest.java`
+   - `generateBulk_shouldThrowBadRequest_whenSizeExceedsLimit()` — проверка `validateBulkSize()` (> 50 → 400)
 
-5. **RateLimiter test** — `RateLimiterTest.checkLimit_exceedsMaxRequests_shouldThrowException()`
-   - Проверка: 10 requests OK, 11th → `RateLimitExceededException`
-   - Без Spring, без Caffeine, чистый unit test
+**1.5. AI parser tests** — `AiResponseParserTest.java`
+   - `parseResponse_validJson_shouldReturnAiCardData()` — корректный JSON → `AiCardData`
+   - `parseResponse_invalidJson_shouldThrowException()` — некорректный JSON → exception
 
 **Группа 2: Postman (базовые проверки)**
 
@@ -226,26 +240,48 @@
    - `POST /cards` 21 раз подряд → 429 на 21-м
    - Без сложных сценариев, просто проверка лимита
 
-**Группа 3: Критичные долги**
+**Группа 3: Инфраструктура тестов**
 
-10. **Smoke test для Liquibase migrations**
+10. **Создать test fixtures/builders** — `TestData.java` или `TestDataBuilder.java`
+    - `defaultProgress()` — создание `UserCardProgress` для тестов
+    - `fixedClock()` — `Clock.fixed()` для тестирования timestamps
+    - Избегать дублирования setup кода в каждом тесте
+
+11. **Внедрить Clock injection в LearningServiceImpl**
+    - Добавить: `private final Clock clock;` в конструктор
+    - Заменить: `Instant.now()` на `Instant.now(clock)`
+    - Цель: точное тестирование `nextReviewAt` расчётов без `Thread.sleep()`
+
+**Группа 4: Критичные долги**
+
+12. **Smoke test для Liquibase migrations**
     - Запустить: `./mvnw liquibase:update` на чистой БД
     - Проверить: нет ошибок, все constraints работают
     - Без автоматизации, ручная проверка достаточно для Level 0
 
-11. **Проверить все 500 ошибки → специфические HTTP коды**
+13. **Проверить все 500 ошибки → специфические HTTP коды**
     - Найти: `throw new RuntimeException` в коде
     - Заменить: на `IllegalArgumentException` (400), `IllegalStateException` (409), `EntityNotFoundException` (404)
     - Проверить: `GlobalExceptionHandler` обрабатывает все типы
     - Без тестов, просто code review + manual testing
 
-**Группа 4: Documentation**
+**Группа 5: Documentation**
 
-12. **Обновить roadmap: отметить Sprint 0.4 как завершённый**
+14. **Обновить roadmap: отметить Sprint 0.4 как завершённый**
     - Отметить все задачи Sprint 0.4
     - Проверить Level 0 Done Criteria
 
-**Итого: 12 задач, ~8-9 часов работы**
+**Итого: 14 задач, ~10-12 часов работы**
+
+**Приоритет выполнения:**
+1. Группа 3 (Clock injection, test fixtures) — инфраструктура для тестов
+2. Группа 1.1 (LearningService) — критичная бизнес-логика
+3. Группа 1.2 (UserRateLimiter) — security
+4. Группа 1.3 (Ownership) — security-critical
+5. Группа 1.4, 1.5 (Bulk validation, AI parser) — дополнительные unit-тесты
+6. Группа 2 (Postman) — API проверки
+7. Группа 4 (Долги) — cleanup
+8. Группа 5 (Docs) — финализация
 
 ### Sprint 1.0 — Frontend Skeleton
 
@@ -571,7 +607,7 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - [ ]  Есть GlobalExceptionHandler
 - [ ]  Есть validation
 - [ ]  Есть Postman collection
-- [ ]  Есть 5–10 unit tests на learning/progress/AI parsing
+- [ ]  Есть unit tests на learning/progress/AI parsing/rate limiting/ownership (15-20 тестов)
 - [ ]  Можешь объяснить backend без подсказки AI
 
 # Level 1 — Usable MVP
@@ -757,10 +793,50 @@ src/
 **Integration tests (Testcontainers PostgreSQL):** Auth flow · Create/Enroll deck · Generate card · Study/Submit · Get progress · Forbidden access cases
 
 **Testing:**
-- Integration tests с Testcontainers PostgreSQL
-- Security tests (ownership violations, 403 cases)
-- Coverage reports (JaCoCo)
-- Migration rollback tests
+
+**Level 2: Integration Tests (Testcontainers PostgreSQL)**
+- Настроить Testcontainers: `@Testcontainers`, `@ServiceConnection`, `PostgreSQLContainer`
+- **Полный learning flow test** — `LearningFlowIntegrationTest.java`:
+  1. Создать пользователя
+  2. Создать deck
+  3. Добавить cards
+  4. Enroll пользователя
+  5. Получить карточки для изучения
+  6. Отправить review
+  7. Проверить изменение progress
+  8. Проверить `nextReviewAt`
+  9. Повторный enroll → 409 Conflict
+- **Ownership и security tests**:
+  - User A создаёт deck
+  - User B не может его изменить → 403
+  - User B не может удалить → 403
+  - Неавторизованный запрос → 401
+- **Database constraints tests**:
+  - Liquibase применяет все migrations
+  - Unique constraints работают (duplicate enrollment → exception)
+  - FK constraints работают
+  - ON DELETE RESTRICT работает
+  - TIMESTAMPTZ корректно сохраняет `Instant`
+  - Database triggers обновляют `updated_at`
+- **Race-condition сценарии**:
+  - Два одновременных enroll → один проходит, второй получает 409
+  - `DataIntegrityViolationException` → понятный HTTP 409
+- **@WebMvcTest для контроллеров** — `LearningControllerTest.java`, `CardControllerTest.java`:
+  - Валидный request → нужный status
+  - Невалидный request → 400
+  - Нет авторизации → 401
+  - Нет доступа → 403
+  - Entity отсутствует → 404
+  - Конфликт enrollment → 409
+  - Ответ соответствует DTO
+- **@DataJpaTest для custom queries** — только нестандартные queries:
+  - Find cards due for review
+  - Find progress by userId and cardId
+  - Count mastered cards
+  - Проверка unique constraint
+  - Проверка выборки с сортировкой и limit
+- **Coverage reports (JaCoCo)**
+- **Migration rollback tests**
 
 **API Documentation:** OpenAPI/Swagger
 
