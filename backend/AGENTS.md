@@ -54,7 +54,9 @@ Full policy: `.windsurf/rules/database-schema-ownership.md`
 
 ## Testing (brief)
 
-**When writing or reviewing tests, read: `.windsurf/rules/testing-conventions.md`**
+**When writing or reviewing tests, read:**
+- `.windsurf/rules/testing-conventions.md` — краткие обязательные правила
+- `docs/testing/testing-strategy.md` — полная документация с примерами
 
 Key rules (always apply):
 - Naming: `method_shouldExpectedResult_whenCondition`

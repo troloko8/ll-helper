@@ -89,4 +89,6 @@ public AuthResponse login(LoginRequest request) {
 
 **Clock injection is mandatory** for services using time — inject `Clock`, use `Instant.now(clock)`, test with `Clock.fixed(...)`.
 
-**Detailed conventions:** See `.windsurf/rules/testing-conventions.md`
+**Detailed conventions:**
+- `.windsurf/rules/testing-conventions.md` — краткие обязательные правила
+- `docs/testing/testing-strategy.md` — полная документация с примерами
