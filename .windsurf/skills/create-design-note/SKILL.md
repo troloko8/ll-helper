@@ -6,7 +6,7 @@ description: Creates a design note file for a new feature following the establis
 Create a design note file in `/Users/troloko/LLHelper/ll-helper/docs/features/` following the established template.
 
 ## Template Structure
-//FIXME later it's probably not design note approach. Maybe need to change the name or sence of this skill
+
 The file should follow this structure (example: `learning-flow.md`):
 
 ```markdown

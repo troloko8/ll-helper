@@ -96,9 +96,10 @@
 - ~~Файл: `common/exception/GlobalExceptionHandler.java`~~
 - ~~Response: `{ "error": "RATE_LIMIT_EXCEEDED", "message": "...", "timestamp": "..." }`~~
 
-**8.15. Обновить Postman collection — тесты на HTTP 429**
-- Файл: `LLHelper.postman_collection.json`
-- Тесты на каждый protected endpoint (6+ requests → 429)
+~~**8.15. Обновить Postman collection — тесты на HTTP 429**~~ — **заменено @WebMvcTest**
+- ~~Файл: `LLHelper.postman_collection.json`~~
+- ~~Тесты на каждый protected endpoint (6+ requests → 429)~~
+- 429 сценарии покрыты в `AuthControllerTest.login_shouldReturn429_whenRateLimitExceeded()` (Sprint 0.4, Группа 1b.5)
 
 ~~**8.16. Обновить документацию**~~
 - ~~`docs/architecture/current-architecture.md` — секция "Rate Limiting"~~
@@ -175,9 +176,36 @@
 
 > **Note:** Тестирование миграций (smoke tests, rollback) отложено на Sprint 0.4.
 
-### Sprint 0.4 — Testing & Postman (Level 0 Minimum)
+### Sprint 0.4 — Testing (Level 0 Minimum)
 
-**Цель:** Минимальные тесты + Postman для демонстрации проекта. Без rocket science (integration tests, coverage → Level 2).
+**Цель:** Unit tests + Controller tests + Postman smoke. Без Testcontainers и интеграционных тестов — это Level 2.
+
+> **Принцип Level 0:** Unit test сервиса и @WebMvcTest контроллера для одной фичи пишутся **вместе**.
+
+**Группа 0: Инфраструктура тестов (выполняется первой)**
+
+> Без этой группы нельзя писать тесты.
+
+**0.1. Добавить Testcontainers в `pom.xml`**
+```xml
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+**0.2. Создать `common/support/TestData.java`** — cross-domain fixtures
+   - `fixedClock()` — `Clock.fixed(Instant.parse("2024-01-01T10:00:00Z"), ZoneOffset.UTC)`
+
+**0.3. Создать `ApplicationContextLoadsTest.java`** — DB smoke с Testcontainers
+   - `contextLoads_shouldStartApplication_withPostgres()` — Liquibase миграции V1–V10 запускаются на чистой PostgreSQL, schema валидна
+   - Без этого теста неизвестно работают ли TIMESTAMPTZ, триггеры, CHECK constraints на чистой БД
+
+**0.4. Внедрить Clock в `LearningServiceImpl`**
+   - Добавить `private final Clock clock;` в конструктор
+   - Заменить `Instant.now()` на `Instant.now(clock)`
+   - Добавить `@Bean Clock clock() { return Clock.systemUTC(); }` в Spring config
 
 **Группа 1: Unit Tests (критичная бизнес-логика)**
 
@@ -198,7 +226,7 @@
    - `tryConsume_shouldThrow_whenOverLimit()` — превышение лимита → `RateLimitExceededException`
    - `tryConsume_shouldSeparateBuckets_forDifferentUsers()` — разные пользователи → независимые buckets
    - `tryConsume_shouldSeparateBuckets_forDifferentActions()` — разные `RateLimitAction` → независимые buckets
-   - `reset_shouldClearBucket_butCurrentlyDoesNot()` — демонстрация известного бага (тест падает, документирует проблему)
+   - `reset_shouldClearBucket_whenCalled()` — автоматически отключить через `@Disabled("Known bug: reset() does not clear bucket, see issue #N")` если баг не исправлен
 
 **1.3. Ownership checks tests** — security-critical
    - `DeckServiceImplTest.update_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может update deck
@@ -215,55 +243,61 @@
    - `parseResponse_validJson_shouldReturnAiCardData()` — корректный JSON → `AiCardData`
    - `parseResponse_invalidJson_shouldThrowException()` — некорректный JSON → exception
 
-**Группа 2: Postman (базовые проверки)**
+**Группа 1b: Controller Tests (@WebMvcTest) — параллельно с Группой 1**
 
-6. **Обновить Postman collection** — проверить все endpoints из `current-architecture.md`
+> Сервис замокан через `@MockitoBean` (Spring Boot 4.x). Нет реальной БД, нет full Spring context. Цель: автоматизировать проверку HTTP статусов, validation и GlobalExceptionHandler.
+
+**1b.1. LearningControllerTest** — `LearningControllerTest.java`
+   - `enroll_shouldReturn200_whenSuccess()` — успешный enroll
+   - `enroll_shouldReturn404_whenDeckNotFound()` — deck не существует → 404
+   - `enroll_shouldReturn409_whenAlreadyEnrolled()` — повторный enroll → 409
+   - `review_shouldReturn200_whenSuccess()` — успешный review
+   - `review_shouldReturn404_whenProgressNotFound()` — progress не существует → 404
+
+**1b.2. DeckControllerTest** — `DeckControllerTest.java`
+   - `create_shouldReturn201_whenValid()` — успешное создание
+   - `create_shouldReturn400_whenTitleIsBlank()` — пустой title → 400
+   - `update_shouldReturn403_whenUserIsNotOwner()` — не owner → 403
+   - `getById_shouldReturn404_whenDeckNotFound()` — deck не существует → 404
+
+**1b.3. CardControllerTest** — `CardControllerTest.java`
+   - `create_shouldReturn201_whenValid()` — успешное создание
+   - `create_shouldReturn403_whenUserIsNotDeckOwner()` — не owner → 403
+   - `generateBulk_shouldReturn400_whenSizeExceedsLimit()` — bulk > 50 → 400
+
+**1b.4. UserControllerTest** — `UserControllerTest.java`
+   - `update_shouldReturn400_whenRequestInvalid()` — невалидный request → 400
+   - `update_shouldReturn403_whenUserIsNotSelf()` — не сам пользователь → 403
+
+**1b.5. AuthControllerTest** — `AuthControllerTest.java`
+   - `register_shouldReturn201_whenValid()` — успешная регистрация
+   - `register_shouldReturn400_whenEmailInvalid()` — невалидный email → 400
+   - `login_shouldReturn200_whenCredentialsValid()` — успешный login
+   - `login_shouldReturn429_whenRateLimitExceeded()` — rate limit → 429
+
+**Группа 2: Postman (smoke testing)**
+
+> HTTP контракт автоматизирован через @WebMvcTest. Postman остаётся только для ручного smoke-тестирования на живом сервере.
+
+6. **Актуализировать Postman collection** — проверить все endpoints из `current-architecture.md`
    - Добавить недостающие endpoints (если есть)
-   - Без сложных тестов, просто корректные requests
+   - Убедиться, что все requests работают на живом сервере
+   - Без автоматических тест-скриптов — только корректные requests
 
-7. **Postman: Happy path tests (200/201)**
-   - Auth: `POST /auth/register` → 201, `POST /auth/login` → 200
-   - Deck: `POST /decks` → 201, `GET /decks` → 200
-   - Card: `POST /cards` → 201, `GET /cards/{id}` → 200
-   - Learning: `POST /learning/enroll/{deckId}` → 200
-   - Без assertions, просто проверка status code
+**Группа 3: Domain-specific fixtures**
 
-8. **Postman: Error cases (400/403/404/409)**
-   - 400: `POST /auth/register` с пустым email → 400
-   - 403: User B пытается update deck User A → 403
-   - 404: `GET /decks/999999` → 404
-   - 409: Enroll deck дважды → 409
-   - Минимум — по 1 тесту на каждый статус
-
-9. **Postman: Rate limiting tests (429)**
-   - `POST /auth/login` 6 раз подряд → 429 на 6-м
-   - `POST /cards` 21 раз подряд → 429 на 21-м
-   - Без сложных сценариев, просто проверка лимита
-
-**Группа 3: Инфраструктура тестов**
-
-10. **Создать test fixtures/builders** — `TestData.java` или `TestDataBuilder.java`
-    - `defaultProgress()` — создание `UserCardProgress` для тестов
-    - `fixedClock()` — `Clock.fixed()` для тестирования timestamps
-    - Избегать дублирования setup кода в каждом тесте
-
-11. **Внедрить Clock injection в LearningServiceImpl**
-    - Добавить: `private final Clock clock;` в конструктор
-    - Заменить: `Instant.now()` на `Instant.now(clock)`
-    - Цель: точное тестирование `nextReviewAt` расчётов без `Thread.sleep()`
+10. **Создать `learning/support/LearningTestData.java`**
+    - `defaultProgress()` — базовый `UserCardProgress` (важные для сценария поля — явно в тесте, не в fixture)
+    - Добавить аналогичные файлы для других модулей по мере роста покрытия
 
 **Группа 4: Критичные долги**
 
-12. **Smoke test для Liquibase migrations**
-    - Запустить: `./mvnw liquibase:update` на чистой БД
-    - Проверить: нет ошибок, все constraints работают
-    - Без автоматизации, ручная проверка достаточно для Level 0
+12. ~~**Smoke test для Liquibase migrations** — ручная проверка~~ **заменено `ApplicationContextLoadsTest` (Группа 0)**
 
 13. **Проверить все 500 ошибки → специфические HTTP коды**
     - Найти: `throw new RuntimeException` в коде
-    - Заменить: на `IllegalArgumentException` (400), `IllegalStateException` (409), `EntityNotFoundException` (404)
-    - Проверить: `GlobalExceptionHandler` обрабатывает все типы
-    - Без тестов, просто code review + manual testing
+    - Заменить: на правильные типы exception (`NotFoundException`, `ConflictException`, etc.)
+    - Проверить: маппинг покрыт `@WebMvcTest` тестами в Группе 1b — code review не доказывает что handler зарегистрирован
 
 **Группа 5: Documentation**
 
@@ -278,17 +312,18 @@
     - Обрезать `LL_Helper_Project_Roadmap.md` до уровней + Done Criteria (~1-2 стр.)
     - Обновить `.windsurf/rules/project-roadmap.md` memory (статус спринтов устарел)
 
-**Итого: 15 задач, ~10-12 часов работы**
+**Итого: ~19 задач, ~12-15 часов работы**
 
 **Приоритет выполнения:**
-1. Группа 3 (Clock injection, test fixtures) — инфраструктура для тестов
-2. Группа 1.1 (LearningService) — критичная бизнес-логика
+1. Группа 3 (Clock injection, TestData) — инфраструктура, без неё нельзя писать тесты
+2. Группа 1.1 + 1b.1 (LearningService + LearningController) — критичная бизнес-логика **параллельно**
 3. Группа 1.2 (UserRateLimiter) — security
-4. Группа 1.3 (Ownership) — security-critical
-5. Группа 1.4, 1.5 (Bulk validation, AI parser) — дополнительные unit-тесты
-6. Группа 2 (Postman) — API проверки
-7. Группа 4 (Долги) — cleanup
-8. Группа 5 (Docs) — финализация
+4. Группа 1.3 + 1b.2-1b.4 (Ownership unit + DeckController, CardController, UserController) — security-critical **параллельно**
+5. Группа 1b.5 (AuthControllerTest) — HTTP auth контракт
+6. Группа 1.4, 1.5 (Bulk validation, AI parser) — дополнительные unit-тесты
+7. Группа 2 (Postman) — ручной smoke
+8. Группа 4 (Долги) — cleanup
+9. Группа 5 (Docs) — финализация
 
 ### Sprint 1.0 — Vertical Flow
 
@@ -327,6 +362,38 @@
    - Визуализировать cascade риски (Deck → Cards)
 2. Обновить `docs/architecture/current-architecture.md` с ссылкой на ER-диаграмму
 3. Подготовить архитектурную схему для портфолио/собеседований
+
+### Sprint 1.3 — AI Workflow & Agent Infrastructure
+
+> **Цель:** Настроить AI-инфраструктуру так, чтобы она помогала, а не тормозила работу лишним контекстом.
+> Изучить архитектуру Windsurf и научиться строить AI-инфраструктуру проекта.
+
+**Группа 1: Понять архитектуру**
+
+1. Изучить как работают вместе: AGENTS.md, rules, memory, skills, workflows
+   - Что грузится в каждый запрос и почему
+   - Разница между `always_on` и `glob` триггерами
+   - Когда использовать `skill` vs `workflow` vs простой промпт
+2. Оптимизировать rules-файлы
+   - Аудит размеров: текущий тотал ~40кб всегда-загружаемых правил
+   - Перевести документационные разделы из rules в `docs/`, оставить в rules только оперативные правила
+   - Цель: rules файлы не должны превышать 5кб ценных разделов с always\_on
+
+**Группа 2: Создать skills**
+
+3. **`create-test-file` skill** — генерация unit + @WebMvcTest шаблона для модуля
+   - Также генерировать `TestData` fixtures для нового entity
+4. **`add-liquibase-migration` skill** — шаблон changeset с правильным именованием и FK-стилем
+5. **Обновить `create-design-note` skill** — адаптировать шаблон под текущие нужды проекта
+
+**Группа 3: Обновить workflows**
+
+6. **Обновить `pre-commit-review.md` workflow**
+   - Добавить проверку test coverage в Test impact секцию (Sprint 0.4 done?)
+   - Добавить ссылку на `.windsurf/rules/testing-conventions.md`
+7. **Создать `start-sprint.md` workflow** — что проверяет перед началом нового sprintа
+
+**Итого:** понять AI-инфраструктуру не как магию, а как инструмент с чёткой механикой и ограничениями.
 
 ---
 
@@ -463,9 +530,11 @@
 
 ### Testing
 
-- JUnit, Mockito, SpringBootTest, MockMvc
-- Testcontainers PostgreSQL
-- Integration tests, security tests for 403 cases
+- JUnit 5 + Mockito + AssertJ: unit tests + @WebMvcTest (Level 0 done)
+- @DataJpaTest + Testcontainers PostgreSQL: repository tests with real DB
+- @SpringBootTest + Testcontainers: integration tests for critical flows
+- Security tests: 403 ownership scenarios
+- CI: tests run on every PR via GitHub Actions
 
 ### API docs
 
@@ -484,11 +553,13 @@
 - Form validation, protected routes, reusable components
 - React Testing Library basics, responsive layout
 
-### AI workflow
+### AI workflow & Agent Infrastructure
 
+- Понимать архитектуру Windsurf: AGENTS.md, rules (always\_on vs glob), skills, workflows, memory
+- Оптимизировать контекст: какие правила грузить всегда, какие — только при работе с нужными файлами
+- Создавать skills для повторяющихся задач (generate test, create entity, add migration)
+- Pre-commit workflow
 - Scripts for changed files / AI context generation
-- Pre-commit checklist
-- Semi-automated Postman update
 
 ### Уровень владения
 

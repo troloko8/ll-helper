@@ -24,6 +24,7 @@ If the change affects architecture, API, database schema, learning flow, AI flow
 - `.windsurf/rules/entity-conventions.md`
 - `.windsurf/rules/database-schema-ownership.md`
 - `docs/database/schema-ownership.md`
+- `.windsurf/rules/testing-conventions.md`
 - `LLHelper.postman_collection.json` when API changes
 
 ## When to update `current-architecture.md`
@@ -97,6 +98,21 @@ Update this file when the change affects:
 - AI error handling
 - AI configuration properties
 - ownership checks for card creation/generation
+
+## When to update `testing-conventions.md`
+
+Update this file when:
+
+- Test stack changes (new library added or removed)
+- New test type added to the project (e.g., Testcontainers, RestAssured)
+- Test naming convention changes
+- New rule discovered (e.g., new mock pattern, new AAA edge case)
+- Testing level boundary changes (what belongs to Level 0 vs Level 2)
+- `TestData.java` shared fixtures pattern changes
+
+If testing conventions change, also update:
+- `backend/CONVENTIONS.md` (Testing section)
+- `backend/AGENTS.md` (Testing section)
 
 ## When to update `mapstruct-conventions.md`
 

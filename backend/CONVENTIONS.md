@@ -70,3 +70,23 @@ public AuthResponse login(LoginRequest request) {
 - TODO (Level 2): Replace `checkLimitByEmail(request.email(), AUTH_REGISTER)` with IP-based limiting — see `IMPROVEMENTS.md`
 
 **See:** `docs/features/rate-limiting-design.md` for full implementation plan
+
+## Testing
+
+**Stack (Level 0–1, included in spring-boot-starter-test):**
+- JUnit 5 — test runner
+- Mockito — mocking (`@Mock`, `@MockitoBean` in `@WebMvcTest` / `@Mock` in unit tests)
+- AssertJ — assertions (`assertThat(...)` — always prefer over `assertEquals`)
+- MockMvc — HTTP contract testing via `@WebMvcTest`
+
+**Level 2+ only:** Testcontainers PostgreSQL. **Never use H2** — not compatible with our TIMESTAMPTZ, triggers, CHECK constraints.
+
+**Test naming:** `method_shouldExpectedResult_whenCondition`
+- `enroll_shouldThrowConflict_whenDeckAlreadyEnrolled()`
+- `update_shouldThrowForbidden_whenUserIsNotOwner()`
+
+**For critical use cases:** cover both business logic (unit test) and HTTP mapping (`@WebMvcTest`). No need to mirror every scenario on both levels.
+
+**Clock injection is mandatory** for services using time — inject `Clock`, use `Instant.now(clock)`, test with `Clock.fixed(...)`.
+
+**Detailed conventions:** See `.windsurf/rules/testing-conventions.md`

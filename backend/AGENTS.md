@@ -3,46 +3,18 @@
 This file is auto-read by Cascade on every session in this project.
 Apply these conventions for ALL backend code in this repository.
 
-## Architecture
-- **Style:** Modular monolith on Spring Boot
-- **Organization:** `package-by-feature`
-- Each module (`card`, `deck`, `auth`, etc.) contains:
-  - `controller/`
-  - `service/`
-  - `repository/`
-  - `dto/request/` and `dto/response/`
-  - `entity/`
-- Cross-cutting concerns go in `common/` (`security`, `exception`, `logging`, `util`, `config`)
+## Rules Reference
 
-## JPA Entity
-- Always use `@Getter` + `@Setter` + `@NoArgsConstructor` from Lombok
-- **Never** use `@Data` on entity classes
-- Do **not** auto-generate `equals`/`hashCode`/`toString`
+Detailed conventions are loaded automatically from `.windsurf/rules/`. Quick index:
 
-## DTO
-- Always use Java `record`
-- Do **not** use Lombok on `record` — records already generate everything
-- Split into `dto/request/` and `dto/response/`
-
-## Mapper
-- **Library:** MapStruct 1.6.3
-- **Pattern:** Interface-based mappers with `@Mapper(componentModel = "spring")`
-- Each module has a `mapper/` package with dedicated mapper interface
-- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
-- MapStruct processor runs **after** Lombok in annotation processing chain
-- Generated implementations are auto-injected as Spring beans
-- **IMPORTANT:** Always use mapper for DTO ↔ Entity conversion. Never write manual mapping in services.
-- **Detailed conventions:** See `.windsurf/rules/mapstruct-conventions.md`
-
-## Naming
-- Packages: `snake_case` for compound words (e.g. `deck`)
-- Classes: `PascalCase` (e.g. `Deck`, `DeckResponse`)
-- REST endpoints: `kebab-case` (e.g. `/api/v1/decks`)
-
-## Database
-- **DBMS:** PostgreSQL
-- **ddl-auto:** `validate`
-- **Migrations:** Liquibase (V1 baseline created, incremental migrations planned for Sprint 0.3)
+| File | Covers |
+|------|--------|
+| `database-schema-ownership.md` | Liquibase ownership, timestamps, migrations, constraints, enums |
+| `entity-conventions.md` | JPA entity patterns, Lombok rules, mapper integration |
+| `mapstruct-conventions.md` | MapStruct patterns, DTO ↔ Entity mapping, multi-source |
+| `testing-conventions.md` | Test types, naming, AAA, mocking, AssertJ, Clock injection |
+| `documentation-sync.md` | Which docs to update and when |
+| `project-roadmap.md` | Current level and sprint status |
 
 ## Core Project Documents
 
@@ -52,42 +24,43 @@ Apply these conventions for ALL backend code in this repository.
 - Learning flow: `docs/features/learning-flow.md`
 - AI generation flow: `docs/features/ai-generation-flow.md`
 
-Before suggesting backend architecture, entity relationships, database constraints, cascade/delete behavior, indexes, learning progress changes, or migrations, check the database relationships document.
+Before changing entities, relationships, constraints, indexes, or migrations — check `docs/database/relationships.md`.
 
-Before suggesting backend architecture changes, first check the current architecture document.
+Before changing architecture, packages, or request lifecycle — check `docs/architecture/current-architecture.md`.
 
-## Ownership Rule
+## Security — Ownership Rule (CRITICAL)
 
 Only the deck owner can create, update, delete, or AI-generate cards inside a deck.
 
-When implementing card creation or generation, always verify:
+Always verify before mutating deck content:
 
-```text
+```java
 if (!Objects.equals(deck.getOwner().getId(), currentUserId)) {
     throw new AccessDeniedException("Access denied: not deck owner");
 }
 ```
 
-This applies to:
-- `POST /api/v1/cards`
-- `POST /api/v1/cards/bulk-generate`
-- Any future endpoint that mutates deck content
+Applies to: `POST /api/v1/cards`, `POST /api/v1/cards/bulk-generate`, and any future endpoint that mutates deck content.
 
-## Database Rule
+## Schema Rule (CRITICAL)
 
-Do not assume that JPA relationships and real PostgreSQL constraints are the same.
+Liquibase is the single source of truth for the DB schema.
 
-When discussing DB behavior, distinguish:
+- **Never** use `ddl-auto: update`
+- **Never** add `@Table(uniqueConstraints=...)`, `@Index`, `@Check`, `@ColumnDefault` to entities
+- Real constraints, indexes, defaults → Liquibase changesets only
 
-- JPA cascade / orphanRemoval
-- DB foreign keys / ON DELETE behavior
-- service-level ownership checks
-- logical ID references without FK constraints
+Full policy: `.windsurf/rules/database-schema-ownership.md`
 
-**Schema ownership:** Liquibase owns the DB schema. Hibernate/JPA entities must describe only the Java-to-DB mapping. Do not define DB constraints, indexes, defaults, or check constraints in entity classes. See `.windsurf/rules/database-schema-ownership.md` for the full policy.
+## Testing (brief)
 
-If entity relationships change, update `docs/database/relationships.md`.
+**When writing or reviewing tests, read: `.windsurf/rules/testing-conventions.md`**
 
-If learning flow logic changes, update `docs/features/learning-flow.md`.
-
-If AI generation logic changes, update `docs/features/ai-generation-flow.md`.
+Key rules (always apply):
+- Naming: `method_shouldExpectedResult_whenCondition`
+- Structure: Arrange / Act / Assert for non-trivial tests; trivial one-liners don’t need AAA comments
+- For a critical use case — cover both business logic (unit) and HTTP mapping (`@WebMvcTest`); no need to mirror every scenario on both levels
+- Services that use time must inject `Clock` — test with `Clock.fixed(...)`
+- **Never use H2** — incompatible with TIMESTAMPTZ, triggers, CHECK constraints
+- `@MockitoBean` in `@WebMvcTest` (Spring Boot 4.x — заменяет `@MockBean`)
+- AssertJ over JUnit assertions: `assertThat(x).isEqualTo(1)`, not `assertEquals(1, x)`
