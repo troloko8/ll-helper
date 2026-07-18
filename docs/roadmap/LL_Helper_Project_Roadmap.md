@@ -269,9 +269,16 @@
 
 14. **Обновить roadmap: отметить Sprint 0.4 как завершённый**
     - Отметить все задачи Sprint 0.4
-    - Проверить Level 0 Done Criteria
+    - Синхронизировать Done Criteria Level 0 (проставить [x] на реально выполненные задачи)
 
-**Итого: 14 задач, ~10-12 часов работы**
+15. **Разделить roadmap на отдельные файлы (post-Sprint-0.4 cleanup)**
+    - Создать `docs/roadmap/changelog.md` — перенести историю Sprint 0.1–0.3 (все зачёркнутые задачи)
+    - Создать `docs/roadmap/current-sprint.md` — только активные задачи текущего sprint'а
+    - Создать `docs/roadmap/backlog.md` — Level 1+ product backlog и техдолг
+    - Обрезать `LL_Helper_Project_Roadmap.md` до уровней + Done Criteria (~1-2 стр.)
+    - Обновить `.windsurf/rules/project-roadmap.md` memory (статус спринтов устарел)
+
+**Итого: 15 задач, ~10-12 часов работы**
 
 **Приоритет выполнения:**
 1. Группа 3 (Clock injection, test fixtures) — инфраструктура для тестов
@@ -283,24 +290,32 @@
 7. Группа 4 (Долги) — cleanup
 8. Группа 5 (Docs) — финализация
 
-### Sprint 1.0 — Frontend Skeleton
+### Sprint 1.0 — Vertical Flow
+
+> **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему.
+> Один вертикальный сценарий — Register → Login → Create deck → Add cards → Enroll → Study → See progress.
+> UI может быть простым. Цель — не красивый Dashboard, а работающий full-stack flow.
 
 1. Создать React/TS app
-2. Настроить routes
-3. Настроить API client
-4. Login/Register
-5. Dashboard
-6. Deck list
-7. Deck details
+2. Настроить routes и API client
+3. Login / Register
+4. Create deck + Add cards
+5. Enroll + Study + See progress
 
-### Sprint 1.1 — Learning UI
+### Sprint 1.1 — First Deployment (Level 1.5)
 
-1. Create deck UI
-2. Add card UI
-3. AI generate cards UI
-4. Enroll deck UI
-5. Study mode UI
-6. Progress UI
+> **Цель:** Сразу после работающего вертикального flow — собрать и запустить систему в интернете.
+> Это первый инженерный цикл: собрал → задеплоил → видишь работающую систему в браузере.
+
+1. Dockerfile backend + frontend
+2. Docker Compose + PostgreSQL
+3. GitHub Actions (build + tests)
+4. Один server / облачная платформа (VPS, Railway, Render)
+5. HTTPS + health endpoint
+6. Environment variables + secrets
+7. Базовые структурированные logs
+8. DB backup
+9. README: как запустить и задеплоить
 
 ### Sprint 1.2 — Architecture Documentation
 
@@ -322,9 +337,10 @@
 | **Level** | **Главный фокус знаний** | **Твой статус** |
 | --- | --- | --- |
 | Level 0 | Spring / JPA / DB / API cleanup / tests / docs | Уже можешь делать, но нужно систематизировать |
-| Level 1 | React/TS + backend integration + usable MVP | Начинать после backend stabilization |
-| Level 2 | Docker, CI, Swagger, Testcontainers, security depth | Учить параллельно после MVP |
-| Level 3 | Deploy, monitoring, backups, refresh tokens, e2e, AI architecture | Пока рано, но логичный следующий уровень |
+| Level 1 | Один вертикальный full-stack flow (React + backend + auth + DB) | Начинать после backend stabilization |
+| Level 1.5 | Docker, CI, первый деплой, HTTPS, env config, health checks | Сразу после работающего вертикального flow |
+| Level 2 | Testcontainers, Swagger, security depth, полный frontend, architecture review | После первого deployment |
+| Level 3 | Monitoring, staging, refresh tokens, e2e, real users, AI architecture | Логичный следующий уровень |
 | Level 4 | SaaS, payments, roles, marketplace, AI cost optimization | Далёкий advanced/product level |
 
 ## Level 0 — Что ты должен знать
@@ -610,9 +626,13 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 - [ ]  Есть unit tests на learning/progress/AI parsing/rate limiting/ownership (15-20 тестов)
 - [ ]  Можешь объяснить backend без подсказки AI
 
-# Level 1 — Usable MVP
+# Level 1 — Vertical Full-Stack Flow
 
-**Цель:** Ты сам и 1–3 друга можете реально пользоваться приложением.
+> **Решение (2026-07):** Level 1 начинается с одного вертикального сценария, а не с полного набора frontend-экранов.
+> Цель не красивый product — а впервые пройти полный путь: frontend → backend → auth → DB → живая система.
+> Остальные экраны (Dashboard, AI generation, Card Editor, Progress) — расширение после первого деплоя.
+
+**Цель:** Один работающий full-stack flow + первый самостоятельный deployment системы.
 
 ## Product flow
 
@@ -742,6 +762,27 @@ src/
 - [ ]  Основные endpoint flows проходят через Postman
 - [ ]  Есть AI workflow prompts
 - [ ]  Проектом можешь пользоваться ты сам
+
+# Level 1.5 — First System Delivery
+
+> **Решение (2026-07):** Level 1.5 — новый уровень, перенесённый из Level 2.
+> Deployment должен произойти сразу после работающего вертикального flow, а не после полного frontend.
+> Первый деплой — не награда в конце обучения. Это часть обучения.
+
+**Цель:** Самостоятельно собрать, запустить и задеплоить full-stack систему. После этого уровня ты можешь сказать: *«Я спроектировал, реализовал, собрал и запустил систему»*.
+
+## ✅ Done Criteria
+
+- [ ]  Приложение доступно через интернет по HTTPS
+- [ ]  Запускается через `docker-compose up`
+- [ ]  GitHub Actions: build + tests зелёные
+- [ ]  Environment variables вынесены из кода
+- [ ]  Есть health endpoint
+- [ ]  Есть DB backup
+- [ ]  Есть README уровня «другой dev может запустить и задеплоить»
+- [ ]  Можешь объяснить pipeline без подсказки AI
+
+---
 
 # Level 2 — Portfolio / Interview-ready
 
