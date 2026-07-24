@@ -192,7 +192,7 @@
     <groupId>org.testcontainers</groupId>
     <artifactId>postgresql</artifactId>
     <scope>test</scope>
-</dependency>
+</dependency>   
 ```
 
 **0.2. Создать `common/support/TestData.java`** — cross-domain fixtures
