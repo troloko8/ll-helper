@@ -186,26 +186,20 @@
 
 > Без этой группы нельзя писать тесты.
 
-**0.1. Добавить Testcontainers в `pom.xml`**
-```xml
-<dependency>
-    <groupId>org.testcontainers</groupId>
-    <artifactId>postgresql</artifactId>
-    <scope>test</scope>
-</dependency>   
-```
+~~**0.1. Добавить Testcontainers в `pom.xml`**~~ — ✅ DONE (`org.testcontainers:postgresql` + `junit-jupiter`, 1.20.4)
 
-**0.2. Создать `common/support/TestData.java`** — cross-domain fixtures
-   - `fixedClock()` — `Clock.fixed(Instant.parse("2024-01-01T10:00:00Z"), ZoneOffset.UTC)`
+~~**0.2. Создать `common/support/TestData.java`** — cross-domain fixtures~~ — ✅ DONE
+   - ~~`fixedClock()` — `Clock.fixed(Instant.parse("2024-01-01T10:00:00Z"), ZoneOffset.UTC)`~~
 
-**0.3. Создать `ApplicationContextLoadsTest.java`** — DB smoke с Testcontainers
-   - `contextLoads_shouldStartApplication_withPostgres()` — Liquibase миграции V1–V10 запускаются на чистой PostgreSQL, schema валидна
+~~**0.3. Создать `ApplicationContextLoadsTest.java`** — DB smoke с Testcontainers~~ — ✅ DONE
+   - ~~`contextLoads_shouldStartApplication_withPostgres()` — Liquibase миграции V1–V10 запускаются на чистой PostgreSQL, schema валидна~~
    - Без этого теста неизвестно работают ли TIMESTAMPTZ, триггеры, CHECK constraints на чистой БД
+   - Docker недоступен в текущей dev-среде — тест не запускался локально, только скомпилирован. Требует проверки на машине с Docker.
 
-**0.4. Внедрить Clock в `LearningServiceImpl`**
-   - Добавить `private final Clock clock;` в конструктор
-   - Заменить `Instant.now()` на `Instant.now(clock)`
-   - Добавить `@Bean Clock clock() { return Clock.systemUTC(); }` в Spring config
+~~**0.4. Внедрить Clock в `LearningServiceImpl`**~~ — ✅ DONE
+   - ~~Добавить `private final Clock clock;` в конструктор~~
+   - ~~Заменить `Instant.now()` на `Instant.now(clock)`~~
+   - ~~Добавить `@Bean Clock clock() { return Clock.systemUTC(); }` в Spring config~~ (`AppConfig`)
 
 **Группа 1: Unit Tests (критичная бизнес-логика)**
 
@@ -215,7 +209,7 @@
    - `enroll_shouldThrowNotFound_whenDeckDoesNotExist()` — deck не существует → 404
    - `review_shouldIncrementCorrect_whenResultIsCorrect()` — correct answer → `timesCorrect++`, `correctStreak++`
    - `review_shouldResetStreak_whenResultIsWrong()` — wrong answer → `timesWrong++`, `correctStreak = 0`
-   - `review_shouldCalculateNextReview_basedOnDifficulty()` — проверка расчёта `nextReviewAt`
+   - `review_shouldCalculateNextReview_basedOnDifficulty()` — **пропущен**
    - `review_shouldThrowNotFound_whenProgressDoesNotExist()` — progress не существует → 404
    - `review_shouldTransitionToLearning_whenNewCardReviewed()` — `NEW` → `LEARNING`
    - `review_shouldTransitionToMastered_whenThresholdReached()` — достижение `MASTERED`
