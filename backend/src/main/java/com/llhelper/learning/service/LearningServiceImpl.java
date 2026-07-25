@@ -65,6 +65,9 @@ public class LearningServiceImpl implements LearningService {
 
             return new EnrollResponse(savedProgress.getId());
         } catch (DataIntegrityViolationException e) {
+            // FIXME: matching on exception message text is fragile — it depends on PostgreSQL
+            // version, JDBC driver, and locale. Consider a pre-check (existsByUserIdAndDeckId)
+            // or a dedicated exception-translation layer instead.
             // Check if this is specifically the duplicate enrollment constraint
             String message = e.getMessage();
             if (message != null && message.contains("uk_user_deck_progress_user_deck")) {
@@ -127,6 +130,8 @@ public class LearningServiceImpl implements LearningService {
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, card.getDeckId())
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
+        // FIXME: should probably be EntityNotFoundException (404), not IllegalStateException (409) —
+        // the card progress genuinely doesn't exist, it's not a state conflict. See LearningServiceImplTest.
         UserCardProgress cardProgress = userCardProgressRepository.findByUserDeckProgressIdAndCardId(deckProgress.getId(), cardId)
             .orElseThrow(() -> new IllegalStateException("Card progress not found. Please enroll first."));
 

@@ -89,6 +89,12 @@ public AuthResponse login(LoginRequest request) {
 
 **Clock injection is mandatory** for services using time — inject `Clock`, use `Instant.now(clock)`, test with `Clock.fixed(...)`.
 
+**Side effects & test data (discovered via `LearningServiceImplTest` review):**
+- If the service explicitly calls `repository.save(...)`, verify that call — state assertions alone don't prove persistence was requested
+- On error paths, verify mutating calls were **not** made (`verify(repo, never()).save(any())`)
+- Use distinct constant IDs per entity (`userId`, `deckId`, `cardId`) — identical values can mask argument-order bugs
+- For threshold logic (`>=`, `>`), add a test one unit **below** the threshold, not just at/above it
+
 **Detailed conventions:**
 - `.windsurf/rules/testing-conventions.md` — краткие обязательные правила
 - `docs/testing/testing-strategy.md` — полная документация с примерами

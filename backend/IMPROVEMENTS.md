@@ -75,6 +75,13 @@
   Для `CardDesc` — общий уровень деки, вычисляется из карточек или задаётся вручную
   Файлы: `Card.java`, `CardDesc.java`, `AiCardGenerationService.java`, `AiCardData.java`
 
+- [ ] **Убрать хрупкий парсинг текста ошибки в `LearningServiceImpl.enrollDeck()`**
+  Сейчас: дубликат enrollment определяется через `e.getMessage().contains("uk_user_deck_progress_user_deck")` в catch-блоке `DataIntegrityViolationException`
+  Проблема: текст ошибки зависит от версии PostgreSQL, JDBC-драйвера и локали — хрупкая проверка
+  Лучше: предварительная проверка `existsByUserIdAndDeckId()` перед `save()`, либо отдельный слой exception-translation
+  Найдено в code review `LearningServiceImplTest` (см. FIXME в коде)
+  Файлы: `LearningServiceImpl.java`
+
 - [ ] **Реализовать soft delete для дек (CardDesc) и карточек (Card)**
   Добавить поле `deleted_at` (TIMESTAMP, nullable) в таблицы `card_descs` и `cards`
   При удалении — устанавливать `deleted_at = CURRENT_TIMESTAMP` вместо физического удаления

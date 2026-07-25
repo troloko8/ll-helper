@@ -66,3 +66,6 @@ Key rules (always apply):
 - **Never use H2** — incompatible with TIMESTAMPTZ, triggers, CHECK constraints
 - `@MockitoBean` in `@WebMvcTest` (Spring Boot 4.x — заменяет `@MockBean`)
 - AssertJ over JUnit assertions: `assertThat(x).isEqualTo(1)`, not `assertEquals(1, x)`
+- If the service explicitly calls `repository.save(...)`, verify the call; on error paths verify it was `never()` called
+- Use distinct constant IDs per entity in test data — identical values can mask argument-order bugs
+- For threshold/branching logic (`>=`, `>`), add a boundary test one unit below the threshold, not just at/above it

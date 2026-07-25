@@ -75,6 +75,53 @@ Clock clock = TestData.fixedClock(); // Clock.fixed("2024-01-01T10:00:00Z")
 - Spring Data standard methods themselves — test your behavior through them
 - `record` constructors
 
+## Side-Effect Verification
+
+If the service under test explicitly calls `repository.save(...)` / `saveAll(...)` (i.e. does **not** rely on JPA dirty-checking inside a real `@Transactional`), verify that call in unit tests — state assertions alone don't prove persistence was requested:
+
+```java
+verify(userCardProgressRepository).save(cardProgress);
+```
+
+For error/exception scenarios, verify that mutating calls were **not** made — this proves the failure has no side effects, not just that an exception was thrown:
+
+```java
+assertThatThrownBy(() -> service.enrollDeck(deckId))
+    .isInstanceOf(EntityNotFoundException.class);
+
+verify(userDeckProgressRepository, never()).save(any());
+verify(userCardProgressRepository, never()).saveAll(any());
+```
+
+**Don't overdo it:** only verify calls that are a meaningful part of the behavior under test (e.g. persistence, mapper translation). Don't turn a test into a full call-log of every internal interaction.
+
+## Test Data Hygiene
+
+Use **distinct** constant values for different entity IDs in a test class (`userId`, `deckId`, `cardId`, ...). Identical values (e.g. all `1L`) can hide argument-order bugs — a swapped `(userId, cardId)` call still passes if both equal `1L`.
+
+```java
+// Bad — masks argument-order bugs
+private static final Long USER_ID = 1L;
+private static final Long DECK_ID = 1L;
+private static final Long CARD_ID = 1L;
+
+// Good
+private static final Long USER_ID = 1L;
+private static final Long DECK_ID = 2L;
+private static final Long CARD_ID = 3L;
+```
+
+## Boundary Testing for Threshold Logic
+
+When business logic branches on a threshold comparison (`>=`, `>`, `<=`, `<`), add a test **one unit below** the threshold in addition to the test **at/above** the threshold. A single "reaches threshold" test does not catch an off-by-one bug (e.g. `>= 2` written instead of `>= 3`).
+
+```java
+review_shouldTransitionToMastered_whenThresholdReached()       // streak == 3 → MASTERED
+review_shouldNotTransitionToMastered_whenThresholdNotReached() // streak == 2 → still REVIEWING
+```
+
+This applies to any status/tier/limit transition, not just spaced-repetition logic (e.g. rate limiting, pagination limits).
+
 ## What NOT to Test
 
 - Lombok-generated code

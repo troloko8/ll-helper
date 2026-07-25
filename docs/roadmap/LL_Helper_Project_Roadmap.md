@@ -203,17 +203,17 @@
 
 **Группа 1: Unit Tests (критичная бизнес-логика)**
 
-**1.1. LearningServiceImpl tests** — `LearningServiceImplTest.java`
-   - `enroll_shouldCreateProgress_whenNotEnrolled()` — успешный enroll
-   - `enroll_shouldThrowConflict_whenAlreadyEnrolled()` — повторный enroll → 409
-   - `enroll_shouldThrowNotFound_whenDeckDoesNotExist()` — deck не существует → 404
-   - `review_shouldIncrementCorrect_whenResultIsCorrect()` — correct answer → `timesCorrect++`, `correctStreak++`
-   - `review_shouldResetStreak_whenResultIsWrong()` — wrong answer → `timesWrong++`, `correctStreak = 0`
-   - `review_shouldCalculateNextReview_basedOnDifficulty()` — **пропущен**
-   - `review_shouldThrowNotFound_whenProgressDoesNotExist()` — progress не существует → 404
-   - `review_shouldTransitionToLearning_whenNewCardReviewed()` — `NEW` → `LEARNING`
-   - `review_shouldTransitionToMastered_whenThresholdReached()` — достижение `MASTERED`
-   - **Требование:** внедрить `Clock` injection в `LearningServiceImpl` для точного тестирования `nextReviewAt`
+~~**1.1. LearningServiceImpl tests**~~ — ✅ DONE — `LearningServiceImplTest.java`
+   - ~~`enroll_shouldCreateProgress_whenNotEnrolled()` — успешный enroll~~
+   - ~~`enroll_shouldThrowConflict_whenAlreadyEnrolled()` — повторный enroll → 409~~
+   - ~~`enroll_shouldThrowNotFound_whenDeckDoesNotExist()` — deck не существует → 404~~
+   - ~~`review_shouldIncrementCorrect_whenResultIsCorrect()` — correct answer → `timesCorrect++`, `correctStreak++`~~
+   - ~~`review_shouldResetStreak_whenResultIsWrong()` — wrong answer → `timesWrong++`, `correctStreak = 0`~~
+   - `review_shouldCalculateNextReview_basedOnDifficulty()` — **пропущен** (логика `nextReviewAt` не реализована в `LearningServiceImpl`)
+   - ~~`review_shouldThrowNotFound_whenProgressDoesNotExist()` — progress не существует~~ (актуально бросает `IllegalStateException` → 409, см. `docs/features/learning-flow.md`)
+   - ~~`review_shouldTransitionToLearning_whenNewCardReviewed()` — `NEW` → `LEARNING`~~
+   - ~~`review_shouldTransitionToMastered_whenThresholdReached()` — достижение `MASTERED`~~
+   - ~~**Требование:** внедрить `Clock` injection в `LearningServiceImpl` для точного тестирования `nextReviewAt`~~ — уже сделано (см. пункт 0.4 выше)
 
 **1.2. UserRateLimiter tests** — `UserRateLimiterTest.java`
    - `tryConsume_shouldAllow_whenUnderLimit()` — запросы в пределах лимита → успех
