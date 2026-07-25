@@ -410,6 +410,63 @@ void reset_shouldClearBucket_whenCalled() {
 
 **Disabled тест** должен иметь ссылку на issue и не жить так бесконечно. Лучший вариант — сначала исправить баг, потом написать зелёный тест.
 
+## Разделение Unit/Slice и Integration тестов (Level 2)
+
+**Naming:** unit и slice-тесты (`@ExtendWith(MockitoExtension.class)`, `@WebMvcTest`) — суффикс `*Test`. Integration-тесты (`@SpringBootTest` + Testcontainers) — суффикс `*IT`.
+
+```
+LearningServiceImplTest       ← unit, Surefire
+LearningControllerTest        ← @WebMvcTest slice, Surefire
+LearningFlowIntegrationIT     ← integration, Failsafe
+```
+
+**Maven Failsafe plugin** — запускает только `*IT` классы, отдельно от Surefire (`*Test`):
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-failsafe-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+**Команды:**
+
+| Команда | Что запускает | Testcontainers |
+|---------|---------------|-----------------|
+| `./mvnw test` | `*Test` (Surefire) — unit + slice | Нет (кроме `ApplicationContextLoadsTest`, Level 0 smoke) |
+| `./mvnw verify` | `*Test` + `*IT` (Surefire + Failsafe) | Да |
+
+Локально во время разработки/дебага — запуск отдельного метода/класса из IDE. Полный набор — только через Maven/CI.
+
+## CI (GitHub Actions) — порядок и оптимизация (Level 2)
+
+**Триггеры:** `push` и `pull_request` на `main`.
+
+**Порядок job'ов (fail-fast):**
+1. Build (`./mvnw compile`)
+2. Unit/slice tests (`./mvnw test`) — быстрые, без Testcontainers
+3. Integration tests (`./mvnw verify`, Testcontainers) — запускаются только после успешных unit-тестов
+4. Отчёт об успехе/ошибке — обязательный статус для merge (branch protection)
+
+**Оптимизация:**
+- Кэшировать `~/.m2/repository` между запусками (по хэшу `pom.xml`)
+- Независимые группы тестов (по модулям) — параллельно внутри unit-стадии
+- Integration-тесты — всегда после unit, не параллельно с ними
+- E2E — только для PR в `main` или перед деплоем, не на каждый push
+
+**Quality gates (после стабилизации CI):**
+- JaCoCo coverage threshold
+- Static analysis (Checkstyle/SpotBugs)
+- Запрет merge при красном pipeline
+
 ## Уровни тестирования — зоны ответственности
 
 | Уровень | Отвечает за | Характерный вопрос |

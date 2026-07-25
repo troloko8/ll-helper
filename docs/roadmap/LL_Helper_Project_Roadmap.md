@@ -944,6 +944,29 @@ src/
 - **Coverage reports (JaCoCo)**
 - **Migration rollback tests**
 
+**Level 2: Разделение Unit/Slice и Integration тестов**
+- **Naming:** unit/slice-тесты — суффикс `*Test` (Surefire), integration-тесты — суффикс `*IT` (Failsafe). Пример: `LearningServiceImplTest` (unit) vs `LearningFlowIntegrationIT` (integration)
+- **Maven Failsafe plugin** — добавить в `pom.xml`, привязать к `integration-test`/`verify` фазам, `<includes>**/*IT.java</includes>`
+- **Разделение команд:**
+  - `./mvnw test` — только `*Test` (Surefire), без Testcontainers, быстрый feedback
+  - `./mvnw verify` — `*Test` + `*IT` (Failsafe), полный набор с Testcontainers
+- **Переименовать существующие integration-тесты** под `*IT` при их создании (`LearningFlowIntegrationTest.java` → `LearningFlowIntegrationIT.java`)
+
+**Level 2: CI (GitHub Actions) — порядок и оптимизация**
+- **Триггеры:** `push` и `pull_request` на `main`
+- **Порядок job'ов:**
+  1. Build (`./mvnw compile`)
+  2. Unit/slice tests (`./mvnw test`) — быстрый fail-fast
+  3. Integration tests (`./mvnw verify`, Testcontainers) — только после успешных unit-тестов
+  4. Отчёт об успехе/ошибке (обязательный статус для merge)
+- **Кэширование:** кэш `~/.m2/repository` между запусками (`actions/cache` по хэшу `pom.xml`)
+- **Параллельность:** независимые группы тестов (например, по модулям) — параллельно внутри unit-стадии; integration — после unit
+- **E2E** — только на PR в `main` или перед деплоем, не на каждый push
+- **Quality gates (после стабилизации CI):**
+  - JaCoCo coverage threshold
+  - Static analysis (Checkstyle/SpotBugs)
+  - Branch protection: запрет merge при красном pipeline
+
 **API Documentation:** OpenAPI/Swagger
 
 **DevOps:** Dockerfile backend/frontend, `docker-compose.yml`, `.env.example`, GitHub Actions (build + tests)
