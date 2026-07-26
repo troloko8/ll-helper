@@ -215,20 +215,20 @@
    - ~~`review_shouldTransitionToMastered_whenThresholdReached()` — достижение `MASTERED`~~
    - ~~**Требование:** внедрить `Clock` injection в `LearningServiceImpl` для точного тестирования `nextReviewAt`~~ — уже сделано (см. пункт 0.4 выше)
 
-**1.2. UserRateLimiter tests** — `UserRateLimiterTest.java`
-   - `tryConsume_shouldAllow_whenUnderLimit()` — запросы в пределах лимита → успех
-   - `tryConsume_shouldThrow_whenOverLimit()` — превышение лимита → `RateLimitExceededException`
-   - `tryConsume_shouldSeparateBuckets_forDifferentUsers()` — разные пользователи → независимые buckets
-   - `tryConsume_shouldSeparateBuckets_forDifferentActions()` — разные `RateLimitAction` → независимые buckets
-   - `reset_shouldClearBucket_whenCalled()` — автоматически отключить через `@Disabled("Known bug: reset() does not clear bucket, see issue #N")` если баг не исправлен
+~~**1.2. UserRateLimiter tests**~~ — ✅ DONE — `UserRateLimiterTest.java`
+   - ~~`tryConsume_shouldAllow_whenUnderLimit()` — запросы в пределах лимита → успех~~
+   - ~~`tryConsume_shouldThrow_whenOverLimit()` — превышение лимита → `RateLimitExceededException`~~
+   - ~~`tryConsume_shouldSeparateBuckets_forDifferentUsers()` — разные пользователи → независимые buckets~~
+   - ~~`tryConsume_shouldSeparateBuckets_forDifferentActions()` — разные `RateLimitAction` → независимые buckets~~
+   - ~~`reset_shouldClearBucket_whenCalled()`~~ — отключён через `@Disabled("Known bug: reset() does not exist in UserRateLimiter — method not implemented")`
 
-**1.3. Ownership checks tests** — security-critical
-   - `DeckServiceImplTest.update_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может update deck
-   - `DeckServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может delete deck
-   - `CardServiceImplTest.create_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может create card
-   - `CardServiceImplTest.generateBulk_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может generate cards
-   - `UserServiceImplTest.update_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может update себя
-   - `UserServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может delete себя
+~~**1.3. Ownership checks tests**~~ — ✅ DONE — security-critical
+   - ~~`DeckServiceImplTest.update_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может update deck~~
+   - ~~`DeckServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotOwner()` — только owner может delete deck~~
+   - ~~`CardServiceImplTest.create_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может create card~~
+   - ~~`CardServiceImplTest.generateBulk_shouldThrowForbidden_whenUserIsNotDeckOwner()` — только deck owner может generate cards~~
+   - ~~`UserServiceImplTest.update_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может update себя~~
+   - ~~`UserServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может delete себя~~
 
 **1.4. Bulk validation test** — `CardServiceImplTest.java`
    - `generateBulk_shouldThrowBadRequest_whenSizeExceedsLimit()` — проверка `validateBulkSize()` (> 50 → 400)
