@@ -1,10 +1,9 @@
 package com.llhelper.ai.provider;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.ai.exception.AiServiceException;
+import com.llhelper.ai.parser.AiResponseParser;
 import com.llhelper.common.model.Language;
 import java.time.Duration;
 import java.util.List;
@@ -56,11 +55,11 @@ private static final String PROMPT_TEMPLATE = """
 
     private final AiProperties aiProperties;
     private final WebClient webClient;
-    private final ObjectMapper objectMapper;
+    private final AiResponseParser aiResponseParser;
 
-    public OpenAiProvider(AiProperties aiProperties, ObjectMapper objectMapper) {
+    public OpenAiProvider(AiProperties aiProperties, AiResponseParser aiResponseParser) {
         this.aiProperties = aiProperties;
-        this.objectMapper = objectMapper;
+        this.aiResponseParser = aiResponseParser;
 
         HttpClient httpClient = HttpClient.create()
             .responseTimeout(Duration.ofSeconds(aiProperties.getRequestTimeoutSeconds()));
@@ -100,7 +99,7 @@ private static final String PROMPT_TEMPLATE = """
                 .bodyToMono(String.class)
                 .block();
 
-            return parseResponse(response);
+            return aiResponseParser.parse(response);
         } catch (WebClientResponseException e) {
             throw new AiServiceException("OpenAI API error: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -114,13 +113,4 @@ private static final String PROMPT_TEMPLATE = """
                !aiProperties.getOpenai().getApiKey().isBlank();
     }
 
-    private AiCardData parseResponse(String response) {
-        try {
-            JsonNode root = objectMapper.readTree(response);
-            JsonNode content = root.path("choices").get(0).path("message").path("content");
-            return objectMapper.readValue(content.asText(), AiCardData.class);
-        } catch (Exception e) {
-            throw new AiServiceException("Failed to parse AI response", e);
-        }
-    }
 }

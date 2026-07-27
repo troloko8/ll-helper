@@ -235,9 +235,10 @@
    - ~~`generateBulk_shouldNotThrow_whenSizeEqualsLimit()` — граничный случай на лимите~~
    - Примечание: `validateBulkSize()` фактически отсутствовал в `CardServiceImpl` несмотря на отметку в п.12 — реализован сейчас (лимит = `AiProperties.getMaxBulkSize()`, по умолчанию 100)
 
-**1.5. AI parser tests** — `AiResponseParserTest.java`
-   - `parseResponse_validJson_shouldReturnAiCardData()` — корректный JSON → `AiCardData`
-   - `parseResponse_invalidJson_shouldThrowException()` — некорректный JSON → exception
+~~**1.5. AI parser tests**~~ — ✅ DONE — `AiResponseParserTest.java`
+   - ~~`parseResponse_validJson_shouldReturnAiCardData()` — корректный JSON → `AiCardData`~~
+   - ~~`parseResponse_invalidJson_shouldThrowException()` — некорректный JSON → exception~~
+   - Примечание: логика парсинга была приватным методом внутри `OpenAiProvider` (не тестируемым изолированно) — вынесена в отдельный `com.llhelper.ai.parser.AiResponseParser`, внедрён в `OpenAiProvider` через конструктор
 
 **Группа 1b: Controller Tests (@WebMvcTest) — параллельно с Группой 1**
 

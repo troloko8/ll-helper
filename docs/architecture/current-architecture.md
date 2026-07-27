@@ -377,6 +377,7 @@ backend/src/main/java/com/llhelper/
 ├── ai/
 │   ├── service/AiCardGenerationService.java
 │   ├── provider/OpenAiProvider.java
+│   ├── parser/AiResponseParser.java
 │   ├── config/AiProperties.java
 │   ├── dto/AiCardData.java
 │   └── util/AiRateLimiter.java
