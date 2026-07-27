@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
@@ -23,6 +24,7 @@ import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,17 +61,21 @@ class CardServiceImplTest {
     @Mock
     private EntityManager entityManager;
 
+    private AiProperties aiProperties;
+
     private CardServiceImpl cardService;
 
     @BeforeEach
     void setUp() {
+        aiProperties = new AiProperties();
         cardService = new CardServiceImpl(
             cardRepository,
             deckRepository,
             aiCardGenerationService,
             securityUtils,
             cardMapper,
-            userRateLimiter
+            userRateLimiter,
+            aiProperties
         );
         ReflectionTestUtils.setField(cardService, "entityManager", entityManager);
     }
@@ -173,5 +179,57 @@ class CardServiceImplTest {
         verify(cardRepository).saveAndFlush(generatedCard);
         verify(entityManager).refresh(generatedCard);
         verify(cardMapper).toResponse(generatedCard);
+    }
+
+    @Test
+    void generateBulk_shouldThrowBadRequest_whenSizeExceedsLimit() {
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        aiProperties.setMaxBulkSize(50);
+
+        List<String> titles = IntStream.range(0, 51)
+            .mapToObj(i -> "title" + i)
+            .toList();
+        BulkCardGenerateRequest request = new BulkCardGenerateRequest(titles, DECK_ID);
+
+        assertThatThrownBy(() -> cardService.createBulk(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Bulk size exceeds limit");
+
+        verify(deckRepository, never()).findWithOwnerById(any());
+        verify(cardRepository, never()).saveAndFlush(any());
+        verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
+        verify(entityManager, never()).refresh(any());
+    }
+
+    @Test
+    void generateBulk_shouldNotThrow_whenSizeEqualsLimit() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        aiProperties.setMaxBulkSize(50);
+
+        AiCardData aiData = new AiCardData("def", List.of(), List.of(), "translation");
+        Card generatedCard = new Card();
+        generatedCard.setTitle("title");
+        CardResponse response = new CardResponse(
+            1L, DECK_ID, "title", aiData.definition(), aiData.synonyms(),
+            aiData.examples(), aiData.translation(), null, null
+        );
+
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(any(), any(), any())).thenReturn(aiData);
+        when(cardMapper.fromAiData(any(), any(), any())).thenReturn(generatedCard);
+        when(cardRepository.saveAndFlush(generatedCard)).thenReturn(generatedCard);
+        when(cardMapper.toResponse(generatedCard)).thenReturn(response);
+
+        List<String> titles = IntStream.range(0, 50)
+            .mapToObj(i -> "title" + i)
+            .toList();
+        BulkCardGenerateRequest request = new BulkCardGenerateRequest(titles, DECK_ID);
+
+        List<CardResponse> results = cardService.createBulk(request);
+
+        assertThat(results).hasSize(50);
+        verify(deckRepository).findWithOwnerById(DECK_ID);
     }
 }

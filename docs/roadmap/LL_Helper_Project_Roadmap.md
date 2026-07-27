@@ -230,8 +230,10 @@
    - ~~`UserServiceImplTest.update_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может update себя~~
    - ~~`UserServiceImplTest.delete_shouldThrowForbidden_whenUserIsNotSelf()` — только сам пользователь может delete себя~~
 
-**1.4. Bulk validation test** — `CardServiceImplTest.java`
-   - `generateBulk_shouldThrowBadRequest_whenSizeExceedsLimit()` — проверка `validateBulkSize()` (> 50 → 400)
+~~**1.4. Bulk validation test**~~ — ✅ DONE — `CardServiceImplTest.java`
+   - ~~`generateBulk_shouldThrowBadRequest_whenSizeExceedsLimit()` — проверка `validateBulkSize()` (> `AiProperties.maxBulkSize` → `IllegalArgumentException` → 400)~~
+   - ~~`generateBulk_shouldNotThrow_whenSizeEqualsLimit()` — граничный случай на лимите~~
+   - Примечание: `validateBulkSize()` фактически отсутствовал в `CardServiceImpl` несмотря на отметку в п.12 — реализован сейчас (лимит = `AiProperties.getMaxBulkSize()`, по умолчанию 100)
 
 **1.5. AI parser tests** — `AiResponseParserTest.java`
    - `parseResponse_validJson_shouldReturnAiCardData()` — корректный JSON → `AiCardData`

@@ -1,5 +1,6 @@
 package com.llhelper.card.service;
 
+import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
@@ -34,6 +35,7 @@ public class CardServiceImpl implements CardService {
     private final SecurityUtils securityUtils;
     private final CardMapper cardMapper;
     private final UserRateLimiter userRateLimiter;
+    private final AiProperties aiProperties;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -45,7 +47,8 @@ public class CardServiceImpl implements CardService {
         AiCardGenerationService aiCardGenerationService,
         SecurityUtils securityUtils,
         CardMapper cardMapper,
-        UserRateLimiter userRateLimiter
+        UserRateLimiter userRateLimiter,
+        AiProperties aiProperties
     ) {
         this.cardRepository = cardRepository;
         this.deckRepository = deckRepository;
@@ -53,6 +56,7 @@ public class CardServiceImpl implements CardService {
         this.securityUtils = securityUtils;
         this.cardMapper = cardMapper;
         this.userRateLimiter = userRateLimiter;
+        this.aiProperties = aiProperties;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -66,6 +70,14 @@ public class CardServiceImpl implements CardService {
         Deck deck = deckRepository.findWithOwnerById(card.getDeckId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getDeckId()));
         validateDeckOwnership(deck);
+    }
+
+    private void validateBulkSize(BulkCardGenerateRequest request) {
+        int maxBulkSize = aiProperties.getMaxBulkSize();
+        if (request.titles().size() > maxBulkSize) {
+            throw new IllegalArgumentException(
+                "Bulk size exceeds limit: " + request.titles().size() + " > " + maxBulkSize);
+        }
     }
 
 
@@ -106,6 +118,8 @@ public class CardServiceImpl implements CardService {
     public List<CardResponse> createBulk(BulkCardGenerateRequest request) {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE);
+
+        validateBulkSize(request);
 
         Deck deck = deckRepository.findWithOwnerById(request.deckId())
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
