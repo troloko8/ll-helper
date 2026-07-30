@@ -133,7 +133,7 @@ Requires enrollment. Uses same batch-load pattern as study cards (no N+1).
 4. Find `UserDeckProgress` for this user + deck.
    - If not enrolled → `403 Forbidden`.
 5. Find `UserCardProgress` by `userDeckProgressId` + `cardId`.
-   - If not found → `409 Conflict` (implies not enrolled or card not in this deck).
+   - If not found → `404 Not Found` (throws `EntityNotFoundException`).
 6. Compare answer: `userAnswer.trim().equalsIgnoreCase(card.title.trim())`.
 7. Update counters:
    - Always: `timesSeen + 1`, `lastReviewedAt = now`.

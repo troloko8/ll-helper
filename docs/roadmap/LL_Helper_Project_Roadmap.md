@@ -244,12 +244,13 @@
 
 > Сервис замокан через `@MockitoBean` (Spring Boot 4.x). Нет реальной БД, нет full Spring context. Цель: автоматизировать проверку HTTP статусов, validation и GlobalExceptionHandler.
 
-**1b.1. LearningControllerTest** — `LearningControllerTest.java`
-   - `enroll_shouldReturn200_whenSuccess()` — успешный enroll
-   - `enroll_shouldReturn404_whenDeckNotFound()` — deck не существует → 404
-   - `enroll_shouldReturn409_whenAlreadyEnrolled()` — повторный enroll → 409
-   - `review_shouldReturn200_whenSuccess()` — успешный review
-   - `review_shouldReturn404_whenProgressNotFound()` — progress не существует → 404
+~~**1b.1. LearningControllerTest**~~ — ✅ DONE — `LearningControllerTest.java`
+   - ~~`enroll_shouldReturn201_whenSuccess()` — успешный enroll~~ (контроллер возвращает 201 Created, не 200)
+   - ~~`enroll_shouldReturn404_whenDeckNotFound()` — deck не существует → 404~~
+   - ~~`enroll_shouldReturn409_whenAlreadyEnrolled()` — повторный enroll → 409~~
+   - ~~`review_shouldReturn200_whenSuccess()` — успешный review~~
+   - ~~`review_shouldReturn404_whenProgressNotFound()` — progress не существует → 404~~
+   - Примечание: `LearningServiceImpl.reviewCard()` бросал `IllegalStateException` (409) при отсутствии `UserCardProgress` вместо `EntityNotFoundException` (404) — исправлен root cause, обновлён `LearningServiceImplTest`
 
 **1b.2. DeckControllerTest** — `DeckControllerTest.java`
    - `create_shouldReturn201_whenValid()` — успешное создание

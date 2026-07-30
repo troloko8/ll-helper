@@ -130,10 +130,8 @@ public class LearningServiceImpl implements LearningService {
         UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, card.getDeckId())
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
 
-        // FIXME: should probably be EntityNotFoundException (404), not IllegalStateException (409) —
-        // the card progress genuinely doesn't exist, it's not a state conflict. See LearningServiceImplTest.
         UserCardProgress cardProgress = userCardProgressRepository.findByUserDeckProgressIdAndCardId(deckProgress.getId(), cardId)
-            .orElseThrow(() -> new IllegalStateException("Card progress not found. Please enroll first."));
+            .orElseThrow(() -> new EntityNotFoundException("Card progress not found: " + cardId));
 
         boolean isCorrect = request.userAnswer().trim().equalsIgnoreCase(card.getTitle().trim());
 

@@ -232,7 +232,7 @@ class LearningServiceImplTest {
             .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> learningService.reviewCard(CARD_ID, new CardReviewRequest("hello")))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(EntityNotFoundException.class)
             .hasMessageContaining("Card progress not found");
 
         verify(userCardProgressRepository, never()).save(any());
