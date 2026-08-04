@@ -3,7 +3,7 @@ name: create-design-note
 description: Creates a design note file for a new feature following the established template in docs/features/
 ---
 
-Create a design note file in `/Users/troloko/LLHelper/ll-helper/docs/features/` following the established template.
+Create a design note file in `docs/features/` following the established template.
 
 ## Template Structure
 
@@ -137,7 +137,7 @@ Body: { ... }
    - Main entities involved
    - API endpoints planned
    - Security concerns
-3. Create file at `/Users/troloko/LLHelper/ll-helper/docs/features/{feature-name}.md`
+3. Create file at `docs/features/{feature-name}.md`
 4. Fill template with provided information
 5. Ensure Definition of Done checkboxes are specific and actionable
 6. List expected files to be created/modified
@@ -150,4 +150,4 @@ Body: { ... }
 
 ## Location
 
-Always create in: `/Users/troloko/LLHelper/ll-helper/docs/features/`
+Always create in: `docs/features/` (repository-relative)

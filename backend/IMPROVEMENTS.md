@@ -49,13 +49,11 @@
 
 ## Database
 
-- [x] Настроить Liquibase для миграций (V1 baseline создан)
-- [ ] Добавить индексы на часто используемые поля (email, username)
-- [ ] **Реализовать created_at через PostgreSQL DEFAULT**  
-  Сейчас: используется `@PrePersist` в Java коде для установки `createdAt`  
-  Лучше: `ALTER TABLE users ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP`  
-  Это разгрузит приложение и перенесёт ответственность на БД  
-  Файлы: `AuthUser.java`, `User.java` — убрать `@PrePersist` для `createdAt`
+- [x] Настроить Liquibase для миграций (V1–V10 применены: unique constraints, FK cascades, CHECK constraints, timestamptz)
+- [x] Индексы на `email`/`username` — уже есть через UNIQUE constraints (V1 baseline)
+- [ ] **Добавить индекс на `user_card_progress.next_review_at`**  
+  Единственный оставшийся пробел по индексам, см. `docs/database/relationships.md` §8
+- [x] **Реализовать created_at через PostgreSQL DEFAULT** — done in V9 migration (`DEFAULT CURRENT_TIMESTAMP` + trigger для `updated_at`), `@PrePersist` больше не используется для технических timestamp'ов
 
 - [ ] **Вынести synonyms, examples и keywords в отдельные независимые таблицы**
   Сейчас: `card_synonyms` и `card_examples` — дочерние таблицы карточки через `@ElementCollection`
@@ -63,17 +61,13 @@
   чтобы можно было искать альтернативные синонимы/примеры по БД без обращения к ИИ
   Файлы: `Card.java`, новые модули `synonym/`, `example/`, `keyword/`
 
-- [ ] **Сделать enum для языков на уровне БД**
-  Сейчас: языки хранятся как `VARCHAR` (nativeLanguage, targetLanguage, uiLanguage)
-  Лучше: создать PostgreSQL `ENUM` тип (`CREATE TYPE language AS ENUM ('ru', 'en', 'de', ...)`)
-  и использовать `@Enumerated(EnumType.STRING)` в Java с соответствующим `enum Language`
-  Файлы: `User.java`, новый `Language.java` enum, миграция Liquibase
+- [x] **Java enum + DB CHECK constraint для языков** — done: `common/model/Language.java` (ISO 639-1) на `Deck.sourceLanguage`/`targetLanguage`, `CHECK` constraints в V6 миграции. Колонки остаются `VARCHAR`, а не нативный PostgreSQL `ENUM` тип — CHECK даёт ту же гарантию валидности без миграции типа колонки.
 
 - [ ] **Добавить уровень сложности слова и деки (CEFR: A1–C2)**
-  Добавить поле `level` (enum: A1, A2, B1, B2, C1, C2) для `Card` и `CardDesc`
+  Добавить поле `level` (enum: A1, A2, B1, B2, C1, C2) для `Card` и `Deck`
   Для `Card` — уровень конкретного слова (AI может возвращать его вместе с данными)
-  Для `CardDesc` — общий уровень деки, вычисляется из карточек или задаётся вручную
-  Файлы: `Card.java`, `CardDesc.java`, `AiCardGenerationService.java`, `AiCardData.java`
+  Для `Deck` — общий уровень деки, вычисляется из карточек или задаётся вручную
+  Файлы: `Card.java`, `Deck.java`, `AiCardGenerationService.java`, `AiCardData.java`
 
 - [ ] **Убрать хрупкий парсинг текста ошибки в `LearningServiceImpl.enrollDeck()`**
   Сейчас: дубликат enrollment определяется через `e.getMessage().contains("uk_user_deck_progress_user_deck")` в catch-блоке `DataIntegrityViolationException`
@@ -82,12 +76,13 @@
   Найдено в code review `LearningServiceImplTest` (см. FIXME в коде)
   Файлы: `LearningServiceImpl.java`
 
-- [ ] **Реализовать soft delete для дек (CardDesc) и карточек (Card)**
-  Добавить поле `deleted_at` (TIMESTAMP, nullable) в таблицы `card_descs` и `cards`
+- [ ] **Реализовать soft delete для дек (Deck) и карточек (Card)**
+  Добавить поле `deleted_at` (TIMESTAMP, nullable) в таблицы `decks` и `cards`
   При удалении — устанавливать `deleted_at = CURRENT_TIMESTAMP` вместо физического удаления
   Все запросы на получение списков фильтровать по `deleted_at IS NULL`
   Добавить endpoint для восстановления (undo delete) или полного удаления (hard delete)
-  Файлы: `CardDesc.java`, `Card.java`, `CardDescRepository.java`, `CardRepository.java`, `CardDescServiceImpl.java`, `CardServiceImpl.java`
+  Файлы: `Deck.java`, `Card.java`, `DeckRepository.java`, `CardRepository.java`, `DeckServiceImpl.java`, `CardServiceImpl.java`
+  Уровень: Level 1 (сейчас удаление — CASCADE, см. `docs/database/relationships.md` §9)
 
 ## AI Features
 
@@ -106,7 +101,7 @@
   - Рекомендацию следующего уровня (например: "ты освоил A1–B1, пора переходить на B2–C1")
   - Список пропущенных важных слов на текущем уровне
   - Рекомендации конкретных дек для изучения
-  Требует: система прохождения card_desc, хранение прогресса, поле `level` в `Card`/`CardDesc`
+  Требует: система прохождения deck'ов, хранение прогресса, поле `level` в `Card`/`Deck`
   Файлы: новый модуль `ai_analysis/`, `AiCardGenerationService.java`
 
 ## Testing
@@ -144,17 +139,17 @@
 - [ ] **Вычисление и использование `difficultyLevel`**  
   Сейчас: поле всегда `null`  
   Цель: рассчитывать сложность карточки на основе статистики (время ответа, количество ошибок)  
-  Файлы: `UserCardProgress.java`, `CardLearningService.java`
+  Файлы: `UserCardProgress.java`, `LearningServiceImpl.java`
 
 - [ ] **Алгоритм интервального повторения для `nextReviewAt`**  
   Сейчас: поле всегда `null`  
   Цель: реализовать SM-2 или собственный алгоритм расчёта следующего повторения  
-  Файлы: `UserCardProgress.java`, `CardLearningService.java`
+  Файлы: `UserCardProgress.java`, `LearningServiceImpl.java`
 
 - [ ] **Система проверки синонимов**  
   Сейчас: проверка только по `card.title` (точное совпадение)  
   Цель: учитывать `card.synonyms`, вводить статусы "почти правильно" с подсказкой  
-  Файлы: `CardLearningService.java`
+  Файлы: `LearningServiceImpl.java`
 
 - [ ] **Отслеживание времени на карточку (`timeSpentMs`)**  
   Сейчас: не передаётся в запросе  
@@ -164,27 +159,32 @@
 - [ ] **Поле `order`/`position` для карточек в deck'е**  
   Сейчас: сортировка по `card.id ASC`  
   Цель: явный порядок карточек, задаваемый создателем deck'а  
-  Файлы: `Card.java`, `CardDescService.java`
+  Файлы: `Card.java`, `DeckService.java`
+
+- [ ] **`REVIEWING` карточки не участвуют в подборке для study**  
+  Сейчас: `LearningServiceImpl.getStudyCards()` берёт только `LEARNING`, затем `NEW` — статус `REVIEWING` полностью пропускается  
+  Цель: решить, должны ли `REVIEWING`-карточки попадать в study-подборку (например, с более низким приоритетом)  
+  Файлы: `LearningServiceImpl.java`
 
 - [ ] **Просмотр прогресса других пользователей**  
   Сейчас: каждый видит только свой `UserCardProgress`  
   Цель: учитель может просматривать прогресс ученика (требует системы ролей/прав)  
-  Файлы: новая система permissions, `CardLearningController.java`
+  Файлы: новая система permissions, `LearningController.java`
 
 - [ ] **Авто-enroll при открытии публичной deck'и**  
   Сейчас: 403 ошибка если deck не добавлен в коллекцию  
   Цель: для публичных deck'ов (`isPublic=true`) автоматически добавлять в коллекцию при первом открытии  
-  Файлы: `CardLearningController.java`, `UserDeckProgressService.java`
+  Файлы: `LearningController.java`, `LearningServiceImpl.java`
 
 - [ ] **Градации сложности ответа (HARD, EASY, CORRECT, WRONG)**  
   Сейчас: boolean (`correct: true/false`)  
   Цель: пользователь оценивает, насколько было сложно вспомнить (влияет на интервал повторения)  
-  Файлы: `CardReviewRequest.java`, `CardLearningService.java`
+  Файлы: `CardReviewRequest.java`, `LearningServiceImpl.java`
 
 - [ ] **Приоритет карточек по сложности и просрочке**  
   Сейчас: простая очередь (LEARNING → NEW)  
   Цель: умная очередь с учётом просроченных карточек, сложности, времени последнего повторения  
-  Файлы: `CardLearningService.java`, `UserCardProgressRepository.java`
+  Файлы: `LearningServiceImpl.java`, `UserCardProgressRepository.java`
 
 - [ ] **Пересмотреть хранение `UserCardProgress` в БД**  
   Сейчас: при enroll создаётся запись `UserCardProgress` для каждой карточки в деке → много строк в БД при больших декax  

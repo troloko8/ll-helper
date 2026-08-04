@@ -2,9 +2,8 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.2 — Backend Cleanup
-> **Status:** Design — implementation plan for rate limiting
 > **Created:** 2026-06-25
+> **Status:** ⚠️ Historical design/planning document — the plan below has been implemented. For the current, maintained state of rate limiting see `docs/architecture/current-architecture.md` §18. This document is kept for design rationale only and is not updated as implementation evolves.
 
 ---
 
@@ -21,7 +20,9 @@ This document defines the implementation plan for **Level 0** (per-user, in-memo
 
 ## 2. Problem Statement
 
-### Current Issues
+### Identified Issues at Design Time
+
+> These were the open issues when this design note was created. The implementation has since evolved; see `docs/architecture/current-architecture.md` §18 for the current rate limiting state.
 
 1. **No rate limiting on user update operations** — any authenticated user can spam `PUT /api/v1/users/{id}` requests
 2. **No rate limiting on auth endpoints** — brute force attacks possible on login/register
@@ -309,9 +310,9 @@ public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededEx
 
 **Priority:** 🟡 Medium
 
-**Files:**
+**Files:** (done — see `docs/roadmap/changelog.md` Sprint 0.2)
 1. `docs/architecture/current-architecture.md` — add "Rate Limiting" section
-2. `docs/roadmap/LL_Helper_Project_Roadmap.md` — mark tasks 7.2, 8, 11 as done
+2. `docs/roadmap/changelog.md` — tasks 7.2, 8, 11 marked done
 3. `backend/CONVENTIONS.md` — add rate limiting rules
 
 ---
@@ -434,7 +435,8 @@ public class RedisRateLimiter {
 
 | Document | Path |
 |----------|------|
-| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
+| Current sprint | `docs/roadmap/current-sprint.md` |
+| Roadmap | `docs/roadmap/roadmap.md` |
 | Current architecture | `docs/architecture/current-architecture.md` |
 | Conventions | `backend/CONVENTIONS.md` |
 | AI generation flow | `docs/features/ai-generation-flow.md` |

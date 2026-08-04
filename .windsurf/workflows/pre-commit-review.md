@@ -6,187 +6,41 @@ description: Review changed files before commit according to LL Helper roadmap, 
 
 Review the current git diff.
 
-Use these documents as context if available:
-
-- `docs/roadmap/LL_Helper_Project_Roadmap.md`
-- `docs/architecture/current-architecture.md`
-- `docs/database/relationships.md`
-- `docs/features/learning-flow.md`
-- `docs/features/ai-generation-flow.md`
-- `backend/CONVENTIONS.md`
-- `backend/IMPROVEMENTS.md`
-- `backend/AGENTS.md`
+Context (read only what's relevant): `docs/roadmap/current-sprint.md` (always read fresh — never assume from memory), `docs/roadmap/roadmap.md` (only if scope/level/milestone impact), `docs/architecture/current-architecture.md`, `docs/database/relationships.md`, `docs/features/learning-flow.md`, `docs/features/ai-generation-flow.md`, `backend/CONVENTIONS.md`, `backend/IMPROVEMENTS.md`, `backend/AGENTS.md`.
 
 ## 1. Roadmap alignment
 
-Check whether the change matches the current roadmap level.
+Read `docs/roadmap/current-sprint.md` fresh now. **Treat the `## Sprint X.Y` header in that file as the single runtime source of truth for the current sprint. Do not edit the header. Do not use `roadmap.md`, `changelog.md`, or `backlog.md` to "correct" the sprint number; `roadmap.md` is only for level and Done Criteria.**
 
-Current focus: Level 0 — Stable Backend Foundation.
-
-Verify:
-
-- Is this change part of the current sprint?
-- Does it accidentally introduce Level 1/2/3/4 scope?
-- Does it complete any roadmap task?
-- Should any roadmap checkbox be updated?
-
-Output:
-
-- Current roadmap level impact
-- Completed roadmap tasks
-- Roadmap updates needed
+Verify: is this change part of the current sprint? Does it accidentally pull in later-level scope (check `roadmap.md`)? Does it complete a current-sprint task or done criterion? Output: `Current sprint: <Sprint X.Y — ...>`, sprint/level impact, completed tasks, `current-sprint.md` updates needed (task/criterion status only — never the sprint number).
 
 ## 2. Code review
 
-Review changed code for:
+Check: correctness, unnecessary complexity, duplicated logic, broken naming, missing validation, missing ownership checks (`backend/AGENTS.md` Hard gates), bad transaction boundaries, entity leakage from API, controller business logic, service responsibility violations, repository misuse. Output: critical issues, recommended fixes, optional improvements.
 
-- correctness
-- unnecessary complexity
-- duplicated logic
-- broken naming
-- missing validation
-- missing ownership checks (only deck owner can create/generate cards — see `AGENTS.md` Ownership Rule)
-- bad transaction boundaries
-- entity leakage from API
-- controller business logic
-- service responsibility violations
-- repository misuse
+## 3. Architecture & documentation sync
 
-Output:
+Documentation is part of the source code — if the change affects package structure, controller/service/repo/entity/DTO/mapper layout, request lifecycle, auth flow, learning flow, AI generation flow, API surface, or DB model, the owning doc must be updated in the same commit. Use `.windsurf/rules/documentation-sync.md` as the routing table (which doc owns which fact) instead of re-deriving it here.
 
-- Critical issues
-- Recommended fixes
-- Optional improvements
+Output: documentation files changed, documentation files missing, documentation not needed because...
 
-## 3. Architecture impact
+## 4. API / Postman impact
 
-Check whether the change affects:
+If the change affects endpoints, HTTP methods, request/response DTOs, auth requirements, status codes, validation errors, or error response shape: `LLHelper.postman_collection.json` must be updated, and the API Surface section of `current-architecture.md` may need an update.
 
-- package structure
-- domain modules
-- controller/service/repository/entity/DTO/mapper structure
-- request lifecycle
-- authentication flow
-- learning flow
-- AI generation flow
-- API surface
-- database model
+Output: Postman update required (y/n), API docs update required (y/n), exact endpoints affected.
 
-If yes, say which architecture docs must be updated.
+## 5. Database impact
 
-Required docs may include:
+Use `docs/database/relationships.md` as the current snapshot. If the change affects entities, JPA annotations, columns, constraints, indexes, cascade/orphanRemoval, soft delete, migrations, ID-only logical references, or copy-vs-reference decisions:
 
-- `docs/architecture/current-architecture.md`
-- `docs/database/relationships.md`
-- `docs/features/learning-flow.md`
-- `backend/AGENTS.md`
-- `backend/CONVENTIONS.md`
+Output: DB impact (y/n), `relationships.md` update needed (y/n), migration needed now vs deferred to a later sprint (check `current-sprint.md`), risk (orphaned data / FK violation / duplicate rows / slow query / security issue).
 
-## 4. Documentation sync check
+## 6. Tests impact
 
-Documentation is part of the source code.
+Check whether tests are needed for: service logic, learning progress transitions, AI parser, validation, exception handling, ownership/security checks, repository queries. Output: existing tests affected, new tests recommended, minimum tests before commit.
 
-If code changes affect architecture, API, database schema, learning logic, AI generation, security, or roadmap progress, related markdown documentation must be updated in the same task.
-
-Check:
-
-- Were architecture docs updated if architecture changed?
-- Were DB docs updated if entities/relations changed?
-- Was `docs/features/learning-flow.md` updated if learning logic changed (enroll flow, study selection, review, status transitions, answer checking)?
-- Was roadmap updated if a task was completed?
-- Was improvements/backlog updated if a new issue was found?
-- Was conventions doc updated if a new project convention appeared?
-- If security/ownership rules changed in code, was `backend/AGENTS.md` Ownership Rule section updated?
-- If new module/package created, was `docs/architecture/current-architecture.md` package tree updated?
-
-Output:
-
-- Documentation files changed
-- Documentation files missing
-- Documentation not needed because...
-
-## 5. API / Postman impact
-
-Check whether the change affects:
-
-- endpoints
-- HTTP methods
-- request DTOs
-- response DTOs
-- auth requirements
-- status codes
-- validation errors
-- error response shape
-
-If yes:
-
-- `LLHelper.postman_collection.json` must be updated
-- Current API Surface in `current-architecture.md` may need update
-
-Output:
-
-- Postman update required: yes/no
-- API docs update required: yes/no
-- Exact endpoints affected
-
-## 6. Database impact
-
-Use `docs/database/relationships.md` as the current DB relationship snapshot.
-
-Check whether the changed code affects:
-
-- entities
-- JPA annotations
-- table names
-- column names
-- nullable fields
-- defaults
-- primary keys
-- foreign keys
-- unique constraints
-- indexes
-- check constraints
-- enum values
-- cascade settings
-- orphanRemoval
-- soft delete
-- migrations
-- ID-only logical references
-- copy vs reference decision
-
-If yes:
-
-- `docs/database/relationships.md` must be updated
-- Liquibase migration may be required
-- roadmap/database tasks may need update
-
-Output:
-
-- DB impact: yes/no
-- `docs/database/relationships.md` update needed: yes/no
-- Migration needed now: yes/no
-- Migration should be deferred to Sprint 0.3: yes/no
-- Risk: orphaned data / FK violation / duplicate rows / slow query / security issue
-
-## 7. Tests impact
-
-Check whether tests are needed for:
-
-- service logic
-- learning progress transitions
-- AI parser
-- validation
-- exception handling
-- ownership/security checks
-- repository queries
-
-Output:
-
-- Existing tests affected
-- New tests recommended
-- Minimum tests before commit
-
-## 8. Final commit readiness verdict
+## 7. Final commit readiness verdict
 
 Return one of:
 
@@ -212,63 +66,19 @@ Optional after commit:
 
 ### Suggested commit message
 
-If verdict is **✅ Ready to commit**, generate a commit message following Conventional Commits format:
+If verdict is **✅ Ready to commit**, generate a Conventional Commits message:
 
-**Format:**
 ```
 type(scope): brief description
 
-- Bullet point describing change 1
-- Bullet point describing change 2
-- Bullet point describing change 3
+- Specific, technical bullet per change
+- ...
 
 Fixes Sprint X.Y Task #N (if applicable)
 ```
 
-**Type options:**
-- `feat`: new feature
-- `fix`: bug fix
-- `refactor`: code restructuring without behavior change
-- `docs`: documentation only
-- `test`: adding/updating tests
-- `chore`: tooling, dependencies, config
-- `perf`: performance improvement
-- `style`: code style/formatting
+**Type:** `feat`/`fix`/`refactor`/`docs`/`test`/`chore`/`perf`/`style`.
+**Scope:** module name (`security`, `learning`, `ai`, `deck`, `card`, `api`, `db`, `arch`, ...).
+**Guidelines:** imperative mood, first line ≤72 chars, reference the sprint task if applicable, mark `BREAKING CHANGE:` if any, mention updated docs if the documentation-sync rule triggered.
 
-**Scope examples:**
-- `security` — auth, ownership, permissions
-- `learning` — enroll, study, review flow
-- `ai` — card generation, OpenAI integration
-- `deck` — deck CRUD operations
-- `card` — card CRUD operations
-- `api` — endpoint/DTO changes
-- `db` — entity/schema changes
-- `arch` — architecture/structure changes
-
-**Guidelines:**
-- First line max 72 chars
-- Use imperative mood: "add", not "added" or "adds"
-- Bullet points should be specific and technical
-- Reference Sprint task if change completes/fixes roadmap item
-- Include breaking changes with `BREAKING CHANGE:` prefix if needed
-- Mention updated docs if documentation-sync rule triggered
-
-**Example:**
-```
-feat(security): add ownership check for card operations
-
-- Add SecurityUtils.getCurrentUserId() (returns User.id, not AuthUser.id)
-- Ownership check: create/update/delete/bulk-generate cards (deck owner only)
-- Replace CardServiceImpl.getCurrentUserId() with SecurityUtils
-- Replace LearningServiceImpl.getCurrentUserId() with SecurityUtils
-- Add @EntityGraph to CardDescRepository.findWithOwnerById()
-- Add Postman test case for 403 ownership violation
-- Update IMPROVEMENTS.md: JWT userId claim now HIGH priority
-
-Fixes Sprint 0.2 Task #1
-```
-
-Output:
-
-- Suggested commit message (if ready to commit)
-- Brief explanation of type/scope choice
+Output: suggested commit message (if ready), brief explanation of type/scope choice.

@@ -2,8 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.1 — Architecture Freeze
-> **Status:** Documentation only — current learning flow snapshot
+> **Current sprint:** see `docs/roadmap/current-sprint.md`
+> **Last updated:** 2026-07-30
+> **Status:** Reflects current `LearningServiceImpl` implementation
 
 ---
 
@@ -77,18 +78,16 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 **Current implementation order:**
 
-1. Validate authenticated user (resolve from JWT → `AuthUser` → `User`).
-2. Check duplicate enrollment.
-   - If already enrolled → `409 Conflict`.
-3. Find deck by `deckId`.
+1. Resolve authenticated user ID from JWT.
+2. Find deck by `deckId`.
    - If not found → `404 Not Found`.
-4. Check deck visibility.
-   - If deck is not public → `403 Forbidden`.
-5. Create `UserDeckProgress` with `ACTIVE` status.
-6. Create `UserCardProgress` for each card in the deck with `NEW` status and all counters at `0`.
-7. Return `201 Created`.
+3. Check deck visibility.
+   - If deck is not public → `403 Forbidden` (`AccessDeniedException`).
+4. Attempt to create `UserDeckProgress` (`ACTIVE` status) and `UserCardProgress` for each deck card (`NEW` status, counters at `0`).
+5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. There is no upfront service-level duplicate check.
+6. Return `201 Created`.
 
-> **Note:** Current implementation checks duplicate enrollment (step 2) before visibility (step 4). This means an already-enrolled private deck returns `409` before `403`. Acceptable for current MVP — should be reviewed during Sprint 0.2 cleanup.
+> **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.
 
 ---
 
@@ -157,7 +156,7 @@ else                        → NEW
 
 Status is **recalculated on every review**, not incremented step by step.
 
-> **Note:** `REVIEWING` cards are not currently surfaced in `getStudyCards`. This may be a gap — review during Sprint 0.2.
+> **Note:** `REVIEWING` cards are not currently surfaced in `getStudyCards` (only `LEARNING` then `NEW` are queried). Known gap, no fix scheduled — see `backend/IMPROVEMENTS.md`.
 
 ---
 
@@ -176,13 +175,13 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 ## 8. Definition of Done
 
-- [ ] User can enroll in a public deck
-- [ ] Duplicate enroll returns `409`
-- [ ] Private deck enroll returns `403`
-- [ ] Study endpoint returns up to 10 cards (LEARNING first, then NEW)
-- [ ] Review endpoint updates progress counters
-- [ ] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
-- [ ] Postman collection updated with all 4 endpoints
+- [x] User can enroll in a public deck
+- [x] Duplicate enroll returns `409`
+- [x] Private deck enroll returns `403`
+- [x] Study endpoint returns up to 10 cards (LEARNING first, then NEW)
+- [x] Review endpoint updates progress counters
+- [x] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
+- [ ] Postman collection updated with all 4 endpoints — see `docs/roadmap/current-sprint.md`
 
 ---
 
@@ -209,12 +208,10 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 ## 11. Known Open Risks
 
-- Deleting a Deck or Card can leave orphaned `UserCardProgress` / `UserDeckProgress` records (no DB FK protection).
-- Cascade/delete behavior for progress entities is unresolved.
-- DB-level FK constraints for progress ID references deferred to Sprint 0.3.
-- Copy vs reference strategy for progress records is still open (see `docs/database/relationships.md` §10).
-- `REVIEWING` cards excluded from study selection — may be a logic gap.
-- Duplicate enrollment protection is service-only — no DB unique constraint yet.
+- Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
+- Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
+- `REVIEWING` cards excluded from study selection — known gap, see `backend/IMPROVEMENTS.md`.
+- Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
 
 ---
 
@@ -222,7 +219,8 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 | Document | Path |
 |----------|------|
-| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
+| Current sprint | `docs/roadmap/current-sprint.md` |
+| Roadmap | `docs/roadmap/roadmap.md` |
 | Current architecture | `docs/architecture/current-architecture.md` |
 | Database relationships | `docs/database/relationships.md` |
 | Postman collection | `LLHelper.postman_collection.json` |

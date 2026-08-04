@@ -1,202 +1,41 @@
 ---
-trigger: always_on
-description: 
-globs: 
+trigger: model_decision
+description: Use when a code change affects architecture, API contracts, database schema or relationships, security behavior, documented feature flows, package structure, or roadmap completion, to determine which documentation must be updated.
 ---
 
 # Documentation Sync Rule
 
-Before making any code change, check whether the change affects project documentation.
+If a change affects architecture, API, DB schema, learning flow, AI flow, security, package structure, or roadmap progress, the owning doc must be updated in the same change. The non-negotiable hard gate lives in root `AGENTS.md`. This file is the trigger→doc routing table.
 
-If the change affects architecture, API, database schema, learning flow, AI flow, security, package structure, or roadmap progress, the corresponding markdown documentation must be updated in the same change.
+## Routing table
 
-## Documentation that must stay in sync
+| Change affects... | Update |
+|---|---|
+| Package/module structure, controller/service/repo/entity/DTO/mapper layout, request lifecycle, auth flow, learning/AI flow at a glance, known issues, open decisions, API surface, tech stack | `docs/architecture/current-architecture.md` |
+| Entities/tables added or removed, FK, cascade, orphanRemoval, unique/check constraints, indexes, (soft) delete, copy-vs-reference, `@OneToOne/@OneToMany/@ManyToOne/@ManyToMany`, `@JoinColumn`, relationship/FK-column nullability, enum storage, ID-only logical refs (`Long userId`), enroll/review queries | `docs/database/relationships.md` — check `current-architecture.md` too if structural |
+| Enroll flow, study selection, review logic, progress calc, status transitions, answer checking, spaced repetition, `UserDeckProgress`/`UserCardProgress` behavior | `docs/features/learning-flow.md` |
+| AI card generation logic, prompt template, provider impl, AI rate limiting, bulk generation, AI error handling, AI config, ownership checks for generation | `docs/features/ai-generation-flow.md` |
+| Test stack/library, new test type, naming convention, new mock/AAA pattern, Level 0 vs Level 2 boundary, `TestData.java` pattern | `backend/.windsurf/rules/testing-conventions.md` — also update `backend/CONVENTIONS.md` (Testing) and `.windsurf/skills/testing/SKILL.md` if routing changed |
+| New mapper hard-gate, new "don't use mapper" case, common mistake, MapStruct version behavior change | `backend/.windsurf/rules/mapstruct-conventions.md` — verify the one-line pointer in `backend/CONVENTIONS.md` (Mapper) still holds |
+| Multi-source mapping, `@Context`, circular deps, mapper architecture edge cases | `docs/backend/mapstruct-edge-cases.md` (not the conventions rule) |
+| Schema constraints (unique/check/FK/not-null), indexes, defaults, enum DB constraints, schema-describing JPA annotations, `ddl-auto`, Liquibase structure | `backend/.windsurf/rules/liquibase-conventions.md` and/or `.windsurf/skills/database/references/*.md` — also update `relationships.md` + `entity-conventions.md` |
+| Current-sprint task completed/moved/discovered, a done criterion met | `docs/roadmap/current-sprint.md` |
+| Level/milestone completed, scope or level order change, open architectural decision resolved | `docs/roadmap/roadmap.md` |
+| New future task / tech debt discovered, not in current sprint | `docs/roadmap/backlog.md` |
+| Endpoint, HTTP method, request/response DTO, auth requirement, status code, validation/error shape | `LLHelper.postman_collection.json` |
 
-- `docs/architecture/current-architecture.md`
-- `docs/database/relationships.md`
-- `docs/features/learning-flow.md`
-- `docs/features/ai-generation-flow.md`
-- `docs/roadmap/LL_Helper_Project_Roadmap.md`
-- `backend/IMPROVEMENTS.md`
-- `backend/CONVENTIONS.md`
-- `backend/AGENTS.md`
-- `.windsurf/rules/mapstruct-conventions.md`
-- `.windsurf/rules/entity-conventions.md`
-- `.windsurf/rules/database-schema-ownership.md`
-- `docs/database/schema-ownership.md`
-- `.windsurf/rules/testing-conventions.md`
-- `LLHelper.postman_collection.json` when API changes
+Adding an ordinary scalar column to an existing entity (no new/removed entity or table, FK, unique/check constraint, index, cascade/delete-policy change) is not a package/layout change and does not by itself require updating `current-architecture.md` or `docs/database/relationships.md`.
 
-## When to update `current-architecture.md`
+Never claim a category is fully resolved ("all issues resolved") when items remain deferred — state precisely what's resolved and point to `backlog.md` for the rest.
 
-Update this file when the change affects:
+## Roadmap checkbox convention
 
-- package structure
-- domain modules
-- controller/service/repository/entity/DTO/mapper structure
-- request lifecycle
-- authentication flow
-- learning flow
-- AI generation flow
-- known architecture issues
-- accepted/open decisions
-- current API surface
-- technology stack
-
-## When to update `relationships.md`
-
-Update this file when the change affects:
-
-- entities
-- table names
-- foreign keys
-- cascade behavior
-- orphanRemoval
-- unique constraints
-- indexes
-- delete behavior
-- soft delete behavior
-- copy vs reference decision
-- JPA annotations: `@OneToOne`, `@OneToMany`, `@ManyToOne`, `@ManyToMany`
-- `@JoinColumn`
-- `@Column(nullable = ...)`
-- `@Table(uniqueConstraints = ...)`
-- `@Check`
-- `@ColumnDefault`
-- enum storage strategy
-- ID-only logical references such as `Long userId`, `Long cardId`, `Long deckId`
-- service logic that depends on relationships
-- enroll/review queries
-- delete behavior even if implemented only in service layer
-
-If a change affects entities or database relationships, do not update only `current-architecture.md`.
-
-Also check whether `docs/database/relationships.md` must be updated.
-
-## When to update `learning-flow.md`
-
-Update this file when the change affects:
-
-- enroll flow
-- study cards selection
-- review logic
-- progress calculation
-- status transitions
-- answer checking strategy
-- spaced repetition intervals
-- UserDeckProgress / UserCardProgress behavior
-
-## When to update `ai-generation-flow.md`
-
-Update this file when the change affects:
-
-- AI card generation logic
-- prompt template
-- OpenAI provider implementation
-- rate limiting behavior
-- bulk generation flow
-- AI error handling
-- AI configuration properties
-- ownership checks for card creation/generation
-
-## When to update `testing-conventions.md`
-
-Update this file when:
-
-- Test stack changes (new library added or removed)
-- New test type added to the project (e.g., Testcontainers, RestAssured)
-- Test naming convention changes
-- New rule discovered (e.g., new mock pattern, new AAA edge case)
-- Testing level boundary changes (what belongs to Level 0 vs Level 2)
-- `TestData.java` shared fixtures pattern changes
-
-If testing conventions change, also update:
-- `backend/CONVENTIONS.md` (Testing section)
-- `backend/AGENTS.md` (Testing section)
-
-## When to update `mapstruct-conventions.md`
-
-Update this file when:
-
-- New mapper pattern discovered (e.g., multi-source mapping, @Context usage)
-- New edge case found (e.g., circular dependencies, read-only fields)
-- Mapper layer architecture changes
-- New "when NOT to use mapper" case identified
-- Common mistake pattern discovered
-- MapStruct library version upgrade changes behavior
-
-If mapper conventions change, also update:
-- `backend/CONVENTIONS.md` (Mapper section)
-- `backend/AGENTS.md` (Mapper section)
-
-## When to update `database-schema-ownership.md`
-
-Update this file when the change affects:
-
-- database schema constraints (unique, check, not null, foreign key)
-- indexes
-- default values
-- enum database constraints
-- JPA annotations that describe schema (`@Table(uniqueConstraints = ...)`, `@Table(indexes = ...)`, `@Index`, `@UniqueConstraint`, `@Check`, `@CheckConstraint`, `@ColumnDefault`)
-- Hibernate DDL mode (`ddl-auto`)
-- Liquibase migration structure or conventions
-
-If a change affects entities or database schema, also update:
-- `docs/database/relationships.md`
-- `.windsurf/rules/entity-conventions.md`
-
-## When to update Roadmap
-
-Update the roadmap when:
-
-- a task from a sprint is completed
-- a task is moved to another sprint
-- a new task is discovered
-- an open decision is resolved
-- a done criterion becomes true
-- project scope changes
-
-Do not silently leave roadmap tasks outdated.
-
-Use markdown task checkboxes:
-
-- `[ ]` for not done
-- `[x]` for done
-- `[~]` or `In progress:` only if the file convention supports it
-
-Prefer checkboxes over strikethrough for completed tasks.
-
-Bad:
-
-~~Add mapper layer~~
-
-Good:
-
-- [x] Add mapper layer
+Use `[ ]` not done, `[x]` done, `[~]`/`In progress:` only if the file already uses that convention. Prefer checkboxes over strikethrough (`~~text~~`).
 
 ## Before editing code
 
-Ask internally:
-
-1. Does this change affect architecture?
-2. Does this change affect API?
-3. Does this change affect DB schema?
-4. Does this change affect learning flow?
-5. Does this change affect AI generation flow?
-6. Does this complete or change a roadmap task?
-7. Does this require Postman update?
-8. Does this require tests?
-
-If yes, update the relevant docs together with the code.
+Ask: does this change architecture, API, DB schema, learning flow, AI flow, or roadmap status? Does it need a Postman update or tests? If yes to any, update the relevant docs together with the code.
 
 ## Output requirement
 
-When finishing a task, always report:
-
-1. Code files changed
-2. Documentation files changed
-3. Tests added/updated
-4. Postman updated or not needed
-5. Roadmap updated or not needed
-
-If documentation was not updated, explain why.
+When finishing a task, report: code files changed, documentation files changed, tests added/updated, Postman updated (y/n), roadmap updated (y/n). If documentation was not updated, explain why.

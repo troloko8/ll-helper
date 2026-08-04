@@ -2,9 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.3 — Database Control
-> **Last updated:** 2026-07-07
-> **Status:** V1 baseline migration created with Liquibase; incremental constraints pending
+> **Current sprint:** see `docs/roadmap/current-sprint.md`
+> **Last updated:** 2026-08-01
+> **Status:** Liquibase migrations V1–V10 applied; constraints, cascades, and timestamps under DB control. Remaining gap: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
 
@@ -20,7 +20,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1–V7 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: indexes, AuthUser→User cascade.
+**Note:** V1–V10 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -28,13 +28,11 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Sprint 0.3 — V1 Liquibase baseline created; current schema state documented. Incremental changes pending.
+**Scope:** Current schema state as of Liquibase migrations V1–V10.
 
 **Not in this document:**
-- Incremental Liquibase migrations after V1 (Sprint 0.3)
-- Full index implementation (Sprint 0.3)
-- Unique constraint enforcement on progress tables (Sprint 0.3)
-- Soft delete / cascade behavior implementation (Sprint 0.3)
+- Remaining index work (`idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck`) — see Section 8
+- Soft delete implementation — deferred to Level 1
 
 ---
 
@@ -89,12 +87,14 @@ This document describes the current database schema and entity relationships for
 │                       │ (deckId)                  │ (cardId)                 │
 │                       ▼                           ▼                          │
 │                   Deck                      Card                         │
-│                   (by ID, not FK)              (by ID, not FK)              │
+│              (Long ID in JPA, FK in DB)  (Long ID in JPA, FK in DB)       │
 │                                                                              │
-│  Note: Progress entities store IDs as Long (logical references). V1 baseline│
-│        adds FK constraints on user_deck_progress.deck_id and                 │
-│        user_card_progress.card_id/user_deck_progress_id with RESTRICT delete│
-│        rules to prevent orphaned references. Soft delete strategy is pending.│
+│  Note: Progress entities store IDs as Long (logical references). DB FKs      │
+│        (V1/V4/V5) use ON DELETE CASCADE for content→progress and            │
+│        learning→progress, establishing delete chains: Deck → Card →         │
+│        UserCardProgress; Deck → UserDeckProgress → UserCardProgress;        │
+│        User → UserDeckProgress → UserCardProgress. See §6.3 and §9.         │
+│        Soft delete strategy is deferred to Level 1.                          │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -134,7 +134,9 @@ User.id ──1:N──▶ Deck.owner
 | FK Column | `decks.owner_id` |
 | Nullable | No |
 | Cascade | None |
-| FK Name | `fk_decks_owner` (Hibernate naming) |
+| On Delete | `NO ACTION` (V1 baseline) |
+| FK Name | `fk_decks_owner` — defined in Liquibase/DB; the entity annotation only mirrors the name |
+| Implication | Deleting a `User` who owns `Deck`s is blocked unless Decks are removed/transferred first |
 
 ### 4.3 Deck → Card (1:N) — "Deck contains Cards"
 
@@ -160,7 +162,7 @@ Deck.id ──1:N──▶ Card.deck
 
 This avoids `LazyInitializationException` in response DTOs while keeping the relationship available for ownership checks and other operations.
 
-**⚠️ Risk:** `CascadeType.ALL` includes `REMOVE`. Deleting a Deck deletes all its Cards through JPA. Because progress currently stores `cardId` as a plain `Long` without FK protection, this can leave orphaned `UserCardProgress` rows pointing to deleted cards. If FK constraints are added later, the same operation may become a FK violation unless delete behavior is explicitly defined.
+**Note:** `CascadeType.ALL` includes `REMOVE`. Deleting a Deck deletes all its Cards through JPA, and `fk_ucp_card` (`ON DELETE CASCADE`, V5) deletes dependent `UserCardProgress` rows at the DB level too — no orphaned rows. Trade-off: this permanently destroys learner progress; soft delete (deferred to Level 1) is the planned mitigation.
 
 ---
 
@@ -177,7 +179,7 @@ User.id ──1:N──▶ UserDeckProgress.userId
 |--------|---------------|
 | JPA Relation | None — stored as `Long userId` field |
 | FK in DB | `fk_udp_user` (added in V4 migration) |
-| Rationale | Logical reference to avoid cross-module coupling; RESTRICT delete prevents deletion of users with active enrollments |
+| Rationale | Logical reference to avoid cross-module coupling; ON DELETE CASCADE — deleting a User deletes all their UserDeckProgress rows, which cascades to UserCardProgress (delete chain established in V4/V5) |
 
 ### 5.2 UserDeckProgress → UserCardProgress (1:N) — "Deck progress contains Card progress"
 
@@ -190,7 +192,7 @@ UserDeckProgress.id ──1:N──▶ UserCardProgress.userDeckProgressId
 |--------|---------------|
 | JPA Relation | None — stored as `Long userDeckProgressId` field |
 | FK in DB | `fk_ucp_user_deck_progress` (added in V1 baseline) |
-| Rationale | DB-level protection while keeping JPA model simple |
+| Rationale | DB-level protection while keeping JPA model simple; ON DELETE CASCADE — deleting a UserDeckProgress deletes all its UserCardProgress rows (V4) |
 
 ### 5.3 UserDeckProgress → Deck (N:1 logical) — "Progress refers to Deck"
 
@@ -203,7 +205,7 @@ UserDeckProgress.deckId ──N:1 (logical)──▶ Deck.id
 |--------|---------------|
 | JPA Relation | None — stored as `Long deckId` field |
 | FK in DB | `fk_udp_deck` (added in V1 baseline) |
-| Implication | RESTRICT delete prevents deck deletion while enrollments exist |
+| Implication | ON DELETE CASCADE — deleting a Deck deletes all dependent UserDeckProgress rows, which then cascades to UserCardProgress (delete chain established in V5) |
 
 ### 5.4 UserCardProgress → Card (N:1 logical) — "Progress refers to Card"
 
@@ -216,7 +218,7 @@ UserCardProgress.cardId ──N:1 (logical)──▶ Card.id
 |--------|---------------|
 | JPA Relation | None — stored as `Long cardId` field |
 | FK in DB | `fk_ucp_card` (added in V1 baseline) |
-| Implication | RESTRICT delete prevents card deletion while progress exists |
+| Implication | ON DELETE CASCADE — deleting a Card deletes all dependent UserCardProgress rows (delete chain established in V5) |
 
 ### 5.5 UserCardProgress → User (N:1 logical) — "Progress belongs to User"
 
@@ -234,7 +236,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 
 ## 6. Current Constraints
 
-### 6.1 DB `CHECK` Constraints (V1 Baseline)
+### 6.1 Current DB `CHECK` Constraints
 
 | Entity | Constraint | Enforcement |
 |--------|------------|-------------|
@@ -247,7 +249,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `Deck` | `source_language IN ('EN','RU','DE',...)` | `chk_decks_source_language` (added in V6) |
 | `Deck` | `target_language IN ('EN','RU','DE',...)` | `chk_decks_target_language` (added in V6) |
 
-**Note:** `org.hibernate.annotations.@Check` is used on entities for documentation, but actual DB enforcement comes from Liquibase V1 baseline. With `ddl-auto=validate`, Hibernate only validates schema against entities; it does not generate or modify constraints.
+**Note:** No entity uses `org.hibernate.annotations.@Check` — verified against actual entity source (`backend/src/main/java`). All `CHECK` constraints are defined and enforced exclusively in Liquibase migrations, per `docs/database/schema-ownership.md`. With `ddl-auto=validate`, Hibernate only validates schema against entities; it does not generate or modify constraints.
 
 ### 6.2 Column Constraints
 
@@ -255,7 +257,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 |-------|--------|------------|
 | `auth_users` | `email` | `UNIQUE`, `NOT NULL` |
 | `auth_users` | `password_hash` | `NOT NULL` |
-| `auth_users` | `role` | `NOT NULL` (with `@ColumnDefault`) |
+| `auth_users` | `role` | `NOT NULL`; entity default `"USER"` in Java field initializer (no `@ColumnDefault`) |
 | `users` | `username` | `UNIQUE`, `NOT NULL` |
 | `users` | `auth_user_id` | `NOT NULL` (implied) |
 | `decks` | `title` | `NOT NULL` |
@@ -310,19 +312,19 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 | `fk_udp_user` | `user_deck_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 | `fk_ucp_user` | `user_card_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 
-**Note:** `fk_decks_owner` and `fk_users_auth_user` remain `NO ACTION` (inline FK in V1 baseline). `fk_cards_deck`, `fk_udp_deck`, `fk_ucp_card` migrated to CASCADE in V5. Delete chain: `decks → cards → user_card_progress` and `decks → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1.
+**Note:** `fk_decks_owner` and `fk_users_auth_user` remain `NO ACTION` (inline FK in V1 baseline). `fk_cards_deck`, `fk_udp_deck`, `fk_ucp_card` migrated to CASCADE in V5; V4 added `fk_udp_user`/`fk_ucp_user`/`fk_ucp_user_deck_progress` with CASCADE. Delete chains: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, and `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1.
 
 ---
 
-## 7. Required Future Unique Constraints
+## 7. Unique Constraints
 
-**Target Sprint:** 0.3 (Liquibase incremental migration after V1 baseline)
+**Status:** ✅ Implemented (V2, V3) — except the rejected alternative.
 
-| Constraint | Tables/Columns | Business Rule |
-|------------|----------------|---------------|
-| `UNIQUE(user_id, deck_id)` | `user_deck_progress` | One enrollment per user per deck |
-| `UNIQUE(user_deck_progress_id, card_id)` | `user_card_progress` | One card progress per deck enrollment per card |
-| `UNIQUE(user_id, card_id)` | `user_card_progress` | Alternative: one card progress per user per card (simpler but more restrictive) |
+| Constraint | Tables/Columns | Business Rule | Status |
+|------------|----------------|---------------|--------|
+| `UNIQUE(user_id, deck_id)` | `user_deck_progress` | One enrollment per user per deck | ✅ Implemented (V2) |
+| `UNIQUE(user_deck_progress_id, card_id)` | `user_card_progress` | One card progress per deck enrollment per card | ✅ Implemented (V3) |
+| `UNIQUE(user_id, card_id)` | `user_card_progress` | Alternative: one card progress per user per card (simpler but more restrictive) | ❌ Rejected alternative — removed in V3 |
 
 **Recommended for current enrollment-based model:**
 - `UNIQUE(user_id, deck_id)` on `user_deck_progress`
@@ -338,23 +340,24 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 ---
 
-## 8. Required Future Indexes
+## 8. Indexes
 
-**Target Sprint:** 0.3 (Liquibase incremental migration after V1 baseline)
+**Status:** Partially implemented — unique constraints cover the hot lookup paths; `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes still pending (Backlog).
 
 | Index | Table | Columns | Purpose | Status |
 |-------|-------|---------|---------|--------|
-| `idx_udp_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint | Pending |
-| `idx_udp_user_status` | `user_deck_progress` | `user_id, status` | List active/paused decks for user | Pending |
+| `uk_user_deck_progress_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint | ✅ Added in V2 |
+| `idx_udp_user_status` | `user_deck_progress` | `user_id, status` | List active/paused decks for user | Pending (Backlog) |
 | `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status | ✅ Added in V1 baseline |
-| `idx_ucp_user_card` | `user_card_progress` | `user_id, card_id` | Fast card lookup (unique) | ✅ Added in V1 baseline |
-| `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending |
-| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) | Pending |
+| `uk_user_card_progress_deck_card` | `user_card_progress` | `user_deck_progress_id, card_id` | Fast card lookup (unique) | ✅ Added in V3 (replaces the incorrect V1 `idx_ucp_user_card`) |
+| `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending (Backlog) |
+| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) | Pending (Backlog) |
 
-**Current State (after V1 baseline):**
-- `users` table: `idx_user_auth`, `idx_user_username` (unique)
-- `user_card_progress`: `idx_ucp_user_deck`, `idx_ucp_user_card` (unique)
-- `idx_udp_user_status`, `idx_ucp_deck_status`, `idx_ucp_next_review`, `idx_cards_deck` are pending in Sprint 0.3.
+**Current State:**
+- `users` table: `idx_user_username` (unique). `idx_user_auth` was a duplicate of `uk_users_auth_user_id` and was removed in V8.
+- `user_card_progress`: `idx_ucp_user_deck` (V1), `uk_user_card_progress_deck_card` (V3, unique)
+- `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique)
+- Still pending: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` — tracked in `docs/roadmap/backlog.md`.
 
 ---
 
@@ -364,8 +367,8 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 | Relationship | Current Cascade | On Delete |
 |--------------|-----------------|-----------|
-| AuthUser → User | None | User deleted → AuthUser remains (orphan) |
-| User → Deck | None | Deck stays (but has `owner_id` FK) |
+| AuthUser → User | `fk_users_auth_user` NO ACTION | Deleting `AuthUser` while a `User` row exists is rejected by DB; deleting `User` leaves `AuthUser` without a profile (orphan). No account-deletion flow defined. |
+| User → Deck | `fk_decks_owner` NO ACTION | User deletion blocked while they own Decks; Decks stay if `User` is removed only after Decks are deleted or transferred |
 | Deck → Card | `CascadeType.ALL` (JPA) + `fk_cards_deck` CASCADE | **Cards deleted when Deck deleted** — aligned at JPA and DB level (V5) |
 | User → UserDeckProgress | None (logical by ID), `fk_udp_user` CASCADE | Progress cascade-deleted when User deleted (V4) |
 | UserDeckProgress → UserCardProgress | `fk_ucp_user_deck_progress` CASCADE | Card progress cascade-deleted when deck progress deleted (V4) |
@@ -376,11 +379,11 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 | Scenario | Decision | Status |
 |----------|----------|--------|
-| Delete User | CASCADE: User → UserDeckProgress → UserCardProgress (V4) | ✅ **Resolved** |
+| Delete User | Progress rows cascade via V4, but `fk_decks_owner` blocks deletion while owned Decks exist | ⚠️ **Partially resolved** — account/content deletion flow remains open |
 | Delete Deck | CASCADE: Deck → Cards → UserCardProgress; Deck → UserDeckProgress → UserCardProgress (V5) | ✅ **Resolved** — CASCADE accepted for MVP; soft delete deferred to Level 1 |
 | Delete Card | CASCADE: Card → UserCardProgress (V5) | ✅ **Resolved** |
 | Delete UserDeckProgress | CASCADE: UserDeckProgress → UserCardProgress (V4) | ✅ **Resolved** |
-| Delete AuthUser | AuthUser → User: NO ACTION (orphan risk remains) | **Open** — roadmap task 13 |
+| Delete AuthUser | `fk_users_auth_user` NO ACTION — no defined account-deletion flow | **Open** — roadmap task 13: deleting `AuthUser` is blocked if `User` exists; deleting `User` leaves orphaned `AuthUser` row |
 
 ### 9.3 Soft Delete Option
 
@@ -395,17 +398,17 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 ## 10. Copy vs Reference Status
 
-**The Core Open Decision:** When a user enrolls in a public deck, should progress reference the original cards (reference) or create copies (copy)?
+**Core model decision:** Enrolled progress references the original Deck and Card records. (Copy/fork alternative is deferred.)
 
 ### Current Implementation: Reference (by ID)
 
 ```java
-// UserCardProgress stores IDs, not entities
+// UserCardProgress stores IDs, not JPA entity references
 @Column(nullable = false)
 private Long cardId;  // References Card.id
 
 @Column(nullable = false)
-private Long deckId;  // References Deck.id
+private Long userDeckProgressId;  // References UserDeckProgress.id
 ```
 
 ### Implications
@@ -414,26 +417,25 @@ private Long deckId;  // References Deck.id
 |--------|---------------------|-------------------|
 | **Pros** | Simple, no data duplication, instant updates | Owner can edit without affecting others, versioning possible |
 | **Cons** | Owner edits affect all learners, deletion breaks progress | Data duplication, complexity in sync/merge |
-| **Current Risk** | Deck owner deletes card → orphaned `UserCardProgress` rows (no DB FK protection); FK violation risk after FKs are added | N/A (not implemented) |
+| **Current Behavior** | Deck owner deletes card → `UserCardProgress` cascade-deleted at DB level (`fk_ucp_card ON DELETE CASCADE`, V5) | N/A (not implemented) |
 
-### Accepted Decision (Sprint 0.2)
+### Accepted Decision
 
 **Accepted for current MVP: Reference model.**
 
 `UserDeckProgress` and `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred.
 
-Current protection strategy:
-- Sprint 0.2: document and enforce service-level ownership checks.
-- Sprint 0.3: decide DB-level FK/delete behavior.
-- Preferred direction: restrict delete if progress exists, unless soft delete is implemented.
+Protection strategy (implemented):
+- Service-level ownership checks (who may mutate a deck/card).
+- DB-level delete behavior: CASCADE (see Section 9), not RESTRICT — simpler for MVP; soft delete deferred to Level 1 for use cases that need to preserve progress history.
 
 ### Decision Timeline
 
-| Sprint | Action |
+| Stage | Action |
 |--------|--------|
-| 0.1 | ~~Document current state (reference by ID)~~ ✅ |
-| 0.2 | ~~Decide strategy~~ ✅ — Reference accepted. Ownership checks enforced. |
-| 0.3 | Implement: add FK constraints with RESTRICT, or soft delete |
+| Design | ~~Document current state (reference by ID)~~ ✅ |
+| Design | ~~Decide strategy~~ ✅ — Reference accepted. Ownership checks enforced. |
+| Implemented | ~~Add FK constraints with delete behavior~~ ✅ — CASCADE (V1/V4/V5). Soft delete remains deferred to Level 1. |
 
 ---
 
@@ -480,34 +482,35 @@ AuthUser (credentials)
 |-------|--------|------------|
 | ~~**No unique constraint on `(user_id, deck_id)`**~~ | ~~Duplicate enrollments possible~~ | ✅ Fixed in V2 migration |
 | ~~**No unique constraint on card progress**~~ | ~~Duplicate card progress rows possible~~ | ✅ Fixed in V3 migration |
-| ~~**Progress entities use IDs, no FK constraints**~~ | ~~Orphaned progress possible if content deleted~~ | ✅ Partial fix: `fk_udp_user` + `fk_ucp_user` added in V4; deck/card FKs in V1 |
-| **Deck cascade deletes Cards** | Deleting deck deletes cards → breaks learner progress | 0.3 |
+| ~~**Progress entities use IDs, no FK constraints**~~ | ~~Orphaned progress possible if content deleted~~ | ✅ Fixed: deck/card FKs since V1, `fk_udp_user`/`fk_ucp_user` added in V4, CASCADE finalized in V5 |
+| ~~**Deck cascade deletes Cards**~~ | ~~Deleting deck deletes cards → breaks learner progress~~ | ✅ Accepted decision — see Section 9.2 (soft delete deferred to Level 1) |
 
 ### 12.2 High Priority
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **No indexes on progress tables** | Slow queries for study card selection | 0.3 |
-| **Languages stored as VARCHAR, not enum** | Invalid language values possible | 0.3 |
-| **No DB-level CHECK constraints** | Invalid status values possible via raw SQL | 0.3 |
-| **User FIXME: verify FK indexes manually** | PostgreSQL does not automatically index referencing FK columns; verify which FK indexes are actually needed in `pg_indexes` | 0.2 |
+| **Missing performance indexes** | `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` not created; see §8 and `docs/roadmap/backlog.md` | Backlog |
+| **Cross-reference consistency is not enforced in DB** | Independent FKs do not guarantee that `UserCardProgress.userId` matches the parent `UserDeckProgress.userId`, or that `cardId` belongs to the enrolled Deck. Currently enforced by application logic. | Backlog |
+| ~~**Languages stored as VARCHAR, not enum**~~ | ~~Invalid language values possible~~ | ✅ Fixed — `CHECK` constraints via V6 |
+| ~~**No DB-level CHECK constraints**~~ | ~~Invalid status values possible via raw SQL~~ | ✅ Fixed — V6 (language), V7 (progress counters) |
+| ~~**Verify FK indexes manually**~~ | ~~PostgreSQL does not automatically index referencing FK columns~~ | ✅ Done — V8 removed a duplicate index found during review |
 
 ### 12.3 Medium Priority
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **No soft delete** | Hard deletes break referential integrity | 0.3 or later |
-| **No cascade strategy defined for User deletion** | User deletion leaves orphaned data | 0.3 |
-| **Deck Java/API naming** | Entity, package, controller, DTO naming should become `Deck` | 0.2 |
-| ~~**`decks` table naming**~~ | ~~DB table rename to `decks`~~ — ✅ Done manually in Sprint 0.2 | ~~0.3~~ |
+| **No soft delete** | Content deletion permanently destroys learner progress (referential integrity itself is enforced via CASCADE) | Level 1 |
+| **No account-deletion flow** | AuthUser → User: `NO ACTION` — deleting `User` leaves orphaned `AuthUser`; deleting `AuthUser` while `User` exists is blocked by FK. Account/profile deletion flow undefined. | Backlog (roadmap task 13) |
+| ~~**Deck Java/API naming**~~ | ~~Entity, package, controller, DTO naming should become `Deck`~~ | ✅ Done |
+| ~~**`decks` table naming**~~ | ~~DB table rename to `decks`~~ — ✅ Done manually | |
 
 ---
 
-## 13. Sprint 0.3 TODO
+## 13. Migration History & Remaining Work
 
-With Liquibase enabled (`ddl-auto=validate`), the following incremental migrations are planned after V1 baseline:
+With Liquibase enabled (`ddl-auto=validate`), the following incremental migrations were applied after the V1 baseline:
 
-### 13.1 Migrations Required
+### 13.1 Applied Migrations
 
 ```sql
 -- V1__baseline_schema.yaml — CREATED (current state)
@@ -531,33 +534,36 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- ✅ DONE (V3): DROP INDEX idx_ucp_user_card (incorrect UNIQUE(user_id, card_id));
 -- ✅ DONE (V3): ALTER TABLE user_card_progress ADD CONSTRAINT uk_user_card_progress_deck_card UNIQUE (user_deck_progress_id, card_id);
 
--- Indexes (pending)
-CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
-CREATE INDEX idx_ucp_deck_status ON user_card_progress(user_deck_progress_id, status);
-CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
-CREATE INDEX idx_cards_deck ON cards(deck_id);
-
+-- CHECK constraints
 -- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_seen_non_negative CHECK (times_seen >= 0);
 -- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_correct_non_negative CHECK (times_correct >= 0);
 -- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_times_wrong_non_negative CHECK (times_wrong >= 0);
 -- ✅ DONE (V7): ALTER TABLE user_card_progress ADD CONSTRAINT chk_ucp_correct_streak_non_negative CHECK (correct_streak >= 0);
 
--- CHECK constraints for language non-empty (pending)
--- ALTER TABLE decks ADD CONSTRAINT chk_source_language
---     CHECK (source_language <> '');
+-- ✅ DONE (V8): Dropped duplicate index `idx_user_auth` on `users.auth_user_id` (`uk_users_auth_user_id` already provides an implicit index). Added preconditions for idempotency.
+-- ✅ DONE (V9): Migrated technical `created_at`/`updated_at` columns from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`; added `DEFAULT CURRENT_TIMESTAMP` and `BEFORE UPDATE` triggers for `updated_at`.
+-- ✅ DONE (V10): Migrated business `last_studied_at`/`last_reviewed_at`/`next_review_at` columns from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using `AT TIME ZONE 'Asia/Jerusalem'`.
 ```
 
-### 13.2 Decisions Required Before Sprint 0.3
+### 13.2 Pending Indexes
 
-1. ~~**Copy vs Reference:** Decide and document before adding FKs~~ ✅ Reference accepted in Sprint 0.2
-2. **Delete behavior:** RESTRICT vs CASCADE vs SET NULL for each relationship
-3. **Soft delete:** Implement for Deck/Card before enabling strict constraints
+```sql
+CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
+CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
+CREATE INDEX idx_cards_deck ON cards(deck_id);
+```
+
+### 13.3 Decisions Made
+
+1. ~~**Copy vs Reference:** Decide and document before adding FKs~~ ✅ Reference accepted
+2. ~~**Delete behavior:** RESTRICT vs CASCADE vs SET NULL for each relationship~~ ✅ CASCADE accepted (V4/V5)
+3. **Soft delete:** Implement for Deck/Card — deferred to Level 1, independent of the CASCADE decision above
 
 ---
 
 ## Appendix A — Schema Inspection Queries
 
-Useful SQL to verify actual DB state before writing Sprint 0.3 migrations:
+Useful SQL to verify actual DB state before writing new migrations:
 
 ```sql
 -- All columns with types, nullability, defaults
@@ -632,7 +638,8 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 |----------|------|
 | Architecture overview | `docs/architecture/current-architecture.md` |
 | Learning flow design | `docs/features/learning-flow.md` |
-| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
+| Current sprint | `docs/roadmap/current-sprint.md` |
+| Roadmap | `docs/roadmap/roadmap.md` |
 | Backend conventions | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
 | Improvements backlog | `backend/IMPROVEMENTS.md` |
 
@@ -654,3 +661,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-13 | V8 migration created: Removed duplicate index `idx_user_auth` on `users.auth_user_id` (unique constraint `uk_users_auth_user_id` already creates index). Added preconditions for idempotency. |
 | 2026-07-13 | V9 migration created: Migrated technical timestamps (`created_at`, `updated_at`) from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`. Added DEFAULT CURRENT_TIMESTAMP and triggers for auto-update. Entities updated to `java.time.Instant` with `insertable=false, updatable=false`. |
 | 2026-07-13 | V10 migration created: Migrated business timestamps (`last_studied_at`, `last_reviewed_at`, `next_review_at`) from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using explicit `AT TIME ZONE 'Asia/Jerusalem'`. Entities updated to `Instant` without `insertable/updatable=false` (application-managed). Added section 6.2.1 "Timestamp Columns". |
+| 2026-07-30 | Doc audit: removed "Sprint 0.3 pending" framing. V2–V10 resolved unique constraints, FK policies, cascades, CHECK constraints, timestamp ownership, and duplicate-index cleanup. Remaining performance indexes tracked in §8 and `docs/roadmap/backlog.md`. Corrected Section 4.3/10 risk notes — FK protection already existed since V1, CASCADE finalized in V5. Header now points to `current-sprint.md`. |

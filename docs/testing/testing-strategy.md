@@ -1,7 +1,7 @@
 # Testing Strategy — LLHelper Backend
 
 > **Полная документация тестовой стратегии проекта.**  
-> Оперативные правила для AI: `.windsurf/rules/testing-conventions.md`
+> Оперативные правила для AI: `backend/.windsurf/rules/testing-conventions.md`, декомпозиция по решениям: `.windsurf/skills/testing/SKILL.md`
 
 ## Test Stack (Spring Boot 4.0.6)
 
@@ -493,7 +493,7 @@ LearningFlowIntegrationIT     ← integration, Failsafe
 
 ## Ссылки
 
-- **Задачи по тестам:** `docs/roadmap/LL_Helper_Project_Roadmap.md` → Sprint 0.4
+- **Задачи по тестам:** `docs/roadmap/current-sprint.md`
 - **Бизнес-логика:** `docs/features/learning-flow.md`
-- **Оперативные правила для AI:** `.windsurf/rules/testing-conventions.md`
+- **Оперативные правила для AI:** `backend/.windsurf/rules/testing-conventions.md`
 - **CONVENTIONS.md:** секция Testing

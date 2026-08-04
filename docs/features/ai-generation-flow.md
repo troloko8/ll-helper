@@ -2,8 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.1 — Architecture Freeze
-> **Status:** Documentation only — current AI generation flow snapshot
+> **Current sprint:** see `docs/roadmap/current-sprint.md`
+> **Last updated:** 2026-07-30
+> **Status:** Reflects current `CardServiceImpl` / `AiCardGenerationService` implementation
 
 ---
 
@@ -37,7 +38,7 @@ This document does not define prompt versioning, AI provider abstraction, genera
 - Streaming responses for bulk generation
 - AI-powered answer checking in learning mode
 - Card preview before save (AI output saved directly)
-- Per-user rate limiting
+- Per-user AI provider rate limiting at the `AiRateLimiter` layer (per-user bulk endpoint limit already exists via `UserRateLimiter`)
 - Regeneration by individual field (definition, synonyms, etc.)
 
 ---
@@ -52,8 +53,9 @@ This document does not define prompt versioning, AI provider abstraction, genera
 | AI Response DTO | `AiCardData` | Record: definition, synonyms, examples, translation |
 | Configuration | `AiProperties` | Config via `@ConfigurationProperties(prefix = "ai")` |
 | Rate Limiter | `AiRateLimiter` | Semaphore-based, per JVM, resets every 1 second |
+| Bulk Endpoint Rate Limiter | `UserRateLimiter` | Per-user/email bucket for `POST /api/v1/cards/bulk-generate` |
 | AI Exception | `AiServiceException` | RuntimeException for all AI errors |
-| Rate Limit Exception | `RateLimitExceededException` | Thrown by `AiRateLimiter` on permit timeout or token limit |
+| Rate Limit Exception | `RateLimitExceededException` | Thrown by `AiRateLimiter` (permit/token) and `UserRateLimiter` (per-user bulk) |
 
 ---
 
@@ -107,8 +109,11 @@ CardController.create(CardRequest)
 ```text
 CardController.createBulk(BulkCardGenerateRequest)
   └── CardServiceImpl.createBulk()
-        ├── UserRateLimiter.checkLimitByEmail(CARD_BULK_GENERATE)
+        ├── Get current user email from `SecurityUtils`
+        ├── userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE)
         │     └── If exceeded → RateLimitExceededException → 429
+        ├── validateBulkSize() — titles.size() > AiProperties.maxBulkSize (default 100)
+        │     └── If exceeded → IllegalArgumentException → 400
         ├── Find Deck (deck) by deckId
         │     └── If not found → EntityNotFoundException → 404
         ├── validateDeckOwnership() — only deck owner allowed
@@ -118,10 +123,10 @@ CardController.createBulk(BulkCardGenerateRequest)
               ├── Create Card entity with AI-generated fields
               ├── Save Card to DB
               ├── Add to results list
-              └── [on exception] → silently skip, continue with next title
+              └── [on exception] → log.debug per failure, skip, continue with next title
 ```
 
-> **⚠️ Known issue:** Entire batch is in one `@Transactional`. Failed titles are silently swallowed — no logging, no partial result reporting. Client cannot tell which titles failed.
+> **⚠️ Known issue:** Entire batch is in one `@Transactional`. Failed titles are logged server-side (`log.debug` per title + `log.warn` summary) but not reported to the client — the response only contains successful cards.
 
 > **TODO in code:** `"probably i want that it was like partial transaction"`
 
@@ -207,22 +212,35 @@ All settings via `@ConfigurationProperties(prefix = "ai")` in `AiProperties`:
 | `ai.openai.model` | `"gpt-4o-mini"` | Model name |
 | `ai.openai.base-url` | `"https://api.openai.com/v1"` | API base URL |
 
-> **Note:** `ai.max-bulk-size` is validated by `@Size(max=100)` on `BulkCardGenerateRequest.titles` via Jakarta Validation. Single source of truth — the DTO annotation.
+> **Note:** Two checks exist: `@Size(max=100)` on `BulkCardGenerateRequest.titles` (hardcoded upper bound, Jakarta Validation → `400`) and `CardServiceImpl.validateBulkSize()` (reads the actual configured `ai.max-bulk-size` via `AiProperties`, throws `IllegalArgumentException` → `400`). If `ai.max-bulk-size` is configured below 100, only `validateBulkSize()` enforces it — the DTO annotation would not catch it.
 
 ---
 
 ## 8. Rate Limiting
 
-### Implementation
+Two independent mechanisms protect AI generation.
 
-`AiRateLimiter` — non-Spring-managed POJO, created as `@Bean` in `AiConfig`.
+### `AiRateLimiter` — global per-JVM limit
 
+`AiRateLimiter` is a non-Spring-managed POJO, created as `@Bean` in `AiConfig`.
+
+- **Scope:** per JVM instance — **not per user**
+- **Shared across:** all concurrent users on the same instance
 - **Mechanism:** `Semaphore(maxRequestsPerSecond)` — 10 permits default
 - **Acquire timeout:** 5 seconds → `RateLimitExceededException` on timeout
-- **Reset:** Every 1 second, releases permits back to max (10)
-- **Token guard:** Rejects if `estimatedTokens > aiProperties.maxTokensPerRequest` (default: 4000)
-- **Bulk guard:** `@Size(max=100)` on `BulkCardGenerateRequest.titles` via Jakarta Validation
-- **Per-user bulk rate limit:** `CARD_BULK_GENERATE` — 3 requests / 1 minute per user
+- **Reset:** every 1 second, releases permits back to `maxRequestsPerSecond`
+- **Token guard:** rejects if `estimatedTokens > aiProperties.maxTokensPerRequest` (default: 4000)
+- **Where applied:** inside `AiCardGenerationService.generateCardData()` before calling `OpenAiProvider`
+- **No distributed rate limiting** across multiple JVMs
+
+### `UserRateLimiter` — per-user limit on bulk endpoint
+
+The bulk endpoint is additionally protected by `UserRateLimiter` from `common/security/`, before the bulk-size, deck-lookup, and ownership checks.
+
+- **Action:** `RateLimitAction.CARD_BULK_GENERATE`
+- **Limit:** 3 requests / 1 minute per user (keyed by email from JWT at Level 0)
+- **Where applied:** first step of `CardServiceImpl.createBulk()`
+- **Scope:** per user; independent of `AiRateLimiter`
 
 ### Token Estimation
 
@@ -232,28 +250,22 @@ estimatedTokens = (int)(text.length() / 4.0) + 500
 
 Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 
-### Scope
-
-- Per JVM instance — **not per user**
-- Shared across all concurrent users
-- No distributed rate limiting
-
 ---
 
 ## 9. Error Handling
 
-| Situation | Exception | HTTP Status (if handled) |
+| Situation | Exception | HTTP Status (handled by `GlobalExceptionHandler`) |
 |---|---|---|
-| API key missing / blank | `AiServiceException("AI provider is not available")` | 500 (unhandled) |
-| API key missing (in provider) | `AiServiceException("OpenAI API key is not configured")` | 500 (unhandled) |
-| Rate limit hit (5s wait) | `RateLimitExceededException("Too many AI requests")` | 500 (unhandled) |
-| Estimated tokens > 4000 | `RateLimitExceededException("Request too large")` | 500 (unhandled) |
-| Bulk size > max | `RateLimitExceededException("Bulk size exceeds maximum")` | Not called in code |
-| OpenAI HTTP error (4xx/5xx) | `AiServiceException("OpenAI API error: ...")` | 500 (unhandled) |
-| JSON parse failure | `AiServiceException("Failed to parse AI response")` | 500 (unhandled) |
-| Bulk: single title failure | Silently caught (`catch (Exception e)`) | Skipped, no error to client |
+| API key missing / blank | `AiServiceException("AI provider is not available")` | 503 |
+| API key missing (in provider) | `AiServiceException("OpenAI API key is not configured")` | 503 |
+| Rate limit hit (5s wait) | `RateLimitExceededException("Too many AI requests")` | 429 |
+| Estimated tokens > 4000 | `RateLimitExceededException("Request too large")` | 429 |
+| Bulk size > max | `IllegalArgumentException("Bulk size exceeds limit: ...")` | 400 |
+| OpenAI HTTP error (4xx/5xx) | `AiServiceException("OpenAI API error: ...")` | 503 |
+| JSON parse failure | `AiServiceException("Failed to parse AI response")` | 503 |
+| Bulk: single title failure | Caught, logged (`log.debug`/`log.warn`) | Skipped, no error to client |
 
-> **⚠️ All AI exceptions are currently unhandled by `GlobalExceptionHandler`.** They propagate as 500 Internal Server Error with stack trace. Proper handling is planned for Sprint 0.2.
+> **Note:** `GlobalExceptionHandler` maps `AiServiceException` → `503 Service Unavailable` and `RateLimitExceededException` → `429 Too Many Requests`. Already fixed — the remaining gap is reporting bulk per-title failures back to the client (see Section 11).
 
 ---
 
@@ -271,13 +283,13 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 - **Prompt quality:** Placeholder-level prompt with typos and vague instructions.
 - **No preview:** AI output is saved directly to DB — bad AI output persists without user review.
 - **Bulk total timeout:** `requestTimeoutSeconds=120` applies per OpenAI call. For 100 titles: up to 100×120s = ~3.3 hours per single client request. No global bulk timeout exists. Fix planned for Level 1 — see `IMPROVEMENTS.md`.
-- **Bulk silent failures:** Client receives only successful cards; failed titles vanish without trace.
+- **Bulk silent failures (client-facing):** Failed titles are logged server-side (`log.debug`/`log.warn`) but the client only receives successful cards — no way to tell which titles failed or why.
 - **Bulk transaction:** All titles in one `@Transactional` — if DB save fails mid-batch, partial rollback behaviour depends on exception type.
 - **No retry logic:** Failed OpenAI calls not retried.
-- **Rate limiter scope:** Per JVM, not per user — one heavy user can exhaust permits for all.
-- **Rate limiter reset bug:** `resetIfNeeded()` releases `10 - availablePermits()` — hardcoded to 10, ignores actual `maxRequestsPerSecond` config if changed.
+- **Rate limiter scope (`AiRateLimiter`):** Per JVM, not per user — one heavy user can exhaust permits for all. `UserRateLimiter` already protects the bulk endpoint per user.
+- ~~**Rate limiter reset bug:** `resetIfNeeded()` releases `10 - availablePermits()` — hardcoded to 10, ignores actual `maxRequestsPerSecond` config if changed.~~ ✅ Fixed — `resetIfNeeded()` now uses the injected `maxRequestsPerSecond` field.
 - **Availability double-check:** `isAvailable()` is checked in both `AiCardGenerationService` and `OpenAiProvider` — redundant.
-- **No ownership check:** Accepted Sprint 0.2 priority fix. Only deck owner may create/generate cards in a deck. See `current-architecture.md` §16 Sprint 0.2 Accepted Decisions.
+- ~~**No ownership check**~~ ✅ Fixed — `validateDeckOwnership()` enforced in both `create()` and `createBulk()`. See `current-architecture.md` §16.
 - **`AiCardData` naming:** DTO not clearly marked as response (TODO in code).
 - **`validateTokenCount()` fixed:** Token limit now read from `AiProperties.maxTokensPerRequest` (default: 4000). Configurable via `ai.max-tokens-per-request`.
 - **`response_format: json_object`:** Relies on OpenAI honouring JSON mode — no fallback if non-JSON returned.
@@ -314,16 +326,16 @@ ai/
 
 - [x] AI generates card content via OpenAI API
 - [x] Single card generation works with `autoGenerate: true`
-- [x] Bulk generation processes titles (up to 100 via DTO @Size)
+- [x] Bulk generation processes titles (up to `AiProperties.maxBulkSize`, default 100, enforced by `@Size(max=100)` + `validateBulkSize()`)
 - [x] Rate limiter exists (semaphore-based, per JVM)
 - [x] API key absence is checked before each call
 - [x] Postman collection includes AI endpoints
-- [ ] AI errors are handled by GlobalExceptionHandler (Sprint 0.2)
-- [ ] Bulk failures are reported to client (Sprint 0.2+ logging, full partial response later)
+- [x] AI errors are handled by GlobalExceptionHandler (`AiServiceException` → 503, `RateLimitExceededException` → 429)
+- [ ] Bulk failures are reported to client (server-side logging exists; full partial response to client deferred)
 - [x] Ownership check exists for AI card generation
-- [ ] RateLimiter reset bug fixed (Sprint 0.2)
-- [x] Bulk size validated via `@Size(max=100)` on `BulkCardGenerateRequest.titles`
-- [x] Per-user rate limit on bulk generation (`CARD_BULK_GENERATE`: 3 req/min)
+- [x] RateLimiter reset bug fixed
+- [x] Bulk size validated via `@Size(max=100)` on `BulkCardGenerateRequest.titles` and `CardServiceImpl.validateBulkSize()`
+- [x] Per-user rate limit on bulk generation (`UserRateLimiter` / `CARD_BULK_GENERATE`: 3 req/min)
 
 ---
 
@@ -331,7 +343,8 @@ ai/
 
 | Document | Path |
 |----------|------|
-| Roadmap | `docs/roadmap/LL_Helper_Project_Roadmap.md` |
+| Current sprint | `docs/roadmap/current-sprint.md` |
+| Roadmap | `docs/roadmap/roadmap.md` |
 | Current architecture | `docs/architecture/current-architecture.md` |
 | Database relationships | `docs/database/relationships.md` |
 | Learning flow | `docs/features/learning-flow.md` |

@@ -1,6 +1,6 @@
 # Database Schema Ownership — Detailed Guide
 
-> **Quick reference:** See `.windsurf/rules/database-schema-ownership.md` for the short version.
+> **Hard gate:** See `backend/AGENTS.md` for the one-line gate, and `backend/.windsurf/rules/liquibase-conventions.md` / `backend/.windsurf/rules/entity-conventions.md` for the short conventions version.
 
 ## Core Principle
 
@@ -889,8 +889,10 @@ Do not let Hibernate generate or evolve the production database schema.
 
 ## References
 
-- **Quick reference:** `.windsurf/rules/database-schema-ownership.md`
-- **Entity conventions:** `.windsurf/rules/entity-conventions.md`
+- **Hard gate:** `backend/AGENTS.md`
+- **Liquibase conventions:** `backend/.windsurf/rules/liquibase-conventions.md`
+- **Entity conventions:** `backend/.windsurf/rules/entity-conventions.md`
+- **Deeper skill reference:** `.windsurf/skills/database/SKILL.md`
 - **DB relationships:** `docs/database/relationships.md`
 - **Liquibase migrations:** `backend/src/main/resources/db/changelog/`
 - **Hibernate DDL mode:** `backend/src/main/resources/application.yaml`

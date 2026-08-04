@@ -1,7 +1,7 @@
 ---
-trigger: always_on
-description: JPA Entity conventions for LLHelper project
-globs: 
+trigger: glob
+description: JPA Entity conventions for LLHelper project — applies when creating or modifying JPA entities
+globs: backend/src/main/java/**/entity/*.java
 ---
 
 # Entity Conventions Rule
@@ -15,7 +15,7 @@ Place entity in: `com.llhelper.<module_name>.entity.<EntityName>`
 Example:
 - `com.llhelper.user.entity.User`
 - `com.llhelper.card.entity.Card`
-- `com.llhelper.card_desc.entity.CardDesc`
+- `com.llhelper.deck.entity.Deck`
 
 ## Required Lombok Annotations
 
@@ -55,16 +55,12 @@ private Instant updatedAt;
 ```
 
 **Timestamp handling:**
-- Use `java.time.Instant` for technical timestamps (`created_at`, `updated_at`)
-- **Never** use `LocalDateTime` for persisted technical timestamps
-- Mark timestamp fields as `insertable = false, updatable = false` — PostgreSQL manages them via DEFAULT and triggers
-- **Do not** use `@PrePersist` / `@PreUpdate` for technical timestamps
-- **Do not** manually set `createdAt` / `updatedAt` in service layer
-- Database handles all timestamp logic via Liquibase-defined defaults and triggers
+- Use `java.time.Instant` (never `LocalDateTime`) for technical timestamps; mark `insertable = false, updatable = false` — PostgreSQL manages them via DEFAULT and triggers
+- **Do not** use `@PrePersist`/`@PreUpdate` or manually set `createdAt`/`updatedAt` in the service layer
+- Business timestamps (`last_reviewed_at`, `next_review_at`) are the opposite: application-managed, no `insertable/updatable = false`, no DB default/trigger
+- `nullable = false` here is for mapping clarity only — real `NOT NULL`/defaults/triggers live in Liquibase
 
-**Note:** `nullable = false` in entity annotations is for mapping clarity only. The real `NOT NULL` constraints, defaults, and triggers must be defined in Liquibase.
-
-See `.windsurf/rules/database-schema-ownership.md` → Timestamp rule for full details.
+Full TIMESTAMP → TIMESTAMPTZ migration procedure: `.windsurf/skills/database/references/timestamp-migrations.md`.
 
 ## Relationships
 
@@ -91,12 +87,7 @@ private Long cardId;  // logical reference to Card.id
 
 ## Mapper Integration
 
-After creating entity, create corresponding mapper:
-
-1. Create `<Module>Mapper` interface in `<module>/mapper/`
-2. Add `@Mapper(componentModel = "spring")`
-3. Implement `toResponse()`, `toEntity()`, `updateEntity()` methods
-4. See `.windsurf/rules/mapstruct-conventions.md` for details
+After creating an entity, add a corresponding `<Module>Mapper` in `<module>/mapper/` — see `mapstruct-conventions.md` (same directory).
 
 ## Validation
 
@@ -111,18 +102,11 @@ private String title;
 private Status status;
 ```
 
-**Do NOT use:**
-- `@NotNull` / `@NotBlank` on entity (use on DTO request)
-- `@Column(unique = true)` — unique constraints belong in Liquibase, not entities
-- `@Table(uniqueConstraints = ...)`, `@Table(indexes = ...)`, `@Index`, `@CheckConstraint`, `@ColumnDefault` — all DB schema constraints belong in Liquibase
-- Entity validation belongs in service layer or DTO
+**Do NOT use:** `@NotNull`/`@NotBlank` (belongs on DTO), `@Column(unique = true)`, `@Table(uniqueConstraints/indexes)`, `@Index`, `@CheckConstraint`, `@ColumnDefault` — all DB schema constraints belong in Liquibase, not entities.
 
-See `.windsurf/rules/database-schema-ownership.md` for the full source-of-truth policy.
+See `backend/AGENTS.md` (Hard gates) and `liquibase-conventions.md` (same directory) for the full source-of-truth policy.
 
 ## References
 
-- **Lombok conventions:** `backend/CONVENTIONS.md` (section "JPA Entity")
-- **Mapper conventions:** `.windsurf/rules/mapstruct-conventions.md`
-- **DB schema ownership:** `.windsurf/rules/database-schema-ownership.md`
-- **DB relationships:** `docs/database/relationships.md`
-- **Package structure:** `docs/architecture/current-architecture.md` (section 6)
+- **Database reference selection:** `.windsurf/skills/database/SKILL.md` — routes to the specific reference (Liquibase, FK/index, timestamp, relationships snapshot) needed for the task at hand; do not fan out to all of them by default.
+- **Mapper conventions:** `mapstruct-conventions.md` (same directory) — only when creating or changing a mapper.

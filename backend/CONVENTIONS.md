@@ -22,11 +22,8 @@
 - Split into `dto/request/` and `dto/response/`
 
 ## Mapper
-- **Library:** MapStruct 1.6.3
-- **Pattern:** Interface-based mappers with `@Mapper(componentModel = "spring")`
-- Each module has a `mapper/` package with dedicated mapper interface
-- Example: `CardMapper` — converts `Card` ↔ `CardResponse`/`CardRequest`
-- **Detailed conventions:** See `.windsurf/rules/mapstruct-conventions.md`
+- **Library:** MapStruct 1.6.3 — interface-based mappers with `@Mapper(componentModel = "spring")`, one per module in `mapper/` package
+- **Conventions:** `backend/.windsurf/rules/mapstruct-conventions.md` (hard gates) + `docs/backend/mapstruct-edge-cases.md` (multi-source, `@Context`, circular deps)
 
 ## Naming
 - Packages: `snake_case` for compound words (e.g. `deck`)
@@ -36,7 +33,7 @@
 ## Database
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `validate`
-- **Migrations:** Liquibase (V1 baseline created, incremental migrations planned for Sprint 0.3)
+- **Migrations:** Liquibase (V1–V10 applied; see `docs/database/relationships.md` for current schema state)
 
 ## Rate Limiting
 
@@ -73,28 +70,11 @@ public AuthResponse login(LoginRequest request) {
 
 ## Testing
 
-**Stack (Level 0–1, included in spring-boot-starter-test):**
-- JUnit 5 — test runner
-- Mockito — mocking (`@Mock`, `@MockitoBean` in `@WebMvcTest` / `@Mock` in unit tests)
-- AssertJ — assertions (`assertThat(...)` — always prefer over `assertEquals`)
-- MockMvc — HTTP contract testing via `@WebMvcTest`
+**Stack (Level 0–1):** JUnit 5, Mockito, AssertJ, MockMvc — all in `spring-boot-starter-test`. Level 2+ adds Testcontainers PostgreSQL (never H2).
 
-**Level 2+ only:** Testcontainers PostgreSQL. **Never use H2** — not compatible with our TIMESTAMPTZ, triggers, CHECK constraints.
-
-**Test naming:** `method_shouldExpectedResult_whenCondition`
-- `enroll_shouldThrowConflict_whenDeckAlreadyEnrolled()`
-- `update_shouldThrowForbidden_whenUserIsNotOwner()`
-
-**For critical use cases:** cover both business logic (unit test) and HTTP mapping (`@WebMvcTest`). No need to mirror every scenario on both levels.
-
-**Clock injection is mandatory** for services using time — inject `Clock`, use `Instant.now(clock)`, test with `Clock.fixed(...)`.
-
-**Side effects & test data (discovered via `LearningServiceImplTest` review):**
-- If the service explicitly calls `repository.save(...)`, verify that call — state assertions alone don't prove persistence was requested
-- On error paths, verify mutating calls were **not** made (`verify(repo, never()).save(any())`)
-- Use distinct constant IDs per entity (`userId`, `deckId`, `cardId`) — identical values can mask argument-order bugs
-- For threshold logic (`>=`, `>`), add a test one unit **below** the threshold, not just at/above it
+All operational rules (naming, Clock injection, mocking, side-effect verification, test data hygiene, threshold testing) live in `backend/.windsurf/rules/testing-conventions.md` — do not duplicate them here.
 
 **Detailed conventions:**
-- `.windsurf/rules/testing-conventions.md` — краткие обязательные правила
-- `docs/testing/testing-strategy.md` — полная документация с примерами
+- `backend/.windsurf/rules/testing-conventions.md` — hard gates (auto-loads on test files)
+- `.windsurf/skills/testing/SKILL.md` — test-level decision routing
+- `docs/testing/testing-strategy.md` — full documentation with examples

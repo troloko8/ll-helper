@@ -2,9 +2,9 @@
 
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
-> **Sprint:** Sprint 0.3 — Database Control
-> **Last updated:** 2026-07-05
-> **Status:** Draft v0.3 — Liquibase foundation added, V1 baseline migration created, Flyway references removed
+> **Current sprint:** see `docs/roadmap/current-sprint.md`
+> **Last updated:** 2026-08-01
+> **Status:** Liquibase schema control complete (V1–V10); Level 0 testing in progress
 
 ---
 
@@ -25,15 +25,16 @@
 - ✅ CRUD for cards
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
-- ✅ Mapper layer, rate limiting, ownership checks completed (Sprint 0.2)
-- 🔄 In progress: database migrations, schema control (Sprint 0.3)
+- ✅ Mapper layer, rate limiting, ownership checks completed
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V10)
+- ⏸ Additional performance indexes deferred to Level 2
+- 🔄 In progress: unit/controller test coverage — see `docs/roadmap/current-sprint.md`
 
-**Out of scope for Sprint 0.1:**
+**Out of scope for Level 0:**
 - Frontend screens (Level 1)
-- Liquibase migrations (Sprint 0.3, in progress)
 - OpenAPI/Swagger (Level 2)
 - Docker/CI (Level 2)
-- Refresh tokens, auth rate limiting (Level 3)
+- Refresh tokens (Level 3)
 
 ---
 
@@ -111,7 +112,7 @@ module/
 ├── service/
 ├── repository/
 ├── entity/
-├── mapper/         ← NEW (Sprint 0.2)
+├── mapper/
 ├── dto/
 │   ├── request/
 │   └── response/
@@ -165,14 +166,9 @@ User ──1:N──▶ UserDeckProgress ──1:N──▶ UserCardProgress
 | **Mutability** | Modified by owner | Modified on review |
 | **Access control** | Public/private via `isPublic` | Enrolled users only |
 
-**Important — cascade/delete behavior is unresolved:**
+**Current delete behavior:** hard delete with database-level `ON DELETE CASCADE` for Deck/Card and related progress records, implemented in V4/V5. Soft delete is deferred to Level 1.
 
-Progress entities must not modify content entities. Deleting a Deck or Card requires an explicit behavior decision:
-- Restrict delete if progress exists, OR
-- Cascade-delete progress intentionally, OR
-- Use soft delete (planned for future).
-
-Currently unresolved. FK violation risk if Deck/Card is deleted while progress records exist.
+Progress entities must not modify content entities.
 
 ---
 
@@ -189,8 +185,7 @@ Typical secured request:
 7. **Mapper** converts entity → response DTO (MapStruct).
 8. Controller returns `ResponseEntity<ResponseDTO>`.
 
-// FIXME: ask later why this addition info looks excessive
-**Mapper layer (Sprint 0.2):**
+**Mapper layer:**
 - Services no longer contain private `toResponse()` methods
 - MapStruct mappers are injected as Spring beans
 - Example: `CardMapper.toResponse(card)` instead of manual DTO construction
@@ -276,17 +271,6 @@ CardService.save(cards)
 **Base URL:** `/api/v1`  
 **Auth:** `Authorization: Bearer <JWT>` on all secured endpoints
 
-**Recent changes (Sprint 0.2):**
-- `GET /decks` now returns `DeckListResponse` (without `cards` array, added `sourceLanguage`, `targetLanguage`)
-- `POST /decks/{id}/enroll` now returns `{ "userDeckId": Long }` instead of void
-- All card endpoints now include `deckId` in `CardResponse`
-
-**Recent changes (Sprint 0.3):**
-- All timestamps now use `java.time.Instant` (ISO-8601 with UTC)
-- API responses return timestamps in format: `2024-01-15T07:30:00Z`
-- Database stores timestamps as `timestamptz` (UTC-safe)
-- Timestamps managed by PostgreSQL (DEFAULT + triggers), not Java
-
 **Timestamp Format:**
 - **Format:** ISO-8601 with UTC timezone (`YYYY-MM-DDTHH:mm:ssZ`)
 - **Example:** `"createdAt": "2024-01-15T07:30:00Z"`
@@ -322,13 +306,14 @@ CardService.save(cards)
 
 ```json
 {
-  "title": "...",
   "definition": "...",
   "synonyms": ["..."],
   "examples": ["..."],
   "translation": "..."
 }
 ```
+
+`title` is not part of the AI output — it is passed as input to the prompt, and the `Card` is created with the original `title` (see `AiCardData`).
 
 ---
 
@@ -348,21 +333,21 @@ backend/src/main/java/com/llhelper/
 │   ├── service/UserService.java
 │   ├── entity/User.java
 │   ├── repository/UserRepository.java
-│   ├── mapper/UserMapper.java                ← NEW
+│   ├── mapper/UserMapper.java
 │   └── dto/{request, response}/
-├── deck/                                ← will be renamed to deck/
-│   ├── controller/DeckController.java    ← → DeckController
-│   ├── service/DeckService.java          ← → DeckService
-│   ├── entity/Deck.java                  ← → Deck
-│   ├── repository/DeckRepository.java    ← → DeckRepository
-│   ├── mapper/DeckMapper.java            ← NEW
-│   └── dto/{request, response}/             ← → DeckRequest/Response
+├── deck/
+│   ├── controller/DeckController.java
+│   ├── service/DeckService.java
+│   ├── entity/Deck.java
+│   ├── repository/DeckRepository.java
+│   ├── mapper/DeckMapper.java
+│   └── dto/{request, response}/
 ├── card/
 │   ├── controller/CardController.java
 │   ├── service/CardService.java
 │   ├── entity/Card.java
 │   ├── repository/CardRepository.java
-│   ├── mapper/CardMapper.java               ← NEW
+│   ├── mapper/CardMapper.java
 │   └── dto/{request, response}/
 ├── learning/
 │   ├── controller/LearningController.java
@@ -397,40 +382,18 @@ backend/src/main/java/com/llhelper/
 
 ## 14. Known Architecture Issues
 
+> Fixed issues history: see `docs/roadmap/changelog.md`.
+
 | Issue | Priority | Target |
 |-------|----------|--------|
-| ~~`CardDesc` entity represented Deck — misleading name~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
-| ~~No `GlobalExceptionHandler`~~ | ~~🔴 High~~ | ~~Sprint 0.2~~ ✅ Fixed |
-| **Deck operations missing ownership check** | 🔴 **CRITICAL** | **Sprint 0.2 (task 7.2)** |
-| **No rate limiting on user update operations** | 🔴 High | **Sprint 0.2 (task 8)** |
-| ~~`ddl-auto=update`, no migration tool — schema not version-controlled~~ | ~~🔴 High~~ | ~~Sprint 0.3~~ ✅ Liquibase + V1 baseline added |
-| Delete Deck/Card with existing progress → FK violation risk | 🔴 High | Sprint 0.3 |
 | No pagination for list endpoints | 🟡 Medium | Level 2 |
-| `createdAt` via `@PrePersist` instead of DB DEFAULT | 🟡 Medium | Sprint 0.3 |
-| Languages stored as VARCHAR, not DB enum | 🟡 Medium | Sprint 0.3 |
-| No indexes on `next_review_at`, `(userId, deckId)` | 🟡 Medium | Sprint 0.3 |
+| No index on `next_review_at` | 🟡 Medium | Backlog |
 | JWT subject is `email`, not `userId` — extra DB lookup per request | 🟢 Low | Post Level 0 |
-| Lombok not consistently applied across all classes | 🟢 Low | Sprint 0.2 |
-
-### Naming Issue: CardDesc → Deck rename
-
-**Status:** ✅ Fixed (Sprint 0.2)
-
-The `CardDesc` entity and `card_descs` table name were misleading — they read as "card description" while representing a **Deck** in the domain model. The Java package, classes, DTOs, REST endpoints, and database table were renamed to `Deck` / `decks`. The DB table rename was performed manually before Liquibase was introduced; Liquibase V1 baseline captures the current schema, and incremental migrations are planned for Sprint 0.3.
-
-| Before | After |
-|--------|-------|
-| `CardDesc` entity | `Deck` entity |
-| `card_descs` table | `decks` table |
-| `CardDescController` | `DeckController` |
-| `/api/v1/card-descs` | `/api/v1/decks` |
-| `CardDescService/Repository` | `DeckService/Repository` |
-| `CardDescRequest/Response` | `DeckRequest/Response` |
-| `card_desc/` package | `deck/` package |
+| Lombok not consistently applied across all classes | 🟢 Low | Backlog |
 
 ### Mapper Layer
 
-**Status:** ✅ Implemented (Sprint 0.2)
+**Status:** ✅ Implemented
 
 MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interface-based mappers.
 
@@ -459,13 +422,9 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 15. Architecture Risks
 
-1. ~~`CardDesc` naming hid the Deck concept~~ — ✅ Fixed in Sprint 0.2 (renamed to `Deck`).
-2. Copy vs reference strategy for enrolling public decks is not finalized.
-3. Liquibase foundation added; incremental schema migrations still pending (Sprint 0.3).
-4. ~~No `GlobalExceptionHandler` means API error responses may be inconsistent.~~ ✅ Fixed (Sprint 0.2)
-5. ~~No mapper layer means the API contract depends too closely on entity structure.~~ ✅ Fixed (Sprint 0.2)
-6. AI generation saves cards directly without preview — bad AI output can persist to the database.
-7. Deleting a Deck or Card while progress exists has no explicit cascade/restrict strategy defined.
+> Resolved risks history: see `docs/roadmap/changelog.md`.
+
+1. AI generation saves cards directly without preview — bad AI output can persist to the database.
 
 ---
 
@@ -479,25 +438,12 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | DTO = Java `record` | No Lombok on records — records generate everything |
 | Entity = Lombok | `@Getter` / `@Setter` / `@NoArgsConstructor`, never `@Data` |
 | No `equals`/`hashCode`/`toString` on entities | Avoids lazy-load issues and infinite recursion |
-| Mapper deferred | Currently `toResponse()` in service; dedicated mapper layer planned for Sprint 0.2 |
-
-### Sprint 0.2 Accepted Decisions
-
-| Decision | Details |
-|----------|---------|  
-| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` must check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
-| Bulk AI generation uses partial-success strategy | Sprint 0.2 fix: log failed titles with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Sprint 0.4 / Level 1. |
-| Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented in Sprint 0.2. |
-| Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress will be handled in Sprint 0.3 via restrict/delete strategy and/or FK decisions. |
+| Bulk AI generation uses partial-success strategy | Failed titles are logged with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Level 1. |
+| Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
+| Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
-
-### Sprint 0.2 Priority Decisions
-
-1. Fix ownership checks before any mapper/DTO cleanup.
-2. Add `GlobalExceptionHandler` before expanding API behavior.
-3. Do not redesign learning UX during Sprint 0.2.
-4. Do not change DB relationship model before Liquibase incremental migrations/Sprint 0.3.
 
 ### Open Decisions
 
@@ -505,7 +451,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 |----------|---------|--------|
 | Soft delete for Card / Deck | Add `deleted_at` column or hard delete? | Planned in `IMPROVEMENTS.md` |
 | Synonyms/examples as separate tables | Currently PostgreSQL `text[]` arrays inside `Card` entity | Deferred |
-| Self-check UX for answers | Direction accepted (Again / Hard / Good / Easy), implementation deferred | Post Sprint 0.2 |
+| Self-check UX for answers | Direction accepted (Again / Hard / Good / Easy), implementation deferred | Backlog |
 
 ---
 
@@ -515,25 +461,15 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 - React screens (Login, Dashboard, Decks, Study Mode, Progress)
 - API client layer (Axios + TanStack Query)
 
-**Sprint 0.2 — Backend Cleanup (current level, pending):**
-- Dedicated mapper layer
-- DTO cleanup
-- `GlobalExceptionHandler`
-- Validation cleanup
-- ~~`CardDesc` → `Deck` rename~~ — ✅ Done (Sprint 0.2, DB table renamed manually)
-
 **Level 2 — Portfolio-ready:**
-- Liquibase + `ddl-auto=validate` (foundation in Sprint 0.3)
 - OpenAPI/Swagger
 - Docker Compose
 - GitHub Actions CI/CD
-- Integration tests (Testcontainers)
+- Repository and full integration test suite using Testcontainers (beyond the Level 0 `ApplicationContextLoadsTest` smoke test)
 
 **Level 3 — Production Candidate:**
 - `StudySession` / `StudySessionAnswer` entities
 - Refresh tokens
-- Rate limiting on auth endpoints
-- AI Provider abstraction interface
 - Soft delete
 
 **Level 4 — SaaS:**
@@ -547,10 +483,10 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** ✅ All endpoints protected (Sprint 0.2 task 8.5–8.14 complete). Postman tests pending (8.15).
-> **Design note:** `docs/features/rate-limiting-design.md`
+> **Status:** ✅ All CRUD/auth/bulk-generate endpoints protected via `UserRateLimiter`. AI provider calls are also protected via a separate global `AiRateLimiter` (not per-user). Postman regression pending — see `docs/roadmap/current-sprint.md`.
+> **Design note:** `docs/features/rate-limiting-design.md` (historical implementation plan)
 
-### Level 0 Implementation (Sprint 0.2)
+### Level 0 Implementation
 
 **Component:** `UserRateLimiter` (`common/security/`)
 
@@ -575,6 +511,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | `POST /api/v1/decks` | 5 | 1 hour | email ✅ | 🟡 Medium |
 | `PUT /api/v1/decks/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
 | `DELETE /api/v1/decks/{id}` | 5 | 1 hour | email ✅ | 🟢 Low |
+| `POST /api/v1/cards/bulk-generate` | 3 | 1 minute | email ✅ | 🔴 High |
 
 ### Error Response
 
@@ -600,21 +537,23 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 - Per-JVM instance (not distributed)
 - Email-based for auth (TODO: migrate to userId when JWT changes)
 - No rate limit headers (`X-RateLimit-*`)
-- AI generation per-user limit deferred (requires userId in service)
 
 ### AI Generation Rate Limiting
 
-**Current:** Per-JVM only (`AiRateLimiter` — 10 req/sec for all users)
+Two independent layers:
 
-**Planned (Level 2):** Per-user limit (10 AI generations/hour) + per-JVM limit
+- **Endpoint layer (`UserRateLimiter`, per-user):** `POST /cards/bulk-generate` limited to 3 req/min per user email (`CARD_BULK_GENERATE`) — see Protected Endpoints above.
+- **Provider layer (`AiRateLimiter`, global per-JVM):** caps outbound OpenAI calls at 10 req/sec across all users, independent of which user triggered the request.
+
+**Planned (Level 2):** Per-user AI generation quota (e.g. 10 generations/hour) at the provider layer, in addition to the existing per-JVM cap.
 
 ---
 
 ## 19. Database Schema Management
 
-> **Status:** ✅ Liquibase ownership policy established (Sprint 0.3)
+> **Status:** ✅ Liquibase ownership policy established
 > **Detailed guide:** `docs/database/schema-ownership.md`
-> **Quick reference:** `.windsurf/rules/database-schema-ownership.md`
+> **Hard gate:** `backend/AGENTS.md` — **Conventions:** `backend/.windsurf/rules/liquibase-conventions.md`, `backend/.windsurf/rules/entity-conventions.md`
 
 ### Schema Ownership
 
@@ -676,9 +615,16 @@ When adding/changing an entity field:
 
 ### Current Migrations
 
-- **V1:** Baseline schema (all tables, constraints, indexes as of 2026-07-04)
-- **V2:** Unique constraint on `user_deck_progress(user_id, deck_id)`
+- **V1:** Baseline schema (all tables, constraints, indexes)
+- **V2:** Unique constraint on `user_deck_progress(user_id, deck_id)` — prevents duplicate enrollment
 - **V3:** Unique constraint on `user_card_progress(user_deck_progress_id, card_id)`
+- **V4:** FK `user_deck_progress`/`user_card_progress` → `users.id` with cascade delete
+- **V5:** FK `decks`/`cards` cascade delete aligned with JPA `CascadeType.ALL`
+- **V6:** `Language` enum validation via `CHECK` constraints on `decks.source_language`/`target_language`
+- **V7:** `CHECK` constraints on `user_card_progress` counters (no negative values)
+- **V8:** Removed duplicate index on `users.auth_user_id`
+- **V9:** `TIMESTAMPTZ` + `DEFAULT CURRENT_TIMESTAMP` + triggers for `created_at`/`updated_at`
+- **V10:** `TIMESTAMPTZ` for learning progress timestamps
 
 ---
 
@@ -686,7 +632,8 @@ When adding/changing an entity field:
 
 | Document             | Path                                          |
 |----------------------|-----------------------------------------------|
-| Roadmap              | `docs/roadmap/LL_Helper_Project_Roadmap.md`   |
+| Current sprint       | `docs/roadmap/current-sprint.md`              |
+| Roadmap              | `docs/roadmap/roadmap.md`                     |
 | Conventions          | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
 | Improvements backlog | `backend/IMPROVEMENTS.md`                     |
 | Postman collection   | `LLHelper.postman_collection.json`            |
@@ -699,22 +646,4 @@ When adding/changing an entity field:
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
-| 2026-06-02 | Initial version — Level 0 Architecture Freeze (Sprint 0.1) |
-| 2026-06-22 | Added MapStruct 1.6.3, implemented CardMapper, updated request lifecycle |
-| 2026-06-23 | Mapper layer complete: CardMapper, DeckMapper, UserMapper. Removed manual toResponse() from services. Updated package structure, request lifecycle, service responsibilities. |
-| 2026-06-24 | Added ownership check for User operations (update/delete). UserServiceImpl now validates ownership via SecurityUtils. Updated Postman with 403 test cases. |
-| 2026-06-25 | Added rate limiting design (Sprint 0.2 task 8). Created `docs/features/rate-limiting-design.md`. Identified Deck ownership check issue (task 7.2). Updated roadmap with detailed breakdown of tasks 7.2 and 8.1-8.16. |
-| 2026-06-28 | Sprint 0.2 tasks 8.1-8.4 completed: fixed RateLimiter reset bug, moved RateLimitExceededException to common/exception, added Caffeine 3.1.8 dependency, created UserRateLimiter. |
-| 2026-06-29 | Sprint 0.2 task 8.5 completed: rate limiting applied to UserServiceImpl.updateUser(). Added SecurityUtils.getCurrentUserEmail() (0 DB queries). Composite key architecture (subject + RateLimitAction). |
-| 2026-06-29 | Sprint 0.2 task 8.6 completed: rate limiting applied to AuthServiceImpl.login() via checkLimitByEmail(request.email(), AUTH_LOGIN). |
-| 2026-06-29 | Sprint 0.2 task 8.7 completed: rate limiting applied to AuthServiceImpl.register(). ⚠️ Email-based limit is weak for registration — IP-based limiting planned for Level 2. |
-| 2026-06-30 | Sprint 0.2 task 8.8 completed: rate limiting applied to CardServiceImpl.create() via checkLimitByEmail(getCurrentUserEmail(), CARD_CREATE). |
-| 2026-06-30 | Sprint 0.2 tasks 8.9-8.10 completed: rate limiting applied to CardServiceImpl.update() and delete(). |
-| 2026-06-30 | Sprint 0.2 tasks 8.11-8.13 completed: rate limiting applied to DeckServiceImpl.create(), update(), delete(). |
-| 2026-06-30 | Sprint 0.2 task 8.14 completed: GlobalExceptionHandler 429 response enriched with error code and timestamp. |
-| 2026-07-04 | Sprint 0.3 foundation: added Liquibase dependency, created V1 baseline migration, switched `ddl-auto` to `validate`. |
-| 2026-07-05 | Sprint 0.3 cleanup: removed Flyway references, corrected relationships.md FK delete rules, removed empty V2 SQL file. |
-| 2026-07-06 | Sprint 0.3: established Liquibase schema ownership policy. Removed duplicate DB constraints from entities (UserCardProgress, UserDeckProgress, User, AuthUser). Created `docs/database/schema-ownership.md` (detailed guide) and `.windsurf/rules/database-schema-ownership.md` (quick reference). |
-| 2026-07-07 | Sprint 0.3: added `common/model/Language.java` enum (ISO 639-1). Deck entity/DTOs migrated from `String` to `Language`. V6 migration: DROP DEFAULT + CHECK constraints on `decks.source_language`/`target_language`. |
+History of changes to this document has moved to `docs/roadmap/changelog.md`. This file reflects only the current state.
