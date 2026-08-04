@@ -34,7 +34,7 @@
 > Сервис замокан через `@MockitoBean` (Spring Boot 4.x). Нет реальной БД, нет full Spring context.
 
 - [x] **1b.1. LearningControllerTest** — DONE (`enroll` → 201, 404, 409; `review` → 200, 404)
-- [ ] **1b.2. DeckControllerTest** — `create` → 201/400, `update` → 403 (not owner), `getById` → 404
+- [x] **1b.2. DeckControllerTest** — DONE (`create` → 201/400, `update` → 403 (not owner), `getById` → 404)
 - [ ] **1b.3. CardControllerTest** — `create` → 201, `create` → 403 (not deck owner), `generateBulk` → 400 (size > 100)
 - [ ] **1b.4. UserControllerTest** — `update` → 400 (invalid), `update` → 403 (not self)
 - [ ] **1b.5. AuthControllerTest** — `register` → 201/400, `login` → 200, `login` → 429 (rate limit)
