@@ -8,11 +8,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static com.llhelper.learning.support.LearningTestData.defaultCardReviewRequest;
+import static com.llhelper.learning.support.LearningTestData.defaultCardReviewResponse;
+import static com.llhelper.learning.support.LearningTestData.defaultEnrollResponse;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
-import com.llhelper.learning.dto.response.EnrollResponse;
-import com.llhelper.learning.enums.CardLearningStatus;
 import com.llhelper.learning.service.LearningService;
 import com.llhelper.common.security.JwtService;
 import jakarta.persistence.EntityNotFoundException;
@@ -51,7 +53,7 @@ class LearningControllerTest {
 
     @Test
     void enroll_shouldReturn201_whenSuccess() throws Exception {
-        when(learningService.enrollDeck(DECK_ID)).thenReturn(new EnrollResponse(USER_DECK_PROGRESS_ID));
+        when(learningService.enrollDeck(DECK_ID)).thenReturn(defaultEnrollResponse());
 
         mockMvc.perform(post("/api/v1/decks/{deckId}/enroll", DECK_ID))
             .andExpect(status().isCreated())
@@ -82,8 +84,8 @@ class LearningControllerTest {
 
     @Test
     void review_shouldReturn200_whenSuccess() throws Exception {
-        CardReviewRequest request = new CardReviewRequest("hello");
-        CardReviewResponse response = new CardReviewResponse(true, "hello", CardLearningStatus.LEARNING, 1, 1);
+        CardReviewRequest request = defaultCardReviewRequest();
+        CardReviewResponse response = defaultCardReviewResponse();
         when(learningService.reviewCard(eq(CARD_ID), any(CardReviewRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/cards/{cardId}/review", CARD_ID)
@@ -99,7 +101,7 @@ class LearningControllerTest {
 
     @Test
     void review_shouldReturn404_whenProgressNotFound() throws Exception {
-        CardReviewRequest request = new CardReviewRequest("hello");
+        CardReviewRequest request = defaultCardReviewRequest();
         when(learningService.reviewCard(eq(CARD_ID), any(CardReviewRequest.class)))
             .thenThrow(new EntityNotFoundException("Card progress not found: " + CARD_ID));
 

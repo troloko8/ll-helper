@@ -7,15 +7,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static com.llhelper.card.support.CardTestData.CARD_ID;
+import static com.llhelper.card.support.CardTestData.bulkGenerateRequest;
+import static com.llhelper.card.support.CardTestData.defaultRequest;
+import static com.llhelper.card.support.CardTestData.defaultResponse;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
-import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
 import com.llhelper.common.security.JwtService;
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -29,9 +30,6 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(CardController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class CardControllerTest {
-
-    private static final Long CARD_ID = 1L;
-    private static final Long DECK_ID = 2L;
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,23 +45,12 @@ class CardControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    private static CardRequest cardRequest() {
-        return new CardRequest("word", "definition", List.of(), List.of(), "translation", DECK_ID, false);
-    }
-
-    private static CardResponse cardResponse(CardRequest request) {
-        return new CardResponse(
-            CARD_ID, request.deckId(), request.title(), request.definition(),
-            request.synonyms(), request.examples(), request.translation(), Instant.EPOCH, Instant.EPOCH
-        );
-    }
-
     // --- create ---
 
     @Test
     void create_shouldReturn201_whenValid() throws Exception {
-        CardRequest request = cardRequest();
-        when(cardService.create(any(CardRequest.class))).thenReturn(cardResponse(request));
+        CardRequest request = defaultRequest();
+        when(cardService.create(any(CardRequest.class))).thenReturn(defaultResponse(CARD_ID, request));
 
         mockMvc.perform(post("/api/v1/cards")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +67,7 @@ class CardControllerTest {
 
         mockMvc.perform(post("/api/v1/cards")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cardRequest())))
+                .content(objectMapper.writeValueAsString(defaultRequest())))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: not deck owner")));
     }
@@ -89,8 +76,7 @@ class CardControllerTest {
 
     @Test
     void generateBulk_shouldReturn400_whenSizeExceedsLimit() throws Exception {
-        List<String> titles = IntStream.range(0, 101).mapToObj(i -> "title" + i).toList();
-        BulkCardGenerateRequest request = new BulkCardGenerateRequest(titles, DECK_ID);
+        BulkCardGenerateRequest request = bulkGenerateRequest(101);
 
         mockMvc.perform(post("/api/v1/cards/bulk-generate")
                 .contentType(MediaType.APPLICATION_JSON)

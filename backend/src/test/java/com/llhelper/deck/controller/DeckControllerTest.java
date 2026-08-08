@@ -10,14 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static com.llhelper.deck.support.DeckTestData.DECK_ID;
+import static com.llhelper.deck.support.DeckTestData.blankTitleRequest;
+import static com.llhelper.deck.support.DeckTestData.defaultRequest;
+import static com.llhelper.deck.support.DeckTestData.defaultResponse;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.llhelper.common.model.Language;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.deck.dto.request.DeckRequest;
-import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.service.DeckService;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -31,8 +33,6 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(DeckController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class DeckControllerTest {
-
-    private static final Long DECK_ID = 1L;
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,23 +48,12 @@ class DeckControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    private static DeckRequest deckRequest() {
-        return new DeckRequest("Deck title", "desc", Language.EN, Language.RU, true);
-    }
-
-    private static DeckResponse deckResponse(DeckRequest request) {
-        return new DeckResponse(
-            DECK_ID, request.title(), request.description(), request.sourceLanguage(),
-            request.targetLanguage(), null, null, null, request.isPublic(), List.of()
-        );
-    }
-
     // --- create ---
 
     @Test
     void create_shouldReturn201_whenValid() throws Exception {
-        DeckRequest request = deckRequest();
-        when(deckService.create(any(DeckRequest.class))).thenReturn(deckResponse(request));
+        DeckRequest request = defaultRequest();
+        when(deckService.create(any(DeckRequest.class))).thenReturn(defaultResponse(DECK_ID, request));
 
         mockMvc.perform(post("/api/v1/decks")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +65,7 @@ class DeckControllerTest {
 
     @Test
     void create_shouldReturn400_whenTitleBlank() throws Exception {
-        DeckRequest request = new DeckRequest("", "desc", Language.EN, Language.RU, true);
+        DeckRequest request = blankTitleRequest();
 
         mockMvc.perform(post("/api/v1/decks")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +90,7 @@ class DeckControllerTest {
 
     @Test
     void update_shouldReturn403_whenNotOwner() throws Exception {
-        DeckRequest request = deckRequest();
+        DeckRequest request = defaultRequest();
         when(deckService.update(eq(DECK_ID), any(DeckRequest.class)))
             .thenThrow(new AccessDeniedException("Access denied: not deck owner"));
 

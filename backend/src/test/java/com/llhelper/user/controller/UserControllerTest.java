@@ -8,6 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static com.llhelper.user.support.UserTestData.USER_ID;
+import static com.llhelper.user.support.UserTestData.blankFirstNameUpdateRequest;
+import static com.llhelper.user.support.UserTestData.defaultUpdateRequest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.user.dto.request.UpdateUserRequest;
@@ -26,8 +30,6 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
 
-    private static final Long USER_ID = 1L;
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -42,15 +44,11 @@ class UserControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    private static UpdateUserRequest updateUserRequest() {
-        return new UpdateUserRequest("First", "Last", "en", "ru", null, "en");
-    }
-
     // --- update ---
 
     @Test
     void update_shouldReturn400_whenFirstNameBlank() throws Exception {
-        UpdateUserRequest request = new UpdateUserRequest("", "Last", "en", "ru", null, "en");
+        UpdateUserRequest request = blankFirstNameUpdateRequest();
 
         mockMvc.perform(put("/api/v1/users/{id}", USER_ID)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -66,7 +64,7 @@ class UserControllerTest {
 
         mockMvc.perform(put("/api/v1/users/{id}", USER_ID)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateUserRequest())))
+                .content(objectMapper.writeValueAsString(defaultUpdateRequest())))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: not user owner")));
     }
