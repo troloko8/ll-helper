@@ -139,3 +139,17 @@ Improved `scripts/check-agent-context.sh` from ~60% to fully functional.
 - Extended broken-reference check to parse ordinary Markdown links `[text](path)` as well as backtick-wrapped paths
 - Added obsolete rule/skill path detection (`database-schema-ownership.md`, `project-roadmap.md`, `security-standards.md`, `LL_Helper_Project_Roadmap.md`)
 - Validation run: `FAIL: 0   WARN: 0`
+
+## Sprint 0.4 — Testing (Level 0 Minimum) ✅ COMPLETE
+
+**Done:** 2026-08-08. **Следующий спринт:** Sprint 1.0 — Vertical Flow (см. `docs/roadmap/current-sprint.md`).
+
+Завершён Level 0 — Stable Backend Foundation. Все группы Sprint 0.4 выполнены:
+
+- **Группа 0:** Testcontainers PostgreSQL, shared `TestData.fixedClock()`, `ApplicationContextLoadsTest` (Liquibase V1–V10 smoke), Clock в `LearningServiceImpl`.
+- **Группа 1:** unit tests — `LearningServiceImpl`, `UserRateLimiter`, ownership forbidden-сценарии, bulk validation, `AiResponseParser`.
+- **Группа 1b:** `@WebMvcTest` контроллеров (`Learning`, `Deck`, `Card`, `User`, `Auth`) — покрыты статусы 400/401/403/404/409/429.
+- **Группа 2:** Postman smoke — 32 запроса, 14 тестов/13 assertions, 0 failures; динамические `{{testEmail}}`/`{{testUsername}}`, ID из ответов, Cleanup- и negative-тесты.
+- **Группа 3:** domain fixtures — `LearningTestData`, `DeckTestData`, `CardTestData`, `UserTestData`.
+- **Группа 4:** `DataIntegrityViolationException` → `409 Conflict` в `GlobalExceptionHandler`, 500-ошибки заменены на специфические HTTP-коды.
+- **Группа 5:** завершение спринта — итог перенесён в `changelog.md`, `current-sprint.md` переключён на Sprint 1.0.

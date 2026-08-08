@@ -272,7 +272,7 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 - [x]  Есть validation
 - [x]  Есть Postman collection (`LLHelper.postman_collection.json`) — актуализация в процессе, см. `current-sprint.md`
 - [x]  Есть unit tests на learning/AI parsing/rate limiting/ownership/bulk validation (см. `current-sprint.md` Группа 1)
-- [ ]  Можешь объяснить backend без подсказки AI
+- [x]  Можешь объяснить backend без подсказки AI
 
 # Level 1 — Vertical Full-Stack Flow
 
