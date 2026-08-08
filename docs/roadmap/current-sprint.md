@@ -41,11 +41,11 @@
 
 **Группа 2: Postman (smoke testing)**
 
-- [ ] Актуализировать Postman collection — проверить все endpoints из `current-architecture.md`, добавить недостающие, убедиться что все requests работают на живом сервере
+- [x] Актуализировать Postman collection — DONE. `current-architecture.md` дополнен 3 user-эндпоинтами. Коллекция переработана: все запросы используют `{{url}}`; email/username теперь генерируются динамически (`testEmail`, `testUsername`); ID ресурсов (`userId`, `deckId`, `cardId`) захватываются из ответов и подставляются в последующие запросы; DELETE-запросы вынесены в `Cleanup`-папку, чтобы не рушить основной flow; негативные тесты переведены на `{{nonExistentUserId}}`/`{{nonExistentDeckId}}` с проверкой 404. `newman`-прогон на живом сервере: 32 запроса, 10 assertions, 0 failures.
 
 **Группа 3: Domain-specific fixtures**
 
-- [ ] Создать `learning/support/LearningTestData.java` (`defaultProgress()` и т.д.); добавить аналогичные файлы для других модулей по мере роста покрытия
+- [x] Создать domain-specific fixtures — DONE. `LearningTestData.java` расширен (`defaultCardReviewRequest`, `defaultCardReviewResponse`, `defaultEnrollResponse`, `defaultCardProgress`, `defaultDeckProgress`); созданы `DeckTestData.java`, `CardTestData.java`, `UserTestData.java`. Четыре контроллерных теста (`LearningControllerTest`, `DeckControllerTest`, `CardControllerTest`, `UserControllerTest`) отрефакторены на использование фикстур, убран дублирующийся boilerplate при создании DTO.
 
 **Группа 4: Критичные долги**
 

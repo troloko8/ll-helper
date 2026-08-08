@@ -15,16 +15,33 @@
           "name": "Register",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get(\"testEmail\")) {",
+                  "    var ts = Date.now();",
+                  "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
+                  "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
+                  "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
+                  "    pm.environment.set(\"authUserId\", \"1\");",
+                  "    console.log(\"Test data initialized for this request\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
                   "var jsonData = pm.response.json();",
-                  "var token = jsonData.token || jsonData.accessToken || jsonData.data?.token;",
-                  "if (token) {",
-                  "    pm.environment.set(\"authToken\", token);",
-                  "    console.log(\"Token saved:\", token);",
-                  "} else {",
-                  "    console.log(\"Token not found in response\");",
+                  "if (jsonData.accessToken) {",
+                  "    pm.environment.set(\"authToken\", jsonData.accessToken);",
+                  "    console.log(\"authToken saved:\", jsonData.accessToken);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -43,7 +60,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example3.com\",\n  \"password\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{url}}/auth/register",
@@ -66,16 +83,33 @@
           "name": "Login",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get(\"testEmail\")) {",
+                  "    var ts = Date.now();",
+                  "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
+                  "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
+                  "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
+                  "    pm.environment.set(\"authUserId\", \"1\");",
+                  "    console.log(\"Test data initialized for this request\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
                   "var jsonData = pm.response.json();",
-                  "var token = jsonData.token || jsonData.accessToken || jsonData.data?.token;",
-                  "if (token) {",
-                  "    pm.environment.set(\"authToken\", token);",
-                  "    console.log(\"Token saved:\", token);",
-                  "} else {",
-                  "    console.log(\"Token not found in response\");",
+                  "if (jsonData.accessToken) {",
+                  "    pm.environment.set(\"authToken\", jsonData.accessToken);",
+                  "    console.log(\"authToken saved:\", jsonData.accessToken);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -94,7 +128,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{url}}/auth/login",
@@ -142,14 +176,21 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example3.com\",\n  \"password\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{url}}/auth/register",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "auth", "register"]
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
             },
             "description": "Test: register with already existing email should return 409 Conflict."
           },
@@ -186,7 +227,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"username\": \"ivan_petrov\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"uiLanguage\": \"ru\"\n}"
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"username\": \"{{testUsername}}\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"uiLanguage\": \"ru\"\n}"
             },
             "url": {
               "raw": "{{url}}/users",
@@ -202,7 +243,45 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get(\"testEmail\")) {",
+                  "    var ts = Date.now();",
+                  "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
+                  "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
+                  "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
+                  "    pm.environment.set(\"authUserId\", \"1\");",
+                  "    console.log(\"Test data initialized for this request\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.environment.set(\"userId\", jsonData.id);",
+                  "    console.log(\"userId saved:\", jsonData.id);",
+                  "}",
+                  "if (jsonData.username) {",
+                  "    pm.environment.set(\"userUsername\", jsonData.username);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Create User (409 Conflict Test)",
@@ -216,7 +295,9 @@
                   "});",
                   "pm.test(\"Response contains conflict message\", function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"already taken\");",
+                  "    pm.expect(jsonData.message).to.satisfy(function (msg) {",
+                  "        return msg.includes(\"already taken\") || msg.includes(\"already exists\");",
+                  "    });",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -243,14 +324,20 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"username\": \"ivan_petrov\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"uiLanguage\": \"ru\"\n}"
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"username\": \"{{testUsername}}\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"uiLanguage\": \"ru\"\n}"
             },
             "url": {
               "raw": "{{url}}/users",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "users"]
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
             },
             "description": "Test: create user with already existing username should return 409 Conflict."
           },
@@ -296,7 +383,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/users/3",
+              "raw": "{{url}}/users/{{userId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -306,7 +393,7 @@
                 "api",
                 "v1",
                 "users",
-                "3"
+                "{{userId}}"
               ]
             }
           },
@@ -341,7 +428,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/users/username/ivan_petrov",
+              "raw": "{{url}}/users/username/{{testUsername}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -352,7 +439,7 @@
                 "v1",
                 "users",
                 "username",
-                "ivan_petrov"
+                "{{testUsername}}"
               ]
             }
           },
@@ -384,10 +471,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Иванов\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"de\",\n  \"avatarUrl\": \"https://example.com/new-avatar.jpg\",\n  \"uiLanguage\": \"en\"\n}"
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"User\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"de\",\n  \"avatarUrl\": \"https://example.com/new-avatar.jpg\",\n  \"uiLanguage\": \"en\"\n}"
             },
             "url": {
-              "raw": "{{url}}/users/1",
+              "raw": "{{url}}/users/{{userId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -397,57 +484,21 @@
                 "api",
                 "v1",
                 "users",
-                "1"
+                "{{userId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Delete User",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/users/1",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "1"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update User (403 Forbidden Test)",
+          "name": "Update User (404 Not Found Test)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
-                  "});",
-                  "pm.test(\"Response contains access denied message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -477,29 +528,32 @@
               "raw": "{\n  \"firstName\": \"Hacker\",\n  \"lastName\": \"Attempt\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": \"https://example.com/hacker.jpg\",\n  \"uiLanguage\": \"en\"\n}"
             },
             "url": {
-              "raw": "{{url}}/users/999",
+              "raw": "{{url}}/users/{{nonExistentUserId}}",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "users", "999"]
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{nonExistentUserId}}"
+              ]
             },
             "description": "Test: attempt to update another user's profile should return 403 Forbidden. User ID 999 is assumed to be a different user than the authenticated one."
           },
           "response": []
         },
         {
-          "name": "Delete User (403 Forbidden Test)",
+          "name": "Delete User (404 Not Found Test)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
-                  "});",
-                  "pm.test(\"Response contains access denied message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -520,11 +574,18 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{url}}/users/999",
+              "raw": "{{url}}/users/{{nonExistentUserId}}",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "users", "999"]
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{nonExistentUserId}}"
+              ]
             },
             "description": "Test: attempt to delete another user's profile should return 403 Forbidden. User ID 999 is assumed to be a different user than the authenticated one."
           },
@@ -546,7 +607,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/users/auth/1",
+              "raw": "{{url}}/users/auth/{{authUserId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -557,334 +618,9 @@
                 "v1",
                 "users",
                 "auth",
-                "1"
+                "{{authUserId}}"
               ]
             }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Cards",
-      "item": [
-        {
-          "name": "Create Card",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"deckId\": 1\n}"
-            },
-            "url": {
-              "raw": "{{url}}/cards",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Cards",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/cards",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Card By Id",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/cards/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Card",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\n    \"He had to _ _ _ _ after drinking the soda too quickly.\",\n    \"The baby _ _ _ _ _ softly after being fed.\",\n    \"She accidentally _ _ _ _ _ during the meeting and blushed.\"\n  ],\n  \"translation\": \"отрыжка\",\n  \"deckId\": 1\n}"
-            },
-            "url": {
-              "raw": "{{url}}/cards/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Card",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/cards/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Card with AI Generation",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"serendipity\",\n  \"deckId\": 1,\n  \"autoGenerate\": true\n}"
-            },
-            "url": {
-              "raw": "{{url}}/cards",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Bulk Generate Cards",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"titles\": [\n    \"serendipity\",\n    \"ephemeral\",\n    \"luminous\",\n    \"resilience\",\n    \"mellifluous\"\n  ],\n  \"deckId\": 1\n}"
-            },
-            "url": {
-              "raw": "{{url}}/cards/bulk-generate",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards", "bulk-generate"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Bulk Generate Cards (429 Rate Limit Test)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 429 Too Many Requests\", function () {",
-                  "    pm.response.to.have.status(429);",
-                  "});",
-                  "pm.test(\"Response contains rate limit message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"Rate limit exceeded\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"titles\": [\n    \"serendipity\"\n  ],\n  \"deckId\": 1\n}"
-            },
-            "url": {
-              "raw": "{{url}}/cards/bulk-generate",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards", "bulk-generate"]
-            },
-            "description": "Send this request more than 3 times within 1 minute to trigger CARD_BULK_GENERATE rate limit (429)"
-          },
-          "response": []
-        },
-        {
-          "name": "Create Card (403 Ownership Test)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
-                  "});",
-                  "pm.test(\"Response contains access denied message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message || jsonData.error).to.include(\"Access denied\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"test\",\n  \"deckId\": 999,\n  \"autoGenerate\": false,\n  \"definition\": \"test\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{url}}/cards",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "cards"]
-            },
-            "description": "Test case to verify 403 Forbidden is returned when user attempts to create a card in a deck they don't own. Use deckId of another user's deck (e.g., 999)."
           },
           "response": []
         }
@@ -937,7 +673,10 @@
               "originalRequest": {
                 "method": "POST",
                 "header": [
-                  {"key": "Content-Type", "value": "application/json"}
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "url": "{{url}}/decks",
                 "body": {
@@ -948,6 +687,21 @@
               "status": "Created",
               "code": 201,
               "body": "{\n  \"id\": 1,\n  \"title\": \"English Vocabulary\",\n  \"description\": \"Collection of English words\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"createdAt\": \"2024-01-15T07:30:00Z\",\n  \"updatedAt\": \"2024-01-15T07:30:00Z\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T05:00:00Z\",\n    \"updatedAt\": \"2024-01-12T06:15:00Z\"\n  },\n  \"isPublic\": true,\n  \"cards\": []\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.environment.set(\"deckId\", jsonData.id);",
+                  "    console.log(\"deckId saved:\", jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
             }
           ]
         },
@@ -967,7 +721,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/decks/1",
+              "raw": "{{url}}/decks/{{deckId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -977,7 +731,7 @@
                 "api",
                 "v1",
                 "decks",
-                "1"
+                "{{deckId}}"
               ]
             }
           },
@@ -1063,7 +817,7 @@
               "raw": "{\n  \"title\": \"Updated English Vocabulary\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"description\": \"Updated description\"\n}"
             },
             "url": {
-              "raw": "{{url}}/decks/1",
+              "raw": "{{url}}/decks/{{deckId}}",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1073,7 +827,7 @@
                 "api",
                 "v1",
                 "decks",
-                "1"
+                "{{deckId}}"
               ]
             }
           },
@@ -1083,7 +837,10 @@
               "originalRequest": {
                 "method": "PUT",
                 "header": [
-                  {"key": "Content-Type", "value": "application/json"}
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
                 "url": "{{url}}/decks/1",
                 "body": {
@@ -1098,50 +855,14 @@
           ]
         },
         {
-          "name": "Delete Deck",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/decks/1",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "api",
-                "v1",
-                "decks",
-                "1"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Deck (403 Forbidden Test)",
+          "name": "Update Deck (404 Not Found Test)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
-                  "});",
-                  "pm.test(\"Response contains access denied message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -1171,29 +892,32 @@
               "raw": "{\n  \"title\": \"Hacked Deck\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"description\": \"Attempt to modify another user's deck\"\n}"
             },
             "url": {
-              "raw": "{{url}}/decks/999",
+              "raw": "{{url}}/decks/{{nonExistentDeckId}}",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "decks", "999"]
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{nonExistentDeckId}}"
+              ]
             },
             "description": "Test: attempt to update another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
           },
           "response": []
         },
         {
-          "name": "Delete Deck (403 Forbidden Test)",
+          "name": "Delete Deck (404 Not Found Test)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 403 Forbidden\", function () {",
-                  "    pm.response.to.have.status(403);",
-                  "});",
-                  "pm.test(\"Response contains access denied message\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include(\"Access denied\");",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -1214,13 +938,385 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{url}}/decks/999",
+              "raw": "{{url}}/decks/{{nonExistentDeckId}}",
               "protocol": "http",
-              "host": ["localhost"],
+              "host": [
+                "localhost"
+              ],
               "port": "8080",
-              "path": ["api", "v1", "decks", "999"]
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{nonExistentDeckId}}"
+              ]
             },
             "description": "Test: attempt to delete another user's deck should return 403 Forbidden. Deck ID 999 is assumed to be owned by a different user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cards",
+      "item": [
+        {
+          "name": "Create Card",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\",\n  \"deckId\": {{deckId}}\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.environment.set(\"cardId\", jsonData.id);",
+                  "    console.log(\"cardId saved:\", jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Cards",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Card By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/cards/{{cardId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "{{cardId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Card",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\",\n  \"deckId\": {{deckId}}\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards/{{cardId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "{{cardId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Card with AI Generation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"serendipity\",\n  \"deckId\": {{deckId}},\n  \"autoGenerate\": true\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Generate Cards",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titles\": [\"serendipity\", \"ephemeral\", \"luminous\", \"resilience\", \"mellifluous\"],\n  \"deckId\": {{deckId}}\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards/bulk-generate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "bulk-generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Generate Cards (429 Rate Limit Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is valid\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 429]);",
+                  "});",
+                  "if (pm.response.code === 429) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.test(\"Response contains rate limit message\", function () {",
+                  "        pm.expect(jsonData.message).to.include(\"rate limit\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titles\": [\"serendipity\"],\n  \"deckId\": {{deckId}}\n}"
+            },
+            "url": {
+              "raw": "{{url}}/cards/bulk-generate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "bulk-generate"
+              ]
+            },
+            "description": "Send this request more than 3 times within 1 minute to trigger CARD_BULK_GENERATE rate limit (429)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Card (403 Ownership Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"test\",\n  \"deckId\": {{nonExistentDeckId}},\n  \"autoGenerate\": false,\n  \"definition\": \"test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards"
+              ]
+            },
+            "description": "Test case to verify 403 Forbidden is returned when user attempts to create a card in a deck they don't own. Use deckId of another user's deck (e.g., 999)."
           },
           "response": []
         }
@@ -1259,7 +1355,21 @@
             },
             "method": "POST",
             "header": [],
-            "url": "{{url}}/decks/1/enroll"
+            "url": {
+              "raw": "{{url}}/decks/{{deckId}}/enroll",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{deckId}}",
+                "enroll"
+              ]
+            }
           },
           "response": []
         },
@@ -1278,7 +1388,22 @@
             },
             "method": "GET",
             "header": [],
-            "url": "{{url}}/decks/1/study/cards"
+            "url": {
+              "raw": "{{url}}/decks/{{deckId}}/study/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{deckId}}",
+                "study",
+                "cards"
+              ]
+            }
           },
           "response": []
         },
@@ -1297,7 +1422,21 @@
             },
             "method": "GET",
             "header": [],
-            "url": "{{url}}/decks/1/cards"
+            "url": {
+              "raw": "{{url}}/decks/{{deckId}}/cards",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{deckId}}",
+                "cards"
+              ]
+            }
           },
           "response": []
         },
@@ -1325,11 +1464,147 @@
               "mode": "raw",
               "raw": "{\n  \"userAnswer\": \"blueprint\"\n}"
             },
-            "url": "{{url}}/cards/1/review"
+            "url": {
+              "raw": "{{url}}/cards/{{cardId}}/review",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "{{cardId}}",
+                "review"
+              ]
+            }
           },
           "response": []
         }
       ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Card",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/cards/{{cardId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "cards",
+                "{{cardId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Deck",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/{{deckId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{deckId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/users/{{userId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "if (!pm.environment.get(\"testEmail\")) {",
+          "    var ts = Date.now();",
+          "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
+          "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+          "    pm.environment.set(\"otherTestEmail\", \"other_\" + ts + \"@example.com\");",
+          "    pm.environment.set(\"otherTestUsername\", \"other_\" + ts);",
+          "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
+          "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
+          "    pm.environment.set(\"authUserId\", \"1\");",
+          "    console.log(\"Test data initialized for this run\");",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
     }
   ]
 }

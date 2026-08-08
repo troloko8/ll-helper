@@ -256,7 +256,10 @@ CardService.save(cards)
 |----------|--------|------|-------------|--------------|
 | `/api/v1/auth/register` | POST | — | Register new user | `AuthResponse` |
 | `/api/v1/auth/login` | POST | — | Login, get JWT | `AuthResponse` |
+| `/api/v1/users` | POST | JWT | Create user profile for current auth account | `UserResponse` |
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
+| `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
+| `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
 | `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `DeckResponse` (with cards) |
