@@ -73,7 +73,8 @@ public class LearningServiceImpl implements LearningService {
             if (message != null && message.contains("uk_user_deck_progress_user_deck")) {
                 throw new IllegalStateException("Deck already enrolled");
             }
-            // Other data integrity violations should be propagated
+            // Other data integrity violations are propagated and mapped to 409 Conflict
+            // by GlobalExceptionHandler.
             throw e;
         }
     }

@@ -84,7 +84,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 3. Check deck visibility.
    - If deck is not public → `403 Forbidden` (`AccessDeniedException`).
 4. Attempt to create `UserDeckProgress` (`ACTIVE` status) and `UserCardProgress` for each deck card (`NEW` status, counters at `0`).
-5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. There is no upfront service-level duplicate check.
+5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. Other data integrity violations are also mapped to `409 Conflict` by `GlobalExceptionHandler`. There is no upfront service-level duplicate check.
 6. Return `201 Created`.
 
 > **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.

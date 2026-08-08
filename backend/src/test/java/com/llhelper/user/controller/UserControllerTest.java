@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -43,6 +45,18 @@ class UserControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    // --- getById ---
+
+    @Test
+    void getById_shouldReturn404_whenUserNotFound() throws Exception {
+        when(userService.getUserById(USER_ID))
+            .thenThrow(new EntityNotFoundException("User not found with id: " + USER_ID));
+
+        mockMvc.perform(get("/api/v1/users/{id}", USER_ID))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message", is("User not found with id: " + USER_ID)));
+    }
 
     // --- update ---
 

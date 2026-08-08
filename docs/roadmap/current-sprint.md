@@ -50,7 +50,7 @@
 **Группа 4: Критичные долги**
 
 - [x] Smoke test для Liquibase migrations — заменено `ApplicationContextLoadsTest` (Группа 0)
-- [ ] Проверить все 500 ошибки → специфические HTTP коды (найти `throw new RuntimeException`, заменить на `NotFoundException`/`ConflictException`/etc., проверить покрытие `@WebMvcTest`)
+- [x] Проверить все 500 ошибки → специфические HTTP коды (найти `throw new RuntimeException`, заменить на `NotFoundException`/`ConflictException`/etc., проверить покрытие `@WebMvcTest`)
 
 **Группа 5: Documentation**
 

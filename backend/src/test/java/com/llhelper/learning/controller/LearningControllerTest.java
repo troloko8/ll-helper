@@ -19,6 +19,7 @@ import com.llhelper.learning.service.LearningService;
 import com.llhelper.common.security.JwtService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -78,6 +79,16 @@ class LearningControllerTest {
         mockMvc.perform(post("/api/v1/decks/{deckId}/enroll", DECK_ID))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message", is("Deck already enrolled")));
+    }
+
+    @Test
+    void enroll_shouldReturn409_whenDataIntegrityViolation() throws Exception {
+        when(learningService.enrollDeck(DECK_ID))
+            .thenThrow(new DataIntegrityViolationException("other constraint"));
+
+        mockMvc.perform(post("/api/v1/decks/{deckId}/enroll", DECK_ID))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message", is("Data integrity violation")));
     }
 
     // --- reviewCard ---

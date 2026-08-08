@@ -15,6 +15,7 @@ import com.llhelper.auth.service.AuthService;
 import com.llhelper.common.exception.RateLimitExceededException;
 import com.llhelper.common.security.JwtService;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -97,5 +98,29 @@ class AuthControllerTest {
             .andExpect(status().isTooManyRequests())
             .andExpect(jsonPath("$.error", is("RATE_LIMIT_EXCEEDED")))
             .andExpect(jsonPath("$.message", is("AUTH_LOGIN rate limit exceeded")));
+    }
+
+    @Test
+    void login_shouldReturn401_whenInvalidCredentials() throws Exception {
+        when(authService.login(any(LoginRequest.class)))
+            .thenThrow(new BadCredentialsException("Invalid email or password"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest())))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.message", is("Invalid email or password")));
+    }
+
+    @Test
+    void register_shouldReturn409_whenEmailAlreadyRegistered() throws Exception {
+        when(authService.register(any(RegisterRequest.class)))
+            .thenThrow(new IllegalStateException("Email already registered"));
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(registerRequest())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message", is("Email already registered")));
     }
 }
