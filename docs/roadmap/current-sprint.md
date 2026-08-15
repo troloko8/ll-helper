@@ -6,11 +6,16 @@
 
 **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему. Один вертикальный сценарий — Register → Login → Create deck → Add cards → Enroll → Study → See progress. UI может быть простым; цель — не красивый Dashboard, а работающий full-stack flow.
 
-**Группа 0: Frontend scaffold**
+**Группа 0: Frontend scaffold & foundation**
 
-- [ ] Создать React/TS приложение.
-- [ ] Настроить React Router, Axios/fetch wrapper, базовый API client.
-- [ ] Настроить JWT storage/use и protected routes.
+- [x] Создать React/TS приложение (Vite scaffold).
+- [x] Установить зависимости: Redux Toolkit, React Router, React Hook Form, Zod, Axios, Vitest.
+- [x] Утвердить архитектурные решения (FSD, state ownership, API layer, auth, routing, UI, testing).
+- [x] Создать frontend AI-context инфраструктуру (`frontend/AGENTS.md`, `frontend/CONVENTIONS.md`, `.windsurf/rules/`).
+- [ ] **Technical Foundation:** Нормализовать scaffold — убрать template код, настроить path aliases, `strict: true`, Vite proxy, `.env.example`, удалить legacy Axios после замены на RTK Query.
+- [ ] Настроить RTK Query base API (`shared/api/`).
+- [ ] Настроить Redux store с session slice (`entities/session/`) и RTK Query middleware.
+- [ ] Настроить React Router (centralized config, layout routes, protected routes).
 - [ ] Базовые формы: Login, Register, Create Deck.
 
 **Группа 1: Auth flow**
@@ -40,8 +45,8 @@
 
 **Группа 5: Documentation**
 
+- [x] Обновить `docs/architecture/current-architecture.md` — frontend architecture section added.
 - [ ] Обновить `docs/features/learning-flow.md` при изменениях flow/UX.
-- [ ] Обновить `docs/architecture/current-architecture.md` если меняется frontend/backend интеграция.
 - [ ] Обновлять `docs/roadmap/current-sprint.md` по ходу.
 
 ## ✅ Done Criteria (Level 1)
@@ -59,7 +64,7 @@
 
 **Приоритет выполнения:**
 
-1. Группа 0 (scaffold)
+1. Группа 0 (scaffold & foundation) — scaffold ✅, Technical Foundation next
 2. Группа 1 (auth)
 3. Группа 2 (decks/cards)
 4. Группа 3 (study)

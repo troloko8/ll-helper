@@ -2,6 +2,7 @@
 
 Repository-wide hard gates and documentation routing table.
 Backend-specific gates: `backend/AGENTS.md`.
+Frontend-specific gates: `frontend/AGENTS.md`.
 
 ## Hard gates
 
@@ -21,13 +22,18 @@ Backend-specific gates: `backend/AGENTS.md`.
 | Levels and Done Criteria | `docs/roadmap/roadmap.md` |
 | Future backlog / tech debt | `docs/roadmap/backlog.md` |
 | Completed sprints | `docs/roadmap/changelog.md` |
-| Current backend architecture | `docs/architecture/current-architecture.md` (read only when actual architectural context is needed) |
+| Current system architecture | `docs/architecture/current-architecture.md` (read only when actual architectural context is needed) |
 | Current DB relationships | `docs/database/relationships.md` (read only when a relationship, constraint, index, or delete-policy fact is needed) |
 | Learning flow | `docs/features/learning-flow.md` |
 | AI generation flow | `docs/features/ai-generation-flow.md` |
 | Backend conventions | `backend/CONVENTIONS.md` |
 | Backend known issues | `backend/IMPROVEMENTS.md` |
 | Backend hard gates | `backend/AGENTS.md` |
+| Frontend hard gates | `frontend/AGENTS.md` |
+| Frontend conventions | `frontend/CONVENTIONS.md` |
+| Frontend FSD conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
+| Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
+| Future frontend design system | `docs/frontend/DESIGN.md` (not yet created — awaiting canonical Stitch design) |
 | Documentation sync rule | `.windsurf/rules/documentation-sync.md` |
 
 ## Roadmap usage

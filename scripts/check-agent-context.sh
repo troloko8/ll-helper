@@ -309,6 +309,19 @@ done
 
 echo ""
 echo "== 12. Broken relative markdown references (best-effort) =="
+# Planned references: files that are deliberately referenced before creation.
+# Add paths here (repo-relative, no leading ./) only when a forward-reference is
+# approved and documented. Remove the entry once the file is created.
+PLANNED_REFS="docs/frontend/DESIGN.md"
+
+is_planned_ref() {
+  local ref_clean="$1"
+  for planned in $PLANNED_REFS; do
+    [ "$ref_clean" = "$planned" ] && return 0
+  done
+  return 1
+}
+
 broken=0
 while IFS= read -r f; do
   [ -z "$f" ] && continue
@@ -330,8 +343,12 @@ while IFS= read -r f; do
     ref_clean="${ref#/}"
     ref_clean="${ref_clean#./}"
     if [ ! -e "$REPO_ROOT/$ref_clean" ] && [ ! -e "$dir/$ref_clean" ]; then
-      fail "$f references missing file: $ref"
-      broken=1
+      if is_planned_ref "$ref_clean"; then
+        pass "$f → $ref (planned, not yet created)"
+      else
+        fail "$f references missing file: $ref"
+        broken=1
+      fi
     fi
   done
 done <"$TMPDIR_CHECK/all_md.txt"

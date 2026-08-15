@@ -1,10 +1,10 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Current level:** Level 0 — Stable Backend Foundation
+> **Current level:** Level 1 — Vertical Full-Stack Flow
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-01
-> **Status:** Liquibase schema control complete (V1–V10); Level 0 testing in progress
+> **Last updated:** 2026-08-15
+> **Status:** Backend foundation complete (Level 0). Frontend architecture foundation complete. Technical Foundation (scaffold normalization) is next.
 
 ---
 
@@ -18,8 +18,9 @@
 
 ## 2. Current Level / Scope
 
-**Level 0 — Stable Backend Foundation**
+**Level 1 — Vertical Full-Stack Flow**
 
+**Backend (Level 0 — complete):**
 - ✅ Spring Boot backend with JWT authentication
 - ✅ CRUD for decks
 - ✅ CRUD for cards
@@ -28,10 +29,17 @@
 - ✅ Mapper layer, rate limiting, ownership checks completed
 - ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V10)
 - ⏸ Additional performance indexes deferred to Level 2
-- 🔄 In progress: unit/controller test coverage — see `docs/roadmap/current-sprint.md`
 
-**Out of scope for Level 0:**
-- Frontend screens (Level 1)
+**Frontend (Level 1 — in progress):**
+- ✅ React/TypeScript/Vite scaffold initialized
+- ✅ Frontend architecture decisions approved and documented
+- 🔄 Technical Foundation (scaffold normalization, tooling) — next step
+- [ ] Auth flow screens
+- [ ] Deck & cards flow screens
+- [ ] Study flow screens
+- [ ] End-to-end vertical flow
+
+**Out of scope for Level 1:**
 - OpenAPI/Swagger (Level 2)
 - Docker/CI (Level 2)
 - Refresh tokens (Level 3)
@@ -49,7 +57,8 @@
 | **Mapper** | MapStruct 1.6.3 |
 | **Build** | Maven |
 | **API Docs** | Postman collection (`LLHelper.postman_collection.json`) |
-| **Frontend** | React + TypeScript + Vite (project initialized with FSD folder structure, no screens yet) |
+| **Frontend (installed)** | React 19, TypeScript 6, Vite 8, Redux Toolkit 2, React Router 7, React Hook Form 7, Zod 4, Axios (legacy scaffold), Vitest (not configured) |
+| **Frontend (approved target, not yet configured)** | RTK Query (via RTK), fetchBaseQuery, CSS Modules, path aliases, strict TS, Vite dev proxy |
 
 ---
 
@@ -458,11 +467,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ---
 
-## 17. Not In Scope Now
-
-**Level 1 — Frontend:**
-- React screens (Login, Dashboard, Decks, Study Mode, Progress)
-- API client layer (Axios + TanStack Query)
+## 17. Future Scope
 
 **Level 2 — Portfolio-ready:**
 - OpenAPI/Swagger
@@ -631,13 +636,88 @@ When adding/changing an entity field:
 
 ---
 
+## 20. Frontend Architecture
+
+> **Status:** Architecture decisions approved and documented. Technical Foundation (scaffold normalization, RTK Query wiring, router setup) is next.
+> **Detailed conventions:** `frontend/CONVENTIONS.md`
+> **Hard gates:** `frontend/AGENTS.md`
+
+### Target Architecture — Pragmatic FSD
+
+```text
+frontend/src/
+├── app/          ← providers, router, store config
+├── pages/        ← route-level compositions
+├── widgets/      ← substantial reusable page blocks
+├── features/     ← user actions/use cases
+├── entities/     ← business/domain concepts
+└── shared/       ← business-agnostic infrastructure (ui, lib, api, config)
+```
+
+Dependency direction: `app` → `pages` → `widgets` → `features` → `entities` → `shared`.
+
+### State Ownership
+
+| Category | Tool |
+|----------|------|
+| Server state | RTK Query |
+| Runtime session state | Redux Toolkit slice (`entities/session/`) |
+| Global client state | Redux Toolkit slices |
+| Form state | React Hook Form + Zod |
+| URL state | React Router |
+| Local UI state | React `useState`/`useReducer` |
+
+### API Layer
+
+- RTK Query with `fetchBaseQuery` — single `createApi` base in `shared/api/`.
+- Domain endpoints injected from relevant entity/feature slices.
+- Centralized auth headers via `prepareHeaders` using a token-storage adapter in `shared/api/` (no Redux import in shared).
+- Base URL: `VITE_API_URL` → backend `/api/v1`.
+- Existing Axios instance is legacy scaffold pending removal.
+
+### Authentication (Level 1)
+
+- Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`).
+- `shared/api/` never imports Redux, entities, features, or app.
+- Auth use cases: `features/login/`, `features/register/`, `features/logout/`.
+- `localStorage` is a deliberate Level 1 trade-off.
+- 401 → `shared/api/` returns normalized error → app-level listener clears token + session → redirect to login.
+- No refresh token (Level 3).
+- Future target: HttpOnly secure cookies (removes client token transport).
+
+### Routing
+
+- React Router 7 with centralized configuration in `app/router/`.
+- Nested layout routes: public/auth layout + authenticated layout.
+- Protected routes depend on `entities/session` runtime state.
+
+### UI / Design
+
+- CSS Modules for component styles + semantic CSS variables for tokens.
+- Shared UI primitives in `shared/ui/`.
+- No external UI framework without explicit decision.
+- Final design tokens TBD when Stitch design is available.
+
+### Testing
+
+- Target: Vitest + React Testing Library + MSW + Playwright.
+- Pure logic → unit tests. Features/pages → integration tests. Critical flows → E2E.
+- No mandatory test for trivial presentational components.
+
+### Current Scaffold State
+
+The frontend directory contains a Vite template initialization with FSD placeholder directories. Non-standard legacy directories (`src/api/`, `src/layouts/`, `src/routes/`, `src/styles/`) and template files (`App.tsx`, `App.css`, `index.css`) exist and are pending cleanup during Technical Foundation.
+
+---
+
 ## References
 
 | Document             | Path                                          |
 |----------------------|-----------------------------------------------|
 | Current sprint       | `docs/roadmap/current-sprint.md`              |
 | Roadmap              | `docs/roadmap/roadmap.md`                     |
-| Conventions          | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
+| Backend conventions  | `backend/AGENTS.md`, `backend/CONVENTIONS.md` |
+| Frontend conventions | `frontend/AGENTS.md`, `frontend/CONVENTIONS.md` |
 | Improvements backlog | `backend/IMPROVEMENTS.md`                     |
 | Postman collection   | `LLHelper.postman_collection.json`            |
 | Learning flow design | `docs/features/learning-flow.md`               |
