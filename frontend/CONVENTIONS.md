@@ -80,20 +80,22 @@ Runtime authentication/session lifecycle state lives in `entities/session/`:
 ```text
 entities/session/
 ├── model/
-│   ├── session-slice.ts   ← Redux slice: session status (initializing | authenticated | anonymous)
+│   ├── session-slice.ts   ← Redux slice: session status (initializing, authenticated, anonymous)
 │   └── selectors.ts       ← selectSessionStatus, selectIsAuthenticated
 └── index.ts               ← public API
 ```
 
-**Conceptual session status:**
-- `initializing` — app bootstrap, rehydrating from persisted token.
-- `authenticated` — valid token present, session active.
-- `anonymous` — no valid token, user is not authenticated.
+**Session model (Level 1):**
+
+```text
+type SessionStatus = 'initializing' | 'authenticated' | 'anonymous'
+```
+
+- `entities/session` owns runtime client session lifecycle state (session status).
+- User/profile data fetched from backend remains RTK Query server state and must not be duplicated into the session Redux slice.
+- Do not invent additional identity fields unless an actual backend/API contract requires them.
 
 **Ownership rules:**
-- `entities/session` owns runtime authentication lifecycle state only.
-- It does **not** store server-fetched user profile data — that belongs in RTK Query cache.
-- Do not add identity fields (username, email, etc.) unless an actual backend API contract requires them at session level.
 - `features/login/`, `features/register/`, `features/logout/` may import and dispatch `entities/session` actions.
 - `app/router/` may read `entities/session` selectors for protected routing.
 - `app/store` wires the session reducer.
@@ -110,7 +112,10 @@ entities/session/
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
-- **Error handling:** `shared/api/` only normalizes transport errors into a consistent shape. It does not perform logout, redirects, Redux dispatches, or user-facing side effects. Application-level error handling (401 → clear session, 429 → rate limit feedback) belongs to `app/` or `features/` as documented in the Authentication and Error Handling sections.
+- **Error handling:**
+  - `shared/api/` only normalizes transport errors into a consistent `ApiError` shape.
+  - `shared/api/` does not perform logout, redirect, dispatch Redux actions, or any user-facing application side effects.
+  - Application-level handling belongs to `app/` or relevant `features/`, as documented in the Authentication and Error Handling sections.
 
 ### shared/api boundary
 
