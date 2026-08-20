@@ -4,7 +4,7 @@
 > **Current level:** Level 1 — Vertical Full-Stack Flow
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
 > **Last updated:** 2026-08-15
-> **Status:** Backend foundation complete (Level 0). Frontend architecture foundation complete. Technical Foundation (scaffold normalization) is next.
+> **Status:** Backend foundation complete (Level 0). Frontend Technical Foundation complete (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router, testing infrastructure). Auth/product flow screens next.
 
 ---
 
@@ -33,7 +33,8 @@
 **Frontend (Level 1 — in progress):**
 - ✅ React/TypeScript/Vite scaffold initialized
 - ✅ Frontend architecture decisions approved and documented
-- 🔄 Technical Foundation (scaffold normalization, tooling) — next step
+- ✅ Technical Foundation scaffold/config normalization (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router)
+- ✅ Testing infrastructure (Vitest, jsdom, React Testing Library, MSW)
 - [ ] Auth flow screens
 - [ ] Deck & cards flow screens
 - [ ] Study flow screens
@@ -57,8 +58,9 @@
 | **Mapper** | MapStruct 1.6.3 |
 | **Build** | Maven |
 | **API Docs** | Postman collection (`LLHelper.postman_collection.json`) |
-| **Frontend (installed)** | React 19, TypeScript 6, Vite 8, Redux Toolkit 2, React Router 7, React Hook Form 7, Zod 4, Axios (legacy scaffold), Vitest (not configured) |
-| **Frontend (approved target, not yet configured)** | RTK Query (via RTK), fetchBaseQuery, CSS Modules, path aliases, strict TS, Vite dev proxy |
+| **Frontend (installed)** | React 19, TypeScript 6, Vite 8, Redux Toolkit 2, React Router 7, React Hook Form 7, Zod 4, Vitest 4 |
+| **Frontend (configured)** | Path alias `@/*` → `src/*`, `strict: true`, Vite dev proxy `/api` → `http://localhost:8080`, `.env.example`, Vitest + jsdom + React Testing Library + MSW |
+| **Frontend (approved target, not yet configured)** | CSS Modules / design tokens, Playwright (E2E) |
 
 ---
 
@@ -638,7 +640,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** Architecture decisions approved and documented. Technical Foundation (scaffold normalization, RTK Query wiring, router setup) is next.
+> **Status:** Technical Foundation complete — path aliases, `strict: true`, Vite proxy, `.env.example`, RTK Query base API, Redux store with session slice, React Router foundation, and testing infrastructure (Vitest + jsdom + React Testing Library + MSW) are all configured. Playwright (E2E) remains future infrastructure for the later E2E stage. CSS Modules / design tokens remain pending until product UI/design implementation starts.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -673,7 +675,6 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 - Domain endpoints injected from relevant entity/feature slices.
 - Centralized auth headers via `prepareHeaders` using a token-storage adapter in `shared/api/` (no Redux import in shared).
 - Base URL: `VITE_API_URL` → backend `/api/v1`.
-- Existing Axios instance is legacy scaffold pending removal.
 
 ### Authentication (Level 1)
 

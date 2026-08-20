@@ -26,7 +26,7 @@ app/  pages/  widgets/  features/  entities/  shared/
 ```
 
 Do not create additional top-level FSD layers (e.g. `processes/`, `layouts/`, `routes/`, `styles/`, `api/`).
-Non-FSD legacy directories (`src/api/`, `src/layouts/`, `src/routes/`, `src/styles/`) exist as scaffold and are pending removal during Technical Foundation.
+The legacy `src/api/` directory has been removed; do not recreate it.
 
 ## Domain code forbidden in shared
 

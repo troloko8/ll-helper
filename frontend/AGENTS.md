@@ -16,7 +16,7 @@ Repository-wide gates: see root `AGENTS.md`.
   - Form state → React Hook Form + Zod.
   - URL state → React Router.
   - Local UI state → React `useState`/`useReducer`.
-- **RTK Query is the API layer:** All backend communication uses RTK Query `fetchBaseQuery`. Existing Axios infrastructure is legacy scaffold pending removal.
+- **RTK Query is the API layer:** All backend communication uses RTK Query `fetchBaseQuery`. Axios has been removed.
 - **Auth architecture (Level 1):** Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`). `shared/api/` reads the token through its own adapter and never imports Redux, entities, features, or app. Auth use cases live in `features/login/`, `features/register/`, `features/logout/`. Future target: HttpOnly secure cookies (requires backend security change, not current sprint).
 - **401 boundary:** `shared/api/` returns normalized 401 errors only. Application-level logout (clear token, clear session, redirect) is owned by an app-level error listener, not by `shared/api/`.
 - **No refresh token:** Level 1 has no refresh-token flow. Handle JWT expiry via 401 → app-level listener → clear token → clear session → redirect to login.

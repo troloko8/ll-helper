@@ -61,6 +61,12 @@ Do not write tests merely for coverage metrics. Tests must protect meaningful be
 - Per-test handler overrides are allowed via `server.use(...)` inside individual tests.
 - Handlers should return realistic response shapes matching actual backend DTOs.
 
+## Test utility placement (FSD boundary)
+
+- Business-agnostic test infrastructure (MSW server/handlers, `setup-tests.ts`) lives in `shared/lib/test/` and must obey normal FSD dependency direction — it must not import `app`/`pages`/`widgets`/`features`/`entities`.
+- App-aware helpers that depend on the configured application store or providers (e.g. `renderWithProviders`) belong at `app` level (`app/test/`), not in `shared`.
+- Do not add an FSD exception to justify placing app-aware helpers in `shared`.
+
 ## Playwright conventions
 
 - E2E tests live in a top-level `e2e/` or `frontend/e2e/` directory.
@@ -69,7 +75,6 @@ Do not write tests merely for coverage metrics. Tests must protect meaningful be
 
 ## Do not
 
-- Do not install testing packages in this task (infrastructure comes in Technical Foundation).
 - Do not require 100% coverage.
 - Do not test React Router internals or Redux Toolkit internals.
 - Do not snapshot-test unless there is a deliberate visual regression strategy.

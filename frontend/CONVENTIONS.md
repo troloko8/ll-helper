@@ -56,8 +56,8 @@ slice-name/
 
 ## Imports
 
-- Absolute imports via path aliases (to be configured in Technical Foundation).
-- Target alias: `@/` → `src/`.
+- Absolute imports via path aliases.
+- Alias: `@/` → `src/`.
 - Import order: external libs → shared → entities → features → widgets → relative.
 - No circular imports between slices.
 - Import from slice public API (`index.ts`), not internal files.
@@ -144,9 +144,7 @@ shared/api/
 - `features/login/`, `features/register/`, and `features/logout/` coordinate both token persistence (via `shared/api/token-storage`) and session state (via `entities/session`).
 - Future HttpOnly-cookie auth removes the client token-transport requirement entirely.
 
-This adapter will be implemented during Technical Foundation.
-
-**Existing Axios (`src/api/axios.ts`) is legacy scaffold — do not use for new code. Will be removed after RTK Query infrastructure exists.**
+**Axios has been removed. All backend communication uses RTK Query.**
 
 ## DTO / Domain-Model
 
@@ -188,8 +186,6 @@ app/router (protected routing)
 - Logout feature (`features/logout/`) performs the same cleanup: `tokenStorage.clearToken()` + dispatch session-cleared.
 - Application bootstrap → rehydrate `entities/session` state from persisted token (via `shared/api/token-storage`).
 
-This error listener will be implemented during Technical Foundation.
-
 ### Future target
 
 - HttpOnly + Secure + SameSite cookie-based auth (requires backend security architecture change).
@@ -197,12 +193,11 @@ This error listener will be implemented during Technical Foundation.
 
 ## Routing
 
-- **Library:** React Router (centralized configuration).
-- **Router config location:** `app/router/`.
-- **Layout routes:** Public/auth layout and authenticated application layout.
-- **Protected routes:** Depend on `entities/session` runtime state.
+- **Library:** React Router 7 (centralized configuration via `createBrowserRouter` + `RouterProvider`).
+- **Router config location:** `app/router/` (`router.tsx`, `protected-route.tsx`, `index.ts`).
+- **Protected routes:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render nothing yet; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`.
 - **Pages do not own global router configuration.**
-- Product URLs will be finalized when canonical UI flow/design is available.
+- Current route tree is temporary infrastructure only (no Auth UI/product pages yet — Phase 1). Product URLs and layout routes will be finalized when canonical UI flow/design is available.
 
 ## Forms and Validation
 
@@ -249,7 +244,7 @@ This error listener will be implemented during Technical Foundation.
 ## Environment / Configuration
 
 - `VITE_API_URL` — backend API base URL (must point to `/api/v1` prefix).
-- `.env.example` — documents required environment variables (to be created in Technical Foundation).
-- Vite dev proxy for `/api` → backend (Technical Foundation task).
-- TypeScript `strict: true` (Technical Foundation task).
-- Path aliases `@/` → `src/` (Technical Foundation task).
+- `.env.example` — documents required environment variables.
+- Vite dev proxy for `/api` → backend (`http://localhost:8080`).
+- TypeScript `strict: true`.
+- Path aliases `@/` → `src/`.

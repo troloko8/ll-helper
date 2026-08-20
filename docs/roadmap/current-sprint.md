@@ -9,13 +9,13 @@
 **Группа 0: Frontend scaffold & foundation**
 
 - [x] Создать React/TS приложение (Vite scaffold).
-- [x] Установить зависимости: Redux Toolkit, React Router, React Hook Form, Zod, Axios, Vitest.
+- [x] Установить зависимости: Redux Toolkit, React Router, React Hook Form, Zod, Vitest.
 - [x] Утвердить архитектурные решения (FSD, state ownership, API layer, auth, routing, UI, testing).
 - [x] Создать frontend AI-context инфраструктуру (`frontend/AGENTS.md`, `frontend/CONVENTIONS.md`, `.windsurf/rules/`).
-- [ ] **Technical Foundation:** Нормализовать scaffold — убрать template код, настроить path aliases, `strict: true`, Vite proxy, `.env.example`, удалить legacy Axios после замены на RTK Query.
-- [ ] Настроить RTK Query base API (`shared/api/`).
-- [ ] Настроить Redux store с session slice (`entities/session/`) и RTK Query middleware.
-- [ ] Настроить React Router (centralized config, layout routes, protected routes).
+- [x] **Technical Foundation:** Нормализован scaffold (path aliases, `strict: true`, Vite proxy, `.env.example`), legacy Axios удалён, testing infrastructure настроена (Vitest + jsdom + RTL + MSW).
+- [x] Настроить RTK Query base API (`shared/api/`).
+- [x] Настроить Redux store с session slice (`entities/session/`) и RTK Query middleware.
+- [x] Настроить React Router (centralized config, layout routes, protected routes).
 - [ ] Базовые формы: Login, Register, Create Deck.
 
 **Группа 1: Auth flow**
