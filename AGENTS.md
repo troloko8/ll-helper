@@ -33,7 +33,7 @@ Frontend-specific gates: `frontend/AGENTS.md`.
 | Frontend conventions | `frontend/CONVENTIONS.md` |
 | Frontend FSD conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
 | Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
-| Future frontend design system | `docs/frontend/DESIGN.md` (not yet created — awaiting canonical Stitch design) |
+| Frontend design system (tokens, shell, screen registry) | `docs/frontend/DESIGN.md` |
 | Documentation sync rule | `.windsurf/rules/documentation-sync.md` |
 
 ## Roadmap usage

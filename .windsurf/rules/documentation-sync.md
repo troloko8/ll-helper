@@ -24,7 +24,7 @@ If a change affects architecture, API, DB schema, learning flow, AI flow, securi
 | Frontend auth architecture (token lifecycle, persistence, 401 handling, protected routes) | `frontend/CONVENTIONS.md` (Authentication section) — also update `frontend/AGENTS.md` if boundary changed |
 | Frontend routing architecture (router mode, layout structure, guard pattern) | `frontend/CONVENTIONS.md` (Routing section) |
 | Frontend testing conventions (new test type, tool, naming, mocking boundary) | `frontend/.windsurf/rules/testing-conventions.md` — also update `frontend/CONVENTIONS.md` (Testing) |
-| Frontend design-system tokens, shared UI conventions, CSS strategy | `docs/frontend/DESIGN.md` (when created) — also update `frontend/CONVENTIONS.md` (UI/Styling) |
+| Frontend design tokens, navigation shell, canonical screen registry, reusable UI pattern list | `docs/frontend/DESIGN.md` — also update `frontend/CONVENTIONS.md` (UI/Styling) if the CSS/token mechanism changed |
 | Current-sprint task completed/moved/discovered, a done criterion met | `docs/roadmap/current-sprint.md` |
 | Level/milestone completed, scope or level order change, open architectural decision resolved | `docs/roadmap/roadmap.md` |
 | New future task / tech debt discovered, not in current sprint | `docs/roadmap/backlog.md` |

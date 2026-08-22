@@ -23,6 +23,13 @@ Repository-wide gates: see root `AGENTS.md`.
 - **Design system:** Custom lightweight system (`shared/ui/` + CSS Modules + semantic CSS variables). No external UI framework without explicit decision.
 - **Testing:** Behavioral/user-centric tests. No mandatory test for trivial presentational components. Critical business logic and user flows require coverage.
 
+## Before implementing or modifying frontend UI
+
+- Read `docs/frontend/DESIGN.md`.
+- Read the relevant entry in `docs/frontend/design-reference/MANIFEST.md`.
+- Use Stitch MCP only for the exact canonical project/screen referenced there.
+- Never select another Stitch variant based only on visual similarity.
+
 ## Where to look
 
 Load only the rule, reference, or normative document required by the current task.
@@ -36,4 +43,4 @@ Load only the rule, reference, or normative document required by the current tas
 | Current sprint | `docs/roadmap/current-sprint.md` |
 | Backend API surface/contracts | `docs/architecture/current-architecture.md` §11 |
 | Documentation sync triggers | `.windsurf/rules/documentation-sync.md` |
-| Future design-system tokens | (not yet created — will be `docs/frontend/DESIGN.md` when canonical Stitch design exists) |
+| Design-system tokens, shell, canonical screens | `docs/frontend/DESIGN.md` |

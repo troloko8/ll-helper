@@ -213,7 +213,7 @@ app/router (protected routing)
 - **Shared UI:** `shared/ui/` — genuinely reusable visual primitives (Button, Input, etc.).
 - **Domain-specific components:** Belong with their entity/feature/widget/page.
 - **No external UI framework** (MUI, Ant, Tailwind, styled-components) without explicit decision.
-- **Design tokens:** Semantic CSS variables in a shared stylesheet. Final tokens TBD when Stitch design is available.
+- **Design tokens:** Semantic CSS variables in a shared stylesheet. Canonical token values, navigation shell, and screen references: `docs/frontend/DESIGN.md`.
 - Headless/accessibility primitives may be introduced later for complex components.
 
 ## Error Handling

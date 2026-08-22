@@ -312,7 +312,7 @@ echo "== 12. Broken relative markdown references (best-effort) =="
 # Planned references: files that are deliberately referenced before creation.
 # Add paths here (repo-relative, no leading ./) only when a forward-reference is
 # approved and documented. Remove the entry once the file is created.
-PLANNED_REFS="docs/frontend/DESIGN.md"
+PLANNED_REFS=""
 
 is_planned_ref() {
   local ref_clean="$1"
