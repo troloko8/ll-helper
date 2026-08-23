@@ -34,6 +34,7 @@ Frontend-specific gates: `frontend/AGENTS.md`.
 | Frontend FSD conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
 | Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
 | Frontend design system (tokens, shell, screen registry) | `docs/frontend/DESIGN.md` |
+| Frontend-consumed backend HTTP contract, DTOs, auth/error behavior and known integration gaps | `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` (repository-grounded snapshot, not the executable source of truth — executable backend code remains authoritative) |
 | Documentation sync rule | `.windsurf/rules/documentation-sync.md` |
 
 ## Roadmap usage

@@ -30,6 +30,11 @@ Repository-wide gates: see root `AGENTS.md`.
 - Use Stitch MCP only for the exact canonical project/screen referenced there.
 - Never select another Stitch variant based only on visual similarity.
 
+## Before implementing or modifying frontend API-facing code
+
+- Before implementing or modifying a frontend feature that communicates with the backend, read the relevant entries in `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`.
+- The inventory is a repository-grounded integration snapshot. If it conflicts with current executable backend code, backend code is authoritative and the inventory must be updated in the same task.
+
 ## Where to look
 
 Load only the rule, reference, or normative document required by the current task.
@@ -39,8 +44,20 @@ Load only the rule, reference, or normative document required by the current tas
 | FSD layer/slice conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
 | Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
 | Frontend detailed conventions | `frontend/CONVENTIONS.md` |
-| Current architecture | `docs/architecture/current-architecture.md` |
 | Current sprint | `docs/roadmap/current-sprint.md` |
-| Backend API surface/contracts | `docs/architecture/current-architecture.md` §11 |
 | Documentation sync triggers | `.windsurf/rules/documentation-sync.md` |
 | Design-system tokens, shell, canonical screens | `docs/frontend/DESIGN.md` |
+
+### Backend architecture (actual system design)
+
+| Need | Read |
+|------|------|
+| Actual current backend architecture (package layout, request lifecycle, tech stack) | `docs/architecture/current-architecture.md` |
+| Backend API surface at a glance | `docs/architecture/current-architecture.md` §11 |
+
+### Frontend-consumed HTTP contract and integration gaps
+
+| Need | Read |
+|------|------|
+| Endpoint list, request/response DTO shapes, auth/error behavior as actually implemented | `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` |
+| Known integration gaps, discrepancies, unresolved questions blocking a frontend screen's data-fetching design | `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` §8–§10 |

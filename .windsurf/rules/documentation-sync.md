@@ -28,7 +28,7 @@ If a change affects architecture, API, DB schema, learning flow, AI flow, securi
 | Current-sprint task completed/moved/discovered, a done criterion met | `docs/roadmap/current-sprint.md` |
 | Level/milestone completed, scope or level order change, open architectural decision resolved | `docs/roadmap/roadmap.md` |
 | New future task / tech debt discovered, not in current sprint | `docs/roadmap/backlog.md` |
-| Endpoint, HTTP method, request/response DTO, auth requirement, status code, validation/error shape | `LLHelper.postman_collection.json` |
+| Endpoint, HTTP method, request/response DTO, auth requirement, validation constraint, status code, or error body changes | Update `LLHelper.postman_collection.json` where applicable; review and update `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`; update the frontend integration map after that map is created (Phase 0.4B) |
 
 Adding an ordinary scalar column to an existing entity (no new/removed entity or table, FK, unique/check constraint, index, cascade/delete-policy change) is not a package/layout change and does not by itself require updating `current-architecture.md` or `docs/database/relationships.md`.
 

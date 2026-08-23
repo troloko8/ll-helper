@@ -370,6 +370,30 @@ else
 fi
 
 echo ""
+echo "== 14. Backend Contract Inventory wiring (existence + exact-path references) =="
+INVENTORY_PATH="docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md"
+if [ -f "$INVENTORY_PATH" ]; then
+  pass "$INVENTORY_PATH exists"
+else
+  fail "$INVENTORY_PATH not found"
+fi
+if [ -f AGENTS.md ] && grep -qF "$INVENTORY_PATH" AGENTS.md; then
+  pass "AGENTS.md references $INVENTORY_PATH"
+else
+  fail "AGENTS.md does not reference $INVENTORY_PATH"
+fi
+if [ -f frontend/AGENTS.md ] && grep -qF "$INVENTORY_PATH" frontend/AGENTS.md; then
+  pass "frontend/AGENTS.md references $INVENTORY_PATH"
+else
+  fail "frontend/AGENTS.md does not reference $INVENTORY_PATH"
+fi
+if [ -f .windsurf/rules/documentation-sync.md ] && grep -qF "$INVENTORY_PATH" .windsurf/rules/documentation-sync.md; then
+  pass ".windsurf/rules/documentation-sync.md references $INVENTORY_PATH"
+else
+  fail ".windsurf/rules/documentation-sync.md does not reference $INVENTORY_PATH"
+fi
+
+echo ""
 echo "================================"
 echo "FAIL: $FAIL   WARN: $WARN"
 if [ "$FAIL" -gt 0 ]; then
