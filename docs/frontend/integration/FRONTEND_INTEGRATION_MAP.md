@@ -1,0 +1,456 @@
+# Frontend Integration Map — Phase 0.4B
+
+> **Purpose:** screen-by-screen map from the 26 canonical Stitch references to candidate frontend routes and the backend contracts they require.
+> **Scope:** documentation and analysis only. This phase does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code.
+> **Date:** 2026-08-23
+> **Repository baseline:** `master` after Phase 0.4A commit `758a565`.
+
+## 1. Source precedence and boundaries
+
+1. `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` owns the repository-grounded HTTP-contract snapshot and gap evidence.
+2. `docs/frontend/DESIGN.md` owns product surfaces, shell rules, and canonical screen names.
+3. `docs/frontend/design-reference/MANIFEST.md` owns exact Stitch project/screen IDs and state variants.
+4. Executable backend code remains authoritative if the inventory becomes stale.
+5. The routes and frontend phases below are **candidates for Phase 0.4C**, not accepted runtime decisions.
+
+The map preserves the content/learning boundary: `Deck`/`Card` are owner-managed content; `UserDeckProgress`/`UserCardProgress` are per-user learning state. Owner/Public Deck Details must not display learning progress, while Learning Deck Details may.
+
+## 2. Status definitions
+
+### Canonical-reference integration status
+
+| Status | Meaning |
+|---|---|
+| **ready** | The screen-specific backend contract is sufficient for the intended surface. Shared platform prerequisites may still determine implementation order. |
+| **partial** | A usable contract exists, but part of the screen, an important state, or a safe lookup/navigation path is incomplete. |
+| **blocked** | The intended screen cannot be implemented safely or truthfully with the current backend contract. |
+| **deferred** | A real surface exists, but it is a candidate to remain outside the first MVP; Phase 0.4C must confirm the deferral. |
+
+### Backend status
+
+`implemented`, `partial`, and `missing` retain the definitions from the backend inventory. A screen may be `ready` against an implemented endpoint while still depending on a shared prerequisite such as completed authentication.
+
+### Contract-local semantics (normative for this map)
+
+Statuses in this map are **screen-contract-local**: they describe whether the screen's own required backend contract is sufficient, not whether every shared platform prerequisite has shipped yet.
+
+- Shared blockers **G-01–G-03** (auth/session bootstrap: current-user identity, Register→Profile orchestration, invalid-token contract) determine *when in the build order* a screen can be safely reached with a trustworthy session. They do not, by themselves, downgrade a screen whose own contract is otherwise sufficient from `ready` to `partial`.
+- A screen is `partial` only when its **own** screen-specific contract, an important state, or a safe lookup/navigation path is incomplete (e.g. an unprotected read, a missing per-screen field, an untruthful partial-failure response).
+- Applying this distinction: Login (`AUTH-01`) and Create Deck (`DECK-01`) are `ready` — their own endpoints fully satisfy the screen's request/response contract. Auth bootstrap (G-01–G-03) gates *reaching* those screens with a session, not the screens' own contracts.
+
+## 3. Shared prerequisites and gaps
+
+| ID | Prerequisite / gap | Affected surfaces | Phase 0.4B conclusion |
+|---|---|---|---|
+| G-01 | No `GET /users/me`; JWT subject is email and the frontend has no current `User.id` after login. | All authenticated shell/session bootstrap; especially Created and owner routing. | Backend blocker before Auth integration. |
+| G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. |
+| G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
+| G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
+| G-05 | `GET /decks/{id}` and `GET /cards/{id}` do not enforce owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | Security/backend blocker for public-facing flows; partial gap for owner tooling. |
+| G-06 | No Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | Backend blocker. |
+| G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
+| G-08 | Study selection excludes `REVIEWING`. | Study and truthful all-caught-up state. | Backend correctness gap before Study MVP. |
+| G-09 | Bulk AI response omits failed titles/reasons. | Add/Edit Card AI partial-failure UX. | Partial gap; manual cards are not blocked. |
+| G-10 | No creator-scoped public-deck list contract. | Creator Profile. | Backend blocker if the surface enters MVP. |
+| G-11 | `isPrivate` UI control maps inversely to wire field `isPublic`. | Create/Edit Deck. | Required frontend boundary mapping: `isPublic = !isPrivate`; not a backend gap. |
+| G-12 | Learning "not enrolled" is actually 409 while learning-flow prose says 403. | Learning Deck Details, Study, review submission. | Documentation-sync gap; frontend must follow the actual 409 contract until corrected. |
+
+Shared JWT errors on every authenticated endpoint: missing Bearer token → controlled `401 {message}`; expired/malformed token → unresolved G-03. Shared controller errors where applicable: validation `400 {errors}`, malformed body `400 {message}`, authorization `403 {message}`, missing resource `404 {message}`, state conflict `409 {message}`, rate limit `429 {error,message,timestamp}`, AI unavailable `503 {message}`, and catch-all `500 {message}`.
+
+## 4. Coverage summary
+
+| Integration status | Canonical references | Count |
+|---|---|---:|
+| **ready** | Login; Create Deck desktop/mobile; Learning Deck Details desktop/mobile; Add Card mobile | 6 |
+| **partial** | Edit Deck desktop/mobile; Owner Deck Details desktop/mobile; Add/Edit Card desktop; Study desktop/mobile | 7 |
+| **blocked** | Register; Learning desktop/mobile; Created desktop/mobile; Public Deck Details desktop/mobile; Discover desktop/mobile; Progress desktop/mobile | 11 |
+| **deferred** | Creator Profile desktop/mobile | 2 |
+| **Total** | All canonical references from the manifest | **26** |
+
+`deferred` for Creator Profile is provisional, not a final MVP decision. Phase 0.4C must confirm or reject it.
+
+## 5. Screen-by-screen integration map
+
+Every subsection applies its contract fields to every canonical reference in its local reference table. State IDs are trailing Stitch screen IDs under canonical project `projects/8241473581937023308`.
+
+### 5.1 Login
+
+| Field | Mapping |
+|---|---|
+| Product surface | Login |
+| Candidate route | `/login` (public; anonymous-only redirect behavior to decide in 0.4C) |
+| Auth | Public request; successful response starts a JWT session. |
+| Domain owner | Auth + app-level session bootstrap |
+| Endpoint | `AUTH-01` — `POST /api/v1/auth/login` |
+| Request / response DTO | `LoginRequest {email,password}` → `AuthResponse {accessToken}` |
+| Errors | 400 field validation; 401 invalid credentials; 429 rate limit. Post-login session calls additionally inherit G-03. |
+| Loading / error / empty | Submit-button loading; field errors for 400; form-level message for 401/429/5xx. Empty state not applicable. No canonical state variant. |
+| Backend status | `AUTH-01` implemented and sufficient for the Login screen's own request/response contract. Authenticated identity bootstrap (G-01) and the invalid-token contract (G-03) are shared prerequisites gating the destination authenticated shell, not the Login screen's own contract. |
+| Candidate frontend phase | Phase 0.5 Auth; G-01/G-03 gate the post-login authenticated shell, not the Login form itself. |
+| Blocker / gap | None specific to this screen's own contract. G-01/G-03 are shared sequencing prerequisites for the authenticated session the login redirects into. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop + responsive mobile adaptation | `login_llhelper` | `a7a9bbf0f06b4ce4823a38fd35ac0849` | None; responsive mobile must reuse this visual language. | **ready** |
+
+### 5.2 Register
+
+| Field | Mapping |
+|---|---|
+| Product surface | Register |
+| Candidate route | `/register` |
+| Auth | Public registration; returned JWT is insufficient for authenticated domain work until a `User` profile exists. |
+| Domain owner | Auth → onboarding/profile |
+| Endpoint | `AUTH-02` — `POST /api/v1/auth/register`; required follow-up capability currently `USER-01` — `POST /api/v1/users`. |
+| Request / response DTO | `RegisterRequest {email,password}` → `AuthResponse {accessToken}`; follow-up `CreateUserRequest` → `UserResponse`. |
+| Errors | Register: 400, 409 email taken, 429. Profile creation: 400, 404 AuthUser, 409 user/username conflict; shared JWT errors. |
+| Loading / error / empty | Submit loading; field validation; email-conflict and rate-limit messages. Empty not applicable. Missing canonical profile-setup validation/conflict/submitting references. |
+| Backend status | `AUTH-02` partial; `USER-01` implemented but no accepted orchestration. |
+| Candidate frontend phase | Phase 0.5 Auth/Onboarding only after 0.4C selects the flow and Stitch adds Complete Profile references. |
+| Blocker / gap | G-02; G-01; G-03. The canonical Register form does not collect `CreateUserRequest` fields. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop + responsive mobile adaptation | `register_llhelper_refined` | `b8c691aab5f94c62854de10febfc4a1f` | None; responsive mobile must reuse this visual language. | **blocked** |
+
+### 5.3 Learning dashboard
+
+| Field | Mapping |
+|---|---|
+| Product surface | My Decks — Learning list/dashboard |
+| Candidate route | `/learning` |
+| Auth | JWT |
+| Domain owner | Learning (`UserDeckProgress` collection), not content ownership |
+| Endpoint | Missing Learning Decks list endpoint. `LEARN-03` is deck-scoped and cannot produce the list. |
+| Request / response DTO | Missing list response DTO; likely needs enrolled deck metadata plus aggregate/per-deck progress, to be designed by backend in 0.4C sequence. |
+| Errors | Cannot finalize beyond shared JWT contract until the endpoint exists. Expected page-level handling must cover 401, 5xx, and endpoint-specific conflicts if any. |
+| Loading / error / empty | Canonical loading, API-error, and empty states exist on both platforms. Empty means no enrolled decks, not no created decks. |
+| Backend status | Missing (G-06). |
+| Candidate frontend phase | After Auth and Learning Decks backend contract; exact Phase 0.5 ordering in 0.4C. |
+| Blocker / gap | No safe/functional source for the collection. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `learning_llhelper_refined_navigation` | `0cb72b02b5db416ea2f8e5b6b33a03cb` | loading `1e7961cc60a04ae38b3caa66ffff0c36`; API error `0189efb46e3e43b8b507897f1ed95c04`; empty `7b1ecb8bc1644f8e727449c11e566e` | **blocked** |
+| Mobile | `learning_mobile_dashboard` | `48477ef15ed64daeb0bf12cb3d8f8fcf` | loading `4e1f1dd85a7241f8b203043770210d24`; API error `bf694bc2ed3e41c599becdd220607d18`; empty `a887cc6f03dd4b6699e58ba76658270f` | **blocked** |
+
+**Missing DTO — minimal required shape** (read-only review of `learning_llhelper_refined_navigation` and `learning_mobile_dashboard`, which show a "Continue Learning" highlight deck plus a "Learning Decks" list):
+
+| Field | Status | Note |
+|---|---|---|
+| `deckId`, `title` | Existing (`Deck`) | Already returned by `DeckListResponse`/`DeckResponse`. |
+| `sourceLanguage`, `targetLanguage` | Existing (`Deck`) | Already returned by `DeckListResponse`. |
+| Per-deck aggregate learning progress (e.g. mastered/total card counts or a percent) | Missing | No aggregate exists; `DeckCardResponse.progress` is per-card only (see `LEARN-03`). Backend must aggregate `UserCardProgress` by deck. |
+| "Continue Learning" highlight selection | Missing (endpoint/DTO), not missing (model) | `UserDeckProgress.lastStudiedAt` already exists and is updated on every review (`learning/entity/UserDeckProgress.java:28-29`, set in `LearningServiceImpl.reviewCard` — `learning/service/LearningServiceImpl.java:155`). The gap is that no Learning Decks list endpoint/DTO exposes `lastStudiedAt` (or any ordering derived from it); `EnrollResponse`/`DeckCardResponse`/`DeckListResponse` all omit it. |
+| Ratings/likes/popularity/follower badges | Not in MVP | Not present on the canonical screen; must not be added. |
+
+Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage, lastStudiedAt, progress: {masteredCount, totalCount}}>`, where the Learning Decks list endpoint/DTO surfaces the existing `UserDeckProgress.lastStudiedAt` field (frontend or backend selects the most-recent one as "Continue Learning"). Ordering rule (most-recent vs. other heuristic) to be confirmed in Phase 0.4C; the underlying data already exists.
+
+### 5.4 Created Decks
+
+| Field | Mapping |
+|---|---|
+| Product surface | My Decks — Created list |
+| Candidate route | `/created` |
+| Auth | JWT |
+| Domain owner | Deck content ownership |
+| Endpoint | Missing owner-scoped list. `DECK-03 GET /api/v1/decks` is globally unfiltered and prohibited for this use. |
+| Request / response DTO | Required owner-scoped list request/response not defined. Existing unsafe response is `List<DeckListResponse>`. |
+| Errors | Cannot finalize until endpoint exists; must cover shared JWT, 5xx, and any future query validation. |
+| Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
+| Backend status | Missing safe contract; existing `DECK-03` partial/unsafe (G-04). |
+| Candidate frontend phase | After Auth, `GET /users/me`, and owner-scoped backend contract. |
+| Blocker / gap | Client filtering is a privacy leak. Current-user identity is also missing (G-01). |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **blocked** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **blocked** |
+
+**Missing DTO — minimal required shape** (read-only review of `created_decks_llhelper_refined_mvp` and `created_decks_mobile_with_bottom_nav`, which show only deck titles plus a "Create New Deck" action):
+
+| Field | Status | Note |
+|---|---|---|
+| `id`, `title`, `description`, `sourceLanguage`, `targetLanguage`, `isPublic`, `owner` | Existing (`DeckListResponse`) | No new response field needed. |
+| Owner-scoped filter (only the current user's decks) | Missing | No query param or endpoint filters by owner; `DECK-03` returns every deck to every authenticated user (G-04). |
+| Per-deck card count | Unresolved | `DeckListResponse` already carries a known `// FIXME: add cardCount` backend gap; whether the canonical screen requires a visible count could not be confirmed from the extracted screen text alone. |
+
+Minimal required response: `List<DeckListResponse>` reused as-is, behind a new owner-scoped query (e.g. `GET /api/v1/decks?owner=me` or `GET /api/v1/decks/mine`), which also requires resolving current-user identity server-side (G-01). No new response fields are required.
+
+### 5.5 Create Deck
+
+| Field | Mapping |
+|---|---|
+| Product surface | Create Deck |
+| Candidate route | `/decks/new` |
+| Auth | JWT; requires an existing `User` profile. |
+| Domain owner | Deck content ownership |
+| Endpoint | `DECK-01` — `POST /api/v1/decks` |
+| Request / response DTO | `DeckRequest {title,description,sourceLanguage,targetLanguage,isPublic}` → `DeckResponse` with `cards`. UI `isPrivate` must invert to `isPublic` (G-11). |
+| Errors | 400 validation/malformed body; 404 current User absent; 429; shared JWT; catch-all 500. |
+| Loading / error / empty | Submitting state; field validation; submission error. Empty not applicable. Desktop has validation/submission references; mobile uses the same semantic patterns without dedicated variants. |
+| Backend status | `DECK-01` implemented and sufficient for the screen's own contract. The new-user prerequisite (G-01/G-02) is a shared sequencing blocker on when Create Deck can be reached with a valid session, not a gap in the Create Deck contract itself. |
+| Candidate frontend phase | After Auth/Onboarding (sequencing only), before Created list UI if direct post-create navigation is accepted. |
+| Blocker / gap | None specific to this screen's own contract. G-01/G-02/G-03 are shared sequencing prerequisites; G-11 is a required mapping, not a blocker. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `create_deck_llhelper` | `316d55fea52c4c0c9dd310cd3d503d04` | validation `22e2d42dcc26455784ceb583e30aea30`; submission error `e6d5d6fdb3ed40cda47504e1621e95ff`; submitting uses button loading | **ready** |
+| Mobile | `create_deck_refined_mobile_state` | `5240c4fae5304c46ab191e32263c8bc8` | No dedicated variants; use canonical form semantics. | **ready** |
+
+### 5.6 Edit Deck
+
+| Field | Mapping |
+|---|---|
+| Product surface | Edit Deck |
+| Candidate route | `/decks/:deckId/edit` |
+| Auth | JWT; owner-only mutation |
+| Domain owner | Deck content ownership |
+| Endpoint | Prefill `DECK-02 GET /api/v1/decks/{id}`; submit `DECK-04 PUT /api/v1/decks/{id}`; optional delete `DECK-05 DELETE /api/v1/decks/{id}`. |
+| Request / response DTO | Prefill `DeckResponse`; update `DeckRequest` → `DeckResponse`; delete → no content. Apply G-11 inversion. |
+| Errors | Prefill 404 plus G-05 visibility gap; update 400/403/404/429; delete 403/404/429; shared JWT. |
+| Loading / error / empty | Initial prefill loading; load error; field validation; submitting/submission error; destructive confirmation/delete error. Empty not applicable. No dedicated canonical state variants. |
+| Backend status | Mutations implemented; read contract partial (G-05). |
+| Candidate frontend phase | Content management after Auth and security read fix. |
+| Blocker / gap | Owner edit can mutate safely, but prefill read is not an owner-scoped trust boundary and navigation from Created is blocked by G-04. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `edit_deck_llhelper_refined_1` | `b4ba921c83ff451093153a41164070ab` | None; use shared skeleton/form/error/dialog patterns. | **partial** |
+| Mobile | `edit_deck_refined_mobile_state` | `09f1d4e790ea4296938b95b95372a884` | None; use shared skeleton/form/error/dialog patterns. | **partial** |
+
+### 5.7 Deck Details — Owner
+
+| Field | Mapping |
+|---|---|
+| Product surface | Owner Deck Details and card inventory; no learning progress |
+| Candidate route | `/decks/:deckId/manage` |
+| Auth | JWT; intended for owner |
+| Domain owner | Deck/Card content ownership |
+| Endpoint | `DECK-02 GET /api/v1/decks/{id}` supplies deck plus `CardResponse[]`; mutations link to `DECK-04/05` and `CARD-05/06`. Do not use `CARD-04` or learning `LEARN-03` for owner inventory. |
+| Request / response DTO | `DeckResponse {…,owner,isPublic,cards: CardResponse[]}`; mutations use `DeckRequest`/`CardRequest`. |
+| Errors | Load 404 plus shared JWT and G-05; mutations 400/403/404/429. |
+| Loading / error / empty | Canonical loading, API-error, and empty-card-inventory states exist on both platforms. |
+| Backend status | Detail read partial; owner mutations implemented. |
+| Candidate frontend phase | Content management after Auth; safe navigation depends on Created contract. |
+| Blocker / gap | Contract contains the needed owner card list, but read lacks visibility enforcement and the frontend cannot establish owner identity without G-01. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `deck_details_owner_llhelper_refined` | `b713dd7ed4ae482ba0d1dddc4b91c31f` | loading `6824accdee2b4c318950af1d2ead2e52`; API error `7f45c3d2132046b39ecfff39a892d786`; empty `2a52cd2db39445bcb9d7662e75fa8226` | **partial** |
+| Mobile | `deck_details_owner_mobile_2` | `ccdfafe064aa4365ba041ed02607151b` | loading `3fd36bb548eb463c8c3d55aa9af7cedf`; API error `350c42b842964c4fa6748332714a62d6`; empty `3487d49d5ba7464484f4891eec8c1c8e` | **partial** |
+
+### 5.8 Deck Details — Public
+
+| Field | Mapping |
+|---|---|
+| Product surface | Public Deck Details and enroll action; no learning progress |
+| Candidate route | `/discover/decks/:deckId` |
+| Auth | JWT under current backend; enroll requires JWT. |
+| Domain owner | Public Deck content + Learning enrollment boundary |
+| Endpoint | Detail `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
+| Request / response DTO | Detail `DeckResponse`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
+| Errors | Detail 404 but lacks private visibility enforcement; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. |
+| Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
+| Backend status | Enroll implemented; detail read partial/unsafe (G-05); safe discovery entry point missing (G-04). |
+| Candidate frontend phase | Discover/enrollment only after security and public-list backend work. |
+| Blocker / gap | Private decks are readable by ID; no public-only collection. Frontend guards cannot repair either leak. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **blocked** |
+| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **blocked** |
+
+### 5.9 Learning Deck Details
+
+| Field | Mapping |
+|---|---|
+| Product surface | Enrolled deck details with per-card learning progress |
+| Candidate route | `/learning/:deckId` |
+| Auth | JWT + existing enrollment |
+| Domain owner | Learning (`UserDeckProgress`/`UserCardProgress`) |
+| Endpoint | Cards/progress `LEARN-03 GET /api/v1/decks/{deckId}/cards`; optional metadata `DECK-02 GET /api/v1/decks/{id}`. |
+| Request / response DTO | `List<DeckCardResponse {id,title,definition,synonyms,examples,translation,progress}>`; metadata `DeckResponse`. |
+| Errors | 409 not enrolled (not 403; G-12), shared JWT, possible 404 for optional metadata. |
+| Loading / error / empty | Initial skeleton; page API error; empty cards state. No dedicated variants; use shared patterns without borrowing Owner details' learning-free content semantics. |
+| Backend status | `LEARN-03` implemented; list navigation missing separately (G-06). |
+| Candidate frontend phase | Learning flow after Auth and Learning dashboard contract. |
+| Blocker / gap | Screen-specific data contract is sufficient; reachability from the Learning list is blocked. Metadata composition must be confirmed in 0.4C. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `learning_deck_details_llhelper_refined` | `3386e5e8e70b4cdbb18051e660b3da83` | None; use shared learning-aware skeleton/page states. | **ready** |
+| Mobile | `learning_deck_details_mobile_refined_2` | `cac865fc9ea94e2abcad0a2af3ac0922` | None; use shared learning-aware skeleton/page states. | **ready** |
+
+### 5.10 Add / Edit Card
+
+| Field | Mapping |
+|---|---|
+| Product surface | Manual Add Card, Edit Card, and optional AI generation |
+| Candidate route | Add `/decks/:deckId/cards/new`; edit `/decks/:deckId/cards/:cardId/edit` |
+| Auth | JWT; deck-owner mutation |
+| Domain owner | Card content; AI generation is backend-owned |
+| Endpoint | Add/manual or single AI `CARD-01 POST /api/v1/cards`; edit prefill `CARD-03 GET /api/v1/cards/{id}`; update `CARD-05 PUT`; optional delete `CARD-06 DELETE`; bulk AI `CARD-02 POST /api/v1/cards/bulk-generate`. |
+| Request / response DTO | `CardRequest` → `CardResponse`; bulk `BulkCardGenerateRequest` → `List<CardResponse>` successes only. |
+| Errors | 400/403/404/429; AI 503; edit prefill has G-05; shared JWT. Bulk partial failures are not represented (G-09). |
+| Loading / error / empty | Form submit/validation/submission errors; AI loading/error; edit prefill loading/error; empty not applicable. Desktop has all form/AI variants; mobile Add has none. |
+| Backend status | Manual create/update/delete implemented; edit read partial; bulk response partial. |
+| Candidate frontend phase | Manual Cards immediately after Create/Owner Details; AI enhancement after manual flow. |
+| Blocker / gap | Desktop reference spans modes with different readiness. AI partial-failure UX cannot be truthful; card read needs visibility enforcement. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop Add/Edit/AI | `add_edit_card_llhelper_refined` | `3166a46c0529467f972671db8357463c` | AI loading `2260370d74d94d279e5662f4fdccede6`; AI error `64cf5e689b9a4566b8f4376bc9102bfd`; submission error `e6d7a5851d2947ca96c41481becd0f0f`; validation `7f79f0550f2041ff815c9604dabb44f5` | **partial** |
+| Mobile Add only | `add_card_mobile` | `87e6c8d854a34b95829ea88d11997d2d` | None; use shared form patterns. Non-canonical `1f9f…` must not be used. | **ready** |
+
+**Operation-level breakdown** (the desktop reference spans all of these; readiness differs per operation):
+
+| Operation | Endpoint | Backend status | Blocker / gap | MVP readiness |
+|---|---|---|---|---|
+| Manual add | `CARD-01 POST /api/v1/cards` (`autoGenerate` omitted/false) | implemented | None | Ready |
+| Edit prefill | `CARD-03 GET /api/v1/cards/{id}` | partial | No ownership/deck-visibility check (G-05) | Partial |
+| Manual update | `CARD-05 PUT /api/v1/cards/{id}` | implemented | None | Ready |
+| Manual delete | `CARD-06 DELETE /api/v1/cards/{id}` | implemented | None | Ready |
+| Single-card AI generation | `CARD-01 POST /api/v1/cards` (`autoGenerate: true`) | implemented | Shared AI 429/503 errors only | Ready |
+| Bulk AI generation | `CARD-02 POST /api/v1/cards/bulk-generate` | partial | Response returns successful cards only; failed titles/reasons are lost (G-09) | Partial (partial-failure UX not truthful) |
+
+The canonical desktop reference stays `partial` at the reference level because it spans mixed-readiness operations. Phase 0.4C may split the runtime implementation so manual add/update/delete and single-card AI ship as part of the manual Cards MVP, while bulk AI partial-failure UX is deferred separately without blocking the rest of this reference.
+
+### 5.11 Study
+
+| Field | Mapping |
+|---|---|
+| Product surface | Study session, answer review, all-caught-up, session complete |
+| Candidate route | `/study/:deckId`; `/study` entry behavior requires 0.4C decision |
+| Auth | JWT + enrollment |
+| Domain owner | Learning |
+| Endpoint | Load `LEARN-02 GET /api/v1/decks/{deckId}/study/cards`; submit `LEARN-04 POST /api/v1/cards/{cardId}/review`. |
+| Request / response DTO | Load `List<DeckCardResponse>`; submit `CardReviewRequest {userAnswer}` → `CardReviewResponse {correct,correctAnswer,status,correctStreak,totalCorrect}`. |
+| Errors | Load/review 409 not enrolled; review 400/404; shared JWT. Answer correctness must come only from response. |
+| Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. Empty study response maps to all-caught-up only after G-08 is fixed. |
+| Backend status | Review implemented; study selection partial (G-08). |
+| Candidate frontend phase | After enrollment and Learning Deck Details; before aggregate Progress UI. |
+| Blocker / gap | Current selection omits `REVIEWING`, so all-caught-up can be false and core spaced-practice behavior is incomplete. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `study_english_b1_llhelper_refined` | `28d18c4a73b547fb92fc949a6bc5d4a8` | loading `b21ae87df0b646bc90ca84af7888d97e`; API error `a031c3ee82f1463f8aa29b77a7d3d96b`; caught up `82a546b4a81049b9b92d144a0e00ba1c`; complete `b1b0f012a4e142de90776804ae47f022` | **partial** |
+| Mobile | `study_english_b1_mobile` | `32b53362748742a19dfc7b4cc15b1a97` | loading `2894882fd954456a8ffc5eda7e95fe65`; API error `b5f6562b8ff3464b8d1bd25f0390f510`; caught up `6d42f1332a8b409cb376c7b81cc6f4e8`; complete `ae6e28fd937b4d2e8bf96fa1d7098745` | **partial** |
+
+### 5.12 Discover
+
+| Field | Mapping |
+|---|---|
+| Product surface | Discover public decks/search |
+| Candidate route | `/discover` |
+| Auth | JWT under current backend |
+| Domain owner | Public Deck content discovery |
+| Endpoint | Missing public-only list/search contract. `DECK-03 GET /api/v1/decks` is globally unfiltered and prohibited. |
+| Request / response DTO | Required public-list query/response not defined. Existing unsafe response is `List<DeckListResponse>` with no search/sort/pagination parameters. |
+| Errors | Cannot finalize until endpoint exists; must include shared JWT, query validation if added, and page-level 5xx. |
+| Loading / error / empty | Canonical loading, API-error, and no-results/empty states on both platforms. No-results must be driven by server-safe public results, not client filtering. |
+| Backend status | Missing safe contract; `DECK-03` partial/unsafe (G-04), detail security also G-05. |
+| Candidate frontend phase | After public-only contract and private read protection. |
+| Blocker / gap | Implementing against `GET /decks` would expose private decks. No search contract exists. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `discover_llhelper_refined` | `97b05b9f24f84410845beb00803e26df` | loading `5a3ee7028bcb4b7d9b8d3ecebfa41231`; API error `7d6fc47e2a4d487789efb22fe6ba0009`; empty/no results `c93b42eb746249e3b5f06cd7d2ec47e6` | **blocked** |
+| Mobile | `discover_mobile` | `9aaf765ffdfb4a0595da18e8c28d0bb6` | loading `6ab80ffecc5d40c6ac73f3684a6f764b`; API error `f87fd1a533a4495194720d6d3a3d065a`; empty/no results `6332e210465d47d58f011bc22a663d72` | **blocked** |
+
+**Missing DTO — minimal required shape** (read-only review of `discover_llhelper_refined`, which lists per-deck title, source/target language, card count, owner `@username`, a `Public` badge, and an `Enrolled` badge on at least one card):
+
+| Field | Status | Note |
+|---|---|---|
+| `id`, `title`, `sourceLanguage`, `targetLanguage`, `owner.username`, `owner.avatarUrl` | Existing (`DeckListResponse`) | `owner` is already a nested `UserResponse` carrying `username`/`avatarUrl`. |
+| Public-only filter | Missing | No query/endpoint returns only `isPublic=true` decks; `DECK-03` is unfiltered (G-04). |
+| `cardCount` per deck | Missing | Canonical UI displays a card count per deck (e.g. "842 Cards"). `DeckListResponse` has the known `// FIXME: add cardCount` gap; not implemented anywhere. Required in the minimal response shape. |
+| `isEnrolled` per deck | Missing | Canonical UI shows an `Enrolled` badge on at least one deck. Requires cross-referencing each public deck against the current user's `UserDeckProgress`; no endpoint returns this combined shape today. This reflects the existing enrollment domain (not a social feature), but the join does not exist. Required in the minimal response shape. |
+| Search/sort/language-filter controls | Unresolved | Not confirmed as an interactive control from the extracted screen content; do not invent a search/pagination contract on this basis alone. |
+
+Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, behind a new public-only query (e.g. `GET /api/v1/decks?public=true`). `cardCount` requires resolving the existing `DeckListResponse` FIXME; `isEnrolled` requires a per-user join against `UserDeckProgress` for each returned deck — both are concrete required fields, not open design questions. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
+
+### 5.13 Creator Profile
+
+| Field | Mapping |
+|---|---|
+| Product surface | Creator profile plus that creator's public decks; no social/follow behavior |
+| Candidate route | `/creators/:username` |
+| Auth | JWT under current backend |
+| Domain owner | User profile + public Deck content |
+| Endpoint | Profile `USER-03 GET /api/v1/users/username/{username}`; creator-public-decks endpoint missing. |
+| Request / response DTO | Profile `UserResponse`; creator deck list DTO/query missing. Existing `DECK-03` is prohibited. |
+| Errors | Profile 404 plus shared JWT; future collection errors unknown. |
+| Loading / error / empty | Profile loading/error; creator-decks loading/error/empty. No canonical state variants. Follow/follower states are explicitly excluded. |
+| Backend status | Profile lookup implemented; required creator deck collection missing (G-10) and affected by G-04/G-05. |
+| Candidate frontend phase | Candidate post-MVP deferral; 0.4C must decide. |
+| Blocker / gap | The visual surface cannot be completed with public creator decks. If kept in MVP, it becomes blocked rather than deferred. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `creator_profile_llhelper_refined` | `8df316a65ffe4ed9b54799830d854dad` | None; use shared page/list states. | **deferred** |
+| Mobile | `creator_profile_mobile` | `87d2a4d2e36940c6b8fb7299259a23a4` | None; use shared page/list states. | **deferred** |
+
+**Missing DTO — minimal required shape, for Phase 0.4C reference only; does not change the `deferred` status** (read-only review of `creator_profile_llhelper_refined`, which shows the creator's `@username` and a "Public Decks" count plus per-deck language pair, card count, and a `Public` badge):
+
+| Field | Status | Note |
+|---|---|---|
+| Creator profile (`username`, name, avatar) | Existing (`UserResponse` via `USER-03`) | No new field needed. |
+| Creator's public deck list (`id`, `title`, `sourceLanguage`, `targetLanguage`) | Missing | No endpoint filters decks by a given owner plus `isPublic=true` (G-10); would reuse `DeckListResponse` fields. |
+| `cardCount` per deck | Missing | Canonical UI shows a per-deck card count (e.g. "1,250 Cards"). Same `// FIXME: add cardCount` gap as Discover/Created Decks — not implemented anywhere. |
+| Follow/follower counts, social behavior | Excluded | Forbidden per `DESIGN.md`; must not be added regardless of the 0.4C MVP decision. |
+
+Minimal required response if this surface enters MVP: existing `UserResponse` + `List<DeckListResponse & {cardCount}>`, behind a creator-scoped and public-only query. This sketch does not resolve the `deferred` status — 0.4C must still confirm inclusion.
+
+### 5.14 Progress
+
+| Field | Mapping |
+|---|---|
+| Product surface | Aggregate Learning Progress |
+| Candidate route | `/progress` |
+| Auth | JWT |
+| Domain owner | Learning aggregate |
+| Endpoint | Missing aggregate Progress contract. `LEARN-03` is one enrolled deck at a time and is not a safe substitute for a user-wide aggregate. |
+| Request / response DTO | Missing aggregate response DTO. Required dimensions must be confirmed from the canonical UI during backend contract design; frontend must not compute unsupported totals from inaccessible lists. |
+| Errors | Cannot finalize until endpoint exists; must cover shared JWT and page-level 5xx. |
+| Loading / error / empty | Canonical loading, API-error, and empty states on both platforms. Empty means no learning progress/enrollments. |
+| Backend status | Missing (G-07). |
+| Candidate frontend phase | After Study persistence and aggregate backend contract. |
+| Blocker / gap | No endpoint can populate the surface; client-side aggregate is unavailable and would create multiple-source consistency problems. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `learning_progress_llhelper_mvp` | `e13aff5d17fc4a1e8fece209220f277f` | loading `497786dcf61d42fe81c04e706284646c`; API error `b31bc072d6d34cc8bf38b8669cf1c9dd`; empty `4c31e4fbed824d3e972ed3ef6ee6c792` | **blocked** |
+| Mobile | `learning_progress_mobile_2` | `786fef679a554769bdf277a497e261c9` | loading `0e6da83508d24bf9a569afe4b85bf2e5`; API error `61efdd5100f7452eab64285063da4702`; empty `0579e6f9cf6a4646b07247abe3b2dbc5` | **blocked** |
+
+**Missing DTO — minimal required shape** (re-checked read-only review of `learning_progress_llhelper_mvp`; canonical page subtitle is "Overview of your current learning status and card distribution", with a "Progress by Deck" section below it):
+
+| Field | Status | Note |
+|---|---|---|
+| Per-deck breakdown by `CardLearningStatus` (`NEW`/`LEARNING`/`REVIEWING`/`MASTERED` counts) | Existing data, missing aggregate | Confirmed required by the page subtitle ("current learning status and card distribution") plus the "Progress by Deck" heading. `CardLearningStatus` and per-card progress already exist on `UserCardProgress`/`DeckCardResponse.CardProgressInfo`; no endpoint aggregates them per deck or per user. |
+| Deck identity per row (`deckId`, `title`, `sourceLanguage`, `targetLanguage`) | Existing (`Deck`) | Reuse existing deck fields; required to label each "Progress by Deck" row. |
+| Any single top-line aggregate percentage, streak summary, or other numeric/graphical widget beyond the per-status counts above | Excluded pending 0.4C | The canonical screenshot's exact rendered numbers/percentages/charts could not be read in this text-based review (image fetch of the canonical screenshot returned `403 Forbidden` when re-checked); they must not be assumed or invented. 0.4C must either (a) confirm these are computed client-side from the per-status counts above, with no new backend field, or (b) specify additional named fields after a proper visual design review — no such field is included in the minimal required response until then. |
+
+Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage, cardsByStatus: {new, learning, reviewing, mastered}, totalCards}>`, aggregated server-side from existing `UserCardProgress` rows. No new domain concept is introduced; this is a new aggregation endpoint over existing data. Any additional summary/percentage widget beyond this is explicitly deferred to 0.4C per the row above.
+
+## 6. Phase 0.4C decision queue
+
+The map exposes, but does not resolve, these decisions:
+
+1. Confirm the MVP surfaces and whether Creator Profile remains deferred.
+2. Accept the separate `/onboarding/profile` flow (or choose a different Register → Profile sequence) and add its canonical Stitch references.
+3. Approve the exact route map, including owner/public detail separation and `/study` entry behavior.
+4. Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.
+5. Confirm private-deck/card read protection as a release blocker.
+6. Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.
+7. Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.
+
+## 7. Phase 0.4B conclusion
+
+- All **26** canonical references are mapped: 14 desktop and 12 mobile.
+- Using contract-local semantics (§2), the map identifies **6 ready**, **7 partial**, **11 blocked**, and **2 provisionally deferred** references.
+- For the five surfaces with no backend contract at all (Learning dashboard, Created Decks, Discover, Creator Profile, Progress), read-only review of the canonical Stitch base screens produced minimal required request/response field sketches (§5.3, §5.4, §5.12–§5.14), explicitly separating fields that already exist on current DTOs from fields that are missing or unresolved. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
+- The Add/Edit Card reference (§5.10) is split into six operations; manual add/update/delete and single-card AI are independently `Ready`, edit prefill and bulk AI remain `Partial` for their own reasons (G-05, G-09).
+- No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
+- The highest-impact blockers are Auth/profile bootstrap (G-01–G-03), private-data exposure/list scoping (G-04–G-05), missing Learning/Progress contracts (G-06–G-07), and Study selection correctness (G-08).
+- Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins.

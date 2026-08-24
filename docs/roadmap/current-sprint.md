@@ -76,6 +76,7 @@
 **Статус:** в процессе. Runtime frontend feature implementation не начата.
 
 - [x] Phase 0.4A — Backend Contract Inventory (`docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`) — repository-grounded аудит контроллеров, DTO, security и error contract.
-- [ ] Phase 0.4B — не начата.
+- [x] Phase 0.4B — Frontend Integration Map (`docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`) — screen-by-screen карта всех 26 canonical Stitch references → candidate route → backend contract → readiness (6 ready / 7 partial / 11 blocked / 2 provisionally deferred).
+- [ ] Phase 0.4C — не начата: принятие candidate routes/frontend phases, подтверждение/отклонение deferred-статуса Creator Profile, и решения по missing-DTO эскизам из Phase 0.4B в качестве окончательных product/backend решений.
 
-**Auth runtime код (Группа 1) заблокирован**, пока Phase 0.4 не будет полностью завершена и проверена — см. подтверждённые расхождения в `BACKEND_CONTRACT_INVENTORY.md` §8 (в т.ч. `AuthServiceImpl.register()` не создаёт `User`).
+**Auth runtime код (Группа 1) заблокирован**, пока Phase 0.4 не будет полностью завершена и проверена — см. подтверждённые расхождения в `BACKEND_CONTRACT_INVENTORY.md` §8 (в т.ч. `AuthServiceImpl.register()` не создаёт `User`). Runtime frontend implementation остаётся заблокированной до завершения Phase 0.4C.

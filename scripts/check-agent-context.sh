@@ -394,6 +394,30 @@ else
 fi
 
 echo ""
+echo "== 15. Frontend Integration Map wiring (existence + exact-path references) =="
+MAP_PATH="docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md"
+if [ -f "$MAP_PATH" ]; then
+  pass "$MAP_PATH exists"
+else
+  fail "$MAP_PATH not found"
+fi
+if [ -f AGENTS.md ] && grep -qF "$MAP_PATH" AGENTS.md; then
+  pass "AGENTS.md references $MAP_PATH"
+else
+  fail "AGENTS.md does not reference $MAP_PATH"
+fi
+if [ -f frontend/AGENTS.md ] && grep -qF "$MAP_PATH" frontend/AGENTS.md; then
+  pass "frontend/AGENTS.md references $MAP_PATH"
+else
+  fail "frontend/AGENTS.md does not reference $MAP_PATH"
+fi
+if [ -f .windsurf/rules/documentation-sync.md ] && grep -qF "$MAP_PATH" .windsurf/rules/documentation-sync.md; then
+  pass ".windsurf/rules/documentation-sync.md references $MAP_PATH"
+else
+  fail ".windsurf/rules/documentation-sync.md does not reference $MAP_PATH"
+fi
+
+echo ""
 echo "================================"
 echo "FAIL: $FAIL   WARN: $WARN"
 if [ "$FAIL" -gt 0 ]; then
