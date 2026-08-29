@@ -106,6 +106,20 @@ this pair. No other active-state color combination is canonical.
 
 ## Application shell
 
+> **Level 1 vertical MVP scoping note (Phase 0.4C):** the full five-destination
+> shell below (desktop sidebar and mobile bottom navigation) remains the
+> canonical post-vertical target and the canonical Stitch screens are not
+> changed by this note. For the Level 1 vertical MVP, the implemented
+> authenticated navigation is a temporary reduced subset: only **Learning** is
+> a persistent destination. **Created**, **Discover**, and **Progress** are
+> fully hidden (not shown disabled/"coming soon"). **Create Deck** is reached
+> via a CTA on the Learning screen (e.g. its empty state), not via a
+> persistent "Created" destination. **Study** is reached contextually from
+> Learning Deck Details (`/study/:deckId`), not as a standalone persistent nav
+> item, since a deck-less `/study` entry has no defined product behavior at
+> Level 1. No route in the reduced shell is a clickable dead link. See
+> `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP scope.
+
 ### Desktop
 
 - One persistent, fixed 260px left sidebar containing:

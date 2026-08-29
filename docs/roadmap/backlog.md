@@ -9,7 +9,7 @@
 ### Sprint 1.0 — Vertical Flow
 
 > **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему.
-> Один вертикальный сценарий — Register → Login → Create deck → Add cards → Enroll → Study → See progress.
+> Один вертикальный сценарий (accepted, Phase 0.4C) — Register → Complete Profile → authenticated app → Create Deck → Manual Add Card → Owner Deck Details → Public Deck Details → Enroll → Learning list/details → Study → per-card progress → повторное открытие Learning list и продолжение позже. Login проверяется отдельно как повторный вход существующего пользователя: clear/logout session → Login → Learning list → continue.
 > UI может быть простым. Цель — не красивый Dashboard, а работающий full-stack flow.
 
 1. Создать React/TS app
@@ -90,28 +90,25 @@
 - [ ] Partial response для bulk failures — `BulkGenerateResponse.created[]` + `failed[]` (title + reason), вместо silent skip
 
 **User self-service API:**
-- `GET /api/v1/me`, `PUT /api/v1/me`, `DELETE /api/v1/me`
+- `GET /api/v1/users/me` — current-user contract accepted (G-01, Phase 0.4C, see `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.4/§0.7); not yet implemented.
+- `PUT /api/v1/me`, `DELETE /api/v1/me` — separate self-service endpoints, not part of the G-01 decision; path not normalized to `/users/me` and remains open/deferred.
 - При `DELETE /api/v1/me`: решить FK delete rules для `fk_users_auth_user`, `fk_decks_owner`. Варианты: soft delete (User/AuthUser/Deck помечаются deleted, FK остаются NO ACTION) — **рекомендовано**; hard delete + CASCADE; hard delete + RESTRICT
 
 **Rate Limiting tests:** unit tests для `UserRateLimiter` — N запросов в пределах лимита, N+1 → exception, разные `RateLimitAction` независимы, TTL очищает buckets через 1 час, разные пользователи независимы, `checkLimitByUserId()`/`checkLimitByEmail()` независимы
 
 ### Frontend (Level 1)
 
-Стек: React + TypeScript + React Router + TanStack Query + Axios
+> Corrected Phase 0.4C — stack/architecture below previously described a stale pre-implementation plan (TanStack Query/Axios, no Redux) that no longer matches `frontend/CONVENTIONS.md`. This is a point fix of this block only, not a full backlog review.
 
-Экраны: Login/Register · Dashboard · My Decks · Deck Details · Create Deck · Card Editor · AI Generate Cards · Study Mode · Progress Page
+Стек: React + TypeScript + React Router 7 + RTK Query + Redux Toolkit (session state) — Axios удалён, см. `frontend/CONVENTIONS.md`.
 
-Архитектура:
-```
-src/
-  api/
-  features/ (auth, decks, cards, learning, ai)
-  components/
-  routes/
-  types/
-```
+Accepted Level 1 vertical MVP screens (см. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3): Login · Register · Complete Profile · Learning list · Create Deck · Owner Deck Details · Manual Add Card · Public Deck Details + Enroll · Learning Deck Details · Study.
 
-Пока без: Redux, Storybook, e2e tests, микрофронтендов
+Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created Decks list · Discover list/search · Creator Profile · aggregate Progress dashboard · Edit Deck/Edit Card (Card Editor, после первого deployment) · single-card AI (optional, отдельная задача после manual smoke) · bulk AI · pagination · refresh token · backend logout.
+
+Архитектура: FSD (`app/pages/widgets/features/entities/shared`), см. `frontend/CONVENTIONS.md`.
+
+Пока без: Storybook, e2e tests, микрофронтендов
 
 ### Performance (Level 1)
 

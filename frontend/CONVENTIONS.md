@@ -80,16 +80,37 @@ Runtime authentication/session lifecycle state lives in `entities/session/`:
 ```text
 entities/session/
 ├── model/
-│   ├── session-slice.ts   ← Redux slice: session status (initializing, authenticated, anonymous)
+│   ├── session-slice.ts   ← Redux slice: session status
 │   └── selectors.ts       ← selectSessionStatus, selectIsAuthenticated
 └── index.ts               ← public API
 ```
 
-**Session model (Level 1):**
+**Session model — current implemented scaffold:**
 
 ```text
-type SessionStatus = 'initializing' | 'authenticated' | 'anonymous'
+type SessionStatus = 'initializing' | 'anonymous' | 'authenticated'
 ```
+
+This is what `entities/session/model/session-slice.ts` actually implements today. There is no `needsProfile` status and no `GET /api/v1/users/me` bootstrap call in the current scaffold; `authenticated` currently means only "a token is present", not "a `User` profile exists".
+
+**Session model — accepted Level 1 target, pending implementation:**
+
+```text
+type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
+```
+
+Source of truth for this target: `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.7 (Phase 0.4C accepted decision). `needsProfile`, the `GET /api/v1/users/me` bootstrap call, and any routing guard that reacts to `needsProfile` are **not implemented yet** — do not write code or docs that assume they exist until this scaffold is updated to match.
+
+**Bootstrap target (accepted, not yet implemented):**
+
+```text
+No token                                  → anonymous
+token + GET /api/v1/users/me → 200        → authenticated
+token + GET /api/v1/users/me → 404        → needsProfile
+token + GET /api/v1/users/me → 401        → clear token → anonymous
+```
+
+`GET /api/v1/users/me` itself does not exist on the backend yet (see `FRONTEND_INTEGRATION_MAP.md` §0.7 / §0.4 G-01). Do not implement this bootstrap call before that endpoint exists.
 
 - `entities/session` owns runtime client session lifecycle state (session status).
 - User/profile data fetched from backend remains RTK Query server state and must not be duplicated into the session Redux slice.
@@ -195,9 +216,16 @@ app/router (protected routing)
 
 - **Library:** React Router 7 (centralized configuration via `createBrowserRouter` + `RouterProvider`).
 - **Router config location:** `app/router/` (`router.tsx`, `protected-route.tsx`, `index.ts`).
-- **Protected routes:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render nothing yet; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`.
+- **Protected routes — current implemented scaffold:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render nothing yet; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`. There is no `needsProfile` branch yet.
+- **Routing target for `needsProfile` (accepted, not yet implemented):**
+  - `initializing` → render nothing, wait for bootstrap to resolve.
+  - `anonymous` → redirect to `/login`.
+  - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
+  - `authenticated` → render the protected application.
+  - `authenticated` user navigating to `/onboarding/profile` → redirect to `/learning`.
 - **Pages do not own global router configuration.**
-- Current route tree is temporary infrastructure only (no Auth UI/product pages yet — Phase 1). Product URLs and layout routes will be finalized when canonical UI flow/design is available.
+  Current runtime route tree remains temporary. Accepted product URLs are owned
+  by FRONTEND_INTEGRATION_MAP.md §0.3 and are pending implementation.
 
 ## Forms and Validation
 

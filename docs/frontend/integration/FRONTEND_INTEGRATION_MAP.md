@@ -1,9 +1,114 @@
-# Frontend Integration Map — Phase 0.4B
+# Frontend Integration Map — Phase 0.4B (historical) + Phase 0.4C (accepted decisions)
 
-> **Purpose:** screen-by-screen map from the 26 canonical Stitch references to candidate frontend routes and the backend contracts they require.
-> **Scope:** documentation and analysis only. This phase does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code.
-> **Date:** 2026-08-23
-> **Repository baseline:** `master` after Phase 0.4A commit `758a565`.
+> **Purpose:** screen-by-screen map from the 26 canonical Stitch references to frontend routes and the backend contracts they require.
+> **Scope:** documentation and analysis only. Phase 0.4C does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code — it only records accepted product/routing decisions on top of the Phase 0.4B read-only snapshot below.
+> **Phase 0.4B date:** 2026-08-23 (repository baseline: `master` after commit `758a565`). **§2–§7 below are preserved as the historical Phase 0.4B result and are not rewritten**, except where a specific field is explicitly superseded by an accepted §0 decision (marked inline, e.g. the `/decks/:deckId` route replacing the `/discover/decks/:deckId` candidate).
+> **Phase 0.4C date:** 2026-08-24. §0 records the accepted Level 1 vertical MVP decisions; where §0 and §2–§7 disagree, §0 governs.
+
+## 0. Phase 0.4C accepted decisions
+
+This section supersedes the "candidate, not accepted" status stated in §1 item 5 for the routes/surfaces listed below. It does not change Stitch, `MANIFEST.md`, backend code, or frontend code.
+
+### 0.1 Accepted Level 1 MVP surfaces
+
+Login, Register, Complete Profile (new, Stitch not yet created — see §0.5), Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
+
+### 0.2 Accepted deferred surfaces/functions
+
+Created Decks list; Discover list/search; Creator Profile; aggregate Progress dashboard; Edit Deck; Edit Card (full Card Editor — target: after first deployment); single-card AI generation (optional, separate task after manual-add smoke succeeds — not bundled into the same PR); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks.
+
+### 0.3 Accepted route map
+
+| Route | Status | Canonical screen | Notes |
+|---|---|---|---|
+| `/login` | accepted | `login_llhelper` | |
+| `/register` | accepted | `register_llhelper_refined` | |
+| `/onboarding/profile` | accepted | **new — Stitch not yet created** | See §0.5 |
+| `/` → `/learning` | accepted | — | redirect |
+| `/learning` | accepted | `learning_llhelper_refined_navigation` / `learning_mobile_dashboard` | depends on G-06 |
+| `/learning/:deckId` | accepted | `learning_deck_details_llhelper_refined` | |
+| `/decks/new` | accepted | `create_deck_llhelper` | |
+| `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | Public Deck Details; JWT-protected route, "public" is the product-surface name, not anonymous HTTP access; reachable only by direct link since Discover is deferred |
+| `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
+| `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
+| `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
+| `/created` | deferred | — | |
+| `/discover` | deferred | — | |
+| `/progress` | deferred | — | |
+| `/creators/:username` | deferred | — | |
+| `/decks/:deckId/edit` | deferred | — | |
+| `/decks/:deckId/cards/:cardId/edit` | deferred | — | |
+
+Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which owns routing mechanics only).
+
+### 0.4 Blocker categorization (supersedes the flat gap list in §3 for sequencing purposes)
+
+**Vertical implementation blockers** (required before the local single-user vertical smoke works at all):
+- G-01 `GET /api/v1/users/me`
+- G-03 controlled 401 for expired/malformed/invalid JWT
+- G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
+- G-06 Learning Decks list endpoint
+- G-08 Study selection must include `REVIEWING`
+- G-12 `docs/features/learning-flow.md` must reflect the actual 409 (done — see that file)
+
+G-05 is **not** described as a vertical-implementation necessity for the local single-user smoke: the current endpoints can already return the user's own deck/cards without ownership enforcement. It is placed early in the backend/security execution order anyway (§0.6, step 2) because the Owner/Public trust boundary must not ship publicly unenforced.
+
+**Public deployment/security blockers** (not required for local vertical smoke; required before first public deployment):
+- G-04 unfiltered `GET /api/v1/decks`
+- `CARD-04` unfiltered `GET /api/v1/cards` (not "G-04 cards" — distinct endpoint, own inventory item)
+- G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
+- Catch-all `500` handler must not return the raw exception message (`GlobalExceptionHandler.handleException`)
+
+**Deferred backend capabilities** (no accepted MVP flow depends on them):
+- Owner-scoped Created list; public-only Discover list/search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout.
+
+### 0.5 Accepted Stitch/design follow-up (not performed in this task)
+
+- **Complete Profile** — new canonical screens required: desktop base, mobile base, validation error, username conflict, submitting. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form). Not added to `docs/frontend/DESIGN.md` canonical registry or `MANIFEST.md` until the screens actually exist.
+- **Owner Deck Details → Public Deck Details navigation action ("View public page")** — checked against `docs/frontend/design-reference/MANIFEST.md` (`deck_details_owner_llhelper_refined` / `_mobile_2`): only `loading_state`/`api_error_state`/`empty_state` are documented; **no canonical action for this transition exists**. This is an **unconfirmed Stitch/design gap**, not a trivial implementation detail. Required behavior once designed: the action is visible only when the deck's `isPublic` is `true` (a private deck has no public page and cannot be enrolled by anyone — see §5.8 correction); it must navigate to `/decks/:deckId`.
+
+### 0.6 Accepted backend → Stitch → frontend order
+
+1. Backend: G-01, G-03, G-06, G-08.
+2. Backend security (early, before any public-facing exposure): G-05.
+3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
+4. Stitch: Complete Profile screens + Owner→Public "View public page" action.
+5. Frontend: Auth + onboarding (`needsProfile` session state, §0.7).
+6. Frontend: Learning list + Learning Deck Details.
+7. Frontend: Create Deck + Owner Deck Details.
+8. Frontend: Manual Add Card.
+9. Frontend: Public Deck Details + Enroll.
+10. Frontend: Study + per-card progress display (§0.8).
+11. E2E manual smoke + Postman sync.
+12. Release hardening: G-04, `CARD-04`, G-05 verification (regression test, not re-implementation, if already closed in step 2), safe 500 body.
+13. First deployment.
+14. Optional, separate task: single-card AI generation, after manual-add smoke succeeds; does not block step 13.
+
+### 0.7 Session state (accepted)
+
+```text
+type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
+```
+
+Required (not yet implemented) `GET /api/v1/users/me` bootstrap semantics:
+- `200 UserResponse` → valid JWT, profile exists → `authenticated`.
+- `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
+- `401 {message}` → missing/invalid/expired JWT → `anonymous`.
+
+This is a documented implementation requirement for the not-yet-existing endpoint, not a description of current behavior.
+
+### 0.8 Progress semantics (accepted, corrects any prior claim of a ready backend aggregate)
+
+- Backend source of truth: `LEARN-03` (`GET /decks/{deckId}/cards`) and its per-card `CardLearningStatus` inside `DeckCardResponse.progress`. **`LEARN-03` does not return a per-deck aggregate summary field** — no such field exists on the current DTO.
+- Frontend may compute **display-only** counts `{new, learning, reviewing, mastered}` from the full card array already returned by `LEARN-03` for the currently open deck. These derived counts are not persisted and do not become a new domain/server state.
+- This is permitted only while `LEARN-03` returns the full, unpaginated card list for a deck. If pagination is introduced for this endpoint (currently deferred, Level 2), the aggregate must move to the backend.
+- The separate cross-deck aggregate `/progress` dashboard remains deferred (G-07); it requires data across all of a user's decks, which no accepted Level 1 endpoint provides.
+
+### 0.9 Audit document lifecycle
+
+- **This document** stays active through implementation of the accepted Level 1 routes above; it then converts to a compact screen integration registry that does not duplicate Stitch IDs already owned by `docs/frontend/design-reference/MANIFEST.md`.
+- **`docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`** stays active as the repository-grounded HTTP-contract snapshot until OpenAPI adoption (`backend/IMPROVEMENTS.md`); after OpenAPI, it reduces to security semantics, integration warnings, and known gaps. OpenAPI itself is out of scope for Level 1/Phase 0.4C.
+- No document is renamed or deleted now; `AGENTS.md` pointers and any validator checks are updated only at the actual retirement/conversion point.
 
 ## 1. Source precedence and boundaries
 
@@ -11,7 +116,7 @@
 2. `docs/frontend/DESIGN.md` owns product surfaces, shell rules, and canonical screen names.
 3. `docs/frontend/design-reference/MANIFEST.md` owns exact Stitch project/screen IDs and state variants.
 4. Executable backend code remains authoritative if the inventory becomes stale.
-5. The routes and frontend phases below are **candidates for Phase 0.4C**, not accepted runtime decisions.
+5. The routes and frontend phases in §2–§7 below were **candidates as of Phase 0.4B**. Phase 0.4C (§0) has since accepted the routes/phases listed in §0.1–§0.3 as decisions; any route or surface not listed in §0 remains a non-accepted candidate or deferred (§0.2).
 
 The map preserves the content/learning boundary: `Deck`/`Card` are owner-managed content; `UserDeckProgress`/`UserCardProgress` are per-user learning state. Owner/Public Deck Details must not display learning progress, while Learning Deck Details may.
 
@@ -24,7 +129,7 @@ The map preserves the content/learning boundary: `Deck`/`Card` are owner-managed
 | **ready** | The screen-specific backend contract is sufficient for the intended surface. Shared platform prerequisites may still determine implementation order. |
 | **partial** | A usable contract exists, but part of the screen, an important state, or a safe lookup/navigation path is incomplete. |
 | **blocked** | The intended screen cannot be implemented safely or truthfully with the current backend contract. |
-| **deferred** | A real surface exists, but it is a candidate to remain outside the first MVP; Phase 0.4C must confirm the deferral. |
+| **deferred** | A real surface exists, but it is a candidate to remain outside the first MVP; Phase 0.4C must confirm the deferral. *(Historical status-definition text — §0.2 has since confirmed deferral for the specific surfaces listed there.)* |
 
 ### Backend status
 
@@ -42,7 +147,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 
 | ID | Prerequisite / gap | Affected surfaces | Phase 0.4B conclusion |
 |---|---|---|---|
-| G-01 | No `GET /users/me`; JWT subject is email and the frontend has no current `User.id` after login. | All authenticated shell/session bootstrap; especially Created and owner routing. | Backend blocker before Auth integration. |
+| G-01 | No `GET /api/v1/users/me`; JWT subject is email and the frontend has no current `User.id` after login. | All authenticated shell/session bootstrap; especially Created and owner routing. | Backend blocker before Auth integration. |
 | G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. |
 | G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
 | G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
@@ -67,7 +172,7 @@ Shared JWT errors on every authenticated endpoint: missing Bearer token → cont
 | **deferred** | Creator Profile desktop/mobile | 2 |
 | **Total** | All canonical references from the manifest | **26** |
 
-`deferred` for Creator Profile is provisional, not a final MVP decision. Phase 0.4C must confirm or reject it.
+`deferred` for Creator Profile was provisional as of Phase 0.4B, not a final MVP decision at that time. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)*
 
 ## 5. Screen-by-screen integration map
 
@@ -159,7 +264,7 @@ Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage,
 | Errors | Cannot finalize until endpoint exists; must cover shared JWT, 5xx, and any future query validation. |
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Missing safe contract; existing `DECK-03` partial/unsafe (G-04). |
-| Candidate frontend phase | After Auth, `GET /users/me`, and owner-scoped backend contract. |
+| Candidate frontend phase | After Auth, `GET /api/v1/users/me`, and owner-scoped backend contract. |
 | Blocker / gap | Client filtering is a privacy leak. Current-user identity is also missing (G-01). |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -245,21 +350,21 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Field | Mapping |
 |---|---|
 | Product surface | Public Deck Details and enroll action; no learning progress |
-| Candidate route | `/discover/decks/:deckId` |
+| Route (**accepted, Phase 0.4C** — supersedes the `/discover/decks/:deckId` candidate below) | `/decks/:deckId` — reachable only by direct link (e.g. from Owner Deck Details, once a canonical navigation action exists — see §0.5) since Discover is deferred. Still a JWT-protected frontend route; "Public" names the product surface (public deck), not anonymous HTTP access. |
 | Auth | JWT under current backend; enroll requires JWT. |
 | Domain owner | Public Deck content + Learning enrollment boundary |
 | Endpoint | Detail `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
 | Request / response DTO | Detail `DeckResponse`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
-| Errors | Detail 404 but lacks private visibility enforcement; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. |
+| Errors | Detail 404 but lacks private visibility enforcement; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
 | Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
-| Backend status | Enroll implemented; detail read partial/unsafe (G-05); safe discovery entry point missing (G-04). |
-| Candidate frontend phase | Discover/enrollment only after security and public-list backend work. |
-| Blocker / gap | Private decks are readable by ID; no public-only collection. Frontend guards cannot repair either leak. |
+| Backend status | Enroll implemented; detail read partial (G-05 — not a vertical-implementation necessity for a single user viewing their own deck, but a required release/security blocker before public-facing exposure, see §0.4); safe discovery entry point missing (G-04, deferred — not required for the accepted direct-link-only MVP flow). |
+| Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. Reachability depends on the Owner Deck Details "View public page" action, which is an **unconfirmed Stitch/design gap** (§0.5), not yet an implemented navigation path. |
+| Blocker / gap | Vertical: none blocking (owner viewing/enrolling their own deck works against current endpoints). Release/security: G-05 (full private-deck/card visibility enforcement) and G-04 (unfiltered `GET /decks`, not used by this screen but a standing exposure) must be closed before public deployment. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **blocked** |
-| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **blocked** |
+| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **partial (accepted Level 1 MVP — see §0; direct-link-only, `blocked`-on-Discover superseded)** |
+| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **partial (accepted Level 1 MVP — see §0; direct-link-only, `blocked`-on-Discover superseded)** |
 
 ### 5.9 Learning Deck Details
 
@@ -383,7 +488,7 @@ Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, b
 | Errors | Profile 404 plus shared JWT; future collection errors unknown. |
 | Loading / error / empty | Profile loading/error; creator-decks loading/error/empty. No canonical state variants. Follow/follower states are explicitly excluded. |
 | Backend status | Profile lookup implemented; required creator deck collection missing (G-10) and affected by G-04/G-05. |
-| Candidate frontend phase | Candidate post-MVP deferral; 0.4C must decide. |
+| Candidate frontend phase | Candidate post-MVP deferral as of Phase 0.4B. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)* |
 | Blocker / gap | The visual surface cannot be completed with public creator decks. If kept in MVP, it becomes blocked rather than deferred. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -400,7 +505,7 @@ Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, b
 | `cardCount` per deck | Missing | Canonical UI shows a per-deck card count (e.g. "1,250 Cards"). Same `// FIXME: add cardCount` gap as Discover/Created Decks — not implemented anywhere. |
 | Follow/follower counts, social behavior | Excluded | Forbidden per `DESIGN.md`; must not be added regardless of the 0.4C MVP decision. |
 
-Minimal required response if this surface enters MVP: existing `UserResponse` + `List<DeckListResponse & {cardCount}>`, behind a creator-scoped and public-only query. This sketch does not resolve the `deferred` status — 0.4C must still confirm inclusion.
+Minimal required response if this surface enters MVP: existing `UserResponse` + `List<DeckListResponse & {cardCount}>`, behind a creator-scoped and public-only query. This sketch does not resolve the `deferred` status. *(Historical — §0.1/§0.2 has since confirmed Creator Profile remains deferred, not entering MVP.)*
 
 ### 5.14 Progress
 
@@ -429,23 +534,25 @@ Minimal required response if this surface enters MVP: existing `UserResponse` + 
 |---|---|---|
 | Per-deck breakdown by `CardLearningStatus` (`NEW`/`LEARNING`/`REVIEWING`/`MASTERED` counts) | Existing data, missing aggregate | Confirmed required by the page subtitle ("current learning status and card distribution") plus the "Progress by Deck" heading. `CardLearningStatus` and per-card progress already exist on `UserCardProgress`/`DeckCardResponse.CardProgressInfo`; no endpoint aggregates them per deck or per user. |
 | Deck identity per row (`deckId`, `title`, `sourceLanguage`, `targetLanguage`) | Existing (`Deck`) | Reuse existing deck fields; required to label each "Progress by Deck" row. |
-| Any single top-line aggregate percentage, streak summary, or other numeric/graphical widget beyond the per-status counts above | Excluded pending 0.4C | The canonical screenshot's exact rendered numbers/percentages/charts could not be read in this text-based review (image fetch of the canonical screenshot returned `403 Forbidden` when re-checked); they must not be assumed or invented. 0.4C must either (a) confirm these are computed client-side from the per-status counts above, with no new backend field, or (b) specify additional named fields after a proper visual design review — no such field is included in the minimal required response until then. |
+| Any single top-line aggregate percentage, streak summary, or other numeric/graphical widget beyond the per-status counts above | Excluded pending 0.4C at the time of Phase 0.4B | The canonical screenshot's exact rendered numbers/percentages/charts could not be read in this text-based review (image fetch of the canonical screenshot returned `403 Forbidden` when re-checked); they must not be assumed or invented. 0.4C must either (a) confirm these are computed client-side from the per-status counts above, with no new backend field, or (b) specify additional named fields after a proper visual design review — no such field is included in the minimal required response until then. *(Historical — §0.8 has since confirmed option (a): client-side, display-only, no new backend field for Level 1.)* |
 
 Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage, cardsByStatus: {new, learning, reviewing, mastered}, totalCards}>`, aggregated server-side from existing `UserCardProgress` rows. No new domain concept is introduced; this is a new aggregation endpoint over existing data. Any additional summary/percentage widget beyond this is explicitly deferred to 0.4C per the row above.
 
-## 6. Phase 0.4C decision queue
+## 6. Phase 0.4C decision queue — resolved
 
-The map exposes, but does not resolve, these decisions:
+This queue was open as of Phase 0.4B. All seven items are now resolved by §0 — either accepted as a decision or resolved by explicit deferral (item 4 mixes both); each row below points to where.
 
-1. Confirm the MVP surfaces and whether Creator Profile remains deferred.
-2. Accept the separate `/onboarding/profile` flow (or choose a different Register → Profile sequence) and add its canonical Stitch references.
-3. Approve the exact route map, including owner/public detail separation and `/study` entry behavior.
-4. Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.
-5. Confirm private-deck/card read protection as a release blocker.
-6. Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.
-7. Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.
+1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — §0.1/§0.2 (Creator Profile deferred).
+2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Flow accepted — §0.3/§0.7. Canonical Stitch references **not yet added** — remains an open Stitch/design task, §0.5.
+3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
+4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created, Discover, Progress-aggregate, and creator-public-decks response shapes are **resolved by explicit deferral; shape intentionally not accepted** (§0.2) — no accepted MVP flow needs them, so no shape is defined.
+5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).
+6. ~~Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.~~ Resolved — §0.1/§0.2/§0.6: manual Add Card is the Level 1 requirement; single-card AI is a separate optional task after manual smoke; bulk AI remains deferred pending the partial-failure contract.
+7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6, and reflected in `docs/roadmap/current-sprint.md`.
 
-## 7. Phase 0.4B conclusion
+## 7. Phase 0.4B conclusion (historical, superseded by §0)
+
+> This section is the historical Phase 0.4B result, preserved as-read and not rewritten (see header note). Its counts and evidence below are historical and unchanged. Where it calls for a future decision (e.g. "Phase 0.4C must..."), that decision has since been made in §0 — this section is not the current target.
 
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
 - Using contract-local semantics (§2), the map identifies **6 ready**, **7 partial**, **11 blocked**, and **2 provisionally deferred** references.
@@ -453,4 +560,4 @@ The map exposes, but does not resolve, these decisions:
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/update/delete and single-card AI are independently `Ready`, edit prefill and bulk AI remain `Partial` for their own reasons (G-05, G-09).
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
 - The highest-impact blockers are Auth/profile bootstrap (G-01–G-03), private-data exposure/list scoping (G-04–G-05), missing Learning/Progress contracts (G-06–G-07), and Study selection correctness (G-08).
-- Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins.
+- Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*

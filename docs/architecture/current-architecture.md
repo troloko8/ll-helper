@@ -208,9 +208,17 @@ Typical secured request:
 ### Authentication Flow
 
 ```text
-POST /api/v1/auth/register  ──▶  Create AuthUser + User  ──▶  Return JWT
+POST /api/v1/auth/register  ──▶  Create AuthUser only    ──▶  Return JWT
 POST /api/v1/auth/login     ──▶  Validate credentials    ──▶  Return JWT
 ```
+
+> **Current behavior (as implemented):** `AuthServiceImpl.register()` creates only `AuthUser`; no `User` profile row is created by `/auth/register` itself. Every authenticated action that resolves the current `User` (`SecurityUtils.getCurrentUser()`/`getCurrentUserId()`) will fail until a separate `POST /api/v1/users` call succeeds.
+>
+> **Accepted Level 1 target flow (Phase 0.4C, not yet implemented):**
+> ```text
+> POST /auth/register → JWT → /onboarding/profile (frontend) → POST /users → authenticated app
+> ```
+> `GET /api/v1/users/me` does not exist yet; it is a Phase 0.4C accepted requirement (see `docs/roadmap/current-sprint.md`), not current behavior.
 
 ### Learning Flow
 
@@ -271,7 +279,7 @@ CardService.save(cards)
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
-| `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards |
+| `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards, ⚠️ globally unfiltered (`findAll()`, no owner/public filter — see `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` Discrepancy C) |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `DeckResponse` (with cards) |
 | `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |
@@ -458,6 +466,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
+| Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` is required to bootstrap session state (`needsProfile` vs `authenticated`) but is not yet implemented. See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
 
 ### Open Decisions
 

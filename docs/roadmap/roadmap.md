@@ -279,6 +279,8 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 > **Решение (2026-07):** Level 1 начинается с одного вертикального сценария, а не с полного набора frontend-экранов.
 > Цель не красивый product — а впервые пройти полный путь: frontend → backend → auth → DB → живая система.
 > Остальные экраны (Dashboard, AI generation, Card Editor, Progress) — расширение после первого деплоя.
+>
+> **Уточнение (Phase 0.4C):** внутри "Add/generate cards" в Level 1 входит только Manual Add Card; полноценный Card Editor/Edit Deck/Edit Card — после первого deployment. Single-card AI generation — optional отдельная задача после успешного manual smoke, не блокирует Level 1. Bulk AI generation — deferred. "See progress" в Level 1 реализуется как backend-provided per-card progress (per-deck отображение на экране Learning Deck Details), не полноценный aggregate Progress dashboard — тот остаётся расширением после первого деплоя. См. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 для точного MVP scope; Level 1 не расширяется до полного набора canonical screens.
 
 **Цель:** Один работающий full-stack flow + первый самостоятельный deployment системы.
 
@@ -286,25 +288,34 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 
 ## Product flow
 
-1. Register/Login
-2. Create deck
-3. Add/generate cards
-4. Subscribe/enroll to deck
-5. Study 10 cards
-6. Submit answers
-7. See correct/wrong
-8. See progress
-9. Return later and continue
+Основной flow (accepted, Phase 0.4C):
+
+1. Register
+2. Complete Profile
+3. Authenticated app
+4. Create deck
+5. Add cards (manual — Level 1 требование; single-card AI — optional after manual smoke; bulk AI — deferred)
+6. Owner Deck Details → Public Deck Details
+7. Subscribe/enroll to deck
+8. Learning list/details
+9. Study 10 cards
+10. Submit answers
+11. See correct/wrong
+12. See progress (backend-provided per-card progress via Learning Deck Details — Level 1; aggregate Progress dashboard — after first deployment)
+13. Return later and continue (повторное открытие Learning list)
+
+Login проверяется отдельно, как повторный вход существующего пользователя (не обязателен сразу после регистрации): clear/logout session → Login → Learning list → continue.
 
 ## ✅ Done Criteria
 
 - [ ]  Есть frontend
-- [ ]  Можно зарегистрироваться / залогиниться
+- [ ]  Можно зарегистрироваться и завершить Complete Profile
 - [ ]  Можно создать deck
-- [ ]  Можно создать / generate cards
+- [ ]  Можно создать card вручную (manual add card — обязательно для Level 1; AI generation не является обязательным Level 1 criterion)
 - [ ]  Можно подписаться / enroll на deck
 - [ ]  Можно пройти study flow
-- [ ]  Прогресс сохраняется
+- [ ]  Per-card progress сохраняется и отображается (отдельный aggregate Progress dashboard не требуется)
+- [ ]  Можно выйти и войти повторно, продолжив через Learning list
 - [ ]  Основные endpoint flows проходят через Postman
 - [ ]  Есть AI workflow prompts
 - [ ]  Проектом можешь пользоваться ты сам

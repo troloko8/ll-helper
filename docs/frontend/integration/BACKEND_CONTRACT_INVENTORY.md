@@ -4,6 +4,7 @@
 > **Scope:** Documentation/analysis only. No frontend runtime code, no backend runtime code, no DTOs/endpoints/routes/components, no Stitch changes.
 > **Date:** 2026-08-22
 > **Repository baseline:** `master` @ `c9e58a31d6ed8441f026db0486556db9d492b978` (verified via `git rev-parse HEAD`, matches expected).
+> **Lifecycle (recorded Phase 0.4C):** This document stays active as the repository-grounded HTTP-contract snapshot until OpenAPI adoption (`backend/IMPROVEMENTS.md` § Documentation). After OpenAPI is adopted, it reduces to security semantics, integration warnings, and known gaps; the generated contract detail moves to OpenAPI. OpenAPI adoption itself is out of scope for Level 1/Phase 0.4C. Screen-specific vertical-implementation vs. public-deployment/security blocker categorization for the gaps below is owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.4, not duplicated here.
 
 ## 1. Method and source precedence
 1. **Executable backend code, `SecurityConfig`, and Liquibase migrations** — authoritative for behavior.

@@ -82,7 +82,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 2. Find deck by `deckId`.
    - If not found → `404 Not Found`.
 3. Check deck visibility.
-   - If deck is not public → `403 Forbidden` (`AccessDeniedException`).
+   - If deck is not public → `403 Forbidden` (`AccessDeniedException`). Private-deck enroll is not possible for any user other than through this rejection — there is no auto-enroll or owner-bypass path in current code.
 4. Attempt to create `UserDeckProgress` (`ACTIVE` status) and `UserCardProgress` for each deck card (`NEW` status, counters at `0`).
 5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. Other data integrity violations are also mapped to `409 Conflict` by `GlobalExceptionHandler`. There is no upfront service-level duplicate check.
 6. Return `201 Created`.
@@ -99,14 +99,16 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 1. Resolve authenticated user.
 2. Find `UserDeckProgress` for this user + deck.
-   - If not enrolled → `403` (throws `IllegalStateException`).
+   - If not enrolled → `409 Conflict` (throws `IllegalStateException`, mapped by `GlobalExceptionHandler` to `409`). Corrects the previous `403` claim in this section — see §9/§10/§11 (G-12).
 3. Load all `UserCardProgress` for this enrollment.
 4. Batch-load all corresponding `Card` entities (single query).
 5. **Priority 1:** Cards with `status = LEARNING`, sorted by `card.id ASC`, up to 10.
 6. **Priority 2:** Cards with `status = NEW`, sorted by `card.id ASC`, fill remaining slots up to 10.
 7. Return combined list (max 10 cards). Empty deck → `200 OK` with empty array.
 
-> Cards with `status = REVIEWING` or `MASTERED` are excluded from study selection.
+> Cards with `status = REVIEWING` or `MASTERED` are excluded from study selection (current implemented behavior).
+>
+> **Pending implementation (Phase 0.4C accepted target, not yet implemented):** `REVIEWING` cards should be included in study selection so spaced practice does not skip them entirely. Tracked as backend blocker G-08 — see `docs/roadmap/current-sprint.md`.
 
 ---
 
@@ -130,7 +132,7 @@ Requires enrollment. Uses same batch-load pattern as study cards (no N+1).
    - If not found → `404 Not Found`.
 3. Resolve parent deck from card.
 4. Find `UserDeckProgress` for this user + deck.
-   - If not enrolled → `403 Forbidden`.
+   - If not enrolled → `409 Conflict` (see G-12 correction above).
 5. Find `UserCardProgress` by `userDeckProgressId` + `cardId`.
    - If not found → `404 Not Found` (throws `EntityNotFoundException`).
 6. Compare answer: `userAnswer.trim().equalsIgnoreCase(card.title.trim())`.
@@ -156,7 +158,7 @@ else                        → NEW
 
 Status is **recalculated on every review**, not incremented step by step.
 
-> **Note:** `REVIEWING` cards are not currently surfaced in `getStudyCards` (only `LEARNING` then `NEW` are queried). Known gap, no fix scheduled — see `backend/IMPROVEMENTS.md`.
+> **Note:** `REVIEWING` cards are not currently surfaced in `getStudyCards` (only `LEARNING` then `NEW` are queried). Tracked as backend blocker G-08 for Phase 0.4C's accepted Level 1 vertical MVP — see `docs/roadmap/current-sprint.md` and `backend/IMPROVEMENTS.md`. Not yet implemented.
 
 ---
 
@@ -193,7 +195,8 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 | Duplicate enroll | `409 Conflict` |
 | Enroll private deck | `403 Forbidden` |
 | Study empty deck | `200 OK` with empty array |
-| Review card without enrollment | `403 Forbidden` |
+| Study cards without enrollment | `409 Conflict` (see §5.2, G-12) |
+| Review card without enrollment | `409 Conflict` (see §5.4, G-12) |
 | Non-existent deck / card | `404 Not Found` |
 
 ---
@@ -204,13 +207,14 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - Deck not found → `404`
 - Private deck enroll attempt → `403`
 - Duplicate enroll → `409`
+- Study/review without enrollment → `409` (see G-12)
 - Empty deck study request → `200` with empty array
 
 ## 11. Known Open Risks
 
 - Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
 - Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
-- `REVIEWING` cards excluded from study selection — known gap, see `backend/IMPROVEMENTS.md`.
+- `REVIEWING` cards excluded from study selection — known gap, tracked as backend blocker G-08 for Phase 0.4C's accepted Level 1 vertical MVP, not yet implemented. See `backend/IMPROVEMENTS.md` and `docs/roadmap/current-sprint.md`.
 - Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
 
 ---

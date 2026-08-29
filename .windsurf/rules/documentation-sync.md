@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: Use when a code change affects architecture, API contracts, database schema or relationships, security behavior, documented feature flows, package structure, or roadmap completion, to determine which documentation must be updated.
+description: Use when a code change affects architecture, API, DB schema, security, feature flows, package structure, or roadmap completion, or before creating a new planning/audit doc, to determine which doc to update and its lifecycle trigger.
 ---
 
 # Documentation Sync Rule
@@ -33,6 +33,10 @@ If a change affects architecture, API, DB schema, learning flow, AI flow, securi
 Adding an ordinary scalar column to an existing entity (no new/removed entity or table, FK, unique/check constraint, index, cascade/delete-policy change) is not a package/layout change and does not by itself require updating `current-architecture.md` or `docs/database/relationships.md`.
 
 Never claim a category is fully resolved ("all issues resolved") when items remain deferred — state precisely what's resolved and point to `backlog.md` for the rest.
+
+## Planning / audit document lifecycle
+
+Before creating a new planning/audit document: determine its normative owner and lifecycle. If an existing owner already covers the fact (see routing table above), update that owner instead of creating a parallel document. Any temporary audit document must record an explicit retirement/conversion trigger at creation time (e.g. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.9, `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` lifecycle note).
 
 ## Roadmap checkbox convention
 

@@ -35,7 +35,7 @@ Repository-wide gates: see root `AGENTS.md`.
 - Before implementing or modifying a frontend feature that communicates with the backend, read the relevant entries in both `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` and `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`.
 - The inventory owns the actual HTTP contract (endpoints, DTO shapes, auth/error behavior). The map owns screen-specific integration readiness (candidate route, required contract, blockers, MVP status) for each canonical Stitch reference.
 - The inventory is a repository-grounded integration snapshot. If it conflicts with current executable backend code, backend code is authoritative and the inventory must be updated in the same task.
-- The map's candidate routes/frontend phases are Phase 0.4C candidates, not accepted runtime decisions, until 0.4C confirms them.
+- The map's §0 holds the accepted Phase 0.4C MVP/routes/phases; §2–§7 preserve the historical Phase 0.4B snapshot and may contain candidates superseded by §0. Executable backend code remains authoritative for current HTTP behavior.
 
 ## Where to look
 
