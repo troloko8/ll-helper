@@ -25,6 +25,9 @@ public class UserDeckProgress {
     @Column(nullable = false)
     private Long deckId;
 
+    @Column(name = "enrolled_at", nullable = false)
+    private Instant enrolledAt;
+
     @Column(name = "last_studied_at")
     private Instant lastStudiedAt;
 

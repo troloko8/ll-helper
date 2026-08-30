@@ -1372,6 +1372,75 @@
       "name": "Learning",
       "item": [
         {
+          "name": "Get My Learning Decks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var decks = pm.response.json();",
+                  "pm.test(\"Response is an array of learning deck summaries\", function () {",
+                  "    pm.expect(decks).to.be.an(\"array\");",
+                  "    decks.forEach(function (deck) {",
+                  "        pm.expect(deck).to.have.all.keys(\"deckId\", \"title\", \"sourceLanguage\", \"targetLanguage\", \"enrolledAt\", \"lastStudiedAt\", \"progress\");",
+                  "        pm.expect(deck.progress).to.have.all.keys(\"masteredCount\", \"totalCount\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"Decks follow Continue/Start ordering\", function () {",
+                  "    for (var i = 1; i < decks.length; i++) {",
+                  "        var previous = decks[i - 1];",
+                  "        var current = decks[i];",
+                  "        if (previous.lastStudiedAt && current.lastStudiedAt) {",
+                  "            pm.expect(Date.parse(previous.lastStudiedAt)).to.be.at.least(Date.parse(current.lastStudiedAt));",
+                  "        } else if (!previous.lastStudiedAt && current.lastStudiedAt) {",
+                  "            pm.expect.fail(\"A studied deck must not follow a never-studied deck\");",
+                  "        } else if (!previous.lastStudiedAt && !current.lastStudiedAt) {",
+                  "            pm.expect(Date.parse(previous.enrolledAt)).to.be.at.least(Date.parse(current.enrolledAt));",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/learning/decks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "learning",
+                "decks"
+              ]
+            },
+            "description": "Returns only ACTIVE enrollments for the authenticated user. Studied decks are ordered by lastStudiedAt DESC, followed by never-studied decks ordered by enrolledAt DESC."
+          },
+          "response": []
+        },
+        {
           "name": "Enroll Deck",
           "event": [
             {

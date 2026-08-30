@@ -25,7 +25,7 @@ Created Decks list; Discover list/search; Creator Profile; aggregate Progress da
 | `/register` | accepted | `register_llhelper_refined` | |
 | `/onboarding/profile` | accepted | **new — Stitch not yet created** | See §0.5 |
 | `/` → `/learning` | accepted | — | redirect |
-| `/learning` | accepted | `learning_llhelper_refined_navigation` / `learning_mobile_dashboard` | depends on G-06 |
+| `/learning` | accepted | `learning_llhelper_refined_navigation` / `learning_mobile_dashboard` | G-06 backend contract implemented as LEARN-05 |
 | `/learning/:deckId` | accepted | `learning_deck_details_llhelper_refined` | |
 | `/decks/new` | accepted | `create_deck_llhelper` | |
 | `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | Public Deck Details; JWT-protected route, "public" is the product-surface name, not anonymous HTTP access; reachable only by direct link since Discover is deferred |
@@ -47,7 +47,7 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 - G-01 `GET /api/v1/users/me` — completed: JWT subject email resolves `AuthUser` → linked `User`, returns `UserResponse`, and does not auto-create a missing profile. `200`/`404`/shared controlled `401` semantics are verified by service, `@WebMvcTest`, and real `SecurityFilterChain` tests.
 - [x] G-03 controlled 401 for expired/malformed/invalid JWT — done: `JwtAuthenticationFilter` catches `JwtException`/`IllegalArgumentException`, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint`, returning the same `{"message":"Authentication required"}` 401 body as the missing-token case. Verified by `JwtSecurityFilterChainTest` (real `SecurityFilterChain`, not `addFilters=false`). No longer an active blocker.
 - G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
-- G-06 Learning Decks list endpoint
+- [x] G-06 Learning Decks list endpoint — implemented as `GET /api/v1/learning/decks` (LEARN-05)
 - G-08 Study selection must include `REVIEWING`
 - G-12 `docs/features/learning-flow.md` must reflect the actual 409 (done — see that file)
 
@@ -69,7 +69,7 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-1. Backend: G-06, G-08 (G-01 and G-03 done — see §0.4).
+1. Backend: G-08 (G-01, G-03, and G-06 done — see §0.4).
 2. Backend security (early, before any public-facing exposure): G-05.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
 4. Stitch: Complete Profile screens + Owner→Public "View public page" action.
@@ -152,7 +152,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
 | G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
 | G-05 | `GET /decks/{id}` and `GET /cards/{id}` do not enforce owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | Security/backend blocker for public-facing flows; partial gap for owner tooling. |
-| G-06 | No Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | Backend blocker. |
+| G-06 | Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | ✅ Resolved by LEARN-05: active current-user enrollments, deterministic Continue/Start ordering, and mastered/total aggregation. |
 | G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
 | G-08 | Study selection excludes `REVIEWING`. | Study and truthful all-caught-up state. | Backend correctness gap before Study MVP. |
 | G-09 | Bulk AI response omits failed titles/reasons. | Add/Edit Card AI partial-failure UX. | Partial gap; manual cards are not blocked. |
@@ -166,9 +166,9 @@ Shared JWT errors on every authenticated endpoint: missing Bearer token → cont
 
 | Integration status | Canonical references | Count |
 |---|---|---:|
-| **ready** | Login; Create Deck desktop/mobile; Learning Deck Details desktop/mobile; Add Card mobile | 6 |
+| **ready** | Login; Learning desktop/mobile; Create Deck desktop/mobile; Learning Deck Details desktop/mobile; Add Card mobile | 8 |
 | **partial** | Edit Deck desktop/mobile; Owner Deck Details desktop/mobile; Add/Edit Card desktop; Study desktop/mobile | 7 |
-| **blocked** | Register; Learning desktop/mobile; Created desktop/mobile; Public Deck Details desktop/mobile; Discover desktop/mobile; Progress desktop/mobile | 11 |
+| **blocked** | Register; Created desktop/mobile; Public Deck Details desktop/mobile; Discover desktop/mobile; Progress desktop/mobile | 9 |
 | **deferred** | Creator Profile desktop/mobile | 2 |
 | **Total** | All canonical references from the manifest | **26** |
 
@@ -226,30 +226,30 @@ Every subsection applies its contract fields to every canonical reference in its
 | Candidate route | `/learning` |
 | Auth | JWT |
 | Domain owner | Learning (`UserDeckProgress` collection), not content ownership |
-| Endpoint | Missing Learning Decks list contract. `LEARN-03` is deck-scoped and cannot produce the list. |
-| Request / response DTO | Missing list response DTO; likely needs enrolled deck metadata plus aggregate/per-deck progress, to be designed by backend in 0.4C sequence. |
-| Errors | Cannot finalize beyond shared JWT contract until the endpoint exists. Expected page-level handling must cover 401, 5xx, and endpoint-specific conflicts if any. |
+| Endpoint | `LEARN-05 GET /api/v1/learning/decks` |
+| Request / response DTO | No request body. `List<LearningDeckResponse>`: `deckId`, `title`, `sourceLanguage`, `targetLanguage`, `enrolledAt`, nullable `lastStudiedAt`, `progress { masteredCount, totalCount }`. |
+| Errors | Shared JWT `401`; page-level `5xx`. Successful empty state is `200 []`. |
 | Loading / error / empty | Canonical loading, API-error, and empty states exist on both platforms. Empty means no enrolled decks, not no created decks. |
-| Backend status | Missing (G-06). |
-| Candidate frontend phase | After Auth and Learning Decks backend contract; exact Phase 0.5 ordering in 0.4C. |
-| Blocker / gap | No safe/functional source for the collection. |
+| Backend status | Implemented (LEARN-05; G-06 resolved). |
+| Candidate frontend phase | After Auth/onboarding, per accepted Phase 0.5 order. |
+| Blocker / gap | No screen-specific backend blocker remains; shared Auth/onboarding prerequisites still apply. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `learning_llhelper_refined_navigation` | `0cb72b02b5db416ea2f8e5b6b33a03cb` | loading `1e7961cc60a04ae38b3caa66ffff0c36`; API error `0189efb46e3e43b8b507897f1ed95c04`; empty `7b1ecb8bc1644f8e727449c11e566e` | **blocked** |
-| Mobile | `learning_mobile_dashboard` | `48477ef15ed64daeb0bf12cb3d8f8fcf` | loading `4e1f1dd85a7241f8b203043770210d24`; API error `bf694bc2ed3e41c599becdd220607d18`; empty `a887cc6f03dd4b6699e58ba76658270f` | **blocked** |
+| Desktop | `learning_llhelper_refined_navigation` | `0cb72b02b5db416ea2f8e5b6b33a03cb` | loading `1e7961cc60a04ae38b3caa66ffff0c36`; API error `0189efb46e3e43b8b507897f1ed95c04`; empty `7b1ecb8bc1644f8e727449c11e566e` | **ready** |
+| Mobile | `learning_mobile_dashboard` | `48477ef15ed64daeb0bf12cb3d8f8fcf` | loading `4e1f1dd85a7241f8b203043770210d24`; API error `bf694bc2ed3e41c599becdd220607d18`; empty `a887cc6f03dd4b6699e58ba76658270f` | **ready** |
 
-**Missing DTO — minimal required shape** (read-only review of `learning_llhelper_refined_navigation` and `learning_mobile_dashboard`, which show a "Continue Learning" highlight deck plus a "Learning Decks" list):
+**Implemented DTO mapping** (`learning_llhelper_refined_navigation` and `learning_mobile_dashboard` show a Continue/Start highlight plus a Learning Decks list):
 
 | Field | Status | Note |
 |---|---|---|
 | `deckId`, `title` | Existing (`Deck`) | Already returned by `DeckListResponse`/`DeckResponse`. |
 | `sourceLanguage`, `targetLanguage` | Existing (`Deck`) | Already returned by `DeckListResponse`. |
-| Per-deck aggregate learning progress (e.g. mastered/total card counts or a percent) | Missing | No aggregate exists; `DeckCardResponse.progress` is per-card only (see `LEARN-03`). Backend must aggregate `UserCardProgress` by deck. |
-| "Continue Learning" highlight selection | Missing (endpoint/DTO), not missing (model) | `UserDeckProgress.lastStudiedAt` already exists and is updated on every review (`learning/entity/UserDeckProgress.java:28-29`, set in `LearningServiceImpl.reviewCard` — `learning/service/LearningServiceImpl.java:155`). The gap is that no Learning Decks list endpoint/DTO exposes `lastStudiedAt` (or any ordering derived from it); `EnrollResponse`/`DeckCardResponse`/`DeckListResponse` all omit it. |
+| Per-deck aggregate learning progress | Implemented | LEARN-05 returns `progress.masteredCount` and `progress.totalCount`, aggregated server-side in one batch read. |
+| "Continue Learning" / "Start Learning" highlight selection | Implemented contract | Response order is authoritative: studied decks first by `lastStudiedAt DESC`; if none has been studied, the newest `enrolledAt` is first. The UI labels a first item with non-null `lastStudiedAt` as Continue Learning, otherwise Start Learning. |
 | Ratings/likes/popularity/follower badges | Not in MVP | Not present on the canonical screen; must not be added. |
 
-Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage, lastStudiedAt, progress: {masteredCount, totalCount}}>`, where the Learning Decks list endpoint/DTO surfaces the existing `UserDeckProgress.lastStudiedAt` field (frontend or backend selects the most-recent one as "Continue Learning"). Ordering rule (most-recent vs. other heuristic) to be confirmed in Phase 0.4C; the underlying data already exists.
+Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enrolledAt, lastStudiedAt, progress: {masteredCount, totalCount}}>`. Only `ACTIVE` enrollments are returned; `id ASC` is the deterministic final tie-breaker.
 
 ### 5.4 Created Decks
 
@@ -378,9 +378,9 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Request / response DTO | `List<DeckCardResponse {id,title,definition,synonyms,examples,translation,progress}>`; metadata `DeckResponse`. |
 | Errors | 409 not enrolled (not 403; G-12), shared JWT, possible 404 for optional metadata. |
 | Loading / error / empty | Initial skeleton; page API error; empty cards state. No dedicated variants; use shared patterns without borrowing Owner details' learning-free content semantics. |
-| Backend status | `LEARN-03` implemented; list navigation missing separately (G-06). |
+| Backend status | `LEARN-03` implemented; list navigation source implemented separately as LEARN-05 (G-06 resolved). |
 | Candidate frontend phase | Learning flow after Auth and Learning dashboard contract. |
-| Blocker / gap | Screen-specific data contract is sufficient; reachability from the Learning list is blocked. Metadata composition must be confirmed in 0.4C. |
+| Blocker / gap | Screen-specific data contract and reachability source are sufficient; shared Auth/onboarding prerequisites still apply. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -555,9 +555,9 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 > This section is the historical Phase 0.4B result, preserved as-read and not rewritten (see header note). Its counts and evidence below are historical and unchanged. Where it calls for a future decision (e.g. "Phase 0.4C must..."), that decision has since been made in §0 — this section is not the current target.
 
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
-- Using contract-local semantics (§2), the map identifies **6 ready**, **7 partial**, **11 blocked**, and **2 provisionally deferred** references.
+- Using contract-local semantics (§2), the map now identifies **8 ready**, **7 partial**, **9 blocked**, and **2 deferred** references after G-06 resolution.
 - For the five surfaces with no backend contract at all (Learning dashboard, Created Decks, Discover, Creator Profile, Progress), read-only review of the canonical Stitch base screens produced minimal required request/response field sketches (§5.3, §5.4, §5.12–§5.14), explicitly separating fields that already exist on current DTOs from fields that are missing or unresolved. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/update/delete and single-card AI are independently `Ready`, edit prefill and bulk AI remain `Partial` for their own reasons (G-05, G-09).
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
-- The highest-impact blockers are Auth/profile bootstrap (G-01–G-03), private-data exposure/list scoping (G-04–G-05), missing Learning/Progress contracts (G-06–G-07), and Study selection correctness (G-08).
+- The remaining highest-impact blockers are unfinished Auth/profile UI orchestration (G-02), private-data exposure/list scoping (G-04–G-05), the deferred aggregate Progress contract (G-07), and Study selection correctness (G-08). G-01, G-03, and G-06 are resolved.
 - Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*

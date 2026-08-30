@@ -267,7 +267,7 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 - [x]  Понятно, где content, а где progress (Content Layer / Learning Layer — см. `current-architecture.md` §1)
 - [x]  DTO не возвращают entity наружу
 - [x]  Есть mapper layer
-- [x]  Есть Liquibase (V1–V10 миграций)
+- [x]  Есть Liquibase (schema defined through V11)
 - [x]  Есть GlobalExceptionHandler
 - [x]  Есть validation
 - [x]  Есть Postman collection (`LLHelper.postman_collection.json`) — актуализация в процессе, см. `current-sprint.md`

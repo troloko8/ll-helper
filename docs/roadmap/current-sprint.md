@@ -37,7 +37,7 @@
 
 **Группа 3: Study flow**
 
-- [ ] Learning list (`/learning`) — требует backend G-06.
+- [ ] Learning list (`/learning`) — backend G-06 готов; frontend ещё не реализован.
 - [ ] Learning Deck Details (`/learning/:deckId`) — показывает backend-provided per-card progress + frontend-derived per-deck counts (см. Phase 0.4C § Progress semantics).
 - [ ] Enroll in deck (через Public Deck Details).
 - [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — требует backend G-08 (`REVIEWING` включён в выборку).
@@ -84,7 +84,7 @@
 **Статус: ✅ завершена** (Phase 0.4A/0.4B/0.4C — documentation/audit-only; runtime code unchanged). Runtime frontend feature implementation ещё не начата — см. упорядоченные задачи ниже.
 
 - [x] Phase 0.4A — Backend Contract Inventory (`docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`) — repository-grounded аудит контроллеров, DTO, security и error contract.
-- [x] Phase 0.4B — Frontend Integration Map (`docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`) — screen-by-screen карта всех 26 canonical Stitch references → candidate route → backend contract → readiness (6 ready / 7 partial / 11 blocked / 2 provisionally deferred).
+- [x] Phase 0.4B — Frontend Integration Map (`docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`) — screen-by-screen карта всех 26 canonical Stitch references → candidate route → backend contract → readiness. После закрытия G-06: 8 ready / 7 partial / 9 blocked / 2 deferred.
 - [x] Phase 0.4C — принятые решения: exact Level 1 vertical MVP, route map, Register→Complete Profile flow, session-модель, navigation scoping, Progress semantics, blocker categorization (vertical vs release/security vs deferred), backend → Stitch → frontend order. См. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 для полного текста решений.
 
 ### Phase 0.4C — принятый Level 1 vertical MVP
@@ -108,7 +108,7 @@
   - [ ] Complete Profile Stitch (desktop/mobile/validation/conflict/submitting) — см. §0.5.
   - [ ] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
   - [ ] End-to-end Register → Profile verification (ручной smoke).
-- [ ] G-06 Learning Decks list endpoint
+- [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, batch progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
 - [ ] G-08 Study selection должен включать `REVIEWING`
 - [x] G-12 `docs/features/learning-flow.md` исправлен (409, не 403)
 
@@ -122,7 +122,7 @@ G-05 — не vertical-блокер, но стоит рано в порядке 
 
 ### Ordered backend → Stitch → frontend tasks
 
-1. ~~Backend: G-01, G-03~~ — выполнено. Следующие: G-06, G-08.
+1. ~~Backend: G-01, G-03, G-06~~ — выполнено. Следующая vertical-задача: G-08.
 2. Backend security (рано): G-05.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting) + Owner→Public "View public page" action (должен быть виден только для `isPublic=true`).

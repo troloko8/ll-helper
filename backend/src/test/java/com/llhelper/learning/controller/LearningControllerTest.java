@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,12 +14,16 @@ import static com.llhelper.learning.support.LearningTestData.defaultCardReviewRe
 import static com.llhelper.learning.support.LearningTestData.defaultEnrollResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.llhelper.learning.dto.request.CardReviewRequest;
-import com.llhelper.learning.dto.response.CardReviewResponse;
-import com.llhelper.learning.service.LearningService;
+import com.llhelper.common.model.Language;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
+import com.llhelper.learning.dto.request.CardReviewRequest;
+import com.llhelper.learning.dto.response.CardReviewResponse;
+import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.service.LearningService;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +58,43 @@ class LearningControllerTest {
 
     @MockitoBean
     private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    // --- getMyDecks ---
+
+    @Test
+    void getMyDecks_shouldReturn200WithLearningDecks() throws Exception {
+        LearningDeckResponse response = new LearningDeckResponse(
+            DECK_ID,
+            "English Basics",
+            Language.EN,
+            Language.RU,
+            Instant.parse("2024-01-01T10:00:00Z"),
+            Instant.parse("2024-01-02T10:00:00Z"),
+            new LearningDeckResponse.ProgressSummary(3, 10)
+        );
+        when(learningService.getMyDecks()).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/learning/decks"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()", is(1)))
+            .andExpect(jsonPath("$[0].deckId", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].title", is("English Basics")))
+            .andExpect(jsonPath("$[0].sourceLanguage", is("EN")))
+            .andExpect(jsonPath("$[0].targetLanguage", is("RU")))
+            .andExpect(jsonPath("$[0].enrolledAt", is("2024-01-01T10:00:00Z")))
+            .andExpect(jsonPath("$[0].lastStudiedAt", is("2024-01-02T10:00:00Z")))
+            .andExpect(jsonPath("$[0].progress.masteredCount", is(3)))
+            .andExpect(jsonPath("$[0].progress.totalCount", is(10)));
+    }
+
+    @Test
+    void getMyDecks_shouldReturn200WithEmptyList() throws Exception {
+        when(learningService.getMyDecks()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/learning/decks"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()", is(0)));
+    }
 
     // --- enrollDeck ---
 

@@ -3,8 +3,8 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-01
-> **Status:** Liquibase migrations V1–V10 applied; constraints, cascades, and timestamps under DB control. Remaining gap: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes (Backlog).
+> **Last updated:** 2026-08-30
+> **Status:** Liquibase migrations V1–V10 applied; V11 defined for G-06. Remaining index gaps: `idx_ucp_next_review`, `idx_cards_deck` (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
 
@@ -20,7 +20,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1–V10 Liquibase migrations applied. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
+**Note:** V1–V10 Liquibase migrations applied and V11 is defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`, `idx_cards_deck`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -28,10 +28,10 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Current schema state as of Liquibase migrations V1–V10.
+**Scope:** Current schema definition through Liquibase migration V11.
 
 **Not in this document:**
-- Remaining index work (`idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck`) — see Section 8
+- Remaining index work (`idx_ucp_next_review`, `idx_cards_deck`) — see Section 8
 - Soft delete implementation — deferred to Level 1
 
 ---
@@ -269,6 +269,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `user_deck_progress` | `user_id` | `NOT NULL` |
 | `user_deck_progress` | `deck_id` | `NOT NULL` |
 | `user_deck_progress` | `status` | `NOT NULL` |
+| `user_deck_progress` | `enrolled_at` | `NOT NULL` (V11 backfills existing rows from `last_studied_at` or migration time) |
 | `user_card_progress` | `user_id` | `NOT NULL` |
 | `user_card_progress` | `card_id` | `NOT NULL` |
 | `user_card_progress` | `user_deck_progress_id` | `NOT NULL` |
@@ -287,6 +288,7 @@ All timestamp columns use `timestamptz` (TIMESTAMP WITH TIME ZONE) and `java.tim
 Entity mapping: `@Column(name = "created_at", nullable = false, insertable = false, updatable = false)`
 
 **Business timestamps** (application-managed):
+- `user_deck_progress.enrolled_at` — set from the injected application `Clock` when enrollment is created; used for Start Learning ordering
 - `user_deck_progress.last_studied_at` — set when user studies cards from deck
 - `user_card_progress.last_reviewed_at` — set when user reviews specific card
 - `user_card_progress.next_review_at` — calculated by spaced repetition algorithm
@@ -296,6 +298,7 @@ Entity mapping: `@Column(name = "last_reviewed_at")` (without `insertable=false,
 **Migration history:**
 - V9: technical timestamps migrated from `timestamp` to `timestamptz` with DEFAULT + triggers
 - V10: business timestamps migrated from `timestamp` to `timestamptz` using explicit `AT TIME ZONE 'Asia/Jerusalem'`
+- V11: `enrolled_at timestamptz` added, existing rows backfilled, then constrained `NOT NULL`; no database default because the application owns this business timestamp
 
 See `docs/database/schema-ownership.md` → "Business timestamps vs Technical timestamps" for detailed rules.
 
@@ -342,12 +345,12 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 ## 8. Indexes
 
-**Status:** Partially implemented — unique constraints cover the hot lookup paths; `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` indexes still pending (Backlog).
+**Status:** Partially implemented — G-06 added the user/status lookup index; `idx_ucp_next_review` and `idx_cards_deck` remain pending (Backlog).
 
 | Index | Table | Columns | Purpose | Status |
 |-------|-------|---------|---------|--------|
 | `uk_user_deck_progress_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint | ✅ Added in V2 |
-| `idx_udp_user_status` | `user_deck_progress` | `user_id, status` | List active/paused decks for user | Pending (Backlog) |
+| `idx_user_deck_progress_user_status` | `user_deck_progress` | `user_id, status` | List active learning decks for current user | ✅ Added in V11 |
 | `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status | ✅ Added in V1 baseline |
 | `uk_user_card_progress_deck_card` | `user_card_progress` | `user_deck_progress_id, card_id` | Fast card lookup (unique) | ✅ Added in V3 (replaces the incorrect V1 `idx_ucp_user_card`) |
 | `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending (Backlog) |
@@ -356,8 +359,8 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 **Current State:**
 - `users` table: `idx_user_username` (unique). `idx_user_auth` was a duplicate of `uk_users_auth_user_id` and was removed in V8.
 - `user_card_progress`: `idx_ucp_user_deck` (V1), `uk_user_card_progress_deck_card` (V3, unique)
-- `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique)
-- Still pending: `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` — tracked in `docs/roadmap/backlog.md`.
+- `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique), `idx_user_deck_progress_user_status` (V11)
+- Still pending: `idx_ucp_next_review`, `idx_cards_deck` — tracked in `docs/roadmap/backlog.md`.
 
 ---
 
@@ -489,7 +492,7 @@ AuthUser (credentials)
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **Missing performance indexes** | `idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck` not created; see §8 and `docs/roadmap/backlog.md` | Backlog |
+| **Missing performance indexes** | `idx_ucp_next_review`, `idx_cards_deck` not created; see §8 and `docs/roadmap/backlog.md` | Backlog |
 | **Cross-reference consistency is not enforced in DB** | Independent FKs do not guarantee that `UserCardProgress.userId` matches the parent `UserDeckProgress.userId`, or that `cardId` belongs to the enrolled Deck. Currently enforced by application logic. | Backlog |
 | ~~**Languages stored as VARCHAR, not enum**~~ | ~~Invalid language values possible~~ | ✅ Fixed — `CHECK` constraints via V6 |
 | ~~**No DB-level CHECK constraints**~~ | ~~Invalid status values possible via raw SQL~~ | ✅ Fixed — V6 (language), V7 (progress counters) |
@@ -548,7 +551,6 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 ### 13.2 Pending Indexes
 
 ```sql
-CREATE INDEX idx_udp_user_status ON user_deck_progress(user_id, status);
 CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
 CREATE INDEX idx_cards_deck ON cards(deck_id);
 ```
@@ -662,3 +664,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-13 | V9 migration created: Migrated technical timestamps (`created_at`, `updated_at`) from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`. Added DEFAULT CURRENT_TIMESTAMP and triggers for auto-update. Entities updated to `java.time.Instant` with `insertable=false, updatable=false`. |
 | 2026-07-13 | V10 migration created: Migrated business timestamps (`last_studied_at`, `last_reviewed_at`, `next_review_at`) from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using explicit `AT TIME ZONE 'Asia/Jerusalem'`. Entities updated to `Instant` without `insertable/updatable=false` (application-managed). Added section 6.2.1 "Timestamp Columns". |
 | 2026-07-30 | Doc audit: removed "Sprint 0.3 pending" framing. V2–V10 resolved unique constraints, FK policies, cascades, CHECK constraints, timestamp ownership, and duplicate-index cleanup. Remaining performance indexes tracked in §8 and `docs/roadmap/backlog.md`. Corrected Section 4.3/10 risk notes — FK protection already existed since V1, CASCADE finalized in V5. Header now points to `current-sprint.md`. |
+| 2026-08-30 | V11 defined: added application-managed `user_deck_progress.enrolled_at`, safely backfilled existing rows, enforced `NOT NULL`, and added `idx_user_deck_progress_user_status(user_id, status)` for the G-06 Learning Decks list. |

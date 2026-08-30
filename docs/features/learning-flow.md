@@ -3,14 +3,14 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-07-30
+> **Last updated:** 2026-08-30
 > **Status:** Reflects current `LearningServiceImpl` implementation
 
 ---
 
 ## 1. Purpose
 
-Describe the current learning flow: enroll → study cards → review card → update progress.
+Describe the current learning flow: list active learning decks → enroll → study cards → review card → update progress.
 
 This document does not define advanced spaced repetition, StudySession history, teacher analytics, or AI recommendations.
 
@@ -21,6 +21,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 ### Current MVP Scope
 
 - Enroll public deck
+- List the current user's active learning decks with aggregate progress
 - Create deck-level progress (`UserDeckProgress`)
 - Create card-level progress (`UserCardProgress`) for all deck cards
 - Get up to 10 cards for study (prioritized by status)
@@ -63,6 +64,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/api/v1/learning/decks` | List current user's active learning decks |
 | `POST` | `/api/v1/decks/{deckId}/enroll` | Enroll in a public deck |
 | `GET` | `/api/v1/decks/{deckId}/study/cards` | Get up to 10 cards for study |
 | `GET` | `/api/v1/decks/{deckId}/cards` | Get all deck cards with progress info |
@@ -72,7 +74,19 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 ## 5. Learning Flow
 
-### 5.1 Enroll Deck
+### 5.1 List Learning Decks
+
+`GET /api/v1/learning/decks`
+
+1. Resolve the authenticated user ID.
+2. Load only `UserDeckProgress` rows with `status = ACTIVE` for that user.
+3. Batch-load all corresponding `Deck` rows and all `UserCardProgress` rows; the query count is constant rather than one card-progress query per deck.
+4. Return deck metadata, `enrolledAt`, nullable `lastStudiedAt`, and `progress { masteredCount, totalCount }`.
+5. Sort studied decks first by `lastStudiedAt DESC`; then never-studied decks by `enrolledAt DESC`; use progress-row `id ASC` as the final deterministic tie-breaker.
+
+The first returned deck is the highlight candidate. If its `lastStudiedAt` is non-null, the UI presents **Continue Learning**; otherwise it presents **Start Learning**. No enrollments returns `200 OK` with `[]`.
+
+### 5.2 Enroll Deck
 
 `POST /api/v1/decks/{deckId}/enroll`
 
@@ -91,7 +105,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 ---
 
-### 5.2 Get Study Cards
+### 5.3 Get Study Cards
 
 `GET /api/v1/decks/{deckId}/study/cards`
 
@@ -112,7 +126,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 
 ---
 
-### 5.3 Get All Deck Cards
+### 5.4 Get All Deck Cards
 
 `GET /api/v1/decks/{deckId}/cards`
 
@@ -121,7 +135,7 @@ Requires enrollment. Uses same batch-load pattern as study cards (no N+1).
 
 ---
 
-### 5.4 Review Card
+### 5.5 Review Card
 
 `POST /api/v1/cards/{cardId}/review`
 
@@ -177,13 +191,14 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 ## 8. Definition of Done
 
+- [x] User can list active learning decks with aggregate progress
 - [x] User can enroll in a public deck
 - [x] Duplicate enroll returns `409`
 - [x] Private deck enroll returns `403`
 - [x] Study endpoint returns up to 10 cards (LEARNING first, then NEW)
 - [x] Review endpoint updates progress counters
 - [x] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
-- [ ] Postman collection updated with all 4 endpoints — see `docs/roadmap/current-sprint.md`
+- [x] Postman collection includes all 5 learning endpoints
 
 ---
 
@@ -191,12 +206,13 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 | Case | Expected |
 |------|----------|
+| No active learning decks | `200 OK` with empty array |
 | Enroll public deck | `201 Created` |
 | Duplicate enroll | `409 Conflict` |
 | Enroll private deck | `403 Forbidden` |
 | Study empty deck | `200 OK` with empty array |
-| Study cards without enrollment | `409 Conflict` (see §5.2, G-12) |
-| Review card without enrollment | `409 Conflict` (see §5.4, G-12) |
+| Study cards without enrollment | `409 Conflict` (see §5.3, G-12) |
+| Review card without enrollment | `409 Conflict` (see §5.5, G-12) |
 | Non-existent deck / card | `404 Not Found` |
 
 ---
@@ -204,6 +220,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 ## 10. Handled Edge Cases
 
 - User not authenticated → `401` (Spring Security filter)
+- No active learning decks → `200 []`
 - Deck not found → `404`
 - Private deck enroll attempt → `403`
 - Duplicate enroll → `409`

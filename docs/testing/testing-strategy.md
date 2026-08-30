@@ -44,7 +44,7 @@
 
 **Level 0:** Unit + @WebMvcTest + один `contextLoads` DB smoke с Testcontainers. Полноценные repository и integration тесты — Level 2.
 
-> **Почему DB smoke в Level 0:** проект содержит TIMESTAMPTZ, триггеры, CHECK constraints, Liquibase V1–V10. Без автоматической проверки что миграции запускаются на чистой PostgreSQL — ручной контроль ненадёжен.
+> **Почему DB smoke в Level 0:** проект содержит TIMESTAMPTZ, триггеры, CHECK constraints, Liquibase V1–V11. Без автоматической проверки что миграции запускаются на чистой PostgreSQL — ручной контроль ненадёжен.
 
 ## Именование тестов
 

@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * DB smoke test: verifies that Liquibase migrations (V1-V10) run successfully
+ * DB smoke test: verifies that Liquibase migrations (V1-V11) run successfully
  * against a clean PostgreSQL instance, and that the resulting schema is valid
  * for Hibernate (ddl-auto: validate).
  *

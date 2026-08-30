@@ -49,7 +49,7 @@
 
 ## Database
 
-- [x] Настроить Liquibase для миграций (V1–V10 применены: unique constraints, FK cascades, CHECK constraints, timestamptz)
+- [x] Настроить Liquibase для миграций (schema defined through V11: unique constraints, FK cascades, CHECK constraints, timestamptz, G-06 enrollment ordering support)
 - [x] Индексы на `email`/`username` — уже есть через UNIQUE constraints (V1 baseline)
 - [ ] **Добавить индекс на `user_card_progress.next_review_at`**  
   Единственный оставшийся пробел по индексам, см. `docs/database/relationships.md` §8

@@ -1,5 +1,6 @@
 package com.llhelper.learning.support;
 
+import com.llhelper.common.support.TestData;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
@@ -56,6 +57,7 @@ public final class LearningTestData {
         UserDeckProgress progress = new UserDeckProgress();
         progress.setUserId(1L);
         progress.setDeckId(1L);
+        progress.setEnrolledAt(TestData.fixedClock().instant());
         progress.setStatus(UserDeckStatus.ACTIVE);
         return progress;
     }

@@ -132,7 +132,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created
 
 **Database quality:** Liquibase fully adopted, `ddl-auto=validate`, indexes, unique constraints, FK checked, cascade strategy documented
 - Unique constraints и indexes уже описаны нормативно в `docs/database/relationships.md` §7–8 — не дублировать точные имена таблиц/колонок здесь
-- Проверить и реализовать pending indexes из `docs/database/relationships.md` §8 (`idx_udp_user_status`, `idx_ucp_next_review`, `idx_cards_deck`)
+- Проверить и реализовать pending indexes из `docs/database/relationships.md` §8 (`idx_ucp_next_review`, `idx_cards_deck`); индекс `(user_id, status)` для `user_deck_progress` закрыт в V11 как часть G-06.
 
 **Индексация БД:**
 
@@ -249,7 +249,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created
 > Часть пунктов ниже может быть уже устаревшей или частично сделанной — не проверялось построчно против кода при слиянии.
 
 - [ ] Проверить все 500 ошибки и заменить на соответствующие HTTP коды — **дублирует Sprint 0.4 Группа 4**, см. `current-sprint.md`
-- [ ] ~~Создать систему миграции для проекта (Liquibase)~~ — **вероятно устарело**: Liquibase уже внедрён и используется (V1–V10, см. `changelog.md` Sprint 0.3)
+- [ ] ~~Создать систему миграции для проекта (Liquibase)~~ — **вероятно устарело**: Liquibase уже внедрён и используется (schema defined through V11; см. `changelog.md` Sprint 0.3)
 - [ ] Проверить структуру базы данных: constraints, FK, cascade, индексы, типы данных, связи — частично покрыто Sprint 0.3, но периодический ревью остаётся полезным
 - [ ] Переписать сложные Hibernate запросы на ручные SQL (кроме простых CRUD)
 - [ ] Установить правило: SQL-запросы вместо Hibernate/JPQL для сложных операций (`@Query(nativeQuery = true)`/`JdbcTemplate`; запрещено для сложных join/агрегаций/фильтров; базовые CRUD — можно Hibernate)

@@ -33,7 +33,7 @@
 ## Database
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `validate`
-- **Migrations:** Liquibase (V1–V10 applied; see `docs/database/relationships.md` for current schema state)
+- **Migrations:** Liquibase (schema defined through V11; see `docs/database/relationships.md` for current schema state)
 
 ## Rate Limiting
 

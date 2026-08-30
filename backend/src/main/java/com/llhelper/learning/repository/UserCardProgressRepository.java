@@ -1,6 +1,7 @@
 package com.llhelper.learning.repository;
 
 import com.llhelper.learning.entity.UserCardProgress;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,4 +10,6 @@ public interface UserCardProgressRepository extends JpaRepository<UserCardProgre
     Optional<UserCardProgress> findByUserDeckProgressIdAndCardId(Long userDeckProgressId, Long cardId);
 
     List<UserCardProgress> findAllByUserDeckProgressId(Long userDeckProgressId);
+
+    List<UserCardProgress> findAllByUserDeckProgressIdIn(Collection<Long> userDeckProgressIds);
 }

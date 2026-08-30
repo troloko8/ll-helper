@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 1 — Vertical Full-Stack Flow
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-15
+> **Last updated:** 2026-08-30
 > **Status:** Backend foundation complete (Level 0). Frontend Technical Foundation complete (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router, testing infrastructure). Auth/product flow screens next.
 
 ---
@@ -27,7 +27,7 @@
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
 - ✅ Mapper layer, rate limiting, ownership checks completed
-- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V10)
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V11 defined; V11 adds G-06 enrollment ordering support)
 - ⏸ Additional performance indexes deferred to Level 2
 
 **Frontend (Level 1 — in progress):**
@@ -158,7 +158,7 @@ User ──1:N──▶ UserDeckProgress ──1:N──▶ UserCardProgress
 
 | Entity | Table | Key Fields |
 |--------|-------|------------|
-| `UserDeckProgress` | `user_deck_progress` | userId, deckId, status, lastStudiedAt |
+| `UserDeckProgress` | `user_deck_progress` | userId, deckId, status, enrolledAt, lastStudiedAt |
 | `UserCardProgress` | `user_card_progress` | userId, cardId, userDeckProgressId, timesSeen, timesCorrect, timesWrong, correctStreak, status, lastReviewedAt |
 
 ### Enums
@@ -289,6 +289,7 @@ CardService.save(cards)
 | `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
+| `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study/cards` | GET | JWT | Get up to 10 cards for study | `List<DeckCardResponse>` |
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
@@ -302,7 +303,7 @@ CardService.save(cards)
 - **Example:** `"createdAt": "2024-01-15T07:30:00Z"`
 - **Backend:** Always returns UTC timestamps
 - **Client responsibility:** Convert to user's local timezone for display
-- **Database:** `timestamptz` columns with `DEFAULT CURRENT_TIMESTAMP` and auto-update triggers
+- **Database:** all timestamp columns use `timestamptz`. Technical `created_at`/`updated_at` columns are database-managed with `DEFAULT CURRENT_TIMESTAMP` and update triggers; learning business timestamps (`enrolled_at`, `last_studied_at`, `last_reviewed_at`, `next_review_at`) are application-managed and have no database default. See `docs/database/relationships.md` §6.2.1.
 
 ---
 
@@ -648,6 +649,7 @@ When adding/changing an entity field:
 - **V8:** Removed duplicate index on `users.auth_user_id`
 - **V9:** `TIMESTAMPTZ` + `DEFAULT CURRENT_TIMESTAMP` + triggers for `created_at`/`updated_at`
 - **V10:** `TIMESTAMPTZ` for learning progress timestamps
+- **V11:** Application-managed `user_deck_progress.enrolled_at` (`timestamptz NOT NULL`, existing rows backfilled) and `idx_user_deck_progress_user_status(user_id, status)` for G-06
 
 ---
 

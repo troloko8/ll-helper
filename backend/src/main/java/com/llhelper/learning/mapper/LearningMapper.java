@@ -1,11 +1,14 @@
 package com.llhelper.learning.mapper;
 
 import com.llhelper.card.entity.Card;
+import com.llhelper.deck.entity.Deck;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
+import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
+import java.time.Instant;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
@@ -22,9 +25,10 @@ public interface LearningMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "deckId", source = "deckId")
+    @Mapping(target = "enrolledAt", source = "enrolledAt")
     @Mapping(target = "lastStudiedAt", ignore = true)
     @Mapping(target = "status", constant = "ACTIVE")
-    UserDeckProgress toUserDeckProgress(Long userId, Long deckId);
+    UserDeckProgress toUserDeckProgress(Long userId, Long deckId, Instant enrolledAt);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userId", source = "userId")
@@ -55,6 +59,19 @@ public interface LearningMapper {
     @Mapping(target = "timesWrong", source = "timesWrong")
     @Mapping(target = "correctStreak", source = "correctStreak")
     DeckCardResponse.CardProgressInfo toCardProgressInfo(UserCardProgress progress);
+
+    @Mapping(target = "deckId", source = "deckProgress.deckId")
+    @Mapping(target = "title", source = "deck.title")
+    @Mapping(target = "sourceLanguage", source = "deck.sourceLanguage")
+    @Mapping(target = "targetLanguage", source = "deck.targetLanguage")
+    @Mapping(target = "enrolledAt", source = "deckProgress.enrolledAt")
+    @Mapping(target = "lastStudiedAt", source = "deckProgress.lastStudiedAt")
+    @Mapping(target = "progress", source = "progress")
+    LearningDeckResponse toLearningDeckResponse(
+        UserDeckProgress deckProgress,
+        Deck deck,
+        LearningDeckResponse.ProgressSummary progress
+    );
 
     @Mapping(target = "correct", source = "isCorrect")
     @Mapping(target = "correctAnswer", source = "card.title")

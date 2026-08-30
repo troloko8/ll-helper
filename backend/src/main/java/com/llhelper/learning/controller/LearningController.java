@@ -4,6 +4,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
+import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.service.LearningService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,6 +25,11 @@ public class LearningController {
 
     private final LearningService learningService;
 
+    @GetMapping("/learning/decks")
+    public ResponseEntity<List<LearningDeckResponse>> getMyDecks() {
+        return ResponseEntity.ok(learningService.getMyDecks());
+    }
+
     @PostMapping("/decks/{deckId}/enroll")
     public ResponseEntity<EnrollResponse> enrollDeck(@PathVariable Long deckId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(learningService.enrollDeck(deckId));
@@ -39,7 +45,6 @@ public class LearningController {
         return ResponseEntity.ok(learningService.getDeckCards(deckId));
     }
 
-    
     @PostMapping("/cards/{cardId}/review")
     public ResponseEntity<CardReviewResponse> reviewCard(
         @PathVariable Long cardId,

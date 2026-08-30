@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: V11-1
+      author: llhelper
+      comment: Add application-managed enrolled_at timestamp for Learning Decks ordering
+      changes:
+        - addColumn:
+            tableName: user_deck_progress
+            columns:
+              - column:
+                  name: enrolled_at
+                  type: timestamptz
+        - sql:
+            sql: >-
+              UPDATE user_deck_progress
+              SET enrolled_at = COALESCE(last_studied_at, CURRENT_TIMESTAMP)
+              WHERE enrolled_at IS NULL
+        - addNotNullConstraint:
+            tableName: user_deck_progress
+            columnName: enrolled_at
+            columnDataType: timestamptz
+
+  - changeSet:
+      id: V11-2
+      author: llhelper
+      comment: Support owner- and status-scoped Learning Decks list lookup
+      changes:
+        - createIndex:
+            indexName: idx_user_deck_progress_user_status
+            tableName: user_deck_progress
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: status
