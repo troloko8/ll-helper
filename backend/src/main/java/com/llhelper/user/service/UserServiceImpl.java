@@ -41,6 +41,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse getCurrentUser(String email) {
+        AuthUser authUser = authRepository.findByEmail(email)
+            .orElseThrow(() -> new EntityNotFoundException("AuthUser not found with email: " + email));
+        User user = userRepository.findByAuthUserId(authUser.getId())
+            .orElseThrow(() -> new EntityNotFoundException("User not found for authUserId: " + authUser.getId()));
+        return userMapper.toResponse(user);
+    }
+
+    @Override
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));

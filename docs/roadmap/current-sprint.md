@@ -97,10 +97,10 @@
 - Navigation/UI shell scoping → `docs/frontend/DESIGN.md`.
 - Deferred surfaces/capabilities → `docs/roadmap/backlog.md` и map §0.2/§0.4.
 
-### Phase 0.4C — backend blockers (не реализованы; полный контекст и deferred capabilities — map §0.4)
+### Phase 0.4C — backend blockers (статус выполнения; полный контекст и deferred capabilities — map §0.4)
 
 **Vertical implementation blockers** (нужны для локального single-user smoke):
-- [ ] G-01 `GET /api/v1/users/me`
+- [x] G-01 `GET /api/v1/users/me` — JWT-protected session bootstrap возвращает `200 UserResponse` для существующего профиля, `404 {"message": ...}` для валидного JWT без профиля и общий контролируемый `401 {"message":"Authentication required"}` для отсутствующего/invalid/expired/malformed JWT.
 - [x] G-03 контролируемый 401 для expired/malformed/invalid JWT — `JwtAuthenticationFilter` перехватывает `JwtException`/`IllegalArgumentException`, очищает `SecurityContext` и делегирует в общий `RestAuthenticationEntryPoint`; тот же `{"message":"Authentication required"}` 401, что и при отсутствующем токене. Подтверждено `JwtSecurityFilterChainTest` (реальный `SecurityFilterChain`).
 - G-02 Register → Complete Profile orchestration — разбито на подзадачи:
   - [x] Product decision: отдельный экран Complete Profile принят (Phase 0.4C).
@@ -122,7 +122,7 @@ G-05 — не vertical-блокер, но стоит рано в порядке 
 
 ### Ordered backend → Stitch → frontend tasks
 
-1. Backend: G-01, G-03, G-06, G-08.
+1. ~~Backend: G-01, G-03~~ — выполнено. Следующие: G-06, G-08.
 2. Backend security (рано): G-05.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting) + Owner→Public "View public page" action (должен быть виден только для `isPublic=true`).

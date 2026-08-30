@@ -210,15 +210,16 @@ Typical secured request:
 ```text
 POST /api/v1/auth/register  ──▶  Create AuthUser only    ──▶  Return JWT
 POST /api/v1/auth/login     ──▶  Validate credentials    ──▶  Return JWT
+GET /api/v1/users/me        ──▶  Resolve current profile from JWT subject email; 404 if profile is not created
 ```
 
 > **Current behavior (as implemented):** `AuthServiceImpl.register()` creates only `AuthUser`; no `User` profile row is created by `/auth/register` itself. Every authenticated action that resolves the current `User` (`SecurityUtils.getCurrentUser()`/`getCurrentUserId()`) will fail until a separate `POST /api/v1/users` call succeeds.
 >
-> **Accepted Level 1 target flow (Phase 0.4C, not yet implemented):**
+> **Accepted Level 1 target flow (Phase 0.4C, implemented backend bootstrap; frontend orchestration pending):**
 > ```text
-> POST /auth/register → JWT → /onboarding/profile (frontend) → POST /users → authenticated app
+> POST /auth/register → JWT → GET /users/me → 404 → /onboarding/profile (frontend) → POST /users → GET /users/me → 200 UserResponse → authenticated app
 > ```
-> `GET /api/v1/users/me` does not exist yet; it is a Phase 0.4C accepted requirement (see `docs/roadmap/current-sprint.md`), not current behavior.
+> `GET /api/v1/users/me` is JWT-protected and resolves the JWT subject email through `AuthUser` to the linked `User`. It returns `404` without creating a profile when the link is absent.
 
 > **JWT error contract (as implemented):** `JwtAuthenticationFilter` catches `io.jsonwebtoken.JwtException` (expired, malformed, invalid-signature) and `IllegalArgumentException` around JWT parsing/validation, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint` bean — the same one registered as `SecurityConfig`'s `authenticationEntryPoint` for the missing-Bearer-token case. Every invalid-JWT scenario therefore returns an identical controlled `401 {"message":"Authentication required"}` response; the client cannot distinguish missing vs. expired vs. malformed vs. invalid-signature tokens from the response body.
 
@@ -278,6 +279,7 @@ CardService.save(cards)
 | `/api/v1/auth/register` | POST | — | Register new user | `AuthResponse` |
 | `/api/v1/auth/login` | POST | — | Login, get JWT | `AuthResponse` |
 | `/api/v1/users` | POST | JWT | Create user profile for current auth account | `UserResponse` |
+| `/api/v1/users/me` | GET | JWT | Resolve current profile from JWT subject email; 404 if profile is not created | `UserResponse` |
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
@@ -468,7 +470,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
-| Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` is required to bootstrap session state (`needsProfile` vs `authenticated`) but is not yet implemented. See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
+| Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
 
 ### Open Decisions
 

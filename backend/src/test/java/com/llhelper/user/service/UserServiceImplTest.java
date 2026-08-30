@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
@@ -14,6 +15,7 @@ import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.mapper.UserMapper;
 import com.llhelper.user.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,8 @@ import org.springframework.security.access.AccessDeniedException;
 class UserServiceImplTest {
 
     private static final Long SELF_ID = 1L;
+    private static final Long AUTH_USER_ID = 3L;
+    private static final String USER_EMAIL = "user@example.com";
     private static final Long OTHER_USER_ID = 2L;
 
     @Mock
@@ -58,6 +62,37 @@ class UserServiceImplTest {
 
     private static UpdateUserRequest updateUserRequest() {
         return new UpdateUserRequest("First", "Last", "en", "ru", null, "en");
+    }
+
+    @Test
+    void getCurrentUser_shouldReturnResponse_whenProfileExists() {
+        AuthUser authUser = new AuthUser();
+        authUser.setId(AUTH_USER_ID);
+        User user = userWithId(SELF_ID);
+        UserResponse response = new UserResponse(
+            SELF_ID, "username", "First", "Last", "en", "ru", null, "en", null, null
+        );
+        when(authRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(authUser));
+        when(userRepository.findByAuthUserId(AUTH_USER_ID)).thenReturn(Optional.of(user));
+        when(userMapper.toResponse(user)).thenReturn(response);
+
+        UserResponse result = userService.getCurrentUser(USER_EMAIL);
+
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
+    void getCurrentUser_shouldThrowNotFound_whenProfileDoesNotExist() {
+        AuthUser authUser = new AuthUser();
+        authUser.setId(AUTH_USER_ID);
+        when(authRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(authUser));
+        when(userRepository.findByAuthUserId(AUTH_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getCurrentUser(USER_EMAIL))
+            .isInstanceOf(EntityNotFoundException.class)
+            .hasMessage("User not found for authUserId: " + AUTH_USER_ID);
+
+        verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
     }
 
     @Test

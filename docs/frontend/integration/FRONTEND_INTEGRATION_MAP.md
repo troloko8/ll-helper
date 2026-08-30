@@ -44,7 +44,7 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 ### 0.4 Blocker categorization (supersedes the flat gap list in §3 for sequencing purposes)
 
 **Vertical implementation blockers** (required before the local single-user vertical smoke works at all):
-- G-01 `GET /api/v1/users/me`
+- G-01 `GET /api/v1/users/me` — completed: JWT subject email resolves `AuthUser` → linked `User`, returns `UserResponse`, and does not auto-create a missing profile. `200`/`404`/shared controlled `401` semantics are verified by service, `@WebMvcTest`, and real `SecurityFilterChain` tests.
 - [x] G-03 controlled 401 for expired/malformed/invalid JWT — done: `JwtAuthenticationFilter` catches `JwtException`/`IllegalArgumentException`, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint`, returning the same `{"message":"Authentication required"}` 401 body as the missing-token case. Verified by `JwtSecurityFilterChainTest` (real `SecurityFilterChain`, not `addFilters=false`). No longer an active blocker.
 - G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
 - G-06 Learning Decks list endpoint
@@ -69,7 +69,7 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-1. Backend: G-01, G-06, G-08 (G-03 done — see §0.4).
+1. Backend: G-06, G-08 (G-01 and G-03 done — see §0.4).
 2. Backend security (early, before any public-facing exposure): G-05.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
 4. Stitch: Complete Profile screens + Owner→Public "View public page" action.
@@ -90,12 +90,12 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
 ```
 
-Required (not yet implemented) `GET /api/v1/users/me` bootstrap semantics:
+Implemented `GET /api/v1/users/me` bootstrap semantics:
 - `200 UserResponse` → valid JWT, profile exists → `authenticated`.
 - `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
 - `401 {message}` → missing/invalid/expired JWT → `anonymous`.
 
-This is a documented implementation requirement for the not-yet-existing endpoint, not a description of current behavior.
+This is the implemented session-bootstrap contract.
 
 ### 0.8 Progress semantics (accepted, corrects any prior claim of a ready backend aggregate)
 
@@ -226,7 +226,7 @@ Every subsection applies its contract fields to every canonical reference in its
 | Candidate route | `/learning` |
 | Auth | JWT |
 | Domain owner | Learning (`UserDeckProgress` collection), not content ownership |
-| Endpoint | Missing Learning Decks list endpoint. `LEARN-03` is deck-scoped and cannot produce the list. |
+| Endpoint | Missing Learning Decks list contract. `LEARN-03` is deck-scoped and cannot produce the list. |
 | Request / response DTO | Missing list response DTO; likely needs enrolled deck metadata plus aggregate/per-deck progress, to be designed by backend in 0.4C sequence. |
 | Errors | Cannot finalize beyond shared JWT contract until the endpoint exists. Expected page-level handling must cover 401, 5xx, and endpoint-specific conflicts if any. |
 | Loading / error / empty | Canonical loading, API-error, and empty states exist on both platforms. Empty means no enrolled decks, not no created decks. |

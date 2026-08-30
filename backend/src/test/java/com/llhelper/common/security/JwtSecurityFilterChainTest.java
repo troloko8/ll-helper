@@ -59,16 +59,16 @@ class JwtSecurityFilterChainTest {
     private UserDetailsService userDetailsService;
 
     @Test
-    void getUserById_shouldReturn401_whenNoAuthorizationHeader() throws Exception {
-        mockMvc.perform(get("/api/v1/users/1"))
+    void getCurrentUser_shouldReturn401_whenNoAuthorizationHeader() throws Exception {
+        mockMvc.perform(get("/api/v1/users/me"))
             .andExpect(status().isUnauthorized())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().json(EXPECTED_BODY));
     }
 
     @Test
-    void getUserById_shouldReturn401_whenBearerTokenIsMalformed() throws Exception {
-        mockMvc.perform(get("/api/v1/users/1")
+    void getCurrentUser_shouldReturn401_whenBearerTokenIsMalformed() throws Exception {
+        mockMvc.perform(get("/api/v1/users/me")
                 .header("Authorization", "Bearer not-a-jwt"))
             .andExpect(status().isUnauthorized())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -76,7 +76,7 @@ class JwtSecurityFilterChainTest {
     }
 
     @Test
-    void getUserById_shouldReturn401_whenJwtIsExpired() throws Exception {
+    void getCurrentUser_shouldReturn401_whenJwtIsExpired() throws Exception {
         String expiredToken = Jwts.builder()
                 .subject(USER_EMAIL)
                 .issuedAt(Date.from(Instant.now().minusSeconds(7200)))
@@ -84,7 +84,7 @@ class JwtSecurityFilterChainTest {
                 .signWith(SIGNING_KEY)
                 .compact();
 
-        mockMvc.perform(get("/api/v1/users/1")
+        mockMvc.perform(get("/api/v1/users/me")
                 .header("Authorization", "Bearer " + expiredToken))
             .andExpect(status().isUnauthorized())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -92,7 +92,7 @@ class JwtSecurityFilterChainTest {
     }
 
     @Test
-    void getUserById_shouldReturn401_whenJwtHasInvalidSignature() throws Exception {
+    void getCurrentUser_shouldReturn401_whenJwtHasInvalidSignature() throws Exception {
         SecretKey wrongKey = Keys.hmacShaKeyFor(
                 "a-completely-different-signing-key-32-chars-min".getBytes());
         String tokenSignedWithWrongKey = Jwts.builder()
@@ -102,7 +102,7 @@ class JwtSecurityFilterChainTest {
                 .signWith(wrongKey)
                 .compact();
 
-        mockMvc.perform(get("/api/v1/users/1")
+        mockMvc.perform(get("/api/v1/users/me")
                 .header("Authorization", "Bearer " + tokenSignedWithWrongKey))
             .andExpect(status().isUnauthorized())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -110,10 +110,10 @@ class JwtSecurityFilterChainTest {
     }
 
     @Test
-    void getUserById_shouldPassThrough_whenJwtIsValid() throws Exception {
+    void getCurrentUser_shouldPassThrough_whenJwtIsValid() throws Exception {
         UserDetails userDetails = new User(USER_EMAIL, "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
         when(userDetailsService.loadUserByUsername(USER_EMAIL)).thenReturn(userDetails);
-        when(userService.getUserById(1L)).thenReturn(
+        when(userService.getCurrentUser(USER_EMAIL)).thenReturn(
                 new UserResponse(1L, USER_EMAIL, "Test", "User", "en", "en", null, "en", null, null));
 
         String validToken = Jwts.builder()
@@ -123,7 +123,7 @@ class JwtSecurityFilterChainTest {
                 .signWith(SIGNING_KEY)
                 .compact();
 
-        mockMvc.perform(get("/api/v1/users/1")
+        mockMvc.perform(get("/api/v1/users/me")
                 .header("Authorization", "Bearer " + validToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value(USER_EMAIL));
