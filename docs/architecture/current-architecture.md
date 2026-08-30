@@ -220,6 +220,8 @@ POST /api/v1/auth/login     ──▶  Validate credentials    ──▶  Return
 > ```
 > `GET /api/v1/users/me` does not exist yet; it is a Phase 0.4C accepted requirement (see `docs/roadmap/current-sprint.md`), not current behavior.
 
+> **JWT error contract (as implemented):** `JwtAuthenticationFilter` catches `io.jsonwebtoken.JwtException` (expired, malformed, invalid-signature) and `IllegalArgumentException` around JWT parsing/validation, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint` bean — the same one registered as `SecurityConfig`'s `authenticationEntryPoint` for the missing-Bearer-token case. Every invalid-JWT scenario therefore returns an identical controlled `401 {"message":"Authentication required"}` response; the client cannot distinguish missing vs. expired vs. malformed vs. invalid-signature tokens from the response body.
+
 ### Learning Flow
 
 ```text

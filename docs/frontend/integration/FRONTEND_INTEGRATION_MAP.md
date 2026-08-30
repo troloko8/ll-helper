@@ -45,7 +45,7 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 
 **Vertical implementation blockers** (required before the local single-user vertical smoke works at all):
 - G-01 `GET /api/v1/users/me`
-- G-03 controlled 401 for expired/malformed/invalid JWT
+- [x] G-03 controlled 401 for expired/malformed/invalid JWT — done: `JwtAuthenticationFilter` catches `JwtException`/`IllegalArgumentException`, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint`, returning the same `{"message":"Authentication required"}` 401 body as the missing-token case. Verified by `JwtSecurityFilterChainTest` (real `SecurityFilterChain`, not `addFilters=false`). No longer an active blocker.
 - G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
 - G-06 Learning Decks list endpoint
 - G-08 Study selection must include `REVIEWING`
@@ -69,7 +69,7 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-1. Backend: G-01, G-03, G-06, G-08.
+1. Backend: G-01, G-06, G-08 (G-03 done — see §0.4).
 2. Backend security (early, before any public-facing exposure): G-05.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
 4. Stitch: Complete Profile screens + Owner→Public "View public page" action.

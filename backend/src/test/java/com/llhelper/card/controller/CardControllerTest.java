@@ -17,6 +17,7 @@ import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.service.CardService;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -44,6 +45,9 @@ class CardControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     // --- create ---
 

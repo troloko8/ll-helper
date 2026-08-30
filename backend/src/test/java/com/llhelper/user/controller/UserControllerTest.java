@@ -15,6 +15,7 @@ import static com.llhelper.user.support.UserTestData.defaultUpdateRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
@@ -45,6 +46,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     // --- getById ---
 

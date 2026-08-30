@@ -14,6 +14,7 @@ import com.llhelper.auth.dto.response.AuthResponse;
 import com.llhelper.auth.service.AuthService;
 import com.llhelper.common.exception.RateLimitExceededException;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     private static RegisterRequest registerRequest() {
         return new RegisterRequest("user@example.com", "password123");

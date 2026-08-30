@@ -17,6 +17,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.service.LearningService;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -49,6 +50,9 @@ class LearningControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     // --- enrollDeck ---
 

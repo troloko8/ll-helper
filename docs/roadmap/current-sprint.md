@@ -101,7 +101,7 @@
 
 **Vertical implementation blockers** (нужны для локального single-user smoke):
 - [ ] G-01 `GET /api/v1/users/me`
-- [ ] G-03 контролируемый 401 для expired/malformed/invalid JWT
+- [x] G-03 контролируемый 401 для expired/malformed/invalid JWT — `JwtAuthenticationFilter` перехватывает `JwtException`/`IllegalArgumentException`, очищает `SecurityContext` и делегирует в общий `RestAuthenticationEntryPoint`; тот же `{"message":"Authentication required"}` 401, что и при отсутствующем токене. Подтверждено `JwtSecurityFilterChainTest` (реальный `SecurityFilterChain`).
 - G-02 Register → Complete Profile orchestration — разбито на подзадачи:
   - [x] Product decision: отдельный экран Complete Profile принят (Phase 0.4C).
   - [x] Backend `POST /users` уже существует (`USER-01`, без изменений).

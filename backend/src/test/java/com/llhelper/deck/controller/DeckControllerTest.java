@@ -17,6 +17,7 @@ import static com.llhelper.deck.support.DeckTestData.defaultResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
+import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.deck.dto.request.DeckRequest;
 import com.llhelper.deck.service.DeckService;
 import jakarta.persistence.EntityNotFoundException;
@@ -47,6 +48,9 @@ class DeckControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     // --- create ---
 
