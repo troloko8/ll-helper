@@ -11,7 +11,7 @@ This section supersedes the "candidate, not accepted" status stated in §1 item 
 
 ### 0.1 Accepted Level 1 MVP surfaces
 
-Login, Register, Complete Profile (new, Stitch not yet created — see §0.5), Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
+Login, Register, Complete Profile, Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
 
 ### 0.2 Accepted deferred surfaces/functions
 
@@ -23,7 +23,7 @@ Created Decks list; Discover list/search; Creator Profile; aggregate Progress da
 |---|---|---|---|
 | `/login` | accepted | `login_llhelper` | |
 | `/register` | accepted | `register_llhelper_refined` | |
-| `/onboarding/profile` | accepted | **new — Stitch not yet created** | See §0.5 |
+| `/onboarding/profile` | accepted | `onboarding_profile_setup_llhelper` / `complete_your_profile_mobile_base` | Canonical base/state references completed; see §0.5 and `MANIFEST.md`. |
 | `/` → `/learning` | accepted | — | redirect |
 | `/learning` | accepted | `learning_llhelper_refined_navigation` / `learning_mobile_dashboard` | G-06 backend contract implemented as LEARN-05 |
 | `/learning/:deckId` | accepted | `learning_deck_details_llhelper_refined` | |
@@ -62,17 +62,16 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
 - Owner-scoped Created list; public-only Discover list/search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout.
 
-### 0.5 Accepted Stitch/design follow-up (not performed in this task)
+### 0.5 Accepted Stitch/design follow-up
 
-- **Complete Profile** — new canonical screens required: desktop base, mobile base, validation error, username conflict, submitting. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form). Not added to `docs/frontend/DESIGN.md` canonical registry or `MANIFEST.md` until the screens actually exist.
-- **Owner Deck Details → Public Deck Details navigation action ("View public page")** — checked against `docs/frontend/design-reference/MANIFEST.md` (`deck_details_owner_llhelper_refined` / `_mobile_2`): only `loading_state`/`api_error_state`/`empty_state` are documented; **no canonical action for this transition exists**. This is an **unconfirmed Stitch/design gap**, not a trivial implementation detail. Required behavior once designed: the action is visible only when the deck's `isPublic` is `true` (a private deck has no public page and cannot be enrolled by anyone — see §5.8 correction); it must navigate to `/decks/:deckId`.
+- [x] **Complete Profile** — canonical desktop base, mobile base, validation error, username conflict, and submitting references exist and are registered in `docs/frontend/DESIGN.md` and `docs/frontend/design-reference/MANIFEST.md`. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form).
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
 1. Backend: G-08 (G-01, G-03, and G-06 done — see §0.4).
 2. Backend security (early, before any public-facing exposure): G-05.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
-4. Stitch: Complete Profile screens + Owner→Public "View public page" action.
+4. ~~Stitch: Complete Profile screens.~~ — completed; see §0.5.
 5. Frontend: Auth + onboarding (`needsProfile` session state, §0.7).
 6. Frontend: Learning list + Learning Deck Details.
 7. Frontend: Create Deck + Owner Deck Details.
@@ -148,7 +147,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | ID | Prerequisite / gap | Affected surfaces | Phase 0.4B conclusion |
 |---|---|---|---|
 | G-01 | No `GET /api/v1/users/me`; JWT subject is email and the frontend has no current `User.id` after login. | All authenticated shell/session bootstrap; especially Created and owner routing. | Backend blocker before Auth integration. |
-| G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. |
+| G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. *(Historical Phase 0.4B finding; the flow and canonical references are now resolved by §0.3/§0.5.)* | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. *(Historical status; superseded by §0.)* |
 | G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
 | G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
 | G-05 | `GET /decks/{id}` and `GET /cards/{id}` do not enforce owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | Security/backend blocker for public-facing flows; partial gap for owner tooling. |
@@ -209,9 +208,9 @@ Every subsection applies its contract fields to every canonical reference in its
 | Endpoint | `AUTH-02` — `POST /api/v1/auth/register`; required follow-up capability currently `USER-01` — `POST /api/v1/users`. |
 | Request / response DTO | `RegisterRequest {email,password}` → `AuthResponse {accessToken}`; follow-up `CreateUserRequest` → `UserResponse`. |
 | Errors | Register: 400, 409 email taken, 429. Profile creation: 400, 404 AuthUser, 409 user/username conflict; shared JWT errors. |
-| Loading / error / empty | Submit loading; field validation; email-conflict and rate-limit messages. Empty not applicable. Missing canonical profile-setup validation/conflict/submitting references. |
+| Loading / error / empty | Submit loading; field validation; email-conflict and rate-limit messages. Empty not applicable. Missing canonical profile-setup validation/conflict/submitting references. *(Historical Phase 0.4B finding; references now exist — see §0.5.)* |
 | Backend status | `AUTH-02` partial; `USER-01` implemented but no accepted orchestration. |
-| Candidate frontend phase | Phase 0.5 Auth/Onboarding only after 0.4C selects the flow and Stitch adds Complete Profile references. |
+| Candidate frontend phase | Phase 0.5 Auth/Onboarding after 0.4C selects the flow and Stitch adds Complete Profile references. *(Historical sequencing condition satisfied; see §0.5.)* |
 | Blocker / gap | G-02; G-01; G-03. The canonical Register form does not collect `CreateUserRequest` fields. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -350,7 +349,7 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Field | Mapping |
 |---|---|
 | Product surface | Public Deck Details and enroll action; no learning progress |
-| Route (**accepted, Phase 0.4C** — supersedes the `/discover/decks/:deckId` candidate below) | `/decks/:deckId` — reachable only by direct link (e.g. from Owner Deck Details, once a canonical navigation action exists — see §0.5) since Discover is deferred. Still a JWT-protected frontend route; "Public" names the product surface (public deck), not anonymous HTTP access. |
+| Route (**accepted, Phase 0.4C** — supersedes the `/discover/decks/:deckId` candidate below) | `/decks/:deckId` — reachable only by direct link since Discover is deferred; no dedicated navigation action from Owner Deck Details is required. Still a JWT-protected frontend route; "Public" names the product surface (public deck), not anonymous HTTP access. |
 | Auth | JWT under current backend; enroll requires JWT. |
 | Domain owner | Public Deck content + Learning enrollment boundary |
 | Endpoint | Detail `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
@@ -358,7 +357,7 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Errors | Detail 404 but lacks private visibility enforcement; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
 | Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
 | Backend status | Enroll implemented; detail read partial (G-05 — not a vertical-implementation necessity for a single user viewing their own deck, but a required release/security blocker before public-facing exposure, see §0.4); safe discovery entry point missing (G-04, deferred — not required for the accepted direct-link-only MVP flow). |
-| Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. Reachability depends on the Owner Deck Details "View public page" action, which is an **unconfirmed Stitch/design gap** (§0.5), not yet an implemented navigation path. |
+| Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. The accepted Level 1 flow uses the direct URL; no Owner Deck Details shortcut is required. |
 | Blocker / gap | Vertical: none blocking (owner viewing/enrolling their own deck works against current endpoints). Release/security: G-05 (full private-deck/card visibility enforcement) and G-04 (unfiltered `GET /decks`, not used by this screen but a standing exposure) must be closed before public deployment. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -543,7 +542,7 @@ Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage,
 This queue was open as of Phase 0.4B. All seven items are now resolved by §0 — either accepted as a decision or resolved by explicit deferral (item 4 mixes both); each row below points to where.
 
 1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — §0.1/§0.2 (Creator Profile deferred).
-2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Flow accepted — §0.3/§0.7. Canonical Stitch references **not yet added** — remains an open Stitch/design task, §0.5.
+2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Resolved — flow accepted in §0.3/§0.7 and canonical references completed in §0.5.
 3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
 4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created, Discover, Progress-aggregate, and creator-public-decks response shapes are **resolved by explicit deferral; shape intentionally not accepted** (§0.2) — no accepted MVP flow needs them, so no shape is defined.
 5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).

@@ -12,8 +12,9 @@ file.
 (`projects/3601588025628203579`) or any other project — see `DESIGN.md`
 Source priority.
 
-**Resolved via:** Stitch MCP (`mcp0_list_screens` / `mcp0_get_project`) on
-2026-08-22. Re-resolve the manifest whenever a canonical screen is replaced,
+**Resolved via:** Stitch MCP (`mcp0_list_screens` / `mcp0_get_project`),
+initially on 2026-08-22; Complete Profile references re-resolved on
+2026-09-01. Re-resolve the manifest whenever a canonical screen is replaced,
 regenerated, renamed, or materially changed in Stitch.
 
 **Screen ID format:** each `Screen ID` below is the trailing segment only.
@@ -51,7 +52,25 @@ The full resource ID is `projects/8241473581937023308/screens/<Screen ID>`.
 - Purpose: visual reference for the register form layout only.
 - Do not copy: raw Stitch HTML/JS; client-side-only validation as the source of truth for backend validation errors.
 
-No separate mobile Login/Register reference exists. Use the desktop auth screens above as the content/visual reference and apply canonical responsive form/layout rules. Do not introduce a different mobile visual style.
+### Complete Profile (desktop) — `onboarding_profile_setup_llhelper`
+
+- Platform: Desktop
+- Screen ID: `69529c7a20a844ae8486702f91d7ed84`
+- Stitch title: "Onboarding Profile Setup — LLHelper"
+- States found: `validation_error_state` → `c733f4776ab347f8adaa219a1092d3b9`; `username_conflict_state` → `d0c9bc16dbaf4bab838b6b9375e9e011`; `submitting_state` → `8a52d9cc5d0f491496c14d1f7d6fea18`.
+- Purpose: canonical desktop reference for `/onboarding/profile` after registration.
+- Contract boundary: production submits `username`, `firstName`, `lastName`, `nativeLanguage`, `targetLanguage`, and `uiLanguage`; `avatarUrl` is excluded from the Level 1 form.
+- Do not copy: raw Stitch HTML/JS; abbreviated prototype names `nativeLang`, `targetLang`, and `uiLang`; the prototype-only `native` UI-language value, which is not a valid backend language code. If the UI offers “Match Native Language”, resolve it to the selected ISO language code before submission.
+
+### Complete Profile (mobile) — `complete_your_profile_mobile_base`
+
+- Platform: Mobile
+- Screen ID: `bb0166aef51d42a490b2d3e7843a4f6b`
+- Stitch title: "Complete Your Profile — Mobile Base"
+- Purpose: canonical mobile layout reference for `/onboarding/profile`.
+- Do not copy: raw Stitch HTML/JS; Node/Dataset/Protocol-style prototype terminology. Use the product field labels and API contract named in the desktop entry.
+
+No separate mobile Login/Register reference exists. Use the desktop Login/Register screens above as the content/visual reference and apply canonical responsive form/layout rules. Do not introduce a different mobile visual style.
 
 ## My Decks — Learning
 

@@ -21,7 +21,7 @@
 **Группа 1: Auth flow**
 
 - [ ] Login / Register экраны и валидация.
-- [ ] Complete Profile экран (`/onboarding/profile`, новый) — требует Stitch-задачу, см. § "Phase 0.4C — принятые решения" ниже.
+- [ ] Complete Profile экран (`/onboarding/profile`, новый) — canonical Stitch references готовы; frontend ещё не реализован.
 - [ ] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
 - [ ] Обработка 401/403/validation errors на frontend (зависит от backend G-03).
 - [ ] Сохранение токена и редирект после auth.
@@ -31,7 +31,7 @@
 - [ ] Create deck screen (`/decks/new`).
 - [ ] Owner Deck Details (`/decks/:deckId/manage`).
 - [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
-- [ ] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); требует Stitch-действие "View public page" на Owner Deck Details.
+- [ ] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); отдельный переход с Owner Deck Details не требуется.
 - [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.
 - [ ] ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.
 
@@ -89,7 +89,7 @@
 
 ### Phase 0.4C — принятый Level 1 vertical MVP
 
-**MVP surfaces:** Login, Register, Complete Profile (новый, Stitch ещё не создан), Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
+**MVP surfaces:** Login, Register, Complete Profile, Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
 
 Полный exact route map, Register → Complete Profile flow, session-модель/bootstrap, navigation scoping, Progress semantics и deferred surfaces — accepted decisions, нормативно владеют:
 - Route map, flow, Progress semantics → `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 (routes §0.3, session bootstrap §0.7, Progress §0.8).
@@ -105,7 +105,7 @@
 - G-02 Register → Complete Profile orchestration — разбито на подзадачи:
   - [x] Product decision: отдельный экран Complete Profile принят (Phase 0.4C).
   - [x] Backend `POST /users` уже существует (`USER-01`, без изменений).
-  - [ ] Complete Profile Stitch (desktop/mobile/validation/conflict/submitting) — см. §0.5.
+  - [x] Complete Profile Stitch (desktop/mobile/validation/conflict/submitting) — canonical references зарегистрированы в `docs/frontend/DESIGN.md` и `docs/frontend/design-reference/MANIFEST.md`.
   - [ ] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
   - [ ] End-to-end Register → Profile verification (ручной smoke).
 - [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, batch progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
@@ -125,7 +125,7 @@ G-05 — не vertical-блокер, но стоит рано в порядке 
 1. ~~Backend: G-01, G-03, G-06~~ — выполнено. Следующая vertical-задача: G-08.
 2. Backend security (рано): G-05.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
-4. Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting) + Owner→Public "View public page" action (должен быть виден только для `isPublic=true`).
+4. ~~Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting).~~ — выполнено.
 5. Frontend: Auth + onboarding (`needsProfile` session state).
 6. Frontend: Learning list + Learning Deck Details.
 7. Frontend: Create Deck + Owner Deck Details.

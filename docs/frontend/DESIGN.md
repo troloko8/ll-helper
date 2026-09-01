@@ -177,6 +177,7 @@ Exact Stitch screen resource IDs behind each name below are owned by
 
 - `login_llhelper`
 - `register_llhelper_refined`
+- `onboarding_profile_setup_llhelper`
 - `learning_llhelper_refined_navigation`
 - `created_decks_llhelper_refined_mvp`
 - `create_deck_llhelper`
@@ -193,6 +194,7 @@ Exact Stitch screen resource IDs behind each name below are owned by
 ### Mobile references
 
 - `created_decks_mobile_with_bottom_nav` — canonical mobile shell.
+- `complete_your_profile_mobile_base`
 - `learning_mobile_dashboard` — layout reference; page title must be
   **Learning**.
 - `create_deck_refined_mobile_state`
@@ -213,6 +215,8 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `empty_state`
 - `validation_error_state`
 - `submission_error_state`
+- `username_conflict_state`
+- `submitting_state`
 - `ai_generation_loading_state`
 - `ai_generation_error_state`
 - `study_all_caught_up`
