@@ -161,9 +161,8 @@
   Цель: явный порядок карточек, задаваемый создателем deck'а  
   Файлы: `Card.java`, `DeckService.java`
 
-- [ ] **`REVIEWING` карточки не участвуют в подборке для study**  
-  Сейчас: `LearningServiceImpl.getStudyCards()` берёт только `LEARNING`, затем `NEW` — статус `REVIEWING` полностью пропускается  
-  Цель: решить, должны ли `REVIEWING`-карточки попадать в study-подборку (например, с более низким приоритетом)  
+- [x] **`REVIEWING` карточки участвуют в подборке для study**
+  Реализовано: `LearningServiceImpl.getStudyCards()` использует приоритет `LEARNING` → `REVIEWING` → `NEW`, исключает `MASTERED` и возвращает не более 10 карточек
   Файлы: `LearningServiceImpl.java`
 
 - [ ] **Просмотр прогресса других пользователей**  

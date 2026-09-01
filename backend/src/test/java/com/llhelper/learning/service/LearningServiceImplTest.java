@@ -19,6 +19,7 @@ import com.llhelper.common.support.TestData;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.learning.dto.request.CardReviewRequest;
+import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.entity.UserCardProgress;
@@ -84,8 +85,12 @@ class LearningServiceImplTest {
     }
 
     private static Card card(String title) {
+        return card(CARD_ID, title);
+    }
+
+    private static Card card(long cardId, String title) {
         Card card = new Card();
-        card.setId(CARD_ID);
+        card.setId(cardId);
         card.setTitle(title);
         card.setDeckId(DECK_ID);
         return card;
@@ -121,7 +126,7 @@ class LearningServiceImplTest {
     }
 
     private static Deck deck(long deckId, String title) {
-        Deck deck = publicDeck(new Card[0]);
+        Deck deck = publicDeck();
         deck.setId(deckId);
         deck.setTitle(title);
         deck.setSourceLanguage(Language.EN);
@@ -130,8 +135,17 @@ class LearningServiceImplTest {
     }
 
     private static UserCardProgress cardProgress(long deckProgressId, CardLearningStatus status) {
+        return cardProgress(deckProgressId, CARD_ID, status);
+    }
+
+    private static UserCardProgress cardProgress(
+        long deckProgressId,
+        long cardId,
+        CardLearningStatus status
+    ) {
         UserCardProgress progress = defaultCardProgress();
         progress.setUserDeckProgressId(deckProgressId);
+        progress.setCardId(cardId);
         progress.setStatus(status);
         return progress;
     }
@@ -335,6 +349,108 @@ class LearningServiceImplTest {
 
         assertThat(result).isEmpty();
         verifyNoInteractions(deckRepository, userCardProgressRepository);
+    }
+
+    // --- getStudyCards ---
+
+    @Test
+    void getStudyCards_shouldPrioritizeLearningThenReviewingThenNew_andExcludeMastered() {
+        UserDeckProgress deckProgress = deckProgressWithId();
+        List<UserCardProgress> progress = List.of(
+            cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.NEW),
+            cardProgress(USER_DECK_PROGRESS_ID, 1L, CardLearningStatus.MASTERED),
+            cardProgress(USER_DECK_PROGRESS_ID, 20L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 30L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.LEARNING)
+        );
+        List<Card> cards = progress.stream()
+            .map(item -> card(item.getCardId(), "Card " + item.getCardId()))
+            .toList();
+
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
+            .thenReturn(Optional.of(deckProgress));
+        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+            .thenReturn(progress);
+        when(cardRepository.findAllById(List.of(5L, 1L, 20L, 30L, 10L))).thenReturn(cards);
+        when(learningMapper.toDeckCardResponse(any(Card.class), any(UserCardProgress.class)))
+            .thenAnswer(invocation -> {
+                Card mappedCard = invocation.getArgument(0);
+                UserCardProgress mappedProgress = invocation.getArgument(1);
+                return deckCardResponse(mappedCard, mappedProgress);
+            });
+
+        List<DeckCardResponse> result = learningService.getStudyCards(DECK_ID);
+
+        assertThat(result).extracting(DeckCardResponse::id)
+            .containsExactly(10L, 30L, 20L, 5L);
+        assertThat(result).extracting(response -> response.progress().status())
+            .containsExactly(
+                CardLearningStatus.LEARNING,
+                CardLearningStatus.LEARNING,
+                CardLearningStatus.REVIEWING,
+                CardLearningStatus.NEW
+            );
+    }
+
+    @Test
+    void getStudyCards_shouldReturnAtMostTenCards_acrossPrioritizedStatuses() {
+        UserDeckProgress deckProgress = deckProgressWithId();
+        List<UserCardProgress> progress = List.of(
+            cardProgress(USER_DECK_PROGRESS_ID, 4L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 3L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 2L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 1L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 8L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 7L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 6L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 12L, CardLearningStatus.NEW),
+            cardProgress(USER_DECK_PROGRESS_ID, 11L, CardLearningStatus.NEW),
+            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.NEW),
+            cardProgress(USER_DECK_PROGRESS_ID, 9L, CardLearningStatus.NEW)
+        );
+        List<Long> cardIds = progress.stream().map(UserCardProgress::getCardId).toList();
+        List<Card> cards = progress.stream()
+            .map(item -> card(item.getCardId(), "Card " + item.getCardId()))
+            .toList();
+
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
+            .thenReturn(Optional.of(deckProgress));
+        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+            .thenReturn(progress);
+        when(cardRepository.findAllById(cardIds)).thenReturn(cards);
+        when(learningMapper.toDeckCardResponse(any(Card.class), any(UserCardProgress.class)))
+            .thenAnswer(invocation -> {
+                Card mappedCard = invocation.getArgument(0);
+                UserCardProgress mappedProgress = invocation.getArgument(1);
+                return deckCardResponse(mappedCard, mappedProgress);
+            });
+
+        List<DeckCardResponse> result = learningService.getStudyCards(DECK_ID);
+
+        assertThat(result).hasSize(10);
+        assertThat(result).extracting(DeckCardResponse::id)
+            .containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
+    }
+
+    private static DeckCardResponse deckCardResponse(Card card, UserCardProgress progress) {
+        return new DeckCardResponse(
+            card.getId(),
+            card.getTitle(),
+            card.getDefinition(),
+            card.getSynonyms(),
+            card.getExamples(),
+            card.getTranslation(),
+            new DeckCardResponse.CardProgressInfo(
+                progress.getStatus(),
+                progress.getTimesSeen(),
+                progress.getTimesCorrect(),
+                progress.getTimesWrong(),
+                progress.getCorrectStreak()
+            )
+        );
     }
 
     // --- reviewCard ---

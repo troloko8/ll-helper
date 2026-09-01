@@ -40,7 +40,7 @@
 - [ ] Learning list (`/learning`) — backend G-06 готов; frontend ещё не реализован.
 - [ ] Learning Deck Details (`/learning/:deckId`) — показывает backend-provided per-card progress + frontend-derived per-deck counts (см. Phase 0.4C § Progress semantics).
 - [ ] Enroll in deck (через Public Deck Details).
-- [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — требует backend G-08 (`REVIEWING` включён в выборку).
+- [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
 - [ ] ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.
 
 **Группа 4: End-to-end smoke**
@@ -109,7 +109,7 @@
   - [ ] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
   - [ ] End-to-end Register → Profile verification (ручной smoke).
 - [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, batch progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
-- [ ] G-08 Study selection должен включать `REVIEWING`
+- [x] G-08 Study selection включает `REVIEWING`: приоритет `LEARNING` → `REVIEWING` → `NEW`, детерминированная сортировка по `card.id` внутри статуса, max 10; `MASTERED` исключён. Подтверждено service unit tests.
 - [x] G-12 `docs/features/learning-flow.md` исправлен (409, не 403)
 
 G-05 — не vertical-блокер, но стоит рано в порядке (шаг 2 ниже) как security-приоритет для Owner/Public trust boundary.
@@ -122,7 +122,7 @@ G-05 — не vertical-блокер, но стоит рано в порядке 
 
 ### Ordered backend → Stitch → frontend tasks
 
-1. ~~Backend: G-01, G-03, G-06~~ — выполнено. Следующая vertical-задача: G-08.
+1. ~~Backend: G-01, G-03, G-06, G-08~~ — выполнено.
 2. Backend security (рано): G-05.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting).~~ — выполнено.

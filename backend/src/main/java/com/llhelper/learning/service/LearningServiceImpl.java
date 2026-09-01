@@ -156,29 +156,23 @@ public class LearningServiceImpl implements LearningService {
     public List<DeckCardResponse> getStudyCards(Long deckId) {
         DeckCardsData data = loadDeckCardsWithProgress(deckId);
 
-        // Priority 1: LEARNING cards
-        List<UserCardProgress> learningCards = data.allCardProgress().stream()
-            .filter(p -> p.getStatus() == CardLearningStatus.LEARNING)
-            .sorted(Comparator.comparing(UserCardProgress::getCardId))
+        return data.allCardProgress().stream()
+            .filter(progress -> progress.getStatus() != CardLearningStatus.MASTERED)
+            .sorted(Comparator
+                .comparingInt((UserCardProgress progress) -> studyPriority(progress.getStatus()))
+                .thenComparing(UserCardProgress::getCardId))
             .limit(10)
-            .collect(Collectors.toList());
-
-        // Priority 2: NEW cards (if less than 10 learning cards)
-        if (learningCards.size() < 10) {
-            int remaining = 10 - learningCards.size();
-
-            List<UserCardProgress> newCards = data.allCardProgress().stream()
-                .filter(p -> p.getStatus() == CardLearningStatus.NEW)
-                .sorted(Comparator.comparing(UserCardProgress::getCardId))
-                .limit(remaining)
-                .toList();
-
-            learningCards.addAll(newCards);
-        }
-
-        return learningCards.stream()
-            .map(p -> toDeckCardResponse(data.cardMap().get(p.getCardId()), p))
+            .map(progress -> toDeckCardResponse(data.cardMap().get(progress.getCardId()), progress))
             .toList();
+    }
+
+    private static int studyPriority(CardLearningStatus status) {
+        return switch (status) {
+            case LEARNING -> 0;
+            case REVIEWING -> 1;
+            case NEW -> 2;
+            case MASTERED -> 3;
+        };
     }
 
     @Override

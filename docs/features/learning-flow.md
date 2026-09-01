@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-30
+> **Last updated:** 2026-09-01
 > **Status:** Reflects current `LearningServiceImpl` implementation
 
 ---
@@ -116,13 +116,9 @@ The first returned deck is the highlight candidate. If its `lastStudiedAt` is no
    - If not enrolled → `409 Conflict` (throws `IllegalStateException`, mapped by `GlobalExceptionHandler` to `409`). Corrects the previous `403` claim in this section — see §9/§10/§11 (G-12).
 3. Load all `UserCardProgress` for this enrollment.
 4. Batch-load all corresponding `Card` entities (single query).
-5. **Priority 1:** Cards with `status = LEARNING`, sorted by `card.id ASC`, up to 10.
-6. **Priority 2:** Cards with `status = NEW`, sorted by `card.id ASC`, fill remaining slots up to 10.
-7. Return combined list (max 10 cards). Empty deck → `200 OK` with empty array.
-
-> Cards with `status = REVIEWING` or `MASTERED` are excluded from study selection (current implemented behavior).
->
-> **Pending implementation (Phase 0.4C accepted target, not yet implemented):** `REVIEWING` cards should be included in study selection so spaced practice does not skip them entirely. Tracked as backend blocker G-08 — see `docs/roadmap/current-sprint.md`.
+5. Exclude cards with `status = MASTERED`.
+6. Sort the remaining cards by status priority `LEARNING` → `REVIEWING` → `NEW`, then by `card.id ASC` inside each status.
+7. Return the first 10 cards. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with an empty array.
 
 ---
 
@@ -172,7 +168,7 @@ else                        → NEW
 
 Status is **recalculated on every review**, not incremented step by step.
 
-> **Note:** `REVIEWING` cards are not currently surfaced in `getStudyCards` (only `LEARNING` then `NEW` are queried). Tracked as backend blocker G-08 for Phase 0.4C's accepted Level 1 vertical MVP — see `docs/roadmap/current-sprint.md` and `backend/IMPROVEMENTS.md`. Not yet implemented.
+`REVIEWING` cards remain eligible for Study after the second correct answer, allowing a later correct streak of three to transition them to `MASTERED`.
 
 ---
 
@@ -231,7 +227,6 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 - Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
 - Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
-- `REVIEWING` cards excluded from study selection — known gap, tracked as backend blocker G-08 for Phase 0.4C's accepted Level 1 vertical MVP, not yet implemented. See `backend/IMPROVEMENTS.md` and `docs/roadmap/current-sprint.md`.
 - Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
 
 ---

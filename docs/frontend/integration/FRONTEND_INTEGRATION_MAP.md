@@ -48,7 +48,7 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 - [x] G-03 controlled 401 for expired/malformed/invalid JWT — done: `JwtAuthenticationFilter` catches `JwtException`/`IllegalArgumentException`, clears `SecurityContextHolder`, and delegates to the shared `RestAuthenticationEntryPoint`, returning the same `{"message":"Authentication required"}` 401 body as the missing-token case. Verified by `JwtSecurityFilterChainTest` (real `SecurityFilterChain`, not `addFilters=false`). No longer an active blocker.
 - G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
 - [x] G-06 Learning Decks list endpoint — implemented as `GET /api/v1/learning/decks` (LEARN-05)
-- G-08 Study selection must include `REVIEWING`
+- [x] G-08 Study selection includes `REVIEWING` — implemented as `LEARNING` → `REVIEWING` → `NEW`, max 10, with `MASTERED` excluded.
 - G-12 `docs/features/learning-flow.md` must reflect the actual 409 (done — see that file)
 
 G-05 is **not** described as a vertical-implementation necessity for the local single-user smoke: the current endpoints can already return the user's own deck/cards without ownership enforcement. It is placed early in the backend/security execution order anyway (§0.6, step 2) because the Owner/Public trust boundary must not ship publicly unenforced.
@@ -68,7 +68,7 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-1. Backend: G-08 (G-01, G-03, and G-06 done — see §0.4).
+1. Backend: G-01, G-03, G-06, and G-08 done — see §0.4.
 2. Backend security (early, before any public-facing exposure): G-05.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile screens.~~ — completed; see §0.5.
@@ -153,7 +153,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-05 | `GET /decks/{id}` and `GET /cards/{id}` do not enforce owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | Security/backend blocker for public-facing flows; partial gap for owner tooling. |
 | G-06 | Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | ✅ Resolved by LEARN-05: active current-user enrollments, deterministic Continue/Start ordering, and mastered/total aggregation. |
 | G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
-| G-08 | Study selection excludes `REVIEWING`. | Study and truthful all-caught-up state. | Backend correctness gap before Study MVP. |
+| G-08 | Study selection previously excluded `REVIEWING`. | Study and truthful all-caught-up state. | ✅ Resolved: `LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` excluded. |
 | G-09 | Bulk AI response omits failed titles/reasons. | Add/Edit Card AI partial-failure UX. | Partial gap; manual cards are not blocked. |
 | G-10 | No creator-scoped public-deck list contract. | Creator Profile. | Backend blocker if the surface enters MVP. |
 | G-11 | `isPrivate` UI control maps inversely to wire field `isPublic`. | Create/Edit Deck. | Required frontend boundary mapping: `isPublic = !isPrivate`; not a backend gap. |
@@ -165,8 +165,8 @@ Shared JWT errors on every authenticated endpoint: missing Bearer token → cont
 
 | Integration status | Canonical references | Count |
 |---|---|---:|
-| **ready** | Login; Learning desktop/mobile; Create Deck desktop/mobile; Learning Deck Details desktop/mobile; Add Card mobile | 8 |
-| **partial** | Edit Deck desktop/mobile; Owner Deck Details desktop/mobile; Add/Edit Card desktop; Study desktop/mobile | 7 |
+| **ready** | Login; Learning desktop/mobile; Create Deck desktop/mobile; Learning Deck Details desktop/mobile; Add Card mobile; Study desktop/mobile | 10 |
+| **partial** | Edit Deck desktop/mobile; Owner Deck Details desktop/mobile; Add/Edit Card desktop | 5 |
 | **blocked** | Register; Created desktop/mobile; Public Deck Details desktop/mobile; Discover desktop/mobile; Progress desktop/mobile | 9 |
 | **deferred** | Creator Profile desktop/mobile | 2 |
 | **Total** | All canonical references from the manifest | **26** |
@@ -431,15 +431,15 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Endpoint | Load `LEARN-02 GET /api/v1/decks/{deckId}/study/cards`; submit `LEARN-04 POST /api/v1/cards/{cardId}/review`. |
 | Request / response DTO | Load `List<DeckCardResponse>`; submit `CardReviewRequest {userAnswer}` → `CardReviewResponse {correct,correctAnswer,status,correctStreak,totalCorrect}`. |
 | Errors | Load/review 409 not enrolled; review 400/404; shared JWT. Answer correctness must come only from response. |
-| Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. Empty study response maps to all-caught-up only after G-08 is fixed. |
-| Backend status | Review implemented; study selection partial (G-08). |
+| Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. With G-08 resolved, an empty study response truthfully means no `LEARNING`, `REVIEWING`, or `NEW` cards remain. |
+| Backend status | Review and study selection implemented; G-08 resolved. |
 | Candidate frontend phase | After enrollment and Learning Deck Details; before aggregate Progress UI. |
-| Blocker / gap | Current selection omits `REVIEWING`, so all-caught-up can be false and core spaced-practice behavior is incomplete. |
+| Blocker / gap | None specific to the Study selection contract for Level 1. Advanced due-date scheduling remains out of scope. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `study_english_b1_llhelper_refined` | `28d18c4a73b547fb92fc949a6bc5d4a8` | loading `b21ae87df0b646bc90ca84af7888d97e`; API error `a031c3ee82f1463f8aa29b77a7d3d96b`; caught up `82a546b4a81049b9b92d144a0e00ba1c`; complete `b1b0f012a4e142de90776804ae47f022` | **partial** |
-| Mobile | `study_english_b1_mobile` | `32b53362748742a19dfc7b4cc15b1a97` | loading `2894882fd954456a8ffc5eda7e95fe65`; API error `b5f6562b8ff3464b8d1bd25f0390f510`; caught up `6d42f1332a8b409cb376c7b81cc6f4e8`; complete `ae6e28fd937b4d2e8bf96fa1d7098745` | **partial** |
+| Desktop | `study_english_b1_llhelper_refined` | `28d18c4a73b547fb92fc949a6bc5d4a8` | loading `b21ae87df0b646bc90ca84af7888d97e`; API error `a031c3ee82f1463f8aa29b77a7d3d96b`; caught up `82a546b4a81049b9b92d144a0e00ba1c`; complete `b1b0f012a4e142de90776804ae47f022` | **ready** |
+| Mobile | `study_english_b1_mobile` | `32b53362748742a19dfc7b4cc15b1a97` | loading `2894882fd954456a8ffc5eda7e95fe65`; API error `b5f6562b8ff3464b8d1bd25f0390f510`; caught up `6d42f1332a8b409cb376c7b81cc6f4e8`; complete `ae6e28fd937b4d2e8bf96fa1d7098745` | **ready** |
 
 ### 5.12 Discover
 
