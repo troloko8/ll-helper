@@ -112,18 +112,18 @@
 - [x] G-08 Study selection включает `REVIEWING`: приоритет `LEARNING` → `REVIEWING` → `NEW`, детерминированная сортировка по `card.id` внутри статуса, max 10; `MASTERED` исключён. Подтверждено service unit tests.
 - [x] G-12 `docs/features/learning-flow.md` исправлен (409, не 403)
 
-G-05 — не vertical-блокер, но стоит рано в порядке (шаг 2 ниже) как security-приоритет для Owner/Public trust boundary.
+G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют общий `DeckAccessPolicy`; public и owner-private чтение разрешено, чужой private контент возвращает контролируемый 403. Подтверждено service unit tests и `@WebMvcTest`.
 
 **Public deployment/security blockers** (обязательны до первого публичного deployment):
 - [ ] G-04 unfiltered `GET /api/v1/decks`
 - [ ] `CARD-04` unfiltered `GET /api/v1/cards`
-- [ ] G-05 (полная реализация) private visibility protection для `GET /decks/{id}` и `GET /cards/{id}`
+- [x] G-05 private visibility protection для `GET /decks/{id}` и `GET /cards/{id}`
 - [ ] Catch-all `500` не должен возвращать raw exception message
 
 ### Ordered backend → Stitch → frontend tasks
 
 1. ~~Backend: G-01, G-03, G-06, G-08~~ — выполнено.
-2. Backend security (рано): G-05.
+2. ~~Backend security: G-05~~ — выполнено.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting).~~ — выполнено.
 5. Frontend: Auth + onboarding (`needsProfile` session state).

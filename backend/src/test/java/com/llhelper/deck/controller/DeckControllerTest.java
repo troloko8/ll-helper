@@ -90,6 +90,16 @@ class DeckControllerTest {
             .andExpect(jsonPath("$.message", is("Deck not found: " + DECK_ID)));
     }
 
+    @Test
+    void getById_shouldReturn403_whenPrivateDeckIsOwnedByAnotherUser() throws Exception {
+        when(deckService.getById(DECK_ID))
+            .thenThrow(new AccessDeniedException("Access denied: private deck"));
+
+        mockMvc.perform(get("/api/v1/decks/{id}", DECK_ID))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message", is("Access denied: private deck")));
+    }
+
     // --- update ---
 
     @Test

@@ -51,12 +51,12 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 - [x] G-08 Study selection includes `REVIEWING` — implemented as `LEARNING` → `REVIEWING` → `NEW`, max 10, with `MASTERED` excluded.
 - G-12 `docs/features/learning-flow.md` must reflect the actual 409 (done — see that file)
 
-G-05 is **not** described as a vertical-implementation necessity for the local single-user smoke: the current endpoints can already return the user's own deck/cards without ownership enforcement. It is placed early in the backend/security execution order anyway (§0.6, step 2) because the Owner/Public trust boundary must not ship publicly unenforced.
+G-05 was **not** a vertical-implementation necessity for the local single-user smoke, but is now resolved: `GET /decks/{id}` and `GET /cards/{id}` share `DeckAccessPolicy`; public content and owner-private content return 200, while another user's private content returns controlled 403. Service and `@WebMvcTest` coverage protect the rule.
 
 **Public deployment/security blockers** (not required for local vertical smoke; required before first public deployment):
 - G-04 unfiltered `GET /api/v1/decks`
 - `CARD-04` unfiltered `GET /api/v1/cards` (not "G-04 cards" — distinct endpoint, own inventory item)
-- G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
+- [x] G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
 - Catch-all `500` handler must not return the raw exception message (`GlobalExceptionHandler.handleException`)
 
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
@@ -69,7 +69,7 @@ G-05 is **not** described as a vertical-implementation necessity for the local s
 ### 0.6 Accepted backend → Stitch → frontend order
 
 1. Backend: G-01, G-03, G-06, and G-08 done — see §0.4.
-2. Backend security (early, before any public-facing exposure): G-05.
+2. ~~Backend security: G-05.~~ — completed; release hardening needs regression verification only.
 3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile screens.~~ — completed; see §0.5.
 5. Frontend: Auth + onboarding (`needsProfile` session state, §0.7).
@@ -150,7 +150,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. *(Historical Phase 0.4B finding; the flow and canonical references are now resolved by §0.3/§0.5.)* | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. *(Historical status; superseded by §0.)* |
 | G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
 | G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
-| G-05 | `GET /decks/{id}` and `GET /cards/{id}` do not enforce owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | Security/backend blocker for public-facing flows; partial gap for owner tooling. |
+| G-05 | `GET /decks/{id}` and `GET /cards/{id}` previously lacked owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | ✅ Resolved by shared `DeckAccessPolicy`: public or owner-private reads succeed; another user's private content returns 403. |
 | G-06 | Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | ✅ Resolved by LEARN-05: active current-user enrollments, deterministic Continue/Start ordering, and mastered/total aggregation. |
 | G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
 | G-08 | Study selection previously excluded `REVIEWING`. | Study and truthful all-caught-up state. | ✅ Resolved: `LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` excluded. |
@@ -312,11 +312,11 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Domain owner | Deck content ownership |
 | Endpoint | Prefill `DECK-02 GET /api/v1/decks/{id}`; submit `DECK-04 PUT /api/v1/decks/{id}`; optional delete `DECK-05 DELETE /api/v1/decks/{id}`. |
 | Request / response DTO | Prefill `DeckResponse`; update `DeckRequest` → `DeckResponse`; delete → no content. Apply G-11 inversion. |
-| Errors | Prefill 404 plus G-05 visibility gap; update 400/403/404/429; delete 403/404/429; shared JWT. |
+| Errors | Prefill 403 private deck owned by another user / 404; update 400/403/404/429; delete 403/404/429; shared JWT. |
 | Loading / error / empty | Initial prefill loading; load error; field validation; submitting/submission error; destructive confirmation/delete error. Empty not applicable. No dedicated canonical state variants. |
-| Backend status | Mutations implemented; read contract partial (G-05). |
+| Backend status | Read and mutations implemented; G-05 resolved. |
 | Candidate frontend phase | Content management after Auth and security read fix. |
-| Blocker / gap | Owner edit can mutate safely, but prefill read is not an owner-scoped trust boundary and navigation from Created is blocked by G-04. |
+| Blocker / gap | Screen-local read/mutation contract is sufficient; navigation from deferred Created remains unavailable because G-04 is unresolved. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -333,11 +333,11 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Domain owner | Deck/Card content ownership |
 | Endpoint | `DECK-02 GET /api/v1/decks/{id}` supplies deck plus `CardResponse[]`; mutations link to `DECK-04/05` and `CARD-05/06`. Do not use `CARD-04` or learning `LEARN-03` for owner inventory. |
 | Request / response DTO | `DeckResponse {…,owner,isPublic,cards: CardResponse[]}`; mutations use `DeckRequest`/`CardRequest`. |
-| Errors | Load 404 plus shared JWT and G-05; mutations 400/403/404/429. |
+| Errors | Load 403 for another user's private deck / 404 plus shared JWT; mutations 400/403/404/429. |
 | Loading / error / empty | Canonical loading, API-error, and empty-card-inventory states exist on both platforms. |
-| Backend status | Detail read partial; owner mutations implemented. |
+| Backend status | Detail read and owner mutations implemented; G-05 resolved. |
 | Candidate frontend phase | Content management after Auth; safe navigation depends on Created contract. |
-| Blocker / gap | Contract contains the needed owner card list, but read lacks visibility enforcement and the frontend cannot establish owner identity without G-01. |
+| Blocker / gap | Screen-local backend contract is sufficient; G-01 supplies owner identity for frontend routing. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -354,11 +354,11 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Domain owner | Public Deck content + Learning enrollment boundary |
 | Endpoint | Detail `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
 | Request / response DTO | Detail `DeckResponse`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
-| Errors | Detail 404 but lacks private visibility enforcement; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
+| Errors | Detail 403 for another user's private deck / 404; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
 | Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
-| Backend status | Enroll implemented; detail read partial (G-05 — not a vertical-implementation necessity for a single user viewing their own deck, but a required release/security blocker before public-facing exposure, see §0.4); safe discovery entry point missing (G-04, deferred — not required for the accepted direct-link-only MVP flow). |
+| Backend status | Enroll and detail visibility implemented; G-05 resolved. Safe discovery entry point remains missing (G-04, deferred — not required for the accepted direct-link-only MVP flow). |
 | Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. The accepted Level 1 flow uses the direct URL; no Owner Deck Details shortcut is required. |
-| Blocker / gap | Vertical: none blocking (owner viewing/enrolling their own deck works against current endpoints). Release/security: G-05 (full private-deck/card visibility enforcement) and G-04 (unfiltered `GET /decks`, not used by this screen but a standing exposure) must be closed before public deployment. |
+| Blocker / gap | Vertical: none. Release/security: G-04 (`GET /decks` remains globally unfiltered, though this screen does not use it) must be closed before public deployment. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -396,11 +396,11 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Domain owner | Card content; AI generation is backend-owned |
 | Endpoint | Add/manual or single AI `CARD-01 POST /api/v1/cards`; edit prefill `CARD-03 GET /api/v1/cards/{id}`; update `CARD-05 PUT`; optional delete `CARD-06 DELETE`; bulk AI `CARD-02 POST /api/v1/cards/bulk-generate`. |
 | Request / response DTO | `CardRequest` → `CardResponse`; bulk `BulkCardGenerateRequest` → `List<CardResponse>` successes only. |
-| Errors | 400/403/404/429; AI 503; edit prefill has G-05; shared JWT. Bulk partial failures are not represented (G-09). |
+| Errors | 400/403/404/429; AI 503; edit prefill returns 403 for another user's private parent deck; shared JWT. Bulk partial failures are not represented (G-09). |
 | Loading / error / empty | Form submit/validation/submission errors; AI loading/error; edit prefill loading/error; empty not applicable. Desktop has all form/AI variants; mobile Add has none. |
-| Backend status | Manual create/update/delete implemented; edit read partial; bulk response partial. |
+| Backend status | Manual create/read/update/delete implemented; bulk response partial. |
 | Candidate frontend phase | Manual Cards immediately after Create/Owner Details; AI enhancement after manual flow. |
-| Blocker / gap | Desktop reference spans modes with different readiness. AI partial-failure UX cannot be truthful; card read needs visibility enforcement. |
+| Blocker / gap | Desktop reference spans modes with different readiness. AI partial-failure UX cannot be truthful; G-05 card visibility is resolved. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -412,7 +412,7 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Operation | Endpoint | Backend status | Blocker / gap | MVP readiness |
 |---|---|---|---|---|
 | Manual add | `CARD-01 POST /api/v1/cards` (`autoGenerate` omitted/false) | implemented | None | Ready |
-| Edit prefill | `CARD-03 GET /api/v1/cards/{id}` | partial | No ownership/deck-visibility check (G-05) | Partial |
+| Edit prefill | `CARD-03 GET /api/v1/cards/{id}` | implemented | Parent-deck visibility enforced by `DeckAccessPolicy` | Ready |
 | Manual update | `CARD-05 PUT /api/v1/cards/{id}` | implemented | None | Ready |
 | Manual delete | `CARD-06 DELETE /api/v1/cards/{id}` | implemented | None | Ready |
 | Single-card AI generation | `CARD-01 POST /api/v1/cards` (`autoGenerate: true`) | implemented | Shared AI 429/503 errors only | Ready |
@@ -453,7 +453,7 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Request / response DTO | Required public-list query/response not defined. Existing unsafe response is `List<DeckListResponse>` with no search/sort/pagination parameters. |
 | Errors | Cannot finalize until endpoint exists; must include shared JWT, query validation if added, and page-level 5xx. |
 | Loading / error / empty | Canonical loading, API-error, and no-results/empty states on both platforms. No-results must be driven by server-safe public results, not client filtering. |
-| Backend status | Missing safe contract; `DECK-03` partial/unsafe (G-04), detail security also G-05. |
+| Backend status | Missing safe list contract; `DECK-03` partial/unsafe (G-04). Detail security G-05 is resolved. |
 | Candidate frontend phase | After public-only contract and private read protection. |
 | Blocker / gap | Implementing against `GET /decks` would expose private decks. No search contract exists. |
 
@@ -486,7 +486,7 @@ Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, b
 | Request / response DTO | Profile `UserResponse`; creator deck list DTO/query missing. Existing `DECK-03` is prohibited. |
 | Errors | Profile 404 plus shared JWT; future collection errors unknown. |
 | Loading / error / empty | Profile loading/error; creator-decks loading/error/empty. No canonical state variants. Follow/follower states are explicitly excluded. |
-| Backend status | Profile lookup implemented; required creator deck collection missing (G-10) and affected by G-04/G-05. |
+| Backend status | Profile lookup implemented; required creator deck collection missing (G-10) and affected by G-04. Detail security G-05 is resolved. |
 | Candidate frontend phase | Candidate post-MVP deferral as of Phase 0.4B. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)* |
 | Blocker / gap | The visual surface cannot be completed with public creator decks. If kept in MVP, it becomes blocked rather than deferred. |
 
@@ -556,7 +556,7 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
 - Using contract-local semantics (§2), the map now identifies **8 ready**, **7 partial**, **9 blocked**, and **2 deferred** references after G-06 resolution.
 - For the five surfaces with no backend contract at all (Learning dashboard, Created Decks, Discover, Creator Profile, Progress), read-only review of the canonical Stitch base screens produced minimal required request/response field sketches (§5.3, §5.4, §5.12–§5.14), explicitly separating fields that already exist on current DTOs from fields that are missing or unresolved. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
-- The Add/Edit Card reference (§5.10) is split into six operations; manual add/update/delete and single-card AI are independently `Ready`, edit prefill and bulk AI remain `Partial` for their own reasons (G-05, G-09).
+- The Add/Edit Card reference (§5.10) is split into six operations; manual add/read/update/delete and single-card AI are independently `Ready`; bulk AI remains `Partial` because of G-09.
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
-- The remaining highest-impact blockers are unfinished Auth/profile UI orchestration (G-02), private-data exposure/list scoping (G-04–G-05), the deferred aggregate Progress contract (G-07), and Study selection correctness (G-08). G-01, G-03, and G-06 are resolved.
+- The remaining highest-impact blockers are unfinished Auth/profile UI orchestration (G-02), private-data exposure in unfiltered lists (G-04 / `CARD-04`), and the deferred aggregate Progress contract (G-07). G-01, G-03, G-05, G-06, and G-08 are resolved.
 - Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*

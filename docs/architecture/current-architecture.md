@@ -285,9 +285,9 @@ CardService.save(cards)
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
 | `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards, ⚠️ globally unfiltered (`findAll()`, no owner/public filter — see `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` Discrepancy C) |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
-| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD | `DeckResponse` (with cards) |
+| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
 | `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |
-| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD | `CardResponse` (includes `deckId`) |
+| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD; GET inherits public/private visibility from the parent deck | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
@@ -364,6 +364,7 @@ backend/src/main/java/com/llhelper/
 │   └── dto/{request, response}/
 ├── deck/
 │   ├── controller/DeckController.java
+│   ├── access/DeckAccessPolicy.java
 │   ├── service/DeckService.java
 │   ├── entity/Deck.java
 │   ├── repository/DeckRepository.java
@@ -466,6 +467,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Entity = Lombok | `@Getter` / `@Setter` / `@NoArgsConstructor`, never `@Data` |
 | No `equals`/`hashCode`/`toString` on entities | Avoids lazy-load issues and infinite recursion |
 | AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| Deck/Card reads inherit deck visibility | `DeckAccessPolicy` permits any authenticated user to read a public deck and its cards, permits the owner to read a private deck and its cards, and returns `403 Forbidden` for another user's private content. `DeckServiceImpl.getById()` and `CardServiceImpl.getById()` apply the shared policy before DTO mapping. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses partial-success strategy | Failed titles are logged with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Level 1. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |

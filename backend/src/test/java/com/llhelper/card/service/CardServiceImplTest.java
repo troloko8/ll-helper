@@ -20,6 +20,7 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
+import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityManager;
 import java.util.List;
@@ -39,6 +40,7 @@ class CardServiceImplTest {
     private static final Long OWNER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
     private static final Long DECK_ID = 10L;
+    private static final Long CARD_ID = 20L;
 
     @Mock
     private CardRepository cardRepository;
@@ -75,7 +77,8 @@ class CardServiceImplTest {
             securityUtils,
             cardMapper,
             userRateLimiter,
-            aiProperties
+            aiProperties,
+            new DeckAccessPolicy(securityUtils)
         );
         ReflectionTestUtils.setField(cardService, "entityManager", entityManager);
     }
@@ -92,6 +95,66 @@ class CardServiceImplTest {
 
     private static CardRequest cardRequest() {
         return new CardRequest("title", "def", List.of(), List.of(), "translation", DECK_ID, false);
+    }
+
+    private static Card card() {
+        Card card = new Card();
+        card.setId(CARD_ID);
+        card.setDeckId(DECK_ID);
+        card.setTitle("title");
+        return card;
+    }
+
+    private static CardResponse cardResponse() {
+        return new CardResponse(CARD_ID, DECK_ID, "title", "def", List.of(), List.of(), "translation", null, null);
+    }
+
+    @Test
+    void getById_shouldSucceed_whenParentDeckIsPublic() {
+        Card card = card();
+        Deck deck = deckOwnedBy(OWNER_ID);
+        CardResponse response = cardResponse();
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(cardMapper.toResponse(card)).thenReturn(response);
+
+        CardResponse result = cardService.getById(CARD_ID);
+
+        assertThat(result).isEqualTo(response);
+        verify(cardMapper).toResponse(card);
+    }
+
+    @Test
+    void getById_shouldSucceed_whenPrivateParentDeckIsOwnedByCurrentUser() {
+        Card card = card();
+        Deck deck = deckOwnedBy(OWNER_ID);
+        deck.setIsPublic(false);
+        CardResponse response = cardResponse();
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(cardMapper.toResponse(card)).thenReturn(response);
+
+        CardResponse result = cardService.getById(CARD_ID);
+
+        assertThat(result).isEqualTo(response);
+        verify(cardMapper).toResponse(card);
+    }
+
+    @Test
+    void getById_shouldThrowForbidden_whenPrivateParentDeckIsOwnedByAnotherUser() {
+        Card card = card();
+        Deck deck = deckOwnedBy(OWNER_ID);
+        deck.setIsPublic(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        assertThatThrownBy(() -> cardService.getById(CARD_ID))
+            .isInstanceOf(AccessDeniedException.class)
+            .hasMessage("Access denied: private deck");
+
+        verify(cardMapper, never()).toResponse(any());
     }
 
     @Test

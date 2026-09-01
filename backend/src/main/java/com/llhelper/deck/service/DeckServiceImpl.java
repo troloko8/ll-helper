@@ -9,6 +9,7 @@ import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.deck.access.DeckAccessPolicy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
@@ -25,6 +26,7 @@ public class DeckServiceImpl implements DeckService {
     private final SecurityUtils securityUtils;
     private final DeckMapper deckMapper;
     private final UserRateLimiter userRateLimiter;
+    private final DeckAccessPolicy deckAccessPolicy;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -33,12 +35,14 @@ public class DeckServiceImpl implements DeckService {
         DeckRepository deckRepository,
         SecurityUtils securityUtils,
         DeckMapper deckMapper,
-        UserRateLimiter userRateLimiter
+        UserRateLimiter userRateLimiter,
+        DeckAccessPolicy deckAccessPolicy
     ) {
         this.deckRepository = deckRepository;
         this.securityUtils = securityUtils;
         this.deckMapper = deckMapper;
         this.userRateLimiter = userRateLimiter;
+        this.deckAccessPolicy = deckAccessPolicy;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -66,8 +70,9 @@ public class DeckServiceImpl implements DeckService {
     @Override
     @Transactional(readOnly = true)
     public DeckResponse getById(Long id) {
-        Deck deck = deckRepository.findById(id)
+        Deck deck = deckRepository.findWithOwnerById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
+        deckAccessPolicy.validateReadAccess(deck);
         return deckMapper.toResponse(deck);
     }
 

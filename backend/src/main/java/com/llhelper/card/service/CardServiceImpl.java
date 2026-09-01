@@ -11,6 +11,7 @@ import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
+import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
@@ -36,6 +37,7 @@ public class CardServiceImpl implements CardService {
     private final CardMapper cardMapper;
     private final UserRateLimiter userRateLimiter;
     private final AiProperties aiProperties;
+    private final DeckAccessPolicy deckAccessPolicy;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -48,7 +50,8 @@ public class CardServiceImpl implements CardService {
         SecurityUtils securityUtils,
         CardMapper cardMapper,
         UserRateLimiter userRateLimiter,
-        AiProperties aiProperties
+        AiProperties aiProperties,
+        DeckAccessPolicy deckAccessPolicy
     ) {
         this.cardRepository = cardRepository;
         this.deckRepository = deckRepository;
@@ -57,6 +60,7 @@ public class CardServiceImpl implements CardService {
         this.cardMapper = cardMapper;
         this.userRateLimiter = userRateLimiter;
         this.aiProperties = aiProperties;
+        this.deckAccessPolicy = deckAccessPolicy;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -157,9 +161,15 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CardResponse getById(Long id) {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
+
+        Deck deck = deckRepository.findWithOwnerById(card.getDeckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getDeckId()));
+        deckAccessPolicy.validateReadAccess(deck);
+
         return cardMapper.toResponse(card);
     }
 

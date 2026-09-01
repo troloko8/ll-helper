@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.llhelper.common.model.Language;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.dto.request.DeckRequest;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.entity.Deck;
@@ -53,7 +54,14 @@ class DeckServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        deckService = new DeckServiceImpl(deckRepository, securityUtils, deckMapper, userRateLimiter);
+        DeckAccessPolicy deckAccessPolicy = new DeckAccessPolicy(securityUtils);
+        deckService = new DeckServiceImpl(
+            deckRepository,
+            securityUtils,
+            deckMapper,
+            userRateLimiter,
+            deckAccessPolicy
+        );
         ReflectionTestUtils.setField(deckService, "entityManager", entityManager);
     }
 
@@ -72,6 +80,54 @@ class DeckServiceImplTest {
 
     private static DeckRequest deckRequest() {
         return new DeckRequest("New title", "desc", Language.EN, Language.RU, true);
+    }
+
+    @Test
+    void getById_shouldSucceed_whenDeckIsPublic() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        DeckResponse response = new DeckResponse(
+            DECK_ID, deck.getTitle(), null, deck.getSourceLanguage(), deck.getTargetLanguage(),
+            null, null, null, true, List.of()
+        );
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckMapper.toResponse(deck)).thenReturn(response);
+
+        DeckResponse result = deckService.getById(DECK_ID);
+
+        assertThat(result).isEqualTo(response);
+        verify(deckMapper).toResponse(deck);
+    }
+
+    @Test
+    void getById_shouldSucceed_whenPrivateDeckIsOwnedByCurrentUser() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        deck.setIsPublic(false);
+        DeckResponse response = new DeckResponse(
+            DECK_ID, deck.getTitle(), null, deck.getSourceLanguage(), deck.getTargetLanguage(),
+            null, null, null, false, List.of()
+        );
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckMapper.toResponse(deck)).thenReturn(response);
+
+        DeckResponse result = deckService.getById(DECK_ID);
+
+        assertThat(result).isEqualTo(response);
+        verify(deckMapper).toResponse(deck);
+    }
+
+    @Test
+    void getById_shouldThrowForbidden_whenPrivateDeckIsOwnedByAnotherUser() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        deck.setIsPublic(false);
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        assertThatThrownBy(() -> deckService.getById(DECK_ID))
+            .isInstanceOf(AccessDeniedException.class)
+            .hasMessage("Access denied: private deck");
+
+        verify(deckMapper, never()).toResponse(any());
     }
 
     @Test

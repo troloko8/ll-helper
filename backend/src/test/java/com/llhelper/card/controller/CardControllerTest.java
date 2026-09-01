@@ -3,6 +3,7 @@ package com.llhelper.card.controller;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,6 +75,16 @@ class CardControllerTest {
                 .content(objectMapper.writeValueAsString(defaultRequest())))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: not deck owner")));
+    }
+
+    @Test
+    void getById_shouldReturn403_whenPrivateParentDeckIsOwnedByAnotherUser() throws Exception {
+        when(cardService.getById(CARD_ID))
+            .thenThrow(new AccessDeniedException("Access denied: private deck"));
+
+        mockMvc.perform(get("/api/v1/cards/{id}", CARD_ID))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message", is("Access denied: private deck")));
     }
 
     // --- createBulk ---
