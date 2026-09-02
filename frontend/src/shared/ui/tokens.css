@@ -1,4 +1,10 @@
 :root {
+  /* Typography */
+  --font-family-ui: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-family-metadata: 'JetBrains Mono Variable', 'JetBrains Mono',
+    'SFMono-Regular', Consolas, monospace;
+
   /* Surfaces */
   --surface: #0b1326;
   --background: #0b1326;

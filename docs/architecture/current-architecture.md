@@ -714,7 +714,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives in `shared/ui/`.
 - No external UI framework without explicit decision.
-- Canonical color and spacing/layout tokens from `docs/frontend/DESIGN.md` are implemented as global CSS variables in `shared/ui/tokens.css`. Canonical font loading, reset, application background styles, responsive shell rules, and screen runtime implementation remain pending.
+- Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, and application foreground/background styles are loaded at startup; responsive shell rules and screen runtime implementation remain pending.
 
 ### Testing
 
