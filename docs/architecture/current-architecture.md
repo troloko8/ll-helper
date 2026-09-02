@@ -714,7 +714,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives in `shared/ui/`.
 - No external UI framework without explicit decision.
-- Canonical design tokens, responsive shell rules, and screen registry are defined in `docs/frontend/DESIGN.md`; their CSS/runtime implementation is pending.
+- Canonical color and spacing/layout tokens from `docs/frontend/DESIGN.md` are implemented as global CSS variables in `shared/ui/tokens.css`. Canonical font loading, reset, application background styles, responsive shell rules, and screen runtime implementation remain pending.
 
 ### Testing
 

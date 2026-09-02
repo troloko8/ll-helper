@@ -19,7 +19,7 @@
 
 **Группа 0A: Minimal UI and application-boundary foundation — выполнить до feature-компонентов**
 
-- [ ] Реализовать canonical CSS variables из `docs/frontend/DESIGN.md`.
+- [x] Реализовать canonical CSS variables из `docs/frontend/DESIGN.md`.
 - [ ] Подключить canonical Geist / JetBrains Mono typography, reset и application background styles.
 - [ ] Реализовать shared-примитивы `Button`, `Input`, `Textarea`, `Select` и `FormField`.
 - [ ] Реализовать канонические состояния загрузки/ошибки: `Skeleton`, `PageState` и `InlineError`.
