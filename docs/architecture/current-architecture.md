@@ -712,7 +712,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 ### UI / Design
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
-- Shared UI primitives in `shared/ui/`.
+- Shared UI primitives `Button`, `Input`, `Textarea`, `Select`, and `FormField` are implemented and exported from `shared/ui/`.
 - No external UI framework without explicit decision.
 - Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, and application foreground/background styles are loaded at startup; responsive shell rules and screen runtime implementation remain pending.
 

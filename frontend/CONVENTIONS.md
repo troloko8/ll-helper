@@ -62,6 +62,12 @@ slice-name/
 - No circular imports between slices.
 - Import from slice public API (`index.ts`), not internal files.
 
+## React APIs
+
+- The frontend runtime baseline is React 19. New components should use current React 19 APIs rather than legacy compatibility patterns.
+- Accept and pass DOM refs as ordinary props, typed with `ComponentPropsWithRef`, instead of wrapping new function components in `forwardRef`.
+- Do not introduce APIs marked deprecated or legacy by React or another installed library unless a documented compatibility requirement makes them necessary. When an exception is required, document why it exists and what allows its removal.
+
 ## State Ownership
 
 | Category | Tool | Location |

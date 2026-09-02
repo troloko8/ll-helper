@@ -1,0 +1,30 @@
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  color: var(--on-surface);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.required {
+  margin-left: 4px;
+  color: var(--error);
+}
+
+.description,
+.error {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.description {
+  color: var(--on-surface-variant);
+}
+
+.error {
+  color: var(--error);
+}

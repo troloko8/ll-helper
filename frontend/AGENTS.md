@@ -21,6 +21,7 @@ Repository-wide gates: see root `AGENTS.md`.
 - **401 boundary:** `shared/api/` returns normalized 401 errors only. The app-level error listener owns token/session/cache cleanup; app routing reacts to the cleared session and redirects to login. `shared/api/` owns neither responsibility.
 - **No refresh token:** Level 1 has no refresh-token flow. Handle JWT expiry via 401 → app-level listener → clear token → clear session → `baseApi.util.resetApiState()` → redirect to login.
 - **Design system:** Custom lightweight system (`shared/ui/` + CSS Modules + semantic CSS variables). No external UI framework without explicit decision.
+- **Modern React APIs:** Follow the React 19 API rules in `frontend/CONVENTIONS.md`; do not introduce deprecated or legacy compatibility APIs without a documented compatibility requirement.
 - **Testing:** Behavioral/user-centric tests. No mandatory test for trivial presentational components. Critical business logic and user flows require coverage.
 
 ## Before implementing or modifying frontend UI

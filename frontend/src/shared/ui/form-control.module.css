@@ -1,0 +1,62 @@
+.control {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 6px;
+  background-color: var(--surface-container-low);
+  color: var(--on-surface);
+  line-height: 1.5;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    outline-color 120ms ease;
+}
+
+.control::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.8;
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--outline);
+}
+
+.control:focus-visible {
+  border-color: var(--primary-container);
+  outline: 2px solid var(--primary-container);
+  outline-offset: 1px;
+}
+
+.control[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.control[aria-invalid='true']:focus-visible {
+  outline-color: var(--error);
+}
+
+.control:disabled {
+  background-color: var(--surface-container-lowest);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.select:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}
