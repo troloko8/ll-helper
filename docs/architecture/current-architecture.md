@@ -657,7 +657,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** Technical Foundation complete — path aliases, `strict: true`, Vite proxy, `.env.example`, RTK Query base API, Redux store with session slice, React Router foundation, and testing infrastructure (Vitest + jsdom + React Testing Library + MSW) are all configured. Playwright (E2E) remains future infrastructure for the later E2E stage. CSS Modules / design tokens remain pending until product UI/design implementation starts.
+> **Status:** Technical scaffold foundation complete — path aliases, `strict: true`, Vite proxy, `.env.example`, RTK Query base API, Redux store with the initial three-state session slice, a temporary React Router/ProtectedRoute scaffold, and testing infrastructure (Vitest + jsdom + React Testing Library + MSW) are configured. Product route layouts, four-state session bootstrap, UI primitives, CSS Modules/token implementation, and feature screens remain pending in `docs/roadmap/current-sprint.md`. Playwright remains future infrastructure for the later E2E stage.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -697,24 +697,24 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 - Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`).
 - `shared/api/` never imports Redux, entities, features, or app.
-- Auth use cases: `features/login/`, `features/register/`, `features/logout/`.
+- Auth use cases: `features/login/`, `features/register/`, `features/logout/`; Complete Profile orchestration belongs to its own feature responsibility rather than `shared/api/`.
 - `localStorage` is a deliberate Level 1 trade-off.
-- 401 → `shared/api/` returns normalized error → app-level listener clears token + session → redirect to login.
+- 401 → `shared/api/` returns normalized error → app-level listener clears token + session + RTK Query cache → redirect to login.
 - No refresh token (Level 3).
 - Future target: HttpOnly secure cookies (removes client token transport).
 
 ### Routing
 
 - React Router 7 with centralized configuration in `app/router/`.
-- Nested layout routes: public/auth layout + authenticated layout.
-- Protected routes depend on `entities/session` runtime state.
+- Current runtime contains only a temporary centralized router and initial `ProtectedRoute`; product routes and layouts are not implemented yet.
+- Target: public/auth, onboarding, and authenticated layouts whose guards depend on `entities/session` runtime state.
 
 ### UI / Design
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives in `shared/ui/`.
 - No external UI framework without explicit decision.
-- Final design tokens TBD when Stitch design is available.
+- Canonical design tokens, responsive shell rules, and screen registry are defined in `docs/frontend/DESIGN.md`; their CSS/runtime implementation is pending.
 
 ### Testing
 
@@ -724,7 +724,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The frontend directory contains a Vite template initialization with FSD placeholder directories. Non-standard legacy directories (`src/api/`, `src/layouts/`, `src/routes/`, `src/styles/`) and template files (`App.tsx`, `App.css`, `index.css`) exist and are pending cleanup during Technical Foundation.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current runtime is a small FSD scaffold containing app/store/router/test infrastructure, `entities/session`, and generic `shared/api`; `pages`, `widgets`, `features`, and `shared/ui` remain placeholders until the current-sprint responsibilities are implemented. The router currently exposes only placeholder `/` and `/login` entries and must not be treated as the accepted product route tree.
 
 ---
 

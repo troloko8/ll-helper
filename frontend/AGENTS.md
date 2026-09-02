@@ -18,8 +18,8 @@ Repository-wide gates: see root `AGENTS.md`.
   - Local UI state → React `useState`/`useReducer`.
 - **RTK Query is the API layer:** All backend communication uses RTK Query `fetchBaseQuery`. Axios has been removed.
 - **Auth architecture (Level 1):** Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`). `shared/api/` reads the token through its own adapter and never imports Redux, entities, features, or app. Auth use cases live in `features/login/`, `features/register/`, `features/logout/`. Future target: HttpOnly secure cookies (requires backend security change, not current sprint).
-- **401 boundary:** `shared/api/` returns normalized 401 errors only. Application-level logout (clear token, clear session, redirect) is owned by an app-level error listener, not by `shared/api/`.
-- **No refresh token:** Level 1 has no refresh-token flow. Handle JWT expiry via 401 → app-level listener → clear token → clear session → redirect to login.
+- **401 boundary:** `shared/api/` returns normalized 401 errors only. The app-level error listener owns token/session/cache cleanup; app routing reacts to the cleared session and redirects to login. `shared/api/` owns neither responsibility.
+- **No refresh token:** Level 1 has no refresh-token flow. Handle JWT expiry via 401 → app-level listener → clear token → clear session → `baseApi.util.resetApiState()` → redirect to login.
 - **Design system:** Custom lightweight system (`shared/ui/` + CSS Modules + semantic CSS variables). No external UI framework without explicit decision.
 - **Testing:** Behavioral/user-centric tests. No mandatory test for trivial presentational components. Critical business logic and user flows require coverage.
 

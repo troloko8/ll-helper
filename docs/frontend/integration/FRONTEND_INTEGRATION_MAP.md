@@ -68,20 +68,24 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-1. Backend: G-01, G-03, G-06, and G-08 done — see §0.4.
-2. ~~Backend security: G-05.~~ — completed; release hardening needs regression verification only.
-3. Documentation correction: G-12 (done in this task — `docs/features/learning-flow.md`).
-4. ~~Stitch: Complete Profile screens.~~ — completed; see §0.5.
-5. Frontend: Auth + onboarding (`needsProfile` session state, §0.7).
-6. Frontend: Learning list + Learning Deck Details.
-7. Frontend: Create Deck + Owner Deck Details.
-8. Frontend: Manual Add Card.
-9. Frontend: Public Deck Details + Enroll.
-10. Frontend: Study + per-card progress display (§0.8).
-11. E2E manual smoke + Postman sync.
-12. Release hardening: G-04, `CARD-04`, G-05 verification (regression test, not re-implementation, if already closed in step 2), safe 500 body.
-13. First deployment.
-14. Optional, separate task: single-card AI generation, after manual-add smoke succeeds; does not block step 13.
+This section owns only the stable accepted sequence and dependency boundaries. Dynamic completion status and the executable subtask checklists are owned solely by `docs/roadmap/current-sprint.md`; do not copy progress markers into this section.
+
+1. Backend vertical prerequisites: G-01, G-03, G-06, and G-08; readiness semantics remain in §0.4.
+2. Backend security prerequisite: G-05 before public-facing exposure; release hardening later performs regression verification rather than redefining the rule.
+3. Documentation prerequisite: G-12 keeps the learning-flow contract aligned with executable behavior.
+4. Stitch prerequisite: Complete Profile desktop/mobile/base/error/submitting references registered through §0.5 and `MANIFEST.md`.
+5. Frontend minimal UI/application-boundary foundation before feature components: canonical tokens/typography, form primitives and semantics, loading/error surfaces, responsive Auth/Onboarding base, global error boundary, bootstrap state, and not-found routing. Exact checklist: current sprint Group 0A; canonical UI contract: `docs/frontend/DESIGN.md`.
+6. Frontend Auth + onboarding: contract-first RTK Query integration, four-state session lifecycle (§0.7), route layouts/guards, cache-safe logout/401, and Login/Register/Complete Profile/Logout orchestration. Exact checklist and tests: current sprint Group 1.
+7. Reduced authenticated `AppShell` before Learning screens: only the accepted Level 1 navigation subset, with no deferred destinations or dead links. Exact checklist: current sprint Group 1A; shell scope: `docs/frontend/DESIGN.md`.
+8. Frontend Learning list + Learning Deck Details.
+9. Frontend Create Deck + Owner Deck Details.
+10. Frontend Manual Add Card.
+11. Frontend Public Deck Details + Enroll.
+12. Frontend Study + per-card progress display (§0.8).
+13. Manual end-to-end smoke + Postman sync.
+14. Release hardening: G-04, `CARD-04`, G-05 regression verification, and safe catch-all 500 body.
+15. First deployment.
+16. Optional, separate single-card AI generation after the manual-add smoke succeeds; it does not block first deployment.
 
 ### 0.7 Session state (accepted)
 
@@ -94,7 +98,13 @@ Implemented `GET /api/v1/users/me` bootstrap semantics:
 - `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
 - `401 {message}` → missing/invalid/expired JWT → `anonymous`.
 
-This is the implemented session-bootstrap contract.
+The backend contract above is implemented; the frontend lifecycle is pending and its execution status is owned by `docs/roadmap/current-sprint.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
+
+- Register stores the token, enters `needsProfile`, completes `POST /users`, then enters `authenticated` and navigates to `/learning`.
+- Login stores the token and resolves `GET /users/me`: `200` navigates to `/learning`, `404` enters `needsProfile` and navigates to `/onboarding/profile`, and `401` clears the session and returns to `/login`.
+- A validation or username-conflict response from Complete Profile keeps the valid token and `needsProfile` session so the user can correct and retry the form.
+- Only a `404` from `GET /users/me` has `needsProfile` semantics; other 404 responses remain ordinary feature/resource errors.
+- Level 1 logout is local: clear token, session state, and RTK Query cache, then let routing return the user to `/login`; backend logout remains deferred.
 
 ### 0.8 Progress semantics (accepted, corrects any prior claim of a ready backend aggregate)
 

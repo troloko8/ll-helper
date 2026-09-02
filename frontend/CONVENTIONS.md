@@ -99,7 +99,7 @@ This is what `entities/session/model/session-slice.ts` actually implements today
 type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
 ```
 
-Source of truth for this target: `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.7 (Phase 0.4C accepted decision). `needsProfile`, the `GET /api/v1/users/me` bootstrap call, and any routing guard that reacts to `needsProfile` are **not implemented yet** — do not write code or docs that assume they exist until this scaffold is updated to match.
+Source of truth for this target: `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.7 (Phase 0.4C accepted decision). The backend `GET /api/v1/users/me` contract exists, but the frontend bootstrap call, `needsProfile`, and routing guards that react to it are **not implemented yet** — do not write code or docs that assume the frontend lifecycle already exists until the scaffold is updated to match.
 
 **Bootstrap target (accepted, not yet implemented):**
 
@@ -110,7 +110,7 @@ token + GET /api/v1/users/me → 404        → needsProfile
 token + GET /api/v1/users/me → 401        → clear token → anonymous
 ```
 
-`GET /api/v1/users/me` itself does not exist on the backend yet (see `FRONTEND_INTEGRATION_MAP.md` §0.7 / §0.4 G-01). Do not implement this bootstrap call before that endpoint exists.
+`GET /api/v1/users/me` is implemented on the backend with the `200`/`404`/controlled `401` semantics above. Its executable backend code remains authoritative; the repository-grounded frontend contract is recorded as `USER-07` in `BACKEND_CONTRACT_INVENTORY.md`.
 
 - `entities/session` owns runtime client session lifecycle state (session status).
 - User/profile data fetched from backend remains RTK Query server state and must not be duplicated into the session Redux slice.
@@ -197,6 +197,7 @@ app-level API error listener (middleware or RTK Query onError)
 → detects 401
 → tokenStorage.clearToken()
 → dispatches entities/session session-cleared action
+→ dispatches baseApi.util.resetApiState()
 
 app/router (protected routing)
 → reacts to session state change → redirects to login
@@ -204,7 +205,7 @@ app/router (protected routing)
 
 - `shared/api/` does not perform application-level logout, dispatch session actions, or redirect.
 - 403 / 429 / validation errors are also normalized transport errors at `shared/api/` level; user-facing behavior is owned by the appropriate higher layer.
-- Logout feature (`features/logout/`) performs the same cleanup: `tokenStorage.clearToken()` + dispatch session-cleared.
+- Logout feature (`features/logout/`) performs the same cleanup: `tokenStorage.clearToken()` + dispatch session-cleared + `baseApi.util.resetApiState()`. Cache reset is mandatory so a later login in the same browser session cannot observe the previous user's cached server state.
 - Application bootstrap → rehydrate `entities/session` state from persisted token (via `shared/api/token-storage`).
 
 ### Future target
@@ -218,11 +219,12 @@ app/router (protected routing)
 - **Router config location:** `app/router/` (`router.tsx`, `protected-route.tsx`, `index.ts`).
 - **Protected routes — current implemented scaffold:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render nothing yet; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`. There is no `needsProfile` branch yet.
 - **Routing target for `needsProfile` (accepted, not yet implemented):**
-  - `initializing` → render nothing, wait for bootstrap to resolve.
+  - `initializing` → render a blocking session-bootstrap `PageState`; never render protected content or an empty screen while bootstrap resolves.
   - `anonymous` → redirect to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application.
   - `authenticated` user navigating to `/onboarding/profile` → redirect to `/learning`.
+- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`; the router provides a not-found route and route-level error surface; the application root provides a global Error Boundary.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned
   by FRONTEND_INTEGRATION_MAP.md §0.3 and are pending implementation.

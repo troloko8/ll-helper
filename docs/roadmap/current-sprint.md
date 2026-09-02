@@ -6,7 +6,7 @@
 
 **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему. Один вертикальный сценарий (accepted, Phase 0.4C) — Register → Complete Profile → authenticated app → Create Deck → Manual Add Card → Owner Deck Details → Public Deck Details → Enroll → Learning list/details → Study → per-card progress → повторное открытие Learning list и продолжение позже. Login проверяется отдельно как повторный вход существующего пользователя, а не как обязательный шаг сразу после регистрации: clear/logout local session → Login → Learning list → continue. UI может быть простым; цель — не красивый Dashboard, а работающий full-stack flow.
 
-**Группа 0: Frontend scaffold & foundation**
+**Группа 0: Frontend scaffold & technical foundation**
 
 - [x] Создать React/TS приложение (Vite scaffold).
 - [x] Установить зависимости: Redux Toolkit, React Router, React Hook Form, Zod, Vitest.
@@ -15,42 +15,78 @@
 - [x] **Technical Foundation:** Нормализован scaffold (path aliases, `strict: true`, Vite proxy, `.env.example`), legacy Axios удалён, testing infrastructure настроена (Vitest + jsdom + RTL + MSW).
 - [x] Настроить RTK Query base API (`shared/api/`).
 - [x] Настроить Redux store с session slice (`entities/session/`) и RTK Query middleware.
-- [x] Настроить React Router (centralized config, layout routes, protected routes).
-- [ ] Базовые формы: Login, Register, Create Deck.
+- [x] Настроить начальный React Router scaffold: centralized config и базовый `ProtectedRoute`. Полное дерево маршрутов, layouts и guards остаются в Группе 1.
+
+**Группа 0A: Minimal UI and application-boundary foundation — выполнить до feature-компонентов**
+
+- [ ] Реализовать canonical CSS variables из `docs/frontend/DESIGN.md`.
+- [ ] Подключить canonical Geist / JetBrains Mono typography, reset и application background styles.
+- [ ] Реализовать shared-примитивы `Button`, `Input`, `Textarea`, `Select` и `FormField`.
+- [ ] Реализовать канонические состояния загрузки/ошибки: `Skeleton`, `PageState` и `InlineError`.
+- [ ] Стандартизировать семантическую разметку форм: связка label/control/error, keyboard focus, `aria-describedby`/`aria-live`, field error, disabled/loading и async error.
+- [ ] Реализовать общий error-presentation contract: global 401 teardown; feature/page-level `403/404/409/429/5xx` через `PageState`/`InlineError`; field validation через `FormField`.
+- [ ] Добавить базовое responsive-поведение для Auth и Onboarding экранов.
+- [ ] Добавить глобальный application Error Boundary и router-level error surface.
+- [ ] Добавить blocking session-bootstrap state вместо пустого экрана и базовый `404 Not Found` route.
 
 **Группа 1: Auth flow**
 
-- [ ] Login / Register экраны и валидация.
-- [ ] Complete Profile экран (`/onboarding/profile`, новый) — canonical Stitch references готовы; frontend ещё не реализован.
-- [ ] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
-- [ ] Обработка 401/403/validation errors на frontend (зависит от backend G-03).
-- [ ] Сохранение токена и редирект после auth.
+- [ ] Реализовать contract-first Auth/User API foundation:
+  - [ ] Инжектировать RTK Query endpoints для `AUTH-01`, `AUTH-02`, `USER-01` и `USER-07` в соответствующих feature/entity slices.
+  - [ ] Описать request/response DTO строго по `BACKEND_CONTRACT_INVENTORY.md`; не хранить `UserResponse` в session slice.
+  - [ ] Реализовать React Hook Form + Zod schemas по фактическим backend constraints.
+  - [ ] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
+- [ ] Реализовать Login / Register экраны и валидацию.
+- [ ] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
+- [ ] Реализовать session lifecycle:
+  - [ ] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
+  - [ ] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.
+  - [ ] Реализовать public/auth, onboarding и authenticated route layouts/guards: `initializing` показывает blocking `PageState`; `anonymous` допускается к `/login` и `/register`; `needsProfile` — только к `/onboarding/profile`; `authenticated` — к product routes.
+  - [ ] Реализовать `/` → `/learning`; authenticated пользователь на auth/onboarding routes также перенаправляется в `/learning`.
+  - [ ] При logout/401 очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
+- [ ] Реализовать Auth + onboarding orchestration:
+  - [ ] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
+  - [ ] Login → сохранить token → `GET /users/me`: `200` → `/learning`; `404` → `/onboarding/profile`; `401` → очистить session → `/login`.
+  - [ ] Complete Profile validation/conflict сохраняет валидную token/session и позволяет повторить отправку.
+  - [ ] Logout является локальным Level 1 flow: очистить token/session/API cache → `/login`; backend logout остаётся deferred.
+- [ ] Покрыть MSW + RTL тестами bootstrap, refresh with token, Register/Profile/Login/Logout orchestration, redirects, `400/401/409/429` и очистку cache между пользователями.
 
-**Группа 2: Deck & cards flow**
+**Группа 1A: Reduced authenticated application shell — выполнить до Learning screens**
 
-- [ ] Create deck screen (`/decks/new`).
-- [ ] Owner Deck Details (`/decks/:deckId/manage`).
-- [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
-- [ ] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); отдельный переход с Owner Deck Details не требуется.
-- [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.
-- [ ] ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.
+- [ ] Реализовать `AppShell` как authenticated layout.
+- [ ] Для Level 1 оставить только `Learning` как persistent destination; `Created`, `Discover` и `Progress` полностью скрыть.
+- [ ] Реализовать согласованное desktop/mobile responsive-поведение без dead links; не строить полный post-vertical shell заранее.
 
-**Группа 3: Study flow**
+**Группа 2: Learning read flow**
 
 - [ ] Learning list (`/learning`) — backend G-06 готов; frontend ещё не реализован.
 - [ ] Learning Deck Details (`/learning/:deckId`) — показывает backend-provided per-card progress + frontend-derived per-deck counts (см. Phase 0.4C § Progress semantics).
-- [ ] Enroll in deck (через Public Deck Details).
+
+**Группа 3: Deck & card authoring flow**
+
+- [ ] Create deck screen (`/decks/new`).
+- [ ] После готовности `/decks/new` добавить рабочий Create Deck CTA на Learning screen; до этого не показывать dead link.
+- [ ] Owner Deck Details (`/decks/:deckId/manage`).
+- [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
+- [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.
+- [ ] ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.
+
+**Группа 4: Public deck, enroll & study flow**
+
+- [ ] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); отдельный переход с Owner Deck Details не требуется.
+- [ ] Enroll in deck через Public Deck Details.
 - [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
+- [ ] После готовности `/study/:deckId` добавить контекстный Study CTA на Learning Deck Details; отдельный persistent Study destination не создавать.
 - [ ] ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.
 
-**Группа 4: End-to-end smoke**
+**Группа 5: End-to-end smoke**
 
 - [ ] Ручной прогон (основной flow): register → complete profile → authenticated app → create deck → manual add card → owner deck details → public deck details → enroll → learning list/details → study → per-card progress → повторное открытие learning list и продолжение позже.
 - [ ] Ручной прогон (повторный вход, отдельно от регистрации): clear/logout local session → login → learning list → continue.
 - [ ] Обновить `LLHelper.postman_collection.json` и `LLHelper.postman_environment.json` по необходимости.
 - [ ] Проверить CORS и base API URL.
 
-**Группа 5: Documentation**
+**Группа 6: Documentation**
 
 - [x] Обновить `docs/architecture/current-architecture.md` — frontend architecture section added.
 - [ ] Обновить `docs/features/learning-flow.md` при изменениях flow/UX.
@@ -72,12 +108,14 @@
 
 **Приоритет выполнения:**
 
-1. Группа 0 (scaffold & foundation) — scaffold ✅, Technical Foundation ✅ (см. Группа 0 выше)
-2. Группа 1 (auth) — Phase 0.4 завершена (см. ниже); runtime frontend больше не заблокирован самим аудитом, но **последовательно зависит от бэкенд/Stitch-пререквизитов** — см. § "Ordered backend → Stitch → frontend tasks" ниже.
-3. Группа 2 (decks/cards)
-4. Группа 3 (study)
-5. Группа 4 (end-to-end smoke)
-6. Группа 5 (docs)
+1. Группа 0 (technical scaffold) — выполнена; затем Группа 0A (minimal UI/application boundaries).
+2. Группа 1 (Auth + onboarding).
+3. Группа 1A (reduced authenticated shell).
+4. Группа 2 (Learning read flow).
+5. Группа 3 (Deck/Card authoring).
+6. Группа 4 (Public Deck + Enroll + Study).
+7. Группа 5 (end-to-end smoke).
+8. Группа 6 (docs).
 
 ## Phase 0.4 — Global Frontend Integration Audit
 
@@ -126,13 +164,15 @@ G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют �
 2. ~~Backend security: G-05~~ — выполнено.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting).~~ — выполнено.
-5. Frontend: Auth + onboarding (`needsProfile` session state).
-6. Frontend: Learning list + Learning Deck Details.
-7. Frontend: Create Deck + Owner Deck Details.
-8. Frontend: Manual Add Card.
-9. Frontend: Public Deck Details + Enroll.
-10. Frontend: Study + per-card progress display.
-11. E2E ручной smoke + Postman sync.
-12. Release hardening: G-04, `CARD-04`, G-05 verification (если уже закрыт на шаге 2 — только regression-проверка, не повторная реализация), безопасное тело 500.
-13. Первый deployment.
-14. Optional: single-card AI generation отдельной задачей, после manual smoke; не блокирует шаг 13.
+5. Frontend: минимальный UI/application-boundary фундамент — подробный checklist в **Группе 0A**.
+6. Frontend: Auth + onboarding — подробный checklist в **Группе 1**.
+7. Frontend: reduced authenticated `AppShell` — подробный checklist в **Группе 1A**.
+8. Frontend: Learning list + Learning Deck Details — **Группа 2**.
+9. Frontend: Create Deck + Owner Deck Details — **Группа 3**.
+10. Frontend: Manual Add Card — **Группа 3**.
+11. Frontend: Public Deck Details + Enroll — **Группа 4**.
+12. Frontend: Study + per-card progress display — **Группа 4**, semantics в map §0.8.
+13. Ручной end-to-end smoke + Postman sync — **Группа 5**.
+14. Release hardening: G-04, `CARD-04`, G-05 regression verification, безопасное тело 500.
+15. Первый deployment.
+16. Optional: single-card AI generation отдельной задачей после manual smoke; не блокирует шаг 15.
