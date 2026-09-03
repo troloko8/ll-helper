@@ -1,0 +1,34 @@
+.form,
+.fields {
+    display: grid;
+    gap: 24px;
+}
+
+.fields {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.nameFields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.username {
+    font-family: var(--font-family-metadata);
+}
+
+.submit {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+}
+
+@media (max-width: 22rem) {
+    .nameFields {
+        grid-template-columns: 1fr;
+    }
+}

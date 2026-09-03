@@ -37,7 +37,7 @@
   - [x] Реализовать React Hook Form + Zod schemas по фактическим backend constraints.
   - [ ] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
 - [x] Реализовать Login / Register экраны и валидацию.
-- [ ] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
+- [x] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
 - [ ] Реализовать session lifecycle:
   - [ ] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
   - [ ] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.

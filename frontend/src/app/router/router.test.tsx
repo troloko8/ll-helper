@@ -50,4 +50,17 @@ describe('router', () => {
             screen.getByRole('button', { name: 'Create Account' }),
         ).toBeInTheDocument()
     })
+
+    it('renders the complete-profile page at /onboarding/profile', async () => {
+        renderRoute('/onboarding/profile')
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Complete Your Profile',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Initialize Profile' }),
+        ).toBeInTheDocument()
+    })
 })

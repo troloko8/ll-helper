@@ -31,11 +31,12 @@ The implemented `widgets/public-form-layout/` slice owns the responsive layout
 base shared by Login, Register, and Complete Profile. Route guards and session
 state remain app/domain responsibilities; the widget contains no auth logic.
 
-The implemented `pages/login/` and `pages/register/` slices compose that layout
-with their feature-owned forms and are mounted at `/login` and `/register`.
-Successful authentication can be exposed through a callback; token/session
-persistence and navigation remain owned by the pending Auth orchestration rather
-than by the presentational pages.
+The implemented `pages/login/`, `pages/register/`, and
+`pages/complete-profile/` slices compose that layout with their feature-owned
+forms and are mounted at `/login`, `/register`, and `/onboarding/profile`.
+Successful authentication/profile creation can be exposed through callbacks;
+token/session transitions and navigation remain owned by the pending Auth
+orchestration rather than by the presentational pages.
 
 ### Slice internal segments
 

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
+import { CompleteProfilePage } from '@/pages/complete-profile'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { RegisterPage } from '@/pages/register'
@@ -27,6 +28,10 @@ export const appRoutes: RouteObject[] = [
             {
                 path: '/register',
                 element: <RegisterPage />,
+            },
+            {
+                path: '/onboarding/profile',
+                element: <CompleteProfilePage />,
             },
             {
                 path: '*',
