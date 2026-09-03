@@ -3,24 +3,24 @@ import { createSlice } from '@reduxjs/toolkit'
 export type SessionStatus = 'initializing' | 'authenticated' | 'anonymous'
 
 export interface SessionState {
-  status: SessionStatus
+    status: SessionStatus
 }
 
 const initialState: SessionState = {
-  status: 'initializing',
+    status: 'initializing',
 }
 
 const sessionSlice = createSlice({
-  name: 'session',
-  initialState,
-  reducers: {
-    sessionAuthenticated(state) {
-      state.status = 'authenticated'
+    name: 'session',
+    initialState,
+    reducers: {
+        sessionAuthenticated(state) {
+            state.status = 'authenticated'
+        },
+        sessionCleared(state) {
+            state.status = 'anonymous'
+        },
     },
-    sessionCleared(state) {
-      state.status = 'anonymous'
-    },
-  },
 })
 
 export const { sessionAuthenticated, sessionCleared } = sessionSlice.actions

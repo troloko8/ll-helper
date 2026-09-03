@@ -1,45 +1,45 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html {
-  min-width: 320px;
-  min-height: 100%;
-  background-color: var(--background);
-  -webkit-text-size-adjust: 100%;
+    min-width: 320px;
+    min-height: 100%;
+    background-color: var(--background);
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  background-color: var(--background);
-  color: var(--on-background);
-  font-family: var(--font-family-ui);
-  line-height: 1.5;
-  overflow-wrap: break-word;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--background);
+    color: var(--on-background);
+    font-family: var(--font-family-ui);
+    line-height: 1.5;
+    overflow-wrap: break-word;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
-  min-height: 100vh;
-  isolation: isolate;
+    min-height: 100vh;
+    isolation: isolate;
 }
 
 :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd) {
-  margin: 0;
+    margin: 0;
 }
 
 :where(button, input, select, textarea) {
-  color: inherit;
-  font: inherit;
+    color: inherit;
+    font: inherit;
 }
 
 :where(img, picture, video, canvas, svg) {
-  display: block;
-  max-width: 100%;
+    display: block;
+    max-width: 100%;
 }

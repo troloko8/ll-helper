@@ -6,14 +6,14 @@ import type { ApiError } from '@/shared/api'
 export const apiErrorListenerMiddleware = createListenerMiddleware()
 
 apiErrorListenerMiddleware.startListening({
-  matcher: isRejectedWithValue,
-  effect: (action, listenerApi) => {
-    const payload = action.payload as ApiError | undefined
+    matcher: isRejectedWithValue,
+    effect: (action, listenerApi) => {
+        const payload = action.payload as ApiError | undefined
 
-    if (payload?.status === 401) {
-      clearToken()
-      listenerApi.dispatch(sessionCleared())
-      listenerApi.dispatch(baseApi.util.resetApiState())
-    }
-  },
+        if (payload?.status === 401) {
+            clearToken()
+            listenerApi.dispatch(sessionCleared())
+            listenerApi.dispatch(baseApi.util.resetApiState())
+        }
+    },
 })

@@ -7,7 +7,7 @@ import '@/shared/ui/styles/tokens.css'
 import '@/shared/ui/styles/global.css'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+    <StrictMode>
+        <App />
+    </StrictMode>,
 )

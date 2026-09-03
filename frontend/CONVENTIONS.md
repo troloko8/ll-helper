@@ -27,6 +27,10 @@ src/
 | `entities` | Domain concepts, data shapes, domain logic | Imports from shared only |
 | `shared` | Business-agnostic utilities, UI primitives, config | Imports nothing from above |
 
+The implemented `widgets/public-form-layout/` slice owns the responsive layout
+base shared by Login, Register, and Complete Profile. Route guards and session
+state remain app/domain responsibilities; the widget contains no auth logic.
+
 ### Slice internal segments
 
 Standard segments inside a slice (use only those needed):
@@ -53,6 +57,12 @@ slice-name/
 - **Types/interfaces:** `PascalCase`. Suffix response DTOs with `Dto` only if disambiguation is needed.
 - **Hooks:** `camelCase` with `use` prefix.
 - **Constants:** `UPPER_SNAKE_CASE`.
+
+## Formatting
+
+- Use four spaces for indentation; do not use tab characters.
+- Prettier is the formatting source of truth. Its repository configuration preserves the established single-quote and no-semicolon style.
+- Use `npm run format` to format frontend source files and `npm run format:check` for a non-mutating verification.
 
 ## Imports
 

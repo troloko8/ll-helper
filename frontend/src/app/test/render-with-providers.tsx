@@ -5,20 +5,23 @@ import { MemoryRouter } from 'react-router-dom'
 import { createAppStore } from '../store'
 
 interface RenderWithProvidersOptions {
-  route?: string
+    route?: string
 }
 
-export function renderWithProviders(ui: ReactElement, options: RenderWithProvidersOptions = {}) {
-  const { route = '/' } = options
-  const store = createAppStore()
+export function renderWithProviders(
+    ui: ReactElement,
+    options: RenderWithProvidersOptions = {},
+) {
+    const { route = '/' } = options
+    const store = createAppStore()
 
-  function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <Provider store={store}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-      </Provider>
-    )
-  }
+    function Wrapper({ children }: { children: ReactNode }) {
+        return (
+            <Provider store={store}>
+                <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+            </Provider>
+        )
+    }
 
-  return { store, ...render(ui, { wrapper: Wrapper }) }
+    return { store, ...render(ui, { wrapper: Wrapper }) }
 }

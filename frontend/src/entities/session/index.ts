@@ -1,7 +1,7 @@
 export {
-  sessionReducer,
-  sessionAuthenticated,
-  sessionCleared,
+    sessionReducer,
+    sessionAuthenticated,
+    sessionCleared,
 } from './model/session-slice'
 export type { SessionStatus, SessionState } from './model/session-slice'
 export { selectSessionStatus, selectIsAuthenticated } from './model/selectors'

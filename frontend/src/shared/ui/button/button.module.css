@@ -1,93 +1,93 @@
 .button {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-weight: 650;
-  line-height: 1.25;
-  cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease,
-    transform 120ms ease;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-weight: 650;
+    line-height: 1.25;
+    cursor: pointer;
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease,
+        color 120ms ease,
+        transform 120ms ease;
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--primary-container);
-  outline-offset: 2px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(1px);
+    transform: translateY(1px);
 }
 
 .button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .primary {
-  background-color: var(--primary-container);
-  color: var(--on-primary);
+    background-color: var(--primary-container);
+    color: var(--on-primary);
 }
 
 .primary:hover:not(:disabled) {
-  background-color: var(--surface-tint);
+    background-color: var(--surface-tint);
 }
 
 .secondary {
-  border-color: var(--outline-variant);
-  background-color: var(--surface-container-high);
-  color: var(--on-surface);
+    border-color: var(--outline-variant);
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
 }
 
 .secondary:hover:not(:disabled) {
-  border-color: var(--outline);
-  background-color: var(--surface-container-highest);
+    border-color: var(--outline);
+    background-color: var(--surface-container-highest);
 }
 
 .danger {
-  border-color: var(--error);
-  background-color: var(--error-container);
-  color: var(--error);
+    border-color: var(--error);
+    background-color: var(--error-container);
+    color: var(--error);
 }
 
 .danger:hover:not(:disabled) {
-  background-color: var(--error);
-  color: var(--error-container);
+    background-color: var(--error);
+    color: var(--error-container);
 }
 
 .danger:focus-visible {
-  outline-color: var(--error);
+    outline-color: var(--error);
 }
 
 .spinner {
-  width: 1em;
-  height: 1em;
-  flex: none;
-  border: 2px solid currentcolor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 700ms linear infinite;
+    width: 1em;
+    height: 1em;
+    flex: none;
+    border: 2px solid currentcolor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(1turn);
-  }
+    to {
+        transform: rotate(1turn);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button {
-    transition: none;
-  }
+    .button {
+        transition: none;
+    }
 
-  .spinner {
-    animation: none;
-  }
+    .spinner {
+        animation: none;
+    }
 }
