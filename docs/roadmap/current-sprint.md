@@ -32,8 +32,8 @@
 **Группа 1: Auth flow**
 
 - [ ] Реализовать contract-first Auth/User API foundation:
-  - [ ] Инжектировать RTK Query endpoints для `AUTH-01`, `AUTH-02`, `USER-01` и `USER-07` в соответствующих feature/entity slices.
-  - [ ] Описать request/response DTO строго по `BACKEND_CONTRACT_INVENTORY.md`; не хранить `UserResponse` в session slice.
+  - [x] Инжектировать RTK Query endpoints для `AUTH-01`, `AUTH-02`, `USER-01` и `USER-07` в соответствующих feature/entity slices.
+  - [x] Описать request/response DTO строго по `BACKEND_CONTRACT_INVENTORY.md`; не хранить `UserResponse` в session slice.
   - [ ] Реализовать React Hook Form + Zod schemas по фактическим backend constraints.
   - [ ] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
 - [ ] Реализовать Login / Register экраны и валидацию.

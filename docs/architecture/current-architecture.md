@@ -690,6 +690,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 - RTK Query with `fetchBaseQuery` — single `createApi` base in `shared/api/`.
 - Domain endpoints injected from relevant entity/feature slices.
+- Implemented injections: `AUTH-01` in `features/login`, `AUTH-02` in `features/register`, `USER-01` in `features/complete-profile`, and `USER-07` in `entities/user`. User profile responses remain RTK Query server state rather than session-slice data.
 - Centralized auth headers via `prepareHeaders` using a token-storage adapter in `shared/api/` (no Redux import in shared).
 - Base URL: `VITE_API_URL` → backend `/api/v1`.
 
@@ -726,7 +727,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current runtime is a small FSD scaffold containing app/store/router/test infrastructure, `entities/session`, and generic `shared/api`; `pages`, `widgets`, `features`, and `shared/ui` remain placeholders until the current-sprint responsibilities are implemented. The router currently exposes only placeholder `/` and `/login` entries and must not be treated as the accepted product route tree.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices, shared API/UI foundations, the public-form layout widget, and a not-found page. Auth/Onboarding feature screens and their final route orchestration remain pending.
 
 ---
 

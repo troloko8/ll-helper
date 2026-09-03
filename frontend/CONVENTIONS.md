@@ -147,6 +147,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
+- **Implemented Auth/User injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, and `entities/user` owns the cacheable current-profile query `USER-07`. `UserResponseDto` remains RTK Query server data and is not copied into `entities/session`.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
