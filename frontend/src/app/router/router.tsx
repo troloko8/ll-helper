@@ -1,8 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom'
+import type { RouteObject } from 'react-router-dom'
+import { NotFoundPage } from '@/pages/not-found'
 import { ProtectedRoute } from './protected-route'
 import { RouterErrorSurface } from './router-error-surface'
 
-export const router = createBrowserRouter([
+export const appRoutes: RouteObject[] = [
     {
         errorElement: <RouterErrorSurface />,
         children: [
@@ -20,6 +22,12 @@ export const router = createBrowserRouter([
                 path: '/login',
                 element: null,
             },
+            {
+                path: '*',
+                element: <NotFoundPage />,
+            },
         ],
     },
-])
+]
+
+export const router = createBrowserRouter(appRoutes)

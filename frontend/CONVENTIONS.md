@@ -233,14 +233,15 @@ app/router (protected routing)
 
 - **Library:** React Router 7 (centralized configuration via `createBrowserRouter` + `RouterProvider`).
 - **Router config location:** `app/router/` (`router.tsx`, `protected-route.tsx`, `index.ts`).
-- **Protected routes — current implemented scaffold:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render nothing yet; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`. There is no `needsProfile` branch yet.
+- **Protected routes — current implemented scaffold:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render a blocking `PageState`; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`. There is no `needsProfile` branch yet.
 - **Routing target for `needsProfile` (accepted, not yet implemented):**
   - `initializing` → render a blocking session-bootstrap `PageState`; never render protected content or an empty screen while bootstrap resolves.
   - `anonymous` → redirect to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application.
   - `authenticated` user navigating to `/onboarding/profile` → redirect to `/learning`.
-- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`. The router now provides a root route-level error surface and the application root provides a global Error Boundary; the explicit not-found route remains pending.
+- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
+- The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned
   by FRONTEND_INTEGRATION_MAP.md §0.3 and are pending implementation.

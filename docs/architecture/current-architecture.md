@@ -706,7 +706,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 ### Routing
 
 - React Router 7 with centralized configuration in `app/router/`.
-- Current runtime contains only a temporary centralized router and initial `ProtectedRoute`; product routes and layouts are not implemented yet.
+- Current runtime contains a temporary centralized router, a `ProtectedRoute` with a blocking session-initialization surface, and an explicit wildcard not-found page; product routes and layouts are not implemented yet.
 - `ApplicationErrorBoundary` wraps the full provider tree, while the root router `errorElement` renders a safe `PageState` for route loader/render failures without exposing technical details.
 - Target: public/auth, onboarding, and authenticated layouts whose guards depend on `entities/session` runtime state.
 

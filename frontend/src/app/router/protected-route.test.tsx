@@ -19,9 +19,13 @@ function renderProtectedRoute(route: string) {
 }
 
 describe('ProtectedRoute', () => {
-    it('renders no protected content while the session is initializing', () => {
+    it('blocks protected content with a loading state while the session is initializing', () => {
         renderProtectedRoute('/')
 
+        expect(
+            screen.getByRole('heading', { name: 'Preparing your workspace' }),
+        ).toBeInTheDocument()
+        expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
         expect(screen.queryByText('Protected content')).not.toBeInTheDocument()
         expect(screen.queryByText('Login page')).not.toBeInTheDocument()
     })
