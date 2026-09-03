@@ -713,6 +713,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives `Button`, `Input`, `Textarea`, `Select`, `FormField`, `Skeleton`, `PageState`, `InlineError`, and `ApiErrorPresentation` are implemented and exported from `shared/ui/`.
+- `widgets/public-form-layout/` provides the responsive Auth/Onboarding layout base: a centered 420px Auth column and a mobile-first 448px Onboarding column with an optional sticky header. Auth pages, session-aware route layouts, and guards remain pending.
 - No external UI framework without explicit decision.
 - Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/styles/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, and application foreground/background styles are loaded at startup; responsive shell rules and screen runtime implementation remain pending.
 
