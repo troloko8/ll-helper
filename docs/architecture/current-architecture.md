@@ -727,7 +727,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices, shared API/UI foundations, the public-form layout widget, and a not-found page. Auth/Onboarding feature screens and their final route orchestration remain pending.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices with backend-aligned Zod form schemas, shared API/UI foundations, the public-form layout widget, and a not-found page. Auth/Onboarding feature screens and their final route orchestration remain pending.
 
 ---
 

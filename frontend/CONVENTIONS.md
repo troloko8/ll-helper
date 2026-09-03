@@ -253,6 +253,7 @@ app/router (protected routing)
 - Zod schemas define both validation rules and TypeScript types.
 - Form state is component-local (not Redux).
 - Validation schemas live alongside the form component or in the feature's `model/` segment.
+- Login, Register, and Complete Profile expose their backend-aligned form schemas and `z.infer`-derived value types through the feature public API. The Complete Profile form intentionally excludes `avatarUrl`; its future Level 1 submit mapping must send the API DTO's nullable field as `null`.
 - Backend validation errors should be mapped to RHF field errors where applicable.
 - Wrap each `Input`, `Textarea`, or `Select` in `FormField`. `FormField` owns the control ID, label association, description/error IDs, `aria-describedby`, `aria-invalid`, and the polite field-error live region; feature forms must not recreate this wiring ad hoc.
 - Preserve keyboard focus visibility. Shared controls and buttons provide `:focus-visible` styling; feature CSS must not remove it without an accessible replacement.
