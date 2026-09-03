@@ -261,14 +261,16 @@ app/router (protected routing)
 ### Transport errors (shared/api responsibility)
 
 - `shared/api/` normalizes HTTP errors into a consistent shape (`ApiError`).
+- `getApiErrorPresentation(error)` maps transport status to safe generic copy; it never exposes backend `5xx` messages. A feature or page may override the copy when it has resource-specific context.
+- `getApiFieldErrors(error)` extracts only `400 { errors: { field: message } }` validation payloads. Features map recognized field names to React Hook Form with `setError`; `FormField` renders the resulting message.
 - It does **not** dispatch Redux actions, redirect, or perform application-level side effects.
 
 ### Application-level error handling (app/features responsibility)
 
-- An app-level API error listener detects normalized errors and performs side effects (e.g. 401 → clear session).
-- 403 / 429 / 5xx → user-facing feedback owned by the relevant feature or a global error handler.
+- The app-level API error listener handles every normalized `401` by clearing the token, clearing the runtime session, and resetting the RTK Query cache. Routing owns the resulting redirect.
+- Page-load `403` / `404` / `409` / `429` / `5xx` failures render `ApiErrorPresentation` in `page` mode (`PageState`); action-level failures render it in `inline` mode (`InlineError`). Features may provide contextual title/message/action props.
+- A `400` field-validation payload is mapped to recognized RHF fields and displayed through `FormField`. Malformed-body or non-field `400` failures use inline presentation.
 - Form validation errors: Zod + RHF field-level display.
-- Backend validation error responses: Map to appropriate UI feedback.
 - Unhandled errors: Global error boundary at `app/` level.
 
 ## Testing

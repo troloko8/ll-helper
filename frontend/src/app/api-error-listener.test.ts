@@ -8,6 +8,9 @@ import { createAppStore } from './store'
 
 const testApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getCachedValue: builder.query<{ value: string }, void>({
+      query: () => '/__test-cache',
+    }),
     triggerUnauthorized: builder.query<unknown, void>({
       query: () => '/__test-401',
     }),
@@ -23,6 +26,9 @@ describe('api-error-listener', () => {
   it('clears the token and marks the session anonymous when the API responds 401', async () => {
     setToken('test-token')
     server.use(
+      http.get('*/__test-cache', () =>
+        HttpResponse.json({ value: 'previous user data' }),
+      ),
       http.get('*/__test-401', () =>
         HttpResponse.json({ message: 'Unauthorized' }, { status: 401 }),
       ),
@@ -31,10 +37,17 @@ describe('api-error-listener', () => {
     const store = createAppStore()
 
     await act(async () => {
+      await store.dispatch(testApi.endpoints.getCachedValue.initiate())
+    })
+
+    expect(Object.keys(store.getState().api.queries)).toHaveLength(1)
+
+    await act(async () => {
       await store.dispatch(testApi.endpoints.triggerUnauthorized.initiate())
     })
 
     expect(getToken()).toBeNull()
     expect(selectSessionStatus(store.getState())).toBe('anonymous')
+    expect(store.getState().api.queries).toEqual({})
   })
 })

@@ -235,7 +235,7 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - Thin `ProgressBar`
 - `CardInventory` — desktop table / mobile list
 - `Skeleton`
-- `PageState` / `InlineError`
+- `PageState` / `InlineError` / `ApiErrorPresentation`
 - Destructive confirmation dialog
 
 Do not prescribe a large generic component library beyond this list in

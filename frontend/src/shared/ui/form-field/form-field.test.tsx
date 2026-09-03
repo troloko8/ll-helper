@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { FormField } from './form-field'
-import { Input } from './input'
+import { Input } from '../form-control'
 
 describe('FormField', () => {
   it('associates its label, description, and error with the control', () => {
