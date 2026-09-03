@@ -104,25 +104,21 @@ Runtime authentication/session lifecycle state lives in `entities/session/`:
 entities/session/
 ├── model/
 │   ├── session-slice.ts   ← Redux slice: session status
-│   └── selectors.ts       ← selectSessionStatus, selectIsAuthenticated
+│   └── selectors.ts       ← selectSessionStatus, selectIsAuthenticated, selectNeedsProfile
 └── index.ts               ← public API
 ```
 
-**Session model — current implemented scaffold:**
-
-```text
-type SessionStatus = 'initializing' | 'anonymous' | 'authenticated'
-```
-
-This is what `entities/session/model/session-slice.ts` actually implements today. There is no `needsProfile` status and no `GET /api/v1/users/me` bootstrap call in the current scaffold; `authenticated` currently means only "a token is present", not "a `User` profile exists".
-
-**Session model — accepted Level 1 target, pending implementation:**
+**Session model — current implementation:**
 
 ```text
 type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
 ```
 
-Source of truth for this target: `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.7 (Phase 0.4C accepted decision). The backend `GET /api/v1/users/me` contract exists, but the frontend bootstrap call, `needsProfile`, and routing guards that react to it are **not implemented yet** — do not write code or docs that assume the frontend lifecycle already exists until the scaffold is updated to match.
+`entities/session/model/session-slice.ts` implements all four accepted Level 1
+statuses and exposes explicit transitions to `anonymous`, `needsProfile`, and
+`authenticated`. The `GET /api/v1/users/me` bootstrap resolution and routing
+guards that react to `needsProfile` are still pending; the current token-only
+bootstrap must not be treated as proof that a `User` profile exists.
 
 **Bootstrap target (accepted, not yet implemented):**
 

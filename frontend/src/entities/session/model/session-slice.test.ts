@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
     sessionAuthenticated,
     sessionCleared,
+    sessionNeedsProfile,
     sessionReducer,
 } from './session-slice'
-import { selectIsAuthenticated, selectSessionStatus } from './selectors'
+import {
+    selectIsAuthenticated,
+    selectNeedsProfile,
+    selectSessionStatus,
+} from './selectors'
 
 describe('sessionReducer', () => {
     it('starts in the initializing status', () => {
@@ -15,6 +20,11 @@ describe('sessionReducer', () => {
     it('transitions to authenticated on sessionAuthenticated', () => {
         const state = sessionReducer(undefined, sessionAuthenticated())
         expect(state.status).toBe('authenticated')
+    })
+
+    it('transitions to needsProfile on sessionNeedsProfile', () => {
+        const state = sessionReducer(undefined, sessionNeedsProfile())
+        expect(state.status).toBe('needsProfile')
     })
 
     it('transitions to anonymous on sessionCleared', () => {
@@ -39,6 +49,24 @@ describe('session selectors', () => {
         ).toBe(false)
         expect(
             selectIsAuthenticated({ session: { status: 'initializing' } }),
+        ).toBe(false)
+        expect(
+            selectIsAuthenticated({ session: { status: 'needsProfile' } }),
+        ).toBe(false)
+    })
+
+    it('selectNeedsProfile is true only when profile completion is required', () => {
+        expect(
+            selectNeedsProfile({ session: { status: 'needsProfile' } }),
+        ).toBe(true)
+        expect(
+            selectNeedsProfile({ session: { status: 'authenticated' } }),
+        ).toBe(false)
+        expect(selectNeedsProfile({ session: { status: 'anonymous' } })).toBe(
+            false,
+        )
+        expect(
+            selectNeedsProfile({ session: { status: 'initializing' } }),
         ).toBe(false)
     })
 })

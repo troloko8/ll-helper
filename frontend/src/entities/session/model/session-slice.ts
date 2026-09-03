@@ -1,6 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-export type SessionStatus = 'initializing' | 'authenticated' | 'anonymous'
+export type SessionStatus =
+    | 'initializing'
+    | 'anonymous'
+    | 'needsProfile'
+    | 'authenticated'
 
 export interface SessionState {
     status: SessionStatus
@@ -17,11 +21,15 @@ const sessionSlice = createSlice({
         sessionAuthenticated(state) {
             state.status = 'authenticated'
         },
+        sessionNeedsProfile(state) {
+            state.status = 'needsProfile'
+        },
         sessionCleared(state) {
             state.status = 'anonymous'
         },
     },
 })
 
-export const { sessionAuthenticated, sessionCleared } = sessionSlice.actions
+export const { sessionAuthenticated, sessionNeedsProfile, sessionCleared } =
+    sessionSlice.actions
 export const sessionReducer = sessionSlice.reducer
