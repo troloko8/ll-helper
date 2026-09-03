@@ -1,0 +1,78 @@
+.state {
+  display: flex;
+  min-height: 240px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px var(--mobile-margin);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.loading .icon {
+  background-color: var(--surface-container-low);
+}
+
+.error .icon {
+  background-color: color-mix(in srgb, var(--error-container) 20%, transparent);
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--outline-variant);
+  border-top-color: var(--primary-container);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.errorIcon {
+  width: 32px;
+  height: 32px;
+  color: var(--error);
+}
+
+.content {
+  display: grid;
+  max-width: 448px;
+  gap: 8px;
+}
+
+.title {
+  color: var(--on-background);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.description {
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.action {
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

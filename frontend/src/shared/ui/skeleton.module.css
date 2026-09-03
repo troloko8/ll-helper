@@ -1,0 +1,40 @@
+.skeleton {
+  max-width: 100%;
+  min-height: 1rem;
+  background-color: var(--surface-container-highest);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.text {
+  width: 100%;
+  height: 1em;
+  border-radius: 4px;
+}
+
+.rectangular {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.circular {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
