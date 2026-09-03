@@ -242,6 +242,10 @@ app/router (protected routing)
 - Form state is component-local (not Redux).
 - Validation schemas live alongside the form component or in the feature's `model/` segment.
 - Backend validation errors should be mapped to RHF field errors where applicable.
+- Wrap each `Input`, `Textarea`, or `Select` in `FormField`. `FormField` owns the control ID, label association, description/error IDs, `aria-describedby`, `aria-invalid`, and the polite field-error live region; feature forms must not recreate this wiring ad hoc.
+- Preserve keyboard focus visibility. Shared controls and buttons provide `:focus-visible` styling; feature CSS must not remove it without an accessible replacement.
+- During submission, disable the related native `fieldset` and render the submit `Button` with `isLoading`. Loading buttons expose `aria-busy` and remain disabled until the request settles.
+- Map backend field validation to React Hook Form with `setError`. Present form-level asynchronous failures with `InlineError`; use its default assertive announcement for urgent failures or `role="status"` for non-urgent retryable feedback.
 
 ## UI / Styling
 

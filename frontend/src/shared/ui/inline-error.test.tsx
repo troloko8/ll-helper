@@ -13,9 +13,21 @@ describe('InlineError', () => {
       />,
     )
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    const error = screen.getByRole('alert')
+
+    expect(error).toHaveTextContent(
       'Card was not savedCheck your connection and try again.',
     )
+    expect(error).toHaveAttribute('aria-live', 'assertive')
+    expect(error).toHaveAttribute('aria-atomic', 'true')
     expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled()
+  })
+
+  it('allows non-urgent async errors to use a polite live region', () => {
+    render(
+      <InlineError role="status" message="The server is temporarily unavailable." />,
+    )
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
   })
 })

@@ -23,7 +23,7 @@
 - [x] Подключить canonical Geist / JetBrains Mono typography, reset и application background styles.
 - [x] Реализовать shared-примитивы `Button`, `Input`, `Textarea`, `Select` и `FormField`.
 - [x] Реализовать канонические состояния загрузки/ошибки: `Skeleton`, `PageState` и `InlineError`.
-- [ ] Стандартизировать семантическую разметку форм: связка label/control/error, keyboard focus, `aria-describedby`/`aria-live`, field error, disabled/loading и async error.
+- [x] Стандартизировать семантическую разметку форм: связка label/control/error, keyboard focus, `aria-describedby`/`aria-live`, field error, disabled/loading и async error.
 - [ ] Реализовать общий error-presentation contract: global 401 teardown; feature/page-level `403/404/409/429/5xx` через `PageState`/`InlineError`; field validation через `FormField`.
 - [ ] Добавить базовое responsive-поведение для Auth и Onboarding экранов.
 - [ ] Добавить глобальный application Error Boundary и router-level error surface.

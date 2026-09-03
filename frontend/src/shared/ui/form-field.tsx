@@ -34,12 +34,14 @@ export function FormField({
   const generatedId = useId()
   const controlId = children.props.id ?? id ?? `field-${generatedId}`
   const descriptionId = description ? `${controlId}-description` : undefined
-  const errorId = error ? `${controlId}-error` : undefined
-  const isRequired = children.props.required ?? required
+  const errorId = `${controlId}-error`
+  const hasError = error !== undefined && error !== null && error !== ''
+  const isRequired = Boolean(children.props.required || required)
+  const isDisabled = Boolean(children.props.disabled || disabled)
   const describedBy = [
     children.props['aria-describedby'],
     descriptionId,
-    errorId,
+    hasError ? errorId : undefined,
   ]
     .filter(Boolean)
     .join(' ')
@@ -48,14 +50,14 @@ export function FormField({
   const control = cloneElement(children, {
     id: controlId,
     required: isRequired,
-    disabled: children.props.disabled ?? disabled,
+    disabled: isDisabled,
     'aria-describedby': describedBy || undefined,
     'aria-invalid':
-      children.props['aria-invalid'] ?? (error ? true : undefined),
+      children.props['aria-invalid'] ?? (hasError ? true : undefined),
   })
 
   return (
-    <div className={classes}>
+    <div className={classes} data-disabled={isDisabled || undefined}>
       <label className={styles.label} htmlFor={controlId}>
         {label}
         {isRequired && (
@@ -70,11 +72,14 @@ export function FormField({
           {description}
         </p>
       )}
-      {error && (
-        <p className={styles.error} id={errorId} role="alert">
-          {error}
-        </p>
-      )}
+      <p
+        className={styles.error}
+        id={errorId}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {error}
+      </p>
     </div>
   )
 }
