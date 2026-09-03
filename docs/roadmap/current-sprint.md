@@ -40,7 +40,7 @@
 - [x] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
 - [ ] Реализовать session lifecycle:
   - [x] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
-  - [ ] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.
+  - [x] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.
   - [ ] Реализовать public/auth, onboarding и authenticated route layouts/guards: `initializing` показывает blocking `PageState`; `anonymous` допускается к `/login` и `/register`; `needsProfile` — только к `/onboarding/profile`; `authenticated` — к product routes.
   - [ ] Реализовать `/` → `/learning`; authenticated пользователь на auth/onboarding routes также перенаправляется в `/learning`.
   - [ ] При logout/401 очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.

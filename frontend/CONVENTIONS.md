@@ -226,7 +226,7 @@ app/router (protected routing)
 - `shared/api/` does not perform application-level logout, dispatch session actions, or redirect.
 - 403 / 429 / validation errors are also normalized transport errors at `shared/api/` level; user-facing behavior is owned by the appropriate higher layer.
 - Logout feature (`features/logout/`) performs the same cleanup: `tokenStorage.clearToken()` + dispatch session-cleared + `baseApi.util.resetApiState()`. Cache reset is mandatory so a later login in the same browser session cannot observe the previous user's cached server state.
-- Application bootstrap → rehydrate `entities/session` state from persisted token (via `shared/api/token-storage`).
+- Application bootstrap checks persisted-token sessions through `USER-07 GET /users/me`: `200` → `authenticated`; `404` from this endpoint only → `needsProfile`; shared `401` handling clears the token, session, and RTK Query cache → `anonymous`. Without a persisted token, bootstrap resolves directly to `anonymous` without an HTTP request. `UserResponse` remains RTK Query server state and is not copied into the session slice.
 
 ### Future target
 

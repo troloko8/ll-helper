@@ -1,16 +1,37 @@
-import { sessionAuthenticated, sessionCleared } from '@/entities/session'
-import { getToken } from '@/shared/api'
+import type { ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
+import {
+    sessionAuthenticated,
+    sessionCleared,
+    sessionNeedsProfile,
+} from '@/entities/session'
+import { userApi } from '@/entities/user'
+import { getToken, isApiError } from '@/shared/api'
 
-type SessionBootstrapAction =
-    | ReturnType<typeof sessionAuthenticated>
-    | ReturnType<typeof sessionCleared>
+type SessionBootstrapDispatch = ThunkDispatch<unknown, unknown, UnknownAction>
 
-type SessionBootstrapDispatch = (action: SessionBootstrapAction) => unknown
-
-export function bootstrapSession(dispatch: SessionBootstrapDispatch): void {
-    if (getToken()) {
-        dispatch(sessionAuthenticated())
-    } else {
+export async function bootstrapSession(
+    dispatch: SessionBootstrapDispatch,
+): Promise<void> {
+    if (!getToken()) {
         dispatch(sessionCleared())
+        return
+    }
+
+    const request = dispatch(
+        userApi.endpoints.getCurrentUser.initiate(undefined, {
+            forceRefetch: true,
+        }),
+    )
+
+    try {
+        const result = await request
+
+        if (result.isSuccess) {
+            dispatch(sessionAuthenticated())
+        } else if (isApiError(result.error) && result.error.status === 404) {
+            dispatch(sessionNeedsProfile())
+        }
+    } finally {
+        request.unsubscribe()
     }
 }

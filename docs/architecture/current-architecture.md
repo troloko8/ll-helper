@@ -697,7 +697,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 ### Authentication (Level 1)
 
 - Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`).
-- The session slice models `initializing`, `anonymous`, `needsProfile`, and `authenticated`; server profile data remains in RTK Query. Bootstrap resolution through `GET /users/me` and session-aware route guards remain pending.
+- The session slice models `initializing`, `anonymous`, `needsProfile`, and `authenticated`; server profile data remains in RTK Query. Startup bootstrap resolves persisted-token sessions through `GET /users/me`: `200` → `authenticated`, endpoint-specific `404` → `needsProfile`, and shared `401` handling clears token/session/API cache → `anonymous`. No-token startup resolves directly to `anonymous`; session-aware route guards remain pending.
 - `shared/api/` never imports Redux, entities, features, or app.
 - Auth use cases: `features/login/`, `features/register/`, `features/logout/`; Complete Profile orchestration belongs to its own feature responsibility rather than `shared/api/`.
 - `localStorage` is a deliberate Level 1 trade-off.
