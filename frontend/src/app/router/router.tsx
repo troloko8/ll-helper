@@ -1,19 +1,25 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { ProtectedRoute } from './protected-route'
+import { RouterErrorSurface } from './router-error-surface'
 
 export const router = createBrowserRouter([
     {
-        path: '/',
-        element: <ProtectedRoute />,
+        errorElement: <RouterErrorSurface />,
         children: [
             {
-                index: true,
+                path: '/',
+                element: <ProtectedRoute />,
+                children: [
+                    {
+                        index: true,
+                        element: null,
+                    },
+                ],
+            },
+            {
+                path: '/login',
                 element: null,
             },
         ],
-    },
-    {
-        path: '/login',
-        element: null,
     },
 ])

@@ -1,0 +1,17 @@
+.surface {
+    display: grid;
+    min-height: 100vh;
+    min-height: 100dvh;
+    place-items: center;
+    padding: 48px var(--mobile-margin);
+}
+
+.surface > section {
+    width: 100%;
+}
+
+@media (min-width: 48rem) {
+    .surface {
+        padding-inline: var(--desktop-page-margin);
+    }
+}

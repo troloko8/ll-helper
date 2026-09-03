@@ -240,7 +240,7 @@ app/router (protected routing)
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application.
   - `authenticated` user navigating to `/onboarding/profile` → redirect to `/learning`.
-- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`; the router provides a not-found route and route-level error surface; the application root provides a global Error Boundary.
+- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`. The router now provides a root route-level error surface and the application root provides a global Error Boundary; the explicit not-found route remains pending.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned
   by FRONTEND_INTEGRATION_MAP.md §0.3 and are pending implementation.
@@ -281,7 +281,7 @@ app/router (protected routing)
 - Page-load `403` / `404` / `409` / `429` / `5xx` failures render `ApiErrorPresentation` in `page` mode (`PageState`); action-level failures render it in `inline` mode (`InlineError`). Features may provide contextual title/message/action props.
 - A `400` field-validation payload is mapped to recognized RHF fields and displayed through `FormField`. Malformed-body or non-field `400` failures use inline presentation.
 - Form validation errors: Zod + RHF field-level display.
-- Unhandled errors: Global error boundary at `app/` level.
+- Unhandled errors: the global `ApplicationErrorBoundary` wraps all application providers; the root router `errorElement` handles route loader/render failures. Both use `PageState` and hide technical error details.
 
 ## Testing
 

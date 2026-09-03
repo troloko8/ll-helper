@@ -26,7 +26,7 @@
 - [x] Стандартизировать семантическую разметку форм: связка label/control/error, keyboard focus, `aria-describedby`/`aria-live`, field error, disabled/loading и async error.
 - [x] Реализовать общий error-presentation contract: global 401 teardown; feature/page-level `403/404/409/429/5xx` через `PageState`/`InlineError`; field validation через `FormField`.
 - [x] Добавить базовое responsive-поведение для Auth и Onboarding экранов.
-- [ ] Добавить глобальный application Error Boundary и router-level error surface.
+- [x] Добавить глобальный application Error Boundary и router-level error surface.
 - [ ] Добавить blocking session-bootstrap state вместо пустого экрана и базовый `404 Not Found` route.
 
 **Группа 1: Auth flow**
