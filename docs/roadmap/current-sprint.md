@@ -36,7 +36,7 @@
   - [x] Описать request/response DTO строго по `BACKEND_CONTRACT_INVENTORY.md`; не хранить `UserResponse` в session slice.
   - [x] Реализовать React Hook Form + Zod schemas по фактическим backend constraints.
   - [ ] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
-- [ ] Реализовать Login / Register экраны и валидацию.
+- [x] Реализовать Login / Register экраны и валидацию.
 - [ ] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
 - [ ] Реализовать session lifecycle:
   - [ ] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.

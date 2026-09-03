@@ -1,0 +1,104 @@
+.screen {
+    display: grid;
+    gap: 40px;
+}
+
+.brand {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.brandMark {
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-items: center;
+    margin-bottom: 8px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-high);
+    color: var(--primary);
+}
+
+.brandMark svg {
+    width: 32px;
+    height: 32px;
+    fill: currentcolor;
+}
+
+.wordmark {
+    color: var(--on-surface);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+}
+
+.subtitle,
+.cardFooter {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container);
+    box-shadow: 0 16px 40px
+        color-mix(in srgb, var(--surface-container-lowest) 55%, transparent);
+}
+
+.accent {
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--primary-container),
+        var(--secondary-container),
+        var(--surface-tint)
+    );
+}
+
+.cardBody {
+    padding: 32px;
+}
+
+.cardFooter {
+    padding: 16px 32px;
+    border-top: 1px solid var(--outline-variant);
+    background-color: var(--surface-container-low);
+    text-align: center;
+}
+
+.link {
+    color: var(--primary);
+    font-weight: 600;
+    text-underline-offset: 3px;
+}
+
+.link:hover {
+    color: var(--primary-container);
+}
+
+.link:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+@media (max-width: 30rem) {
+    .screen {
+        gap: 32px;
+    }
+
+    .cardBody {
+        padding: 24px;
+    }
+
+    .cardFooter {
+        padding-inline: 24px;
+    }
+}
