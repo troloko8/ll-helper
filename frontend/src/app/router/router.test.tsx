@@ -116,20 +116,28 @@ describe('router session boundaries', () => {
     )
 
     it.each(['/login', '/register', '/onboarding/profile'])(
-        'redirects an authenticated user from %s to the product area',
+        'redirects an authenticated user from %s to learning',
         async (path) => {
             const { router } = renderRoute(path, 'authenticated')
 
             await waitFor(() => {
-                expect(router.state.location.pathname).toBe('/')
+                expect(router.state.location.pathname).toBe('/learning')
             })
         },
     )
 
-    it('allows an authenticated user to reach the product area', () => {
+    it('redirects the authenticated root route to learning', async () => {
         const { router } = renderRoute('/', 'authenticated')
 
-        expect(router.state.location.pathname).toBe('/')
+        await waitFor(() => {
+            expect(router.state.location.pathname).toBe('/learning')
+        })
+    })
+
+    it('allows an authenticated user to reach learning', () => {
+        const { router } = renderRoute('/learning', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/learning')
         expect(
             screen.queryByRole('heading', { name: 'Preparing your workspace' }),
         ).not.toBeInTheDocument()

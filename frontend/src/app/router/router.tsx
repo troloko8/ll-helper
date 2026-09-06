@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { Navigate, createBrowserRouter } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
 import { CompleteProfilePage } from '@/pages/complete-profile'
 import { LoginPage } from '@/pages/login'
@@ -40,6 +40,10 @@ export const appRoutes: RouteObject[] = [
                 children: [
                     {
                         path: '/',
+                        element: <Navigate to="/learning" replace />,
+                    },
+                    {
+                        path: '/learning',
                         element: null,
                     },
                     {

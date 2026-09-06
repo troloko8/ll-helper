@@ -241,9 +241,9 @@ app/router (protected routing)
   - `initializing` → render a blocking session-bootstrap `PageState`; never render protected content or an empty screen while bootstrap resolves.
   - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
-  - `authenticated` → render the protected application; Auth/Onboarding routes currently redirect to the root product placeholder.
-- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; the current root product placeholder and authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute`.
-- **Remaining routing target:** `/` redirects to `/learning`, and authenticated visits to Auth/Onboarding routes redirect there directly. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
+  - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute`.
+- `/` redirects to `/learning`. The `/learning` route is the temporary product placeholder until the Learning screen and authenticated `AppShell` are implemented. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned

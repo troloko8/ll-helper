@@ -15,7 +15,7 @@ export function AuthRoute() {
     }
 
     if (status === 'authenticated') {
-        return <Navigate to="/" replace />
+        return <Navigate to="/learning" replace />
     }
 
     return <Outlet />

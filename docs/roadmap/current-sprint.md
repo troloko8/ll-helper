@@ -42,7 +42,7 @@
   - [x] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
   - [x] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.
   - [x] Реализовать public/auth, onboarding и authenticated route layouts/guards: `initializing` показывает blocking `PageState`; `anonymous` допускается к `/login` и `/register`; `needsProfile` — только к `/onboarding/profile`; `authenticated` — к product routes.
-  - [ ] Реализовать `/` → `/learning`; authenticated пользователь на auth/onboarding routes также перенаправляется в `/learning`.
+  - [x] Реализовать `/` → `/learning`; authenticated пользователь на auth/onboarding routes также перенаправляется в `/learning`.
   - [ ] При logout/401 очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
 - [ ] Реализовать Auth + onboarding orchestration:
   - [ ] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
