@@ -1,36 +1,63 @@
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import {
+    sessionAuthenticated,
+    sessionCleared,
+    sessionNeedsProfile,
+} from '@/entities/session'
 import { createAppStore } from '../store'
 import { appRoutes } from './router'
 
-function renderRoute(path: string) {
+type ResolvedSessionStatus = 'anonymous' | 'needsProfile' | 'authenticated'
+
+const sessionActions = {
+    anonymous: sessionCleared,
+    needsProfile: sessionNeedsProfile,
+    authenticated: sessionAuthenticated,
+} as const
+
+function renderRoute(path: string, status?: ResolvedSessionStatus) {
+    const store = createAppStore()
+
+    if (status) {
+        store.dispatch(sessionActions[status]())
+    }
+
     const router = createMemoryRouter(appRoutes, {
         initialEntries: [path],
     })
 
     render(
-        <Provider store={createAppStore()}>
+        <Provider store={store}>
             <RouterProvider router={router} />
         </Provider>,
     )
+
+    return { router, store }
 }
 
-describe('router', () => {
-    it('renders the not-found page for an unknown URL', async () => {
-        renderRoute('/missing-page')
+describe('router session boundaries', () => {
+    it.each([
+        '/login',
+        '/register',
+        '/onboarding/profile',
+        '/',
+        '/missing-page',
+    ])('blocks %s while the session is initializing', (path) => {
+        renderRoute(path)
 
         expect(
-            await screen.findByRole('heading', { name: 'Page not found' }),
+            screen.getByRole('heading', {
+                name: 'Preparing your workspace',
+            }),
         ).toBeInTheDocument()
-        expect(
-            screen.getByText('The page you requested does not exist.'),
-        ).toBeInTheDocument()
+        expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
     })
 
-    it('renders the login page at /login', async () => {
-        renderRoute('/login')
+    it('allows an anonymous user to open login', async () => {
+        renderRoute('/login', 'anonymous')
 
         expect(
             await screen.findByRole('heading', { name: 'LLHelper' }),
@@ -40,8 +67,8 @@ describe('router', () => {
         ).toBeInTheDocument()
     })
 
-    it('renders the register page at /register', async () => {
-        renderRoute('/register')
+    it('allows an anonymous user to open register', async () => {
+        renderRoute('/register', 'anonymous')
 
         expect(
             await screen.findByRole('heading', { name: 'Create Account' }),
@@ -51,8 +78,19 @@ describe('router', () => {
         ).toBeInTheDocument()
     })
 
-    it('renders the complete-profile page at /onboarding/profile', async () => {
-        renderRoute('/onboarding/profile')
+    it.each(['/onboarding/profile', '/', '/missing-page'])(
+        'redirects an anonymous user from %s to login',
+        async (path) => {
+            const { router } = renderRoute(path, 'anonymous')
+
+            await waitFor(() => {
+                expect(router.state.location.pathname).toBe('/login')
+            })
+        },
+    )
+
+    it('allows a user who needs a profile to open onboarding', async () => {
+        renderRoute('/onboarding/profile', 'needsProfile')
 
         expect(
             await screen.findByRole('heading', {
@@ -61,6 +99,47 @@ describe('router', () => {
         ).toBeInTheDocument()
         expect(
             screen.getByRole('button', { name: 'Initialize Profile' }),
+        ).toBeInTheDocument()
+    })
+
+    it.each(['/login', '/register', '/', '/missing-page'])(
+        'redirects a user who needs a profile from %s to onboarding',
+        async (path) => {
+            const { router } = renderRoute(path, 'needsProfile')
+
+            await waitFor(() => {
+                expect(router.state.location.pathname).toBe(
+                    '/onboarding/profile',
+                )
+            })
+        },
+    )
+
+    it.each(['/login', '/register', '/onboarding/profile'])(
+        'redirects an authenticated user from %s to the product area',
+        async (path) => {
+            const { router } = renderRoute(path, 'authenticated')
+
+            await waitFor(() => {
+                expect(router.state.location.pathname).toBe('/')
+            })
+        },
+    )
+
+    it('allows an authenticated user to reach the product area', () => {
+        const { router } = renderRoute('/', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/')
+        expect(
+            screen.queryByRole('heading', { name: 'Preparing your workspace' }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('shows not found to an authenticated user at an unknown URL', async () => {
+        renderRoute('/missing-page', 'authenticated')
+
+        expect(
+            await screen.findByRole('heading', { name: 'Page not found' }),
         ).toBeInTheDocument()
     })
 })

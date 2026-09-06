@@ -657,7 +657,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** Technical scaffold foundation complete — path aliases, `strict: true`, Vite proxy, `.env.example`, RTK Query base API, Redux store with the initial three-state session slice, a temporary React Router/ProtectedRoute scaffold, and testing infrastructure (Vitest + jsdom + React Testing Library + MSW) are configured. Product route layouts, four-state session bootstrap, UI primitives, CSS Modules/token implementation, and feature screens remain pending in `docs/roadmap/current-sprint.md`. Playwright remains future infrastructure for the later E2E stage.
+> **Status:** The frontend foundation and Auth/Onboarding base are implemented: path aliases, strict TypeScript, Vite proxy, RTK Query, the four-state session bootstrap, session-aware route boundaries, shared UI primitives, canonical styling, and Login/Register/Complete Profile screens. Product routes and end-to-end Auth orchestration remain pending in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -708,15 +708,15 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 ### Routing
 
 - React Router 7 with centralized configuration in `app/router/`.
-- Current runtime contains a temporary centralized router, a `ProtectedRoute` with a blocking session-initialization surface, and an explicit wildcard not-found page; product routes and layouts are not implemented yet.
+- The centralized router implements separate `AuthRoute`, `OnboardingRoute`, and `AuthenticatedRoute` layout guards driven by the four-state `entities/session` runtime model. Every route shows a blocking `PageState` during initialization; anonymous users are limited to Login/Register, `needsProfile` users to Complete Profile, and authenticated users to the product area.
 - `ApplicationErrorBoundary` wraps the full provider tree, while the root router `errorElement` renders a safe `PageState` for route loader/render failures without exposing technical details.
-- Target: public/auth, onboarding, and authenticated layouts whose guards depend on `entities/session` runtime state.
+- The product route tree is still a temporary root placeholder; `/` → `/learning` and the remaining accepted product routes are pending.
 
 ### UI / Design
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives `Button`, `Input`, `Textarea`, `Select`, `FormField`, `Skeleton`, `PageState`, `InlineError`, and `ApiErrorPresentation` are implemented and exported from `shared/ui/`.
-- `widgets/public-form-layout/` provides the responsive Auth/Onboarding layout base: a centered 420px Auth column and a mobile-first 448px Onboarding column with an optional sticky header. Session-aware route layouts and guards remain pending.
+- `widgets/public-form-layout/` provides the responsive Auth/Onboarding layout base: a centered 420px Auth column and a mobile-first 448px Onboarding column with an optional sticky header. Session-aware route layouts and guards are implemented in `app/router/`.
 - Canonical Login and Register pages are implemented in `pages/login/` and `pages/register/` and mounted at `/login` and `/register`; their feature-owned RHF + Zod forms call `AUTH-01`/`AUTH-02`, map backend field and form errors, and can expose successful `AuthResponse` values to the still-pending session orchestration.
 - Canonical Complete Profile is implemented in `pages/complete-profile/` at `/onboarding/profile`; its feature-owned form calls `USER-01`, submits the six required profile fields with `avatarUrl: null`, renders validation/username-conflict/submitting states, and exposes successful `UserResponse` values to the still-pending session orchestration.
 - No external UI framework without explicit decision.

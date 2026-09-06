@@ -4,7 +4,9 @@ import { CompleteProfilePage } from '@/pages/complete-profile'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { RegisterPage } from '@/pages/register'
-import { ProtectedRoute } from './protected-route'
+import { AuthRoute } from './auth-route'
+import { AuthenticatedRoute } from './authenticated-route'
+import { OnboardingRoute } from './onboarding-route'
 import { RouterErrorSurface } from './router-error-surface'
 
 export const appRoutes: RouteObject[] = [
@@ -12,30 +14,39 @@ export const appRoutes: RouteObject[] = [
         errorElement: <RouterErrorSurface />,
         children: [
             {
-                path: '/',
-                element: <ProtectedRoute />,
+                element: <AuthRoute />,
                 children: [
                     {
-                        index: true,
-                        element: null,
+                        path: '/login',
+                        element: <LoginPage />,
+                    },
+                    {
+                        path: '/register',
+                        element: <RegisterPage />,
                     },
                 ],
             },
             {
-                path: '/login',
-                element: <LoginPage />,
+                element: <OnboardingRoute />,
+                children: [
+                    {
+                        path: '/onboarding/profile',
+                        element: <CompleteProfilePage />,
+                    },
+                ],
             },
             {
-                path: '/register',
-                element: <RegisterPage />,
-            },
-            {
-                path: '/onboarding/profile',
-                element: <CompleteProfilePage />,
-            },
-            {
-                path: '*',
-                element: <NotFoundPage />,
+                element: <AuthenticatedRoute />,
+                children: [
+                    {
+                        path: '/',
+                        element: null,
+                    },
+                    {
+                        path: '*',
+                        element: <NotFoundPage />,
+                    },
+                ],
             },
         ],
     },

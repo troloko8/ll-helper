@@ -236,15 +236,14 @@ app/router (protected routing)
 ## Routing
 
 - **Library:** React Router 7 (centralized configuration via `createBrowserRouter` + `RouterProvider`).
-- **Router config location:** `app/router/` (`router.tsx`, `protected-route.tsx`, `index.ts`).
-- **Protected routes — current implemented scaffold:** `ProtectedRoute` reads `selectSessionStatus`/`selectIsAuthenticated` from `entities/session`. `initializing` → render a blocking `PageState`; `anonymous` → redirect to `/login` (`replace`); `authenticated` → render nested route via `Outlet`. There is no `needsProfile` branch yet.
-- **Routing target for `needsProfile` (accepted, not yet implemented):**
+- **Router config location:** `app/router/` (`router.tsx`, route-boundary components, `index.ts`).
+- **Implemented route boundaries:** `AuthRoute`, `OnboardingRoute`, and `AuthenticatedRoute` read `entities/session` runtime status and gate their nested routes through `Outlet`:
   - `initializing` → render a blocking session-bootstrap `PageState`; never render protected content or an empty screen while bootstrap resolves.
-  - `anonymous` → redirect to `/login`.
+  - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
-  - `authenticated` → render the protected application.
-  - `authenticated` user navigating to `/onboarding/profile` → redirect to `/learning`.
-- **Route boundaries target:** public/auth, onboarding, and authenticated layouts; `/` redirects to `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
+  - `authenticated` → render the protected application; Auth/Onboarding routes currently redirect to the root product placeholder.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; the current root product placeholder and authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute`.
+- **Remaining routing target:** `/` redirects to `/learning`, and authenticated visits to Auth/Onboarding routes redirect there directly. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned
