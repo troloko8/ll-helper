@@ -1,12 +1,9 @@
-import type { CompleteProfileFormProps } from '@/features/complete-profile'
-import { CompleteProfileForm } from '@/features/complete-profile'
+import {
+    CompleteProfileForm,
+    useCompleteProfileSuccess,
+} from '@/features/complete-profile'
 import { PublicFormLayout } from '@/widgets/public-form-layout'
 import styles from './complete-profile-page.module.css'
-
-export type CompleteProfilePageProps = Pick<
-    CompleteProfileFormProps,
-    'onSuccess'
->
 
 function PsychologyIcon() {
     return (
@@ -40,7 +37,9 @@ function ProfileHeader() {
     )
 }
 
-export function CompleteProfilePage({ onSuccess }: CompleteProfilePageProps) {
+export function CompleteProfilePage() {
+    const handleCompleteProfileSuccess = useCompleteProfileSuccess()
+
     return (
         <PublicFormLayout variant="onboarding" header={<ProfileHeader />}>
             <div className={styles.screen}>
@@ -56,7 +55,9 @@ export function CompleteProfilePage({ onSuccess }: CompleteProfilePageProps) {
                     className={styles.formPanel}
                     aria-labelledby="complete-profile-title"
                 >
-                    <CompleteProfileForm onSuccess={onSuccess} />
+                    <CompleteProfileForm
+                        onSuccess={handleCompleteProfileSuccess}
+                    />
                 </section>
             </div>
         </PublicFormLayout>

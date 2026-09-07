@@ -46,7 +46,7 @@
   - [x] При `401` очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
   - [x] При logout очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
 - [ ] Реализовать Auth + onboarding orchestration:
-  - [ ] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
+  - [x] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
   - [ ] Login → сохранить token → `GET /users/me`: `200` → `/learning`; `404` → `/onboarding/profile`; `401` → очистить session → `/login`.
   - [ ] Complete Profile validation/conflict сохраняет валидную token/session и позволяет повторить отправку.
   - [ ] Logout является локальным Level 1 flow: очистить token/session/API cache → `/login`; backend logout остаётся deferred.
@@ -120,7 +120,7 @@
 
 ## Phase 0.4 — Global Frontend Integration Audit
 
-**Статус: ✅ завершена** (Phase 0.4A/0.4B/0.4C — documentation/audit-only; runtime code unchanged). Runtime frontend feature implementation ещё не начата — см. упорядоченные задачи ниже.
+**Статус: ✅ завершена** (Phase 0.4A/0.4B/0.4C были documentation/audit-only; runtime code в рамках самой фазы не менялся). Последующая runtime frontend implementation уже идёт по упорядоченным задачам и checklist выше.
 
 - [x] Phase 0.4A — Backend Contract Inventory (`docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`) — repository-grounded аудит контроллеров, DTO, security и error contract.
 - [x] Phase 0.4B — Frontend Integration Map (`docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`) — screen-by-screen карта всех 26 canonical Stitch references → candidate route → backend contract → readiness. После закрытия G-06: 8 ready / 7 partial / 9 blocked / 2 deferred.
@@ -145,7 +145,7 @@
   - [x] Product decision: отдельный экран Complete Profile принят (Phase 0.4C).
   - [x] Backend `POST /users` уже существует (`USER-01`, без изменений).
   - [x] Complete Profile Stitch (desktop/mobile/validation/conflict/submitting) — canonical references зарегистрированы в `docs/frontend/DESIGN.md` и `docs/frontend/design-reference/MANIFEST.md`.
-  - [ ] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
+  - [x] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
   - [ ] End-to-end Register → Profile verification (ручной smoke).
 - [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, batch progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
 - [x] G-08 Study selection включает `REVIEWING`: приоритет `LEARNING` → `REVIEWING` → `NEW`, детерминированная сортировка по `card.id` внутри статуса, max 10; `MASTERED` исключён. Подтверждено service unit tests.

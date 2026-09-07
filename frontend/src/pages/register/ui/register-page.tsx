@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
-import type { RegisterFormProps } from '@/features/register'
-import { RegisterForm } from '@/features/register'
+import { RegisterForm, useRegisterSuccess } from '@/features/register'
 import { PublicFormLayout } from '@/widgets/public-form-layout'
 import styles from './register-page.module.css'
 
-export type RegisterPageProps = Pick<RegisterFormProps, 'onSuccess'>
+export function RegisterPage() {
+    const handleRegisterSuccess = useRegisterSuccess()
 
-export function RegisterPage({ onSuccess }: RegisterPageProps) {
     return (
         <PublicFormLayout variant="auth">
             <section className={styles.card} aria-labelledby="register-title">
@@ -17,7 +16,7 @@ export function RegisterPage({ onSuccess }: RegisterPageProps) {
                         <p>Enter your details to create a new account.</p>
                     </header>
 
-                    <RegisterForm onSuccess={onSuccess} />
+                    <RegisterForm onSuccess={handleRegisterSuccess} />
 
                     <footer className={styles.cardFooter}>
                         <p>

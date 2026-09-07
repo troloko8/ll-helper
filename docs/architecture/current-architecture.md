@@ -215,9 +215,9 @@ GET /api/v1/users/me        ──▶  Resolve current profile from JWT subject 
 
 > **Current behavior (as implemented):** `AuthServiceImpl.register()` creates only `AuthUser`; no `User` profile row is created by `/auth/register` itself. Every authenticated action that resolves the current `User` (`SecurityUtils.getCurrentUser()`/`getCurrentUserId()`) will fail until a separate `POST /api/v1/users` call succeeds.
 >
-> **Accepted Level 1 target flow (Phase 0.4C, implemented backend bootstrap; frontend orchestration pending):**
+> **Implemented Register → Complete Profile frontend flow (Level 1):**
 > ```text
-> POST /auth/register → JWT → GET /users/me → 404 → /onboarding/profile (frontend) → POST /users → GET /users/me → 200 UserResponse → authenticated app
+> POST /auth/register → persist JWT → needsProfile → /onboarding/profile → POST /users → authenticated → /learning
 > ```
 > `GET /api/v1/users/me` is JWT-protected and resolves the JWT subject email through `AuthUser` to the linked `User`. It returns `404` without creating a profile when the link is absent.
 
@@ -657,7 +657,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** The frontend foundation and Auth/Onboarding base are implemented: path aliases, strict TypeScript, Vite proxy, RTK Query, the four-state session bootstrap, session-aware route boundaries, shared UI primitives, canonical styling, and Login/Register/Complete Profile screens. Product routes and end-to-end Auth orchestration remain pending in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
+> **Status:** The frontend foundation and Auth/Onboarding base are implemented: path aliases, strict TypeScript, Vite proxy, RTK Query, the four-state session bootstrap, session-aware route boundaries, shared UI primitives, canonical styling, Login/Register/Complete Profile screens, and Register → Complete Profile orchestration. Login orchestration and the authenticated product UI remain pending in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -697,7 +697,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 ### Authentication (Level 1)
 
 - Bearer JWT + `localStorage` persistence (via `shared/api/token-storage` adapter) + Redux runtime session state (`entities/session/`).
-- The session slice models `initializing`, `anonymous`, `needsProfile`, and `authenticated`; server profile data remains in RTK Query. Startup bootstrap resolves persisted-token sessions through `GET /users/me`: `200` → `authenticated`, endpoint-specific `404` → `needsProfile`, and shared `401` handling clears token/session/API cache → `anonymous`. No-token startup resolves directly to `anonymous`; session-aware route guards remain pending.
+- The session slice models `initializing`, `anonymous`, `needsProfile`, and `authenticated`; server profile data remains in RTK Query. Startup bootstrap resolves persisted-token sessions through `GET /users/me`: `200` → `authenticated`, endpoint-specific `404` → `needsProfile`, and shared `401` handling clears token/session/API cache → `anonymous`. No-token startup resolves directly to `anonymous`; session-aware route guards enforce the corresponding route boundaries.
 - `shared/api/` never imports Redux, entities, features, or app.
 - Auth use cases: `features/login/`, `features/register/`, `features/logout/`; Complete Profile orchestration belongs to its own feature responsibility rather than `shared/api/`.
 - `localStorage` is a deliberate Level 1 trade-off.
@@ -710,15 +710,15 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 - React Router 7 with centralized configuration in `app/router/`.
 - The centralized router implements separate `AuthRoute`, `OnboardingRoute`, and `AuthenticatedRoute` layout guards driven by the four-state `entities/session` runtime model. Every route shows a blocking `PageState` during initialization; anonymous users are limited to Login/Register, `needsProfile` users to Complete Profile, and authenticated users to the product area.
 - `ApplicationErrorBoundary` wraps the full provider tree, while the root router `errorElement` renders a safe `PageState` for route loader/render failures without exposing technical details.
-- The product route tree is still a temporary root placeholder; `/` → `/learning` and the remaining accepted product routes are pending.
+- `/` and authenticated Auth/Onboarding routes redirect to the temporary `/learning` product placeholder; the remaining accepted product routes are pending.
 
 ### UI / Design
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives `Button`, `Input`, `Textarea`, `Select`, `FormField`, `Skeleton`, `PageState`, `InlineError`, and `ApiErrorPresentation` are implemented and exported from `shared/ui/`.
 - `widgets/public-form-layout/` provides the responsive Auth/Onboarding layout base: a centered 420px Auth column and a mobile-first 448px Onboarding column with an optional sticky header. Session-aware route layouts and guards are implemented in `app/router/`.
-- Canonical Login and Register pages are implemented in `pages/login/` and `pages/register/` and mounted at `/login` and `/register`; their feature-owned RHF + Zod forms call `AUTH-01`/`AUTH-02`, map backend field and form errors, and can expose successful `AuthResponse` values to the still-pending session orchestration.
-- Canonical Complete Profile is implemented in `pages/complete-profile/` at `/onboarding/profile`; its feature-owned form calls `USER-01`, submits the six required profile fields with `avatarUrl: null`, renders validation/username-conflict/submitting states, and exposes successful `UserResponse` values to the still-pending session orchestration.
+- Canonical Login and Register pages are implemented in `pages/login/` and `pages/register/` and mounted at `/login` and `/register`; their feature-owned RHF + Zod forms call `AUTH-01`/`AUTH-02` and map backend field and form errors. Register success persists the JWT, enters `needsProfile`, and navigates to `/onboarding/profile`; Login success orchestration remains pending.
+- Canonical Complete Profile is implemented in `pages/complete-profile/` at `/onboarding/profile`; its feature-owned form calls `USER-01`, submits the six required profile fields with `avatarUrl: null`, and renders validation/username-conflict/submitting states. Success enters `authenticated` and navigates to `/learning` while errors preserve the existing token and `needsProfile` state.
 - No external UI framework without explicit decision.
 - Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/styles/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, and application foreground/background styles are loaded at startup; responsive shell rules and screen runtime implementation remain pending.
 
@@ -730,7 +730,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices with backend-aligned Zod form schemas, shared API/UI foundations, the public-form layout widget, and a not-found page. Auth/Onboarding feature screens and their final route orchestration remain pending.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices with backend-aligned Zod form schemas, shared API/UI foundations, the public-form layout widget, a not-found page, and the Register → Complete Profile route orchestration. Login orchestration and the authenticated product UI remain pending.
 
 ---
 

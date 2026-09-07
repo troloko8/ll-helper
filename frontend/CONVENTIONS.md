@@ -34,9 +34,11 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 The implemented `pages/login/`, `pages/register/`, and
 `pages/complete-profile/` slices compose that layout with their feature-owned
 forms and are mounted at `/login`, `/register`, and `/onboarding/profile`.
-Successful authentication/profile creation can be exposed through callbacks;
-token/session transitions and navigation remain owned by the pending Auth
-orchestration rather than by the presentational pages.
+The Register and Complete Profile features own their successful-submit
+orchestration: registration persists the access token, enters `needsProfile`,
+and navigates to onboarding; profile creation enters `authenticated` and
+navigates to `/learning`. The pages remain route-level compositions and do not
+own token or session transitions.
 
 ### Slice internal segments
 
@@ -116,11 +118,11 @@ type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authentica
 
 `entities/session/model/session-slice.ts` implements all four accepted Level 1
 statuses and exposes explicit transitions to `anonymous`, `needsProfile`, and
-`authenticated`. The `GET /api/v1/users/me` bootstrap resolution and routing
-guards that react to `needsProfile` are still pending; the current token-only
-bootstrap must not be treated as proof that a `User` profile exists.
+`authenticated`. The `GET /api/v1/users/me` bootstrap and session-aware route
+guards resolve persisted sessions without treating a token alone as proof that
+a `User` profile exists.
 
-**Bootstrap target (accepted, not yet implemented):**
+**Bootstrap behavior:**
 
 ```text
 No token                                  → anonymous
@@ -255,7 +257,7 @@ app/router (protected routing)
 - Zod schemas define both validation rules and TypeScript types.
 - Form state is component-local (not Redux).
 - Validation schemas live alongside the form component or in the feature's `model/` segment.
-- Login, Register, and Complete Profile expose their backend-aligned form schemas and `z.infer`-derived value types through the feature public API. The Complete Profile form intentionally excludes `avatarUrl`; its future Level 1 submit mapping must send the API DTO's nullable field as `null`.
+- Login, Register, and Complete Profile expose their backend-aligned form schemas and `z.infer`-derived value types through the feature public API. The Complete Profile form intentionally excludes `avatarUrl`; its submit mapping sends the API DTO's nullable field as `null`.
 - Backend validation errors should be mapped to RHF field errors where applicable.
 - Wrap each `Input`, `Textarea`, or `Select` in `FormField`. `FormField` owns the control ID, label association, description/error IDs, `aria-describedby`, `aria-invalid`, and the polite field-error live region; feature forms must not recreate this wiring ad hoc.
 - Preserve keyboard focus visibility. Shared controls and buttons provide `:focus-visible` styling; feature CSS must not remove it without an accessible replacement.
