@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
-import type { LoginFormProps } from '@/features/login'
-import { LoginForm } from '@/features/login'
+import { LoginForm, useLoginOrchestration } from '@/features/login'
 import { PublicFormLayout } from '@/widgets/public-form-layout'
 import styles from './login-page.module.css'
 
-export type LoginPageProps = Pick<LoginFormProps, 'onSuccess'>
+export function LoginPage() {
+    const handleLoginSuccess = useLoginOrchestration()
 
-export function LoginPage({ onSuccess }: LoginPageProps) {
     return (
         <PublicFormLayout variant="auth">
             <div className={styles.screen}>
@@ -23,7 +22,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                 <section className={styles.card} aria-label="Sign in form">
                     <div className={styles.accent} aria-hidden="true" />
                     <div className={styles.cardBody}>
-                        <LoginForm onSuccess={onSuccess} />
+                        <LoginForm onSuccess={handleLoginSuccess} />
                     </div>
                     <footer className={styles.cardFooter}>
                         <p>

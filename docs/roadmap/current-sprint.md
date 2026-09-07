@@ -47,8 +47,8 @@
   - [x] При logout очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
 - [ ] Реализовать Auth + onboarding orchestration:
   - [x] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
-  - [ ] Login → сохранить token → `GET /users/me`: `200` → `/learning`; `404` → `/onboarding/profile`; `401` → очистить session → `/login`.
-  - [ ] Complete Profile validation/conflict сохраняет валидную token/session и позволяет повторить отправку.
+  - [x] Login → сохранить token → `GET /users/me`: `200` → `/learning`; `404` → `/onboarding/profile`; `401` → очистить session → `/login`.
+  - [x] Complete Profile validation/conflict сохраняет валидную token/session и позволяет повторить отправку.
   - [ ] Logout является локальным Level 1 flow: очистить token/session/API cache → `/login`; backend logout остаётся deferred.
 - [ ] Покрыть MSW + RTL тестами bootstrap, refresh with token, Register/Profile/Login/Logout orchestration, redirects, `400/401/409/429` и очистку cache между пользователями.
 
