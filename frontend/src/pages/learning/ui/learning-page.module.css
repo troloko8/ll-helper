@@ -1,0 +1,121 @@
+.page {
+    display: grid;
+    gap: 40px;
+}
+
+.pageHeader {
+    display: grid;
+    max-width: 720px;
+    gap: 8px;
+}
+
+.eyebrow {
+    color: var(--primary-container);
+    font-family: var(--font-family-metadata);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.pageHeader h1 {
+    color: var(--on-background);
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 720;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    color: var(--on-surface-variant);
+    font-size: 1rem;
+}
+
+.deckSection {
+    display: grid;
+    gap: 20px;
+}
+
+.deckSection h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+    font-weight: 650;
+}
+
+.deckGrid {
+    display: grid;
+    gap: 16px;
+}
+
+.skeletonCard {
+    display: grid;
+    min-height: 176px;
+    align-content: space-between;
+    gap: 20px;
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.emptyState {
+    display: grid;
+    min-height: 320px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+    text-align: center;
+}
+
+.emptyIcon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    place-items: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    color: var(--primary-container);
+    background-color: var(--surface-container);
+}
+
+.emptyIcon svg {
+    width: 28px;
+    height: 28px;
+    fill: currentcolor;
+}
+
+.emptyState h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    max-width: 400px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+@media (min-width: 48rem) {
+    .page {
+        gap: 48px;
+    }
+
+    .deckGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .skeletonCard:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 75rem) {
+    .deckGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

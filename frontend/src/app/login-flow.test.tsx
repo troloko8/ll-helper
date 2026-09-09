@@ -59,6 +59,9 @@ describe('Login orchestration', () => {
             http.post('http://localhost/api/v1/auth/login', () =>
                 HttpResponse.json({ accessToken: 'login-token' }),
             ),
+            http.get('http://localhost/api/v1/learning/decks', () =>
+                HttpResponse.json([]),
+            ),
         )
     })
 

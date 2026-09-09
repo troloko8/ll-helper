@@ -60,7 +60,7 @@
 
 **Группа 2: Learning read flow**
 
-- [ ] Learning list (`/learning`) — backend G-06 готов; frontend ещё не реализован.
+- [x] Learning list (`/learning`) — backend G-06 и frontend реализованы.
 - [ ] Learning Deck Details (`/learning/:deckId`) — показывает backend-provided per-card progress + frontend-derived per-deck counts (см. Phase 0.4C § Progress semantics).
 
 **Группа 3: Deck & card authoring flow**

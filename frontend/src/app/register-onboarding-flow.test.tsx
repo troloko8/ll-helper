@@ -91,6 +91,9 @@ describe('Register to Complete Profile orchestration', () => {
                     updatedAt: '2026-09-06T00:00:00Z',
                 })
             }),
+            http.get('http://localhost/api/v1/learning/decks', () =>
+                HttpResponse.json([]),
+            ),
         )
         const { router } = renderRegistrationFlow()
         const user = userEvent.setup()

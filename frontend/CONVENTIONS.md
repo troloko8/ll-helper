@@ -46,6 +46,11 @@ and navigates to onboarding; profile creation enters `authenticated` and
 navigates to `/learning`. The pages remain route-level compositions and do not
 own token or session transitions.
 
+The implemented `pages/learning/` slice owns the `/learning` route composition.
+It consumes the cacheable `LEARN-05` query from `entities/learning/`, renders
+the backend-defined response order, and treats the first item as the
+Continue/Start highlight without copying server state into Redux slices.
+
 ### Slice internal segments
 
 Standard segments inside a slice (use only those needed):
@@ -158,7 +163,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented Auth/User injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, and `entities/user` owns the cacheable current-profile query `USER-07`. `UserResponseDto` remains RTK Query server data and is not copied into `entities/session`.
+- **Implemented Auth/User/Learning injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning list query `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
@@ -251,7 +256,7 @@ app/router (protected routing)
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
 - `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
-- `/` redirects to `/learning`. The `/learning` route remains a temporary empty product placeholder until the Learning screen is implemented. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
+- `/` redirects to the implemented Learning list at `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned

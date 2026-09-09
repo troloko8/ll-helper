@@ -1,12 +1,14 @@
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
+import { HttpResponse, http } from 'msw'
 import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
     sessionAuthenticated,
     sessionCleared,
     sessionNeedsProfile,
 } from '@/entities/session'
+import { server } from '@/shared/lib/test'
 import { createAppStore } from '../store'
 import { appRoutes } from './router'
 
@@ -39,6 +41,14 @@ function renderRoute(path: string, status?: ResolvedSessionStatus) {
 }
 
 describe('router session boundaries', () => {
+    beforeEach(() => {
+        server.use(
+            http.get('http://localhost/api/v1/learning/decks', () =>
+                HttpResponse.json([]),
+            ),
+        )
+    })
+
     it.each([
         '/login',
         '/register',
