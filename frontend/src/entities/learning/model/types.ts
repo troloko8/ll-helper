@@ -35,6 +35,10 @@ export interface LearningDeckResponseDto {
     progress: LearningProgressSummaryDto
 }
 
+export interface EnrollResponseDto {
+    userDeckId: number
+}
+
 export type CardLearningStatus = 'NEW' | 'LEARNING' | 'REVIEWING' | 'MASTERED'
 
 export interface CardProgressInfoDto {

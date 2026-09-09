@@ -74,8 +74,8 @@
 
 **Группа 4: Public deck, enroll & study flow**
 
-- [ ] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); отдельный переход с Owner Deck Details не требуется.
-- [ ] Enroll in deck через Public Deck Details.
+- [x] Public Deck Details + Enroll (`/decks/:deckId`) — достижим только по прямой ссылке (Discover отложен); отдельный переход с Owner Deck Details не требуется.
+- [x] Enroll in deck через Public Deck Details.
 - [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
 - [ ] После готовности `/study/:deckId` добавить контекстный Study CTA на Learning Deck Details; отдельный persistent Study destination не создавать.
 - ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.

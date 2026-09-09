@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-09-01
+> **Last updated:** 2026-09-09
 > **Status:** Reflects current `LearningServiceImpl` implementation
 
 ---
@@ -100,6 +100,11 @@ The first returned deck is the highlight candidate. If its `lastStudiedAt` is no
 4. Attempt to create `UserDeckProgress` (`ACTIVE` status) and `UserCardProgress` for each deck card (`NEW` status, counters at `0`).
 5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. Other data integrity violations are also mapped to `409 Conflict` by `GlobalExceptionHandler`. There is no upfront service-level duplicate check.
 6. Return `201 Created`.
+
+In the Level 1 frontend flow, Public Deck Details invokes this endpoint through
+its Start Learning action. A successful response opens the enrolled deck's
+Learning Deck Details screen; `403`, `409`, and server failures remain visible
+inline so the public deck content is not replaced by a false success state.
 
 > **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.
 

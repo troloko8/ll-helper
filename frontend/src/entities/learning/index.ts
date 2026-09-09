@@ -13,6 +13,7 @@ export type {
     CardProgressInfoDto,
     DeckCardResponseDto,
     DeckProgressCounts,
+    EnrollResponseDto,
     LearningDeckResponseDto,
     LearningProgressSummaryDto,
 } from './model/types'

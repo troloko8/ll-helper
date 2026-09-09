@@ -370,6 +370,12 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. The accepted Level 1 flow uses the direct URL; no Owner Deck Details shortcut is required. |
 | Blocker / gap | Vertical: none. Release/security: G-04 (`GET /decks` remains globally unfiltered, though this screen does not use it) must be closed before public deployment. |
 
+**Runtime status:** Public Deck Details and enrollment are implemented at the
+accepted direct-link-only `/decks/:deckId` route. The page consumes `DECK-02`,
+exposes `LEARN-01` only for a public deck, presents inline enrollment errors,
+and navigates to `/learning/:deckId` after `201 Created`. No Discover or Owner
+Deck Details entry point was added.
+
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
 | Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **partial (accepted Level 1 MVP — see §0; direct-link-only, `blocked`-on-Discover superseded)** |

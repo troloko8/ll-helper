@@ -1,0 +1,256 @@
+.page,
+.skeleton {
+    display: grid;
+    gap: 24px;
+}
+
+.hero,
+.inventory,
+.emptyState,
+.skeletonHero,
+.skeletonInventory {
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.hero {
+    display: grid;
+    gap: 24px;
+    padding: 20px;
+    background: linear-gradient(
+        135deg,
+        var(--surface-container-high) 0%,
+        var(--surface-container) 100%
+    );
+}
+
+.heroContent {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+}
+
+.visibilityBadge {
+    width: fit-content;
+    padding: 5px 8px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 4px;
+    color: var(--on-surface-variant);
+    background-color: var(--surface-container-highest);
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.hero h1 {
+    max-width: 780px;
+    color: var(--on-background);
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-weight: 720;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+}
+
+.description {
+    max-width: 760px;
+    color: var(--on-surface-variant);
+    font-size: 0.9375rem;
+}
+
+.metadata {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.metadata div {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.metadata dt,
+.inventoryHeader span,
+.columnHeadings,
+.cardNumber,
+.mobileLabel {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.metadata dd {
+    color: var(--on-surface);
+    font-family: var(--font-family-metadata);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.metadata div:nth-child(2) dd {
+    color: var(--primary-container);
+}
+
+.inventory {
+    overflow: hidden;
+}
+
+.inventoryHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--surface-container-high);
+}
+
+.inventoryHeader h2 {
+    color: var(--on-surface);
+    font-size: 1.125rem;
+}
+
+.columnHeadings {
+    display: none;
+}
+
+.cardList {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 12px;
+    list-style: none;
+}
+
+.cardRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container);
+}
+
+.cardNumber {
+    display: none;
+}
+
+.cardFace {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+    gap: 4px;
+}
+
+.cardFace strong,
+.cardFace small {
+    overflow-wrap: anywhere;
+}
+
+.cardFace strong {
+    color: var(--on-surface);
+    font-size: 0.875rem;
+}
+
+.cardFace small {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 220px;
+    place-content: center;
+    gap: 8px;
+    padding: 32px 20px;
+    text-align: center;
+}
+
+.emptyState h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.skeletonHero,
+.skeletonInventory {
+    display: grid;
+    gap: 18px;
+    padding: 20px;
+}
+
+@media (min-width: 48rem) {
+    .page,
+    .skeleton {
+        gap: 24px;
+        padding-top: 8px;
+    }
+
+    .hero {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        padding: 28px;
+    }
+
+    .metadata {
+        width: fit-content;
+        grid-template-columns: repeat(3, minmax(130px, auto));
+        gap: 32px;
+    }
+
+    .inventoryHeader {
+        padding: 16px 20px;
+    }
+
+    .columnHeadings,
+    .cardRow {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 20px;
+    }
+
+    .columnHeadings {
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--outline-variant);
+        background-color: var(--surface-container);
+    }
+
+    .cardList {
+        gap: 0;
+        padding: 0;
+    }
+
+    .cardRow {
+        padding: 14px 20px;
+        border: 0;
+        border-bottom: 1px solid var(--outline-variant);
+        border-radius: 0;
+        background-color: transparent;
+    }
+
+    .cardRow:last-child {
+        border-bottom: 0;
+    }
+
+    .cardNumber {
+        display: inline;
+    }
+
+    .mobileLabel {
+        display: none;
+    }
+}

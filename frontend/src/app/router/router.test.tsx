@@ -84,7 +84,7 @@ describe('router session boundaries', () => {
                         createdAt: '2026-09-01T10:00:00Z',
                         updatedAt: '2026-09-01T10:00:00Z',
                     },
-                    isPublic: false,
+                    isPublic: true,
                     cards: [],
                 }),
             ),
@@ -225,6 +225,18 @@ describe('router session boundaries', () => {
         expect(router.state.location.pathname).toBe('/decks/12/manage')
         expect(
             await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
+        ).toBeInTheDocument()
+    })
+
+    it('allows an authenticated user to open public deck details directly', async () => {
+        const { router } = renderRoute('/decks/12', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/decks/12')
+        expect(
+            await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Start learning' }),
         ).toBeInTheDocument()
     })
 

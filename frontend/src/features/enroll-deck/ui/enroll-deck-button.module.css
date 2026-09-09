@@ -1,0 +1,21 @@
+.action {
+    display: grid;
+    gap: 12px;
+}
+
+.button {
+    min-height: 52px;
+    width: 100%;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+@media (min-width: 48rem) {
+    .action {
+        width: min(100%, 320px);
+    }
+
+    .button {
+        min-width: 220px;
+    }
+}

@@ -8,6 +8,7 @@ import { LearningDeckDetailsPage } from '@/pages/learning-deck-details'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { OwnerDeckDetailsPage } from '@/pages/owner-deck-details'
+import { PublicDeckDetailsPage } from '@/pages/public-deck-details'
 import { RegisterPage } from '@/pages/register'
 import { AppShell } from '@/widgets/app-shell'
 import { AuthRoute } from './auth-route'
@@ -62,6 +63,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/decks/new',
                                 element: <CreateDeckPage />,
+                            },
+                            {
+                                path: '/decks/:deckId',
+                                element: <PublicDeckDetailsPage />,
                             },
                             {
                                 path: '/decks/:deckId/manage',
