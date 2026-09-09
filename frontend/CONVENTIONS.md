@@ -59,7 +59,11 @@ The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
 `features/create-deck/` form inside the authenticated `AppShell`. The feature
 owns the `DECK-01` mutation, backend-aligned validation, submission states, and
 the required `isPrivate` UI → `isPublic` wire inversion. Shared Deck response
-types and the backend Language enum live in `entities/deck/`.
+types and the backend Language enum live in `entities/deck/`. The implemented
+`pages/owner-deck-details/` slice owns `/decks/:deckId/manage`, consumes the
+cacheable `DECK-02` query from `entities/deck/`, verifies the current user is
+the response owner, and renders the response's content-card inventory without
+learning progress.
 
 ### Slice internal segments
 
@@ -173,7 +177,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
@@ -265,7 +269,7 @@ app/router (protected routing)
   - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
-- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/learning/:deckId`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/learning/:deckId`, `/decks/new`, `/decks/:deckId/manage`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
 - `/` redirects to the implemented Learning list at `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**

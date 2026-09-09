@@ -67,7 +67,7 @@
 
 - [x] Create deck screen (`/decks/new`).
 - [x] После готовности `/decks/new` добавить рабочий Create Deck CTA на Learning screen; до этого не показывать dead link.
-- [ ] Owner Deck Details (`/decks/:deckId/manage`).
+- [x] Owner Deck Details (`/decks/:deckId/manage`).
 - [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
 - [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.
 - ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.

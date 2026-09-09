@@ -1,0 +1,318 @@
+.page,
+.skeleton {
+    display: grid;
+    gap: 24px;
+}
+
+.summary,
+.inventory,
+.skeletonSummary,
+.skeletonInventory {
+    overflow: hidden;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.summary {
+    display: grid;
+    gap: 24px;
+    padding: 20px;
+    background: linear-gradient(
+        135deg,
+        var(--surface-container-high) 0%,
+        var(--surface-container) 100%
+    );
+}
+
+.summaryHeading,
+.titleLine,
+.inventoryHeader,
+.inventoryHeader > div {
+    display: flex;
+}
+
+.summaryHeading,
+.inventoryHeader {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.titleLine {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.titleLine h1 {
+    color: var(--on-background);
+    font-size: clamp(1.75rem, 7vw, 3rem);
+    font-weight: 720;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+}
+
+.visibilityBadge {
+    padding: 5px 8px;
+    border: 1px solid
+        color-mix(in srgb, var(--primary-container) 42%, transparent);
+    border-radius: 4px;
+    color: var(--primary-container);
+    background-color: color-mix(
+        in srgb,
+        var(--primary-container) 9%,
+        transparent
+    );
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.description {
+    max-width: 760px;
+    margin-top: 8px;
+    color: var(--on-surface-variant);
+    font-size: 0.9375rem;
+}
+
+.metadata {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.metadata div {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.metadata dt,
+.inventoryHeader span,
+.columnHeadings,
+.cardNumber,
+.mobileLabel {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.metadata dd {
+    color: var(--on-surface);
+    font-family: var(--font-family-metadata);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.inventory {
+    display: grid;
+}
+
+.inventoryHeader {
+    flex-direction: column;
+    padding: 16px;
+    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--surface-container-high);
+}
+
+.inventoryHeader > div {
+    align-items: baseline;
+    gap: 10px;
+}
+
+.inventoryHeader h2 {
+    color: var(--on-surface);
+    font-size: 1.125rem;
+}
+
+.search {
+    display: flex;
+    width: 100%;
+    min-height: 38px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 5px;
+    color: var(--on-surface-variant);
+    background-color: var(--surface-container-lowest);
+}
+
+.search:focus-within {
+    border-color: var(--primary-container);
+    outline: 1px solid var(--primary-container);
+}
+
+.search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    color: var(--on-surface);
+    background: transparent;
+    font-size: 0.8125rem;
+}
+
+.search input::placeholder {
+    color: var(--on-surface-variant);
+}
+
+.columnHeadings {
+    display: none;
+}
+
+.cardList {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 12px;
+    list-style: none;
+}
+
+.cardRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container);
+}
+
+.cardNumber {
+    display: none;
+}
+
+.cardFace {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+    gap: 4px;
+}
+
+.cardFace strong,
+.cardFace small {
+    overflow-wrap: anywhere;
+}
+
+.cardFace strong {
+    color: var(--on-surface);
+    font-size: 0.875rem;
+}
+
+.cardFace small {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 220px;
+    place-content: center;
+    gap: 8px;
+    padding: 32px 20px;
+    text-align: center;
+}
+
+.emptyState h3 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.skeletonSummary,
+.skeletonInventory {
+    display: grid;
+    gap: 18px;
+    padding: 20px;
+}
+
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@media (min-width: 48rem) {
+    .page,
+    .skeleton {
+        gap: 24px;
+        padding-top: 8px;
+    }
+
+    .summary,
+    .skeletonSummary {
+        padding: 28px;
+    }
+
+    .metadata {
+        width: fit-content;
+        grid-template-columns: repeat(3, minmax(130px, auto));
+        gap: 32px;
+    }
+
+    .inventoryHeader {
+        flex-direction: row;
+        align-items: center;
+        padding: 16px 20px;
+    }
+
+    .search {
+        width: min(280px, 38%);
+    }
+
+    .columnHeadings,
+    .cardRow {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 20px;
+    }
+
+    .columnHeadings {
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--outline-variant);
+        background-color: var(--surface-container);
+    }
+
+    .cardList {
+        gap: 0;
+        padding: 0;
+    }
+
+    .cardRow {
+        padding: 14px 20px;
+        border: 0;
+        border-bottom: 1px solid var(--outline-variant);
+        border-radius: 0;
+        background-color: transparent;
+    }
+
+    .cardRow:last-child {
+        border-bottom: 0;
+    }
+
+    .cardNumber {
+        display: inline;
+    }
+
+    .mobileLabel {
+        display: none;
+    }
+}

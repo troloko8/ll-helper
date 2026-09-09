@@ -49,6 +49,45 @@ describe('router session boundaries', () => {
             http.get('http://localhost/api/v1/decks/:deckId/cards', () =>
                 HttpResponse.json([]),
             ),
+            http.get('http://localhost/api/v1/users/me', () =>
+                HttpResponse.json({
+                    id: 42,
+                    username: 'learner',
+                    firstName: 'Test',
+                    lastName: 'Learner',
+                    nativeLanguage: 'en',
+                    targetLanguage: 'es',
+                    avatarUrl: null,
+                    uiLanguage: 'en',
+                    createdAt: '2026-09-01T10:00:00Z',
+                    updatedAt: '2026-09-01T10:00:00Z',
+                }),
+            ),
+            http.get('http://localhost/api/v1/decks/:deckId', () =>
+                HttpResponse.json({
+                    id: 12,
+                    title: 'Spanish Core 1000',
+                    description: null,
+                    sourceLanguage: 'ES',
+                    targetLanguage: 'EN',
+                    createdAt: '2026-09-01T10:00:00Z',
+                    updatedAt: '2026-09-01T10:00:00Z',
+                    owner: {
+                        id: 42,
+                        username: 'learner',
+                        firstName: 'Test',
+                        lastName: 'Learner',
+                        nativeLanguage: 'en',
+                        targetLanguage: 'es',
+                        avatarUrl: null,
+                        uiLanguage: 'en',
+                        createdAt: '2026-09-01T10:00:00Z',
+                        updatedAt: '2026-09-01T10:00:00Z',
+                    },
+                    isPublic: false,
+                    cards: [],
+                }),
+            ),
         )
     })
 
@@ -177,6 +216,15 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
         expect(
             screen.getByRole('button', { name: 'Create Deck' }),
+        ).toBeInTheDocument()
+    })
+
+    it('allows an authenticated owner to reach deck management', async () => {
+        const { router } = renderRoute('/decks/12/manage', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/decks/12/manage')
+        expect(
+            await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
         ).toBeInTheDocument()
     })
 

@@ -55,6 +55,9 @@ describe('CreateDeckPage', () => {
             await screen.findByRole('heading', { name: 'Deck created' }),
         ).toBeInTheDocument()
         expect(screen.getByText('Travel Japanese')).toBeInTheDocument()
+        expect(
+            screen.getByRole('link', { name: 'Manage deck' }),
+        ).toHaveAttribute('href', '/decks/73/manage')
 
         await user.click(screen.getByRole('button', { name: 'Create another' }))
 

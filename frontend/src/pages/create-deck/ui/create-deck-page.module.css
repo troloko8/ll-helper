@@ -119,6 +119,28 @@
     margin-top: 20px;
 }
 
+.manageLink {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.manageLink:hover {
+    background-color: var(--primary);
+}
+
+.manageLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
 @media (min-width: 48rem) {
     .page {
         gap: 24px;

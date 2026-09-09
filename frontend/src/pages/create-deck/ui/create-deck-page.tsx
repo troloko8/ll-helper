@@ -59,9 +59,12 @@ export function CreateDeckPage() {
                                 >
                                     Create another
                                 </Button>
-                                <Button onClick={() => navigate('/learning')}>
-                                    Back to Learning
-                                </Button>
+                                <Link
+                                    className={styles.manageLink}
+                                    to={`/decks/${createdDeck.id}/manage`}
+                                >
+                                    Manage deck
+                                </Link>
                             </div>
                         </div>
                     ) : (

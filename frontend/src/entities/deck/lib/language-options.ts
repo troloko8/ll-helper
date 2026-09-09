@@ -25,3 +25,10 @@ export const DECK_LANGUAGE_OPTIONS: ReadonlyArray<{
     { value: 'TR', label: 'Turkish' },
     { value: 'HE', label: 'Hebrew' },
 ]
+
+export function getDeckLanguageLabel(code: DeckLanguageCode): string {
+    return (
+        DECK_LANGUAGE_OPTIONS.find((option) => option.value === code)?.label ??
+        code
+    )
+}
