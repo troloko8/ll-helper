@@ -1,7 +1,7 @@
 import { act } from 'react'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { selectSessionStatus } from '@/entities/session'
+import { selectSessionStatus, sessionAuthenticated } from '@/entities/session'
 import { baseApi, getToken, setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { createAppStore } from './store'
@@ -13,6 +13,9 @@ const testApi = baseApi.injectEndpoints({
         }),
         triggerUnauthorized: builder.query<unknown, void>({
             query: () => '/__test-401',
+        }),
+        triggerNotFound: builder.query<unknown, void>({
+            query: () => '/__test-404',
         }),
     }),
     overrideExisting: false,
@@ -51,5 +54,27 @@ describe('api-error-listener', () => {
         expect(getToken()).toBeNull()
         expect(selectSessionStatus(store.getState())).toBe('anonymous')
         expect(store.getState().api.queries).toEqual({})
+    })
+
+    it('does not change the session when a non-profile request responds 404', async () => {
+        setToken('valid-token')
+        server.use(
+            http.get('*/__test-404', () =>
+                HttpResponse.json(
+                    { message: 'Deck not found' },
+                    { status: 404 },
+                ),
+            ),
+        )
+
+        const store = createAppStore()
+        store.dispatch(sessionAuthenticated())
+
+        await act(async () => {
+            await store.dispatch(testApi.endpoints.triggerNotFound.initiate())
+        })
+
+        expect(getToken()).toBe('valid-token')
+        expect(selectSessionStatus(store.getState())).toBe('authenticated')
     })
 })

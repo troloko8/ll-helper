@@ -61,6 +61,34 @@ describe('RegisterForm', () => {
         })
     })
 
+    it('maps backend field validation errors to their controls', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/auth/register', () =>
+                HttpResponse.json(
+                    { errors: { email: 'Email is not valid' } },
+                    { status: 400 },
+                ),
+            ),
+        )
+        renderRegisterForm()
+        const user = userEvent.setup()
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Email' }),
+            'new-user@example.com',
+        )
+        await user.type(screen.getByLabelText(/^Password/), 'password123')
+        await user.click(screen.getByRole('button', { name: 'Create Account' }))
+
+        expect(
+            await screen.findByText('Email is not valid'),
+        ).toBeInTheDocument()
+        expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        )
+    })
+
     it('shows an email conflict returned by the backend', async () => {
         const user = userEvent.setup()
         server.use(

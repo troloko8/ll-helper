@@ -101,6 +101,30 @@ describe('CompleteProfileForm', () => {
         })
     })
 
+    it('maps backend field validation errors to their controls', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/users', () =>
+                HttpResponse.json(
+                    { errors: { firstName: 'First name is not valid' } },
+                    { status: 400 },
+                ),
+            ),
+        )
+        renderCompleteProfileForm()
+        const user = await fillValidProfile()
+
+        await user.click(
+            screen.getByRole('button', { name: 'Initialize Profile' }),
+        )
+
+        expect(
+            await screen.findByText('First name is not valid'),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('textbox', { name: 'First name' }),
+        ).toHaveAttribute('aria-invalid', 'true')
+    })
+
     it('maps a username conflict to the username field', async () => {
         server.use(
             http.post('http://localhost/api/v1/users', () =>
@@ -123,5 +147,28 @@ describe('CompleteProfileForm', () => {
         expect(
             screen.getByRole('textbox', { name: 'Username' }),
         ).toHaveAttribute('aria-invalid', 'true')
+    })
+
+    it('shows a non-username profile conflict at form level', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/users', () =>
+                HttpResponse.json(
+                    { message: 'User profile already exists' },
+                    { status: 409 },
+                ),
+            ),
+        )
+        renderCompleteProfileForm()
+        const user = await fillValidProfile()
+
+        await user.click(
+            screen.getByRole('button', { name: 'Initialize Profile' }),
+        )
+
+        expect(
+            await screen.findByText(
+                'A profile has already been created for this account.',
+            ),
+        ).toBeInTheDocument()
     })
 })

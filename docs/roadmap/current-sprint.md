@@ -31,26 +31,26 @@
 
 **Группа 1: Auth flow**
 
-- [ ] Реализовать contract-first Auth/User API foundation:
+- [x] Реализовать contract-first Auth/User API foundation:
   - [x] Инжектировать RTK Query endpoints для `AUTH-01`, `AUTH-02`, `USER-01` и `USER-07` в соответствующих feature/entity slices.
   - [x] Описать request/response DTO строго по `BACKEND_CONTRACT_INVENTORY.md`; не хранить `UserResponse` в session slice.
   - [x] Реализовать React Hook Form + Zod schemas по фактическим backend constraints.
-  - [ ] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
+  - [x] Отобразить `400` field validation, `401` bad credentials, `409` email/username conflict и `429` rate limit; `404 → needsProfile` применять только к `GET /users/me`.
 - [x] Реализовать Login / Register экраны и валидацию.
 - [x] Реализовать Complete Profile (`/onboarding/profile`) по canonical Stitch references.
-- [ ] Реализовать session lifecycle:
+- [x] Реализовать session lifecycle:
   - [x] Session с 4 состояниями: `initializing | anonymous | needsProfile | authenticated`.
   - [x] Session bootstrap через `GET /api/v1/users/me`: `200` → `authenticated`; `404` → `needsProfile`; `401` → clear token → `anonymous`.
   - [x] Реализовать public/auth, onboarding и authenticated route layouts/guards: `initializing` показывает blocking `PageState`; `anonymous` допускается к `/login` и `/register`; `needsProfile` — только к `/onboarding/profile`; `authenticated` — к product routes.
   - [x] Реализовать `/` → `/learning`; authenticated пользователь на auth/onboarding routes также перенаправляется в `/learning`.
   - [x] При `401` очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
   - [x] При logout очищать token, session state и RTK Query cache через `baseApi.util.resetApiState()`.
-- [ ] Реализовать Auth + onboarding orchestration:
+- [x] Реализовать Auth + onboarding orchestration:
   - [x] Register → сохранить token → `needsProfile` → Complete Profile (`POST /users`) → `authenticated` → `/learning`.
   - [x] Login → сохранить token → `GET /users/me`: `200` → `/learning`; `404` → `/onboarding/profile`; `401` → очистить session → `/login`.
   - [x] Complete Profile validation/conflict сохраняет валидную token/session и позволяет повторить отправку.
   - [x] Logout является локальным Level 1 flow: очистить token/session/API cache → `/login`; backend logout остаётся deferred.
-- [ ] Покрыть MSW + RTL тестами bootstrap, refresh with token, Register/Profile/Login/Logout orchestration, redirects, `400/401/409/429` и очистку cache между пользователями.
+- [x] Покрыть MSW + RTL тестами bootstrap, refresh with token, Register/Profile/Login/Logout orchestration, redirects, `400/401/409/429` и очистку cache между пользователями.
 
 **Группа 1A: Reduced authenticated application shell — выполнить до Learning screens**
 
@@ -70,7 +70,7 @@
 - [ ] Owner Deck Details (`/decks/:deckId/manage`).
 - [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
 - [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.
-- [ ] ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.
+- ~~AI generate cards screen~~ / ~~Deck list / deck details view~~ — заменено на точный список выше (Phase 0.4C); Created Decks list — deferred.
 
 **Группа 4: Public deck, enroll & study flow**
 
@@ -78,13 +78,13 @@
 - [ ] Enroll in deck через Public Deck Details.
 - [ ] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
 - [ ] После готовности `/study/:deckId` добавить контекстный Study CTA на Learning Deck Details; отдельный persistent Study destination не создавать.
-- [ ] ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.
+- ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.
 
 **Группа 5: End-to-end smoke**
 
 - [ ] Ручной прогон (основной flow): register → complete profile → authenticated app → create deck → manual add card → owner deck details → public deck details → enroll → learning list/details → study → per-card progress → повторное открытие learning list и продолжение позже.
 - [ ] Ручной прогон (повторный вход, отдельно от регистрации): clear/logout local session → login → learning list → continue.
-- [ ] Обновить `LLHelper.postman_collection.json` и `LLHelper.postman_environment.json` по необходимости.
+- [x] Обновить `LLHelper.postman_collection.json` и `LLHelper.postman_environment.json` по необходимости.
 - [ ] Проверить CORS и base API URL.
 
 **Группа 6: Documentation**
@@ -95,8 +95,8 @@
 
 ## ✅ Done Criteria (Level 1)
 
-- [ ] Есть frontend
-- [ ] Можно зарегистрироваться и завершить Complete Profile
+- [x] Есть frontend
+- [x] Можно зарегистрироваться и завершить Complete Profile
 - [ ] Можно создать deck
 - [ ] Можно создать card вручную (manual add card — обязательно для Level 1; AI generation не является обязательным Level 1 criterion — optional отдельной задачей после manual smoke)
 - [ ] Можно подписаться / enroll на deck через Public Deck Details
@@ -109,8 +109,8 @@
 
 **Приоритет выполнения:**
 
-1. Группа 0 (technical scaffold) — выполнена; затем Группа 0A (minimal UI/application boundaries).
-2. Группа 1 (Auth + onboarding).
+1. Группы 0 и 0A (technical scaffold + minimal UI/application boundaries) — выполнены.
+2. Группа 1 (Auth + onboarding) — выполнена.
 3. Группа 1A (reduced authenticated shell).
 4. Группа 2 (Learning read flow).
 5. Группа 3 (Deck/Card authoring).
@@ -165,8 +165,8 @@ G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют �
 2. ~~Backend security: G-05~~ — выполнено.
 3. ~~Documentation correction G-12~~ — выполнено (`docs/features/learning-flow.md`).
 4. ~~Stitch: Complete Profile (desktop/mobile/validation/conflict/submitting).~~ — выполнено.
-5. Frontend: минимальный UI/application-boundary фундамент — подробный checklist в **Группе 0A**.
-6. Frontend: Auth + onboarding — подробный checklist в **Группе 1**.
+5. ~~Frontend: минимальный UI/application-boundary фундамент~~ — выполнено; подробный checklist в **Группе 0A**.
+6. ~~Frontend: Auth + onboarding~~ — выполнено; подробный checklist в **Группе 1**.
 7. Frontend: reduced authenticated `AppShell` — подробный checklist в **Группе 1A**.
 8. Frontend: Learning list + Learning Deck Details — **Группа 2**.
 9. Frontend: Create Deck + Owner Deck Details — **Группа 3**.
