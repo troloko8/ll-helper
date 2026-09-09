@@ -46,6 +46,9 @@ describe('router session boundaries', () => {
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
+            http.get('http://localhost/api/v1/decks/:deckId/cards', () =>
+                HttpResponse.json([]),
+            ),
         )
     })
 
@@ -154,6 +157,15 @@ describe('router session boundaries', () => {
         expect(
             screen.queryByRole('heading', { name: 'Preparing your workspace' }),
         ).not.toBeInTheDocument()
+    })
+
+    it('allows an authenticated user to reach learning deck details', async () => {
+        const { router } = renderRoute('/learning/12', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/learning/12')
+        expect(
+            await screen.findByRole('heading', { name: 'Deck 12' }),
+        ).toBeInTheDocument()
     })
 
     it('shows not found to an authenticated user at an unknown URL', async () => {

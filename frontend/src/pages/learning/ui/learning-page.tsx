@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Button, ApiErrorPresentation, Skeleton } from '@/shared/ui'
 import { LearningDeckCard, useGetLearningDecksQuery } from '@/entities/learning'
 import styles from './learning-page.module.css'
@@ -76,11 +77,16 @@ export function LearningPage() {
                     <h2 id="learning-decks-title">Learning decks</h2>
                     <div className={styles.deckGrid}>
                         {data.map((deck, index) => (
-                            <LearningDeckCard
-                                deck={deck}
-                                featured={index === 0}
+                            <Link
+                                className={styles.deckLink}
+                                to={`/learning/${deck.deckId}`}
                                 key={deck.deckId}
-                            />
+                            >
+                                <LearningDeckCard
+                                    deck={deck}
+                                    featured={index === 0}
+                                />
+                            </Link>
                         ))}
                     </div>
                 </section>

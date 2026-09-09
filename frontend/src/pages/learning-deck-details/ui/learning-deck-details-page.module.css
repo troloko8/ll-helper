@@ -1,0 +1,303 @@
+.page,
+.skeleton {
+    display: grid;
+    gap: 32px;
+}
+
+.pageHeader {
+    display: grid;
+    gap: 12px;
+}
+
+.pageHeader nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pageHeader nav a {
+    color: var(--primary-container);
+    text-decoration: none;
+}
+
+.pageHeader nav a:hover {
+    text-decoration: underline;
+}
+
+.pageHeader h1 {
+    color: var(--on-background);
+    font-size: clamp(1.75rem, 6vw, 3rem);
+    font-weight: 720;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+}
+
+.metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.metadata span {
+    padding: 6px 10px;
+    border-radius: 4px;
+    color: var(--on-surface-variant);
+    background-color: var(--surface-container-high);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+}
+
+.progressSection {
+    display: grid;
+    gap: 12px;
+}
+
+.masteryCard,
+.countCard {
+    display: grid;
+    min-height: 96px;
+    align-content: center;
+    gap: 6px;
+    padding: 20px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.masteryCard {
+    place-items: center;
+    border-color: color-mix(
+        in srgb,
+        var(--primary-container) 45%,
+        var(--outline-variant)
+    );
+}
+
+.masteryValue {
+    color: var(--primary-container);
+    font-family: var(--font-family-metadata);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.masteryLabel,
+.countCard dt,
+.inventoryHeading span,
+.columnHeadings,
+.cardNumber,
+.status {
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.masteryLabel,
+.countCard dt,
+.inventoryHeading span,
+.columnHeadings,
+.cardNumber {
+    color: var(--on-surface-variant);
+}
+
+.countGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.countCard dd {
+    order: -1;
+    color: var(--on-surface);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.inventory {
+    display: grid;
+    gap: 16px;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 220px;
+    place-content: center;
+    gap: 8px;
+    padding: 32px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+    text-align: center;
+}
+
+.emptyState h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.inventoryHeading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.inventoryHeading h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.columnHeadings {
+    display: none;
+}
+
+.cardList {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.cardRow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 16px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container-low);
+}
+
+.cardNumber {
+    display: none;
+}
+
+.cardFace {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.cardFace strong {
+    color: var(--on-surface);
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.cardFace small,
+.translation {
+    color: var(--on-surface-variant);
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+}
+
+.translation {
+    grid-column: 1 / -1;
+}
+
+.status {
+    align-self: start;
+    justify-self: end;
+    padding: 4px 7px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 4px;
+    color: var(--on-surface-variant);
+    background-color: var(--surface-container-high);
+}
+
+.status[data-status='MASTERED'] {
+    border-color: color-mix(in srgb, var(--primary-container) 45%, transparent);
+    color: var(--primary-container);
+}
+
+.status[data-status='LEARNING'] {
+    border-color: color-mix(
+        in srgb,
+        var(--secondary-container) 65%,
+        transparent
+    );
+    color: var(--secondary-container);
+}
+
+.status[data-status='REVIEWING'] {
+    border-color: color-mix(in srgb, var(--error) 45%, transparent);
+    color: var(--error);
+}
+
+.skeletonGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (min-width: 48rem) {
+    .page,
+    .skeleton {
+        gap: 40px;
+    }
+
+    .progressSection {
+        grid-template-columns: minmax(200px, 1.2fr) minmax(360px, 1fr);
+    }
+
+    .masteryCard {
+        min-height: 148px;
+    }
+
+    .countCard {
+        min-height: 68px;
+        padding: 14px 18px;
+    }
+
+    .columnHeadings,
+    .cardRow {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 120px;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .columnHeadings {
+        padding: 0 20px;
+    }
+
+    .cardList {
+        overflow: hidden;
+        gap: 0;
+        border: 1px solid var(--outline-variant);
+        border-radius: 8px;
+    }
+
+    .cardRow {
+        padding: 16px 20px;
+        border: 0;
+        border-bottom: 1px solid var(--outline-variant);
+        border-radius: 0;
+    }
+
+    .cardRow:last-child {
+        border-bottom: 0;
+    }
+
+    .cardNumber {
+        display: inline;
+    }
+
+    .translation {
+        grid-column: auto;
+        color: var(--on-surface);
+    }
+}

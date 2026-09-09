@@ -75,6 +75,9 @@ describe('LearningPage', () => {
         ).toBeInTheDocument()
         expect(screen.getByText('8 / 20 mastered')).toBeInTheDocument()
         expect(screen.getByLabelText('English to Russian')).toBeInTheDocument()
+        expect(
+            screen.getByRole('link', { name: /English essentials/ }),
+        ).toHaveAttribute('href', '/learning/12')
     })
 
     it('labels an unstudied first deck as ready to start', async () => {

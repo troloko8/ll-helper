@@ -41,7 +41,6 @@ function LearningLink({ mobile = false }: { mobile?: boolean }) {
                     .join(' ')
             }
             to="/learning"
-            end
         >
             <span className={styles.navIcon}>
                 <LearningIcon />
