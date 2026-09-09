@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
 import { CompleteProfilePage } from '@/pages/complete-profile'
+import { CreateDeckPage } from '@/pages/create-deck'
 import { LearningPage } from '@/pages/learning'
 import { LearningDeckDetailsPage } from '@/pages/learning-deck-details'
 import { LoginPage } from '@/pages/login'
@@ -55,6 +56,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/learning/:deckId',
                                 element: <LearningDeckDetailsPage />,
+                            },
+                            {
+                                path: '/decks/new',
+                                element: <CreateDeckPage />,
                             },
                             {
                                 path: '*',

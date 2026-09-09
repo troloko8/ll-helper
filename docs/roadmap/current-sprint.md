@@ -65,7 +65,7 @@
 
 **Группа 3: Deck & card authoring flow**
 
-- [ ] Create deck screen (`/decks/new`).
+- [x] Create deck screen (`/decks/new`).
 - [ ] После готовности `/decks/new` добавить рабочий Create Deck CTA на Learning screen; до этого не показывать dead link.
 - [ ] Owner Deck Details (`/decks/:deckId/manage`).
 - [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.

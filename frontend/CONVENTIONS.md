@@ -55,6 +55,12 @@ It consumes the full, unpaginated `LEARN-03` card list, renders each
 backend-provided card status, and derives display-only per-status counts from
 that response. The counts are neither persisted nor copied into client state.
 
+The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
+`features/create-deck/` form inside the authenticated `AppShell`. The feature
+owns the `DECK-01` mutation, backend-aligned validation, submission states, and
+the required `isPrivate` UI → `isPublic` wire inversion. Shared Deck response
+types and the backend Language enum live in `entities/deck/`.
+
 ### Slice internal segments
 
 Standard segments inside a slice (use only those needed):
@@ -167,7 +173,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented Auth/User/Learning injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

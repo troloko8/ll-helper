@@ -1,0 +1,136 @@
+.page {
+    display: grid;
+    width: 100%;
+    max-width: 680px;
+    gap: 20px;
+    margin-inline: auto;
+}
+
+.backLink {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.backLink:hover {
+    color: var(--primary-container);
+}
+
+.backLink:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+.panel {
+    overflow: hidden;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container);
+}
+
+.panelHeader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--surface-container-high);
+}
+
+.panelHeader h1 {
+    color: var(--on-surface);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.panelHeader p {
+    margin-top: 4px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    color: var(--primary-container);
+    background-color: var(--surface-container);
+}
+
+.icon svg {
+    width: 22px;
+    height: 22px;
+    fill: currentcolor;
+}
+
+.panelBody {
+    padding: 20px;
+}
+
+.success {
+    display: grid;
+    min-height: 360px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.successMark {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 4px;
+    place-items: center;
+    border: 1px solid var(--primary-container);
+    border-radius: 50%;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.success h2 {
+    color: var(--on-surface);
+    font-size: 1.5rem;
+}
+
+.success p {
+    color: var(--on-surface-variant);
+}
+
+.successActions {
+    display: grid;
+    width: 100%;
+    max-width: 360px;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@media (min-width: 48rem) {
+    .page {
+        gap: 24px;
+        padding-top: 28px;
+    }
+
+    .panelHeader,
+    .panelBody {
+        padding: 24px;
+    }
+
+    .successActions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

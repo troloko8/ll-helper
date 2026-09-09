@@ -1,0 +1,123 @@
+.form,
+.fields {
+    display: grid;
+    gap: 24px;
+}
+
+.fields {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.languageFields {
+    display: grid;
+    gap: 16px;
+}
+
+.privacyControl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container-low);
+    cursor: pointer;
+}
+
+.privacyInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background-color: var(--surface-container-highest);
+    transition:
+        border-color 120ms ease,
+        background-color 120ms ease;
+}
+
+.switch span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: var(--on-surface-variant);
+    transition:
+        transform 120ms ease,
+        background-color 120ms ease;
+}
+
+.privacyInput:checked + .switch {
+    border-color: var(--primary-container);
+    background-color: var(--primary-container);
+}
+
+.privacyInput:checked + .switch span {
+    background-color: var(--on-primary);
+    transform: translateX(16px);
+}
+
+.privacyInput:focus-visible + .switch {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+}
+
+.privacyCopy {
+    display: grid;
+    gap: 4px;
+    color: var(--on-surface);
+    font-weight: 620;
+}
+
+.privacyCopy small {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.actions {
+    display: grid;
+    gap: 12px;
+}
+
+.submit {
+    min-height: 48px;
+    order: -1;
+}
+
+@media (min-width: 32rem) {
+    .languageFields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .actions {
+        grid-template-columns: auto minmax(160px, auto);
+        justify-content: end;
+    }
+
+    .submit {
+        order: initial;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .switch,
+    .switch span {
+        transition: none;
+    }
+}

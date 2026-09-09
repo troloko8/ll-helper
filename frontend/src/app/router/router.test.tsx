@@ -168,6 +168,18 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
+    it('allows an authenticated user to reach Create Deck', async () => {
+        const { router } = renderRoute('/decks/new', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/decks/new')
+        expect(
+            await screen.findByRole('heading', { name: 'Create Deck' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Create Deck' }),
+        ).toBeInTheDocument()
+    })
+
     it('shows not found to an authenticated user at an unknown URL', async () => {
         renderRoute('/missing-page', 'authenticated')
 
