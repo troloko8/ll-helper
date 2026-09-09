@@ -92,7 +92,7 @@ describe('LearningPage', () => {
         expect(await screen.findByText('Start learning')).toBeInTheDocument()
     })
 
-    it('shows an empty state without a dead create-deck link', async () => {
+    it('shows an empty state with a working Create Deck CTA', async () => {
         server.use(
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
@@ -106,7 +106,9 @@ describe('LearningPage', () => {
                 name: 'No learning decks yet',
             }),
         ).toBeInTheDocument()
-        expect(screen.queryByRole('link')).not.toBeInTheDocument()
+        expect(
+            screen.getByRole('link', { name: 'Create Deck' }),
+        ).toHaveAttribute('href', '/decks/new')
     })
 
     it('shows a page error and retries the request', async () => {

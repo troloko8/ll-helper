@@ -66,7 +66,7 @@
 **Группа 3: Deck & card authoring flow**
 
 - [x] Create deck screen (`/decks/new`).
-- [ ] После готовности `/decks/new` добавить рабочий Create Deck CTA на Learning screen; до этого не показывать dead link.
+- [x] После готовности `/decks/new` добавить рабочий Create Deck CTA на Learning screen; до этого не показывать dead link.
 - [ ] Owner Deck Details (`/decks/:deckId/manage`).
 - [ ] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
 - [ ] Single-card AI generation — **optional, отдельная задача после manual smoke**, не в этой группе.

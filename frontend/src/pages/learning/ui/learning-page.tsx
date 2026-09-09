@@ -35,6 +35,9 @@ function EmptyLearningState() {
                 Enrolled decks will appear here with your current mastery
                 progress.
             </p>
+            <Link className={styles.createDeckLink} to="/decks/new">
+                Create Deck
+            </Link>
         </section>
     )
 }
