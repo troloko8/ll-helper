@@ -72,8 +72,13 @@ describe('AddCardPage', () => {
             screen.getByRole('link', { name: 'Back to Spanish Core 1000' }),
         ).toHaveAttribute('href', '/decks/12/manage')
         expect(
-            screen.queryByRole('button', { name: /generate with ai/i }),
-        ).not.toBeInTheDocument()
+            screen.getByRole('button', { name: /generate with ai/i }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByText(
+                'AI fills the card details and saves the card immediately.',
+            ),
+        ).toBeInTheDocument()
     })
 
     it("does not expose the form for another user's deck", async () => {

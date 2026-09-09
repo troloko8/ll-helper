@@ -20,12 +20,14 @@ const synonymListSchema = z
         'Each synonym must be at most 100 characters',
     )
 
+export const cardTitleSchema = z
+    .string()
+    .trim()
+    .min(1, 'Target word is required')
+    .max(100, 'Target word must be at most 100 characters')
+
 export const addCardFormSchema = z.object({
-    title: z
-        .string()
-        .trim()
-        .min(1, 'Target word is required')
-        .max(100, 'Target word must be at most 100 characters'),
+    title: cardTitleSchema,
     definition: z
         .string()
         .trim()

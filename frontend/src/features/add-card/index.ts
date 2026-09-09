@@ -1,6 +1,7 @@
 export { addCardApi, useAddCardMutation } from './api/add-card-api'
 export {
     addCardFormSchema,
+    cardTitleSchema,
     parseExamples,
     parseSynonyms,
     type AddCardFormValues,

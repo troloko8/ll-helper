@@ -412,12 +412,13 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Candidate frontend phase | Manual Cards immediately after Create/Owner Details; AI enhancement after manual flow. |
 | Blocker / gap | Desktop reference spans modes with different readiness. AI partial-failure UX cannot be truthful; G-05 card visibility is resolved. |
 
-**Runtime status:** Manual Add Card is implemented at the accepted
-`/decks/:deckId/cards/new` route. It uses the manual `CARD-01` path with
-`autoGenerate: false`, checks deck ownership before exposing the form, and is
-reachable from Owner Deck Details. Edit, delete, single-card AI, and bulk AI
-remain outside this runtime slice; their operation-level readiness below is
-unchanged.
+**Runtime status:** Manual Add Card and optional single-card AI generation are
+implemented at the accepted `/decks/:deckId/cards/new` route. Manual creation
+uses `autoGenerate: false`; AI creation validates the target word and uses
+`autoGenerate: true`, with dedicated pending and `429`/`503` error states. Both
+paths save immediately, invalidate the deck cache, and return to Owner Deck
+Details. Edit, delete, and bulk AI remain outside this runtime slice; their
+operation-level readiness below is unchanged.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|

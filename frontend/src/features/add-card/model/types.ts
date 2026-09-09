@@ -5,5 +5,5 @@ export interface AddCardRequestDto {
     examples: string[] | null
     translation: string | null
     deckId: number
-    autoGenerate: false
+    autoGenerate: boolean
 }

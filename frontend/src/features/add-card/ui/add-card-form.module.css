@@ -15,12 +15,46 @@
     border: 0;
 }
 
+.wordSection,
+.wordRow {
+    display: grid;
+}
+
+.wordSection {
+    gap: 8px;
+}
+
+.wordRow {
+    gap: 12px;
+}
+
 .wordField input {
     min-height: 56px;
     padding-inline: 16px;
     background-color: var(--surface-container-highest);
     font-size: 1rem;
     font-weight: 600;
+}
+
+.aiButton {
+    min-height: 48px;
+    border-color: color-mix(
+        in srgb,
+        var(--primary-container) 35%,
+        var(--outline-variant)
+    );
+    color: var(--primary-container);
+    background-color: color-mix(
+        in srgb,
+        var(--primary-container) 8%,
+        var(--surface-container-low)
+    );
+    white-space: nowrap;
+}
+
+.aiHint {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
 }
 
 .meanings {
@@ -119,6 +153,16 @@
     .meanings {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
+    }
+
+    .wordRow {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+    }
+
+    .aiButton {
+        min-height: 56px;
+        margin-top: 25px;
     }
 
     .synonymsPanel {

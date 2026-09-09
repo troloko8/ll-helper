@@ -1,10 +1,10 @@
 # AI Generation Flow — Current Flow Design Note
 
 > **Project:** LLHelper — AI Language Cards
-> **Current level:** Level 0 — Stable Backend Foundation
+> **Current level:** see `docs/roadmap/current-sprint.md`
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-07-30
-> **Status:** Reflects current `CardServiceImpl` / `AiCardGenerationService` implementation
+> **Last updated:** 2026-09-09
+> **Status:** Reflects current backend generation flow and single-card frontend entry
 
 ---
 
@@ -101,6 +101,24 @@ CardController.create(CardRequest)
         ├── Save Card to DB
         └── Return CardResponse
 ```
+
+#### Frontend single-card entry
+
+The authenticated Add Card screen at `/decks/:deckId/cards/new` exposes AI
+generation as an optional action next to the target-word field. The frontend:
+
+1. validates and trims the required target word;
+2. sends `POST /api/v1/cards` with the selected `deckId`, null manual content
+   fields, and `autoGenerate: true`;
+3. disables all form controls and shows the AI generation loading state while
+   the request is pending;
+4. on `201`, invalidates the deck-detail cache and returns to Owner Deck
+   Details because the backend has already saved the generated card;
+5. on `429` or `503`, preserves the target word, shows the AI-specific inline
+   error state, and allows retry.
+
+The frontend does not build prompts, call an AI provider directly, preview or
+compare generated fields, or implement bulk generation in this screen.
 
 ### 5.2 Bulk Generation
 

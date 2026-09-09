@@ -14,6 +14,7 @@ import {
 import { useAddCardMutation } from '../api/add-card-api'
 import {
     addCardFormSchema,
+    cardTitleSchema,
     parseExamples,
     parseSynonyms,
     type AddCardFormValues,
@@ -21,6 +22,7 @@ import {
 import styles from './add-card-form.module.css'
 
 const CARD_FIELDS = ['title', 'definition', 'translation', 'synonyms'] as const
+type AddCardAction = 'manual' | 'ai'
 
 export interface AddCardFormProps {
     deckId: number
@@ -51,12 +53,17 @@ function applyFieldErrors(
 
 export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
     const [submitError, setSubmitError] = useState<unknown>()
+    const [submitErrorTitle, setSubmitErrorTitle] = useState(
+        'Unable to save card',
+    )
+    const [activeAction, setActiveAction] = useState<AddCardAction>()
     const [addCard, { isLoading }] = useAddCardMutation()
     const {
         control,
         register,
         handleSubmit,
         clearErrors,
+        getValues,
         setError,
         formState: { errors, isSubmitting },
     } = useForm<AddCardFormValues>({
@@ -79,6 +86,8 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
     const onSubmit = handleSubmit(async (values) => {
         clearErrors()
         setSubmitError(undefined)
+        setSubmitErrorTitle('Unable to save card')
+        setActiveAction('manual')
 
         try {
             const response = await addCard({
@@ -95,25 +104,80 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
             if (!applyFieldErrors(error, setError)) {
                 setSubmitError(error)
             }
+        } finally {
+            setActiveAction(undefined)
         }
     })
+
+    const handleAiGenerate = async () => {
+        clearErrors()
+        setSubmitError(undefined)
+        setSubmitErrorTitle('AI generation failed')
+
+        const titleResult = cardTitleSchema.safeParse(getValues('title'))
+        if (!titleResult.success) {
+            setError('title', {
+                type: 'manual',
+                message: titleResult.error.issues[0]?.message,
+            })
+            return
+        }
+
+        setActiveAction('ai')
+        try {
+            const response = await addCard({
+                title: titleResult.data,
+                definition: null,
+                translation: null,
+                synonyms: null,
+                examples: null,
+                deckId,
+                autoGenerate: true,
+            }).unwrap()
+            await onSuccess?.(response)
+        } catch (error) {
+            if (!applyFieldErrors(error, setError)) {
+                setSubmitError(error)
+            }
+        } finally {
+            setActiveAction(undefined)
+        }
+    }
 
     return (
         <form className={styles.form} onSubmit={onSubmit} noValidate>
             <fieldset className={styles.fields} disabled={isBusy}>
-                <FormField
-                    label="Target word"
-                    error={errors.title?.message}
-                    required
-                    className={styles.wordField}
-                >
-                    <Input
-                        {...register('title')}
-                        autoComplete="off"
-                        maxLength={100}
-                        placeholder="e.g., Ephemeral"
-                    />
-                </FormField>
+                <div className={styles.wordSection}>
+                    <div className={styles.wordRow}>
+                        <FormField
+                            label="Target word"
+                            error={errors.title?.message}
+                            required
+                            className={styles.wordField}
+                        >
+                            <Input
+                                {...register('title')}
+                                autoComplete="off"
+                                maxLength={100}
+                                placeholder="e.g., Ephemeral"
+                            />
+                        </FormField>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className={styles.aiButton}
+                            isLoading={isBusy && activeAction === 'ai'}
+                            loadingLabel="Generating card"
+                            onClick={() => void handleAiGenerate()}
+                        >
+                            <span aria-hidden="true">✦</span> Generate with AI
+                        </Button>
+                    </div>
+                    <p className={styles.aiHint}>
+                        AI fills the card details and saves the card
+                        immediately.
+                    </p>
+                </div>
 
                 <div className={styles.meanings}>
                     <FormField
@@ -220,7 +284,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     <ApiErrorPresentation
                         error={submitError}
                         mode="inline"
-                        title="Unable to save card"
+                        title={submitErrorTitle}
                     />
                 )}
 
@@ -235,7 +299,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     <Button
                         className={styles.submit}
                         type="submit"
-                        isLoading={isBusy}
+                        isLoading={isBusy && activeAction === 'manual'}
                         loadingLabel="Saving card"
                     >
                         Save card

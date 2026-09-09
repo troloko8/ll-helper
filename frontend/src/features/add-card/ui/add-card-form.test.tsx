@@ -92,6 +92,113 @@ describe('AddCardForm', () => {
         })
     })
 
+    it('creates and saves a card with AI from the target word only', async () => {
+        const onSuccess = vi.fn()
+        server.use(
+            http.post('http://localhost/api/v1/cards', async ({ request }) => {
+                expect(await request.json()).toEqual({
+                    title: 'Ephemeral',
+                    definition: null,
+                    translation: null,
+                    synonyms: null,
+                    examples: null,
+                    deckId: 12,
+                    autoGenerate: true,
+                })
+                return HttpResponse.json(createdCard, { status: 201 })
+            }),
+        )
+        renderWithProviders(<AddCardForm deckId={12} onSuccess={onSuccess} />)
+        const user = userEvent.setup()
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Target word' }),
+            '  Ephemeral  ',
+        )
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+
+        await waitFor(() => {
+            expect(onSuccess).toHaveBeenCalledWith(createdCard)
+        })
+    })
+
+    it('requires a target word before starting AI generation', async () => {
+        const user = userEvent.setup()
+        renderWithProviders(<AddCardForm deckId={12} />)
+
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+
+        expect(
+            await screen.findByText('Target word is required'),
+        ).toBeInTheDocument()
+    })
+
+    it('shows the AI loading state and locks manual fields', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/cards', async () => {
+                await delay('infinite')
+                return HttpResponse.json(createdCard, { status: 201 })
+            }),
+        )
+        renderWithProviders(<AddCardForm deckId={12} />)
+        const user = userEvent.setup()
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Target word' }),
+            'Ephemeral',
+        )
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+
+        expect(
+            await screen.findByRole('button', { name: 'Generating card' }),
+        ).toBeDisabled()
+        expect(
+            screen.getByRole('textbox', { name: 'Definition' }),
+        ).toBeDisabled()
+    })
+
+    it('shows AI-specific provider errors and allows retry', async () => {
+        let requestCount = 0
+        const onSuccess = vi.fn()
+        server.use(
+            http.post('http://localhost/api/v1/cards', () => {
+                requestCount += 1
+                return requestCount === 1
+                    ? HttpResponse.json(
+                          { message: 'AI provider is not available' },
+                          { status: 503 },
+                      )
+                    : HttpResponse.json(createdCard, { status: 201 })
+            }),
+        )
+        renderWithProviders(<AddCardForm deckId={12} onSuccess={onSuccess} />)
+        const user = userEvent.setup()
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Target word' }),
+            'Ephemeral',
+        )
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+
+        const errorTitle = await screen.findByText('AI generation failed')
+        expect(errorTitle.closest('[role="alert"]')).toHaveTextContent(
+            'Something went wrong on our side. Try again later.',
+        )
+
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(createdCard))
+    })
+
     it('adds and removes optional example fields', async () => {
         const user = userEvent.setup()
         renderWithProviders(<AddCardForm deckId={12} />)
