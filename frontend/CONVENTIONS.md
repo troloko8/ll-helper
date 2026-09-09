@@ -31,6 +31,12 @@ The implemented `widgets/public-form-layout/` slice owns the responsive layout
 base shared by Login, Register, and Complete Profile. Route guards and session
 state remain app/domain responsibilities; the widget contains no auth logic.
 
+The implemented `widgets/app-shell/` slice owns the responsive authenticated
+layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
+navigation, and the protected route outlet. Its Level 1 navigation intentionally
+exposes only the working `/learning` destination; deferred destinations are not
+rendered.
+
 The implemented `pages/login/`, `pages/register/`, and
 `pages/complete-profile/` slices compose that layout with their feature-owned
 forms and are mounted at `/login`, `/register`, and `/onboarding/profile`.
@@ -244,8 +250,8 @@ app/router (protected routing)
   - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
-- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute`.
-- `/` redirects to `/learning`. The `/learning` route is the temporary product placeholder until the Learning screen and authenticated `AppShell` are implemented. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
+- `/` redirects to `/learning`. The `/learning` route remains a temporary empty product placeholder until the Learning screen is implemented. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
   Current runtime route tree remains temporary. Accepted product URLs are owned

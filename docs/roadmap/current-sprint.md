@@ -54,9 +54,9 @@
 
 **Группа 1A: Reduced authenticated application shell — выполнить до Learning screens**
 
-- [ ] Реализовать `AppShell` как authenticated layout.
-- [ ] Для Level 1 оставить только `Learning` как persistent destination; `Created`, `Discover` и `Progress` полностью скрыть.
-- [ ] Реализовать согласованное desktop/mobile responsive-поведение без dead links; не строить полный post-vertical shell заранее.
+- [x] Реализовать `AppShell` как authenticated layout.
+- [x] Для Level 1 оставить только `Learning` как persistent destination; `Created`, `Discover` и `Progress` полностью скрыть.
+- [x] Реализовать согласованное desktop/mobile responsive-поведение без dead links; не строить полный post-vertical shell заранее.
 
 **Группа 2: Learning read flow**
 

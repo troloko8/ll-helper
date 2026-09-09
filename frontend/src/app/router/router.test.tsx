@@ -139,6 +139,9 @@ describe('router session boundaries', () => {
 
         expect(router.state.location.pathname).toBe('/learning')
         expect(
+            screen.getByRole('navigation', { name: 'Primary navigation' }),
+        ).toBeInTheDocument()
+        expect(
             screen.queryByRole('heading', { name: 'Preparing your workspace' }),
         ).not.toBeInTheDocument()
     })

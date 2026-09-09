@@ -4,6 +4,7 @@ import { CompleteProfilePage } from '@/pages/complete-profile'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { RegisterPage } from '@/pages/register'
+import { AppShell } from '@/widgets/app-shell'
 import { AuthRoute } from './auth-route'
 import { AuthenticatedRoute } from './authenticated-route'
 import { OnboardingRoute } from './onboarding-route'
@@ -39,16 +40,21 @@ export const appRoutes: RouteObject[] = [
                 element: <AuthenticatedRoute />,
                 children: [
                     {
-                        path: '/',
-                        element: <Navigate to="/learning" replace />,
-                    },
-                    {
-                        path: '/learning',
-                        element: null,
-                    },
-                    {
-                        path: '*',
-                        element: <NotFoundPage />,
+                        element: <AppShell />,
+                        children: [
+                            {
+                                path: '/',
+                                element: <Navigate to="/learning" replace />,
+                            },
+                            {
+                                path: '/learning',
+                                element: null,
+                            },
+                            {
+                                path: '*',
+                                element: <NotFoundPage />,
+                            },
+                        ],
                     },
                 ],
             },
