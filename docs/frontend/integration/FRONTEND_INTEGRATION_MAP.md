@@ -412,6 +412,13 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Candidate frontend phase | Manual Cards immediately after Create/Owner Details; AI enhancement after manual flow. |
 | Blocker / gap | Desktop reference spans modes with different readiness. AI partial-failure UX cannot be truthful; G-05 card visibility is resolved. |
 
+**Runtime status:** Manual Add Card is implemented at the accepted
+`/decks/:deckId/cards/new` route. It uses the manual `CARD-01` path with
+`autoGenerate: false`, checks deck ownership before exposing the form, and is
+reachable from Owner Deck Details. Edit, delete, single-card AI, and bulk AI
+remain outside this runtime slice; their operation-level readiness below is
+unchanged.
+
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
 | Desktop Add/Edit/AI | `add_edit_card_llhelper_refined` | `3166a46c0529467f972671db8357463c` | AI loading `2260370d74d94d279e5662f4fdccede6`; AI error `64cf5e689b9a4566b8f4376bc9102bfd`; submission error `e6d7a5851d2947ca96c41481becd0f0f`; validation `7f79f0550f2041ff815c9604dabb44f5` | **partial** |

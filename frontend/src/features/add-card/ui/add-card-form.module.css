@@ -1,0 +1,145 @@
+.form,
+.fields {
+    display: grid;
+}
+
+.form {
+    width: 100%;
+}
+
+.fields {
+    min-width: 0;
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.wordField input {
+    min-height: 56px;
+    padding-inline: 16px;
+    background-color: var(--surface-container-highest);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.meanings {
+    display: grid;
+    gap: 20px;
+}
+
+.meanings textarea {
+    min-height: 112px;
+}
+
+.synonymsPanel {
+    padding: 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-lowest);
+}
+
+.examples {
+    display: grid;
+    gap: 16px;
+}
+
+.examplesHeading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.examplesHeading h2 {
+    color: var(--on-surface);
+    font-family: var(--font-family-metadata);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.examplesHeading p {
+    margin-top: 6px;
+    color: var(--on-surface-variant);
+    font-size: 0.8125rem;
+}
+
+.exampleList {
+    display: grid;
+    gap: 12px;
+}
+
+.exampleRow {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.exampleNumber {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    margin-top: 25px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--on-surface-variant);
+    background-color: var(--surface-container-high);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+}
+
+.exampleField {
+    min-width: 0;
+}
+
+.exampleField textarea {
+    min-height: 80px;
+}
+
+.removeExample {
+    grid-column: 2;
+    justify-self: start;
+}
+
+.actions {
+    display: grid;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--outline-variant);
+}
+
+@media (min-width: 48rem) {
+    .fields {
+        gap: 28px;
+    }
+
+    .meanings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .synonymsPanel {
+        padding: 20px;
+    }
+
+    .exampleRow {
+        grid-template-columns: 32px minmax(0, 1fr) auto;
+    }
+
+    .removeExample {
+        grid-column: auto;
+        margin-top: 25px;
+    }
+
+    .actions {
+        grid-template-columns: auto auto;
+        justify-content: end;
+    }
+
+    .submit {
+        min-width: 148px;
+    }
+}

@@ -1,5 +1,6 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
+import { AddCardPage } from '@/pages/add-card'
 import { CompleteProfilePage } from '@/pages/complete-profile'
 import { CreateDeckPage } from '@/pages/create-deck'
 import { LearningPage } from '@/pages/learning'
@@ -65,6 +66,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/decks/:deckId/manage',
                                 element: <OwnerDeckDetailsPage />,
+                            },
+                            {
+                                path: '/decks/:deckId/cards/new',
+                                element: <AddCardPage />,
                             },
                             {
                                 path: '*',

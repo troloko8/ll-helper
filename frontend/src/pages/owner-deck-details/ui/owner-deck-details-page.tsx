@@ -202,6 +202,12 @@ export function OwnerDeckDetailsPage() {
                             {deck.description || 'No description provided.'}
                         </p>
                     </div>
+                    <Link
+                        className={styles.addCardLink}
+                        to={`/decks/${deck.id}/cards/new`}
+                    >
+                        Add card
+                    </Link>
                 </div>
 
                 <dl className={styles.metadata}>

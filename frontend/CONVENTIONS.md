@@ -63,7 +63,13 @@ types and the backend Language enum live in `entities/deck/`. The implemented
 `pages/owner-deck-details/` slice owns `/decks/:deckId/manage`, consumes the
 cacheable `DECK-02` query from `entities/deck/`, verifies the current user is
 the response owner, and renders the response's content-card inventory without
-learning progress.
+learning progress. The implemented `pages/add-card/` slice owns
+`/decks/:deckId/cards/new`, verifies deck ownership before rendering, and
+composes the manual `features/add-card/` form. That feature owns the `CARD-01`
+mutation, backend-aligned validation and list normalization; shared
+`CardResponse` contract data lives in `entities/card/`. Successful creation
+invalidates the selected deck detail cache before navigation returns to Owner
+Deck Details.
 
 ### Slice internal segments
 
@@ -177,7 +183,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual `CARD-01` mutation, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

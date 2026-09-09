@@ -117,6 +117,10 @@ describe('OwnerDeckDetailsPage', () => {
         expect(screen.getByText('Hola')).toBeInTheDocument()
         expect(screen.getByText('Hello')).toBeInTheDocument()
         expect(screen.queryByText('Mastered')).not.toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Add card' })).toHaveAttribute(
+            'href',
+            '/decks/12/cards/new',
+        )
     })
 
     it('filters cards by source or target text', async () => {
