@@ -196,7 +196,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - [x] User can enroll in a public deck
 - [x] Duplicate enroll returns `409`
 - [x] Private deck enroll returns `403`
-- [x] Study endpoint returns up to 10 cards (LEARNING first, then NEW)
+- [x] Study endpoint returns up to 10 cards (`LEARNING` → `REVIEWING` → `NEW`; `MASTERED` excluded)
 - [x] Review endpoint updates progress counters
 - [x] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
 - [x] Postman collection includes all 5 learning endpoints

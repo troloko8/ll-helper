@@ -1,0 +1,375 @@
+.page,
+.skeleton {
+    display: grid;
+    width: 100%;
+    max-width: 900px;
+    gap: 24px;
+    margin-inline: auto;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.header > a {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 6px;
+    color: var(--on-surface);
+    background-color: var(--surface-container-high);
+    text-decoration: none;
+}
+
+.header > a:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+}
+
+.header h1 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+    line-height: 1.2;
+}
+
+.header p,
+.resultProgress {
+    margin-top: 5px;
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.header strong {
+    color: var(--primary-container);
+}
+
+.progressTrack {
+    width: 100%;
+    height: 4px;
+    overflow: hidden;
+    background-color: var(--surface-container-high);
+}
+
+.progressTrack span {
+    display: block;
+    height: 100%;
+    background-color: var(--primary-container);
+    box-shadow: 0 0 10px
+        color-mix(in srgb, var(--primary-container) 50%, transparent);
+    transition: width 180ms ease;
+}
+
+.studyCard,
+.result,
+.complete,
+.allCaughtUp {
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container);
+    box-shadow: 0 18px 48px color-mix(in srgb, black 24%, transparent);
+}
+
+.studyCard {
+    display: grid;
+    gap: 28px;
+    padding: 20px;
+}
+
+.prompt {
+    display: grid;
+    min-height: 220px;
+    align-content: center;
+    gap: 18px;
+    text-align: left;
+}
+
+.prompt > span,
+.prompt p > span,
+.cardDetails span,
+.answerSummary dt,
+.complete > span,
+.scoreGrid dt {
+    width: fit-content;
+    padding: 4px 7px;
+    border-radius: 3px;
+    color: var(--primary);
+    background-color: color-mix(
+        in srgb,
+        var(--secondary-container) 28%,
+        transparent
+    );
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.prompt h2 {
+    color: var(--on-surface);
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.prompt p {
+    display: grid;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px solid var(--outline-variant);
+    color: var(--on-surface-variant);
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.result {
+    display: grid;
+    gap: 22px;
+    padding: 20px;
+}
+
+.result[data-correct='true'] {
+    border-color: color-mix(
+        in srgb,
+        var(--primary-container) 45%,
+        var(--outline-variant)
+    );
+}
+
+.result[data-correct='false'] {
+    border-color: color-mix(in srgb, var(--error) 55%, var(--outline-variant));
+}
+
+.resultHeader,
+.resultHeader > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.resultHeader {
+    justify-content: space-between;
+}
+
+.resultHeader > div > span {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-weight: 800;
+}
+
+.result[data-correct='false'] .resultHeader > div > span {
+    color: var(--on-surface);
+    background-color: var(--error-container);
+}
+
+.resultHeader h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.answerSummary,
+.scoreGrid {
+    display: grid;
+    gap: 12px;
+}
+
+.answerSummary div,
+.scoreGrid div {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    background-color: var(--surface-container-low);
+}
+
+.answerSummary dd {
+    color: var(--on-surface);
+    overflow-wrap: anywhere;
+}
+
+.answerSummary div:last-child dd {
+    color: var(--primary-container);
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.cardDetails {
+    display: grid;
+    gap: 18px;
+    padding: 18px;
+    border-radius: 6px;
+    background-color: var(--surface-container-low);
+}
+
+.cardDetails div {
+    display: grid;
+    gap: 7px;
+}
+
+.cardDetails p {
+    color: var(--on-surface-variant);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.complete {
+    display: grid;
+    width: 100%;
+    max-width: 680px;
+    gap: 20px;
+    margin: 8vh auto 0;
+    padding: 24px;
+    text-align: center;
+}
+
+.allCaughtUp {
+    display: grid;
+    width: 100%;
+    max-width: 560px;
+    min-height: 400px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    margin: 6vh auto 0;
+    padding: 32px;
+    text-align: center;
+}
+
+.caughtUpIcon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 6px;
+    place-items: center;
+    border: 1px solid var(--primary-container);
+    border-radius: 8px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.allCaughtUp > span:not(.caughtUpIcon) {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.allCaughtUp h1 {
+    color: var(--on-surface);
+    font-size: clamp(1.5rem, 7vw, 2rem);
+}
+
+.allCaughtUp p {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.complete > span {
+    justify-self: center;
+}
+
+.complete h1 {
+    color: var(--on-surface);
+    font-size: clamp(1.75rem, 7vw, 2.5rem);
+    text-transform: uppercase;
+}
+
+.scoreGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scoreGrid div {
+    min-width: 0;
+    place-items: center;
+    padding: 14px 8px;
+}
+
+.scoreGrid dd {
+    order: -1;
+    color: var(--on-surface);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.scoreGrid small {
+    color: var(--on-surface-variant);
+    font-size: 0.6875rem;
+}
+
+.completeActions,
+.stateActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.completeActions a,
+.stateActions a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    color: var(--on-surface);
+    text-decoration: none;
+}
+
+.skeleton {
+    padding-top: 16px;
+}
+
+@media (min-width: 48rem) {
+    .page,
+    .skeleton {
+        gap: 32px;
+        padding-top: 8px;
+    }
+
+    .studyCard,
+    .result {
+        padding: 40px;
+    }
+
+    .prompt {
+        min-height: 260px;
+        text-align: center;
+    }
+
+    .prompt > span {
+        justify-self: center;
+    }
+
+    .prompt p > span {
+        display: none;
+    }
+
+    .answerSummary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .complete {
+        padding: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progressTrack span {
+        transition: none;
+    }
+}

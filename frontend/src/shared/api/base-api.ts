@@ -53,6 +53,6 @@ const baseQueryWithErrorNormalization: BaseQueryFn<
 export const baseApi = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithErrorNormalization,
-    tagTypes: ['Deck', 'LearningDeck'],
+    tagTypes: ['Deck', 'LearningDeck', 'LearningCards'],
     endpoints: () => ({}),
 })

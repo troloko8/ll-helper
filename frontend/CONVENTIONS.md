@@ -81,6 +81,14 @@ the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
 cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
 
+The implemented `pages/study/` slice owns the contextual `/study/:deckId`
+route. It consumes the backend-ordered, maximum-ten-card `LEARN-02` session,
+keeps only transient position/result/score state locally, and composes
+`features/review-card/` for `LEARN-04`. Answer correctness always comes from
+the review response; the page never compares answers itself. Reviews invalidate
+the affected Learning card/detail caches, while the session advances through
+its original batch and explicitly refetches when the user chooses to continue.
+
 ### Slice internal segments
 
 Standard segments inside a slice (use only those needed):
@@ -193,7 +201,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-03` and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-03`, and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
@@ -285,7 +293,7 @@ app/router (protected routing)
   - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
-- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/learning/:deckId`, `/decks/new`, `/decks/:deckId/manage`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/learning/:deckId`, `/decks/new`, `/decks/:deckId`, `/decks/:deckId/manage`, `/decks/:deckId/cards/new`, `/study/:deckId`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
 - `/` redirects to the implemented Learning list at `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**

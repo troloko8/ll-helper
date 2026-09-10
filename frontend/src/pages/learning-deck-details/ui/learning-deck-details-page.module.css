@@ -54,6 +54,29 @@
     text-transform: uppercase;
 }
 
+.studyLink {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.studyLink:hover {
+    background-color: var(--primary);
+}
+
+.studyLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
 .progressSection {
     display: grid;
     gap: 12px;

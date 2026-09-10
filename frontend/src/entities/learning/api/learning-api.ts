@@ -12,9 +12,18 @@ export const learningApi = baseApi.injectEndpoints({
         }),
         getLearningDeckCards: builder.query<DeckCardResponseDto[], number>({
             query: (deckId) => `/decks/${deckId}/cards`,
+            providesTags: (_result, _error, deckId) => [
+                { type: 'LearningCards', id: deckId },
+            ],
+        }),
+        getStudyCards: builder.query<DeckCardResponseDto[], number>({
+            query: (deckId) => `/decks/${deckId}/study/cards`,
         }),
     }),
 })
 
-export const { useGetLearningDecksQuery, useGetLearningDeckCardsQuery } =
-    learningApi
+export const {
+    useGetLearningDecksQuery,
+    useGetLearningDeckCardsQuery,
+    useGetStudyCardsQuery,
+} = learningApi

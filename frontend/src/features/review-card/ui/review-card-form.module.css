@@ -1,0 +1,35 @@
+.form fieldset {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.form input {
+    min-height: 56px;
+    padding-inline: 16px;
+    background-color: var(--surface-container-lowest);
+    font-family: var(--font-family-metadata);
+}
+
+.form button[type='submit'] {
+    min-height: 52px;
+}
+
+@media (min-width: 48rem) {
+    .form fieldset {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+    }
+
+    .form fieldset > :nth-child(2):not(button) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .form button[type='submit'] {
+        min-width: 160px;
+        margin-bottom: 20px;
+    }
+}

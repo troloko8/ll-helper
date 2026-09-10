@@ -118,6 +118,10 @@ describe('LearningDeckDetailsPage', () => {
         expect(progress).toHaveTextContent('Reviewing1')
         expect(progress).toHaveTextContent('Learning2')
         expect(progress).toHaveTextContent('New1')
+        expect(screen.getByRole('link', { name: 'Study now' })).toHaveAttribute(
+            'href',
+            '/study/12',
+        )
     })
 
     it('shows the empty inventory state for a deck without cards', async () => {

@@ -460,6 +460,14 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Candidate frontend phase | After enrollment and Learning Deck Details; before aggregate Progress UI. |
 | Blocker / gap | None specific to the Study selection contract for Level 1. Advanced due-date scheduling remains out of scope. |
 
+**Runtime status:** Study is implemented at the accepted contextual
+`/study/:deckId` route and is linked only from Learning Deck Details when a
+non-`MASTERED` card exists. The page renders the backend-ordered `LEARN-02`
+batch, submits each answer through `LEARN-04`, derives correctness only from
+the backend response, and covers loading, API error, all-caught-up, per-answer
+result, and session-complete states. No persistent Study navigation destination
+was added.
+
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
 | Desktop | `study_english_b1_llhelper_refined` | `28d18c4a73b547fb92fc949a6bc5d4a8` | loading `b21ae87df0b646bc90ca84af7888d97e`; API error `a031c3ee82f1463f8aa29b77a7d3d96b`; caught up `82a546b4a81049b9b92d144a0e00ba1c`; complete `b1b0f012a4e142de90776804ae47f022` | **ready** |

@@ -162,6 +162,9 @@ export function LearningDeckDetailsPage() {
     }
 
     const resolvedCards = cards ?? []
+    const hasStudyCards = resolvedCards.some(
+        (card) => card.progress.status !== 'MASTERED',
+    )
     const languagePair = deck
         ? `${getLanguageLabel(deck.sourceLanguage)} → ${getLanguageLabel(deck.targetLanguage)}`
         : null
@@ -179,6 +182,11 @@ export function LearningDeckDetailsPage() {
                     {languagePair && <span>{languagePair}</span>}
                     <span>{resolvedCards.length} cards</span>
                 </div>
+                {hasStudyCards && (
+                    <Link className={styles.studyLink} to={`/study/${deckId}`}>
+                        Study now
+                    </Link>
+                )}
             </header>
 
             <ProgressOverview cards={resolvedCards} />

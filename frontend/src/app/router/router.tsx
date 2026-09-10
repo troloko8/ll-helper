@@ -10,6 +10,7 @@ import { NotFoundPage } from '@/pages/not-found'
 import { OwnerDeckDetailsPage } from '@/pages/owner-deck-details'
 import { PublicDeckDetailsPage } from '@/pages/public-deck-details'
 import { RegisterPage } from '@/pages/register'
+import { StudyPage } from '@/pages/study'
 import { AppShell } from '@/widgets/app-shell'
 import { AuthRoute } from './auth-route'
 import { AuthenticatedRoute } from './authenticated-route'
@@ -75,6 +76,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/decks/:deckId/cards/new',
                                 element: <AddCardPage />,
+                            },
+                            {
+                                path: '/study/:deckId',
+                                element: <StudyPage />,
                             },
                             {
                                 path: '*',
