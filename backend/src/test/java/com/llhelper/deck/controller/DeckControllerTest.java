@@ -19,7 +19,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckListResponse;
 import com.llhelper.deck.service.DeckService;
+import java.time.Instant;
+import java.util.List;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,6 +101,68 @@ class DeckControllerTest {
         mockMvc.perform(get("/api/v1/decks/{id}", DECK_ID))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: private deck")));
+    }
+
+    // --- getPublicDecks ---
+
+    @Test
+    void getPublicDecks_shouldReturn200WithPublicDecks() throws Exception {
+        DeckRequest request = defaultRequest();
+        DeckListResponse response = new DeckListResponse(
+            DECK_ID,
+            request.title(),
+            request.description(),
+            request.sourceLanguage(),
+            request.targetLanguage(),
+            Instant.EPOCH,
+            Instant.EPOCH,
+            null,
+            true
+        );
+        when(deckService.getPublicDecks()).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/decks"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].title", is(request.title())))
+            .andExpect(jsonPath("$[0].isPublic", is(true)));
+    }
+
+    // --- getCurrentUserDecks ---
+
+    @Test
+    void getCurrentUserDecks_shouldReturn200WithOwnedPublicAndPrivateDecks() throws Exception {
+        DeckRequest request = defaultRequest();
+        DeckListResponse publicDeck = new DeckListResponse(
+            DECK_ID,
+            request.title(),
+            request.description(),
+            request.sourceLanguage(),
+            request.targetLanguage(),
+            Instant.EPOCH,
+            Instant.EPOCH,
+            null,
+            true
+        );
+        DeckListResponse privateDeck = new DeckListResponse(
+            2L,
+            "Private deck",
+            request.description(),
+            request.sourceLanguage(),
+            request.targetLanguage(),
+            Instant.EPOCH,
+            Instant.EPOCH,
+            null,
+            false
+        );
+        when(deckService.getCurrentUserDecks()).thenReturn(List.of(publicDeck, privateDeck));
+
+        mockMvc.perform(get("/api/v1/decks/mine"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].isPublic", is(true)))
+            .andExpect(jsonPath("$[1].id", is(2L), Long.class))
+            .andExpect(jsonPath("$[1].isPublic", is(false)));
     }
 
     // --- update ---

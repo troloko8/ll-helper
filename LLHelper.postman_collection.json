@@ -807,7 +807,28 @@
           ]
         },
         {
-          "name": "Get All Decks",
+          "name": "Get Public Decks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var decks = pm.response.json();",
+                  "pm.test(\"Every returned deck is public\", function () {",
+                  "    pm.expect(decks).to.be.an(\"array\");",
+                  "    decks.forEach(function (deck) {",
+                  "        pm.expect(deck.isPublic).to.eql(true);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
@@ -837,7 +858,7 @@
           },
           "response": [
             {
-              "name": "Get All Decks - Success",
+              "name": "Get Public Decks - Success",
               "originalRequest": {
                 "method": "GET",
                 "header": [],
@@ -845,7 +866,74 @@
               },
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"description\": \"Collection of English words\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"createdAt\": \"2024-01-15T07:30:00Z\",\n    \"updatedAt\": \"2024-01-15T07:30:00Z\",\n    \"owner\": {\n      \"id\": 1,\n      \"username\": \"ivan_petrov\",\n      \"firstName\": \"Иван\",\n      \"lastName\": \"Петров\",\n      \"nativeLanguage\": \"ru\",\n      \"targetLanguage\": \"en\",\n      \"avatarUrl\": \"https://example.com/avatar.jpg\",\n      \"uiLanguage\": \"ru\",\n      \"createdAt\": \"2024-01-10T05:00:00Z\",\n      \"updatedAt\": \"2024-01-12T06:15:00Z\"\n    },\n    \"isPublic\": true\n  },\n  {\n    \"id\": 2,\n    \"title\": \"German Basics\",\n    \"description\": \"German words for beginners\",\n    \"sourceLanguage\": \"DE\",\n    \"targetLanguage\": \"RU\",\n    \"createdAt\": \"2024-01-14T11:20:00Z\",\n    \"updatedAt\": \"2024-01-14T11:20:00Z\",\n    \"owner\": {\n      \"id\": 2,\n      \"username\": \"maria_s\",\n      \"firstName\": \"Мария\",\n      \"lastName\": \"Сидорова\",\n      \"nativeLanguage\": \"ru\",\n      \"targetLanguage\": \"de\",\n      \"avatarUrl\": null,\n      \"uiLanguage\": \"en\",\n      \"createdAt\": \"2024-01-08T08:00:00Z\",\n      \"updatedAt\": \"2024-01-08T08:00:00Z\"\n    },\n    \"isPublic\": false\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"description\": \"Collection of English words\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"createdAt\": \"2024-01-15T07:30:00Z\",\n    \"updatedAt\": \"2024-01-15T07:30:00Z\",\n    \"owner\": {\n      \"id\": 1,\n      \"username\": \"ivan_petrov\",\n      \"firstName\": \"Иван\",\n      \"lastName\": \"Петров\",\n      \"nativeLanguage\": \"ru\",\n      \"targetLanguage\": \"en\",\n      \"avatarUrl\": \"https://example.com/avatar.jpg\",\n      \"uiLanguage\": \"ru\",\n      \"createdAt\": \"2024-01-10T05:00:00Z\",\n      \"updatedAt\": \"2024-01-12T06:15:00Z\"\n    },\n    \"isPublic\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get My Decks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an owned deck collection\", function () {",
+                  "    var decks = pm.response.json();",
+                  "    pm.expect(decks).to.be.an(\"array\");",
+                  "    decks.forEach(function (deck) {",
+                  "        pm.expect(deck).to.have.property(\"id\");",
+                  "        pm.expect(deck).to.have.property(\"isPublic\");",
+                  "        pm.expect(deck).to.have.property(\"owner\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/mine",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "mine"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get My Decks - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{url}}/decks/mine"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"description\": \"Collection of English words\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"createdAt\": \"2024-01-15T07:30:00Z\",\n    \"updatedAt\": \"2024-01-15T07:30:00Z\",\n    \"owner\": {\n      \"id\": 1,\n      \"username\": \"ivan_petrov\"\n    },\n    \"isPublic\": true\n  },\n  {\n    \"id\": 2,\n    \"title\": \"Private Vocabulary\",\n    \"description\": \"Personal study deck\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"createdAt\": \"2024-01-16T07:30:00Z\",\n    \"updatedAt\": \"2024-01-16T07:30:00Z\",\n    \"owner\": {\n      \"id\": 1,\n      \"username\": \"ivan_petrov\"\n    },\n    \"isPublic\": false\n  }\n]"
             }
           ]
         },

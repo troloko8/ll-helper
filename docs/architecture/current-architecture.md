@@ -283,7 +283,8 @@ CardService.save(cards)
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
-| `/api/v1/decks` | GET | JWT | List decks (lite) | `List<DeckListResponse>` ⚠️ no cards, ⚠️ globally unfiltered (`findAll()`, no owner/public filter — see `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` Discrepancy C) |
+| `/api/v1/decks` | GET | JWT | List public decks (lite); private decks are filtered in the repository query | `List<DeckListResponse>` ⚠️ no cards/card count/enrollment state |
+| `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user, including public and private decks | `List<DeckListResponse>` ⚠️ no cards/card count |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
 | `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |

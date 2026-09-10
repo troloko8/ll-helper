@@ -32,14 +32,19 @@ public class DeckController {
         return ResponseEntity.status(HttpStatus.CREATED).body(deckService.create(request));
     }
 
+    @GetMapping("/mine")
+    public ResponseEntity<List<DeckListResponse>> getCurrentUserDecks() {
+        return ResponseEntity.ok(deckService.getCurrentUserDecks());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DeckResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(deckService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<List<DeckListResponse>> getAll() {
-        return ResponseEntity.ok(deckService.getAll());
+    public ResponseEntity<List<DeckListResponse>> getPublicDecks() {
+        return ResponseEntity.ok(deckService.getPublicDecks());
     }
 
     @PutMapping("/{id}")

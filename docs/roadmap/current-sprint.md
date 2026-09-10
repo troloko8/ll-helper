@@ -153,8 +153,11 @@
 
 G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют общий `DeckAccessPolicy`; public и owner-private чтение разрешено, чужой private контент возвращает контролируемый 403. Подтверждено service unit tests и `@WebMvcTest`.
 
+**Completed backend foundations for deferred surfaces:**
+- [x] Owner-scoped deck collection `GET /api/v1/decks/mine` возвращает все public/private decks текущего пользователя. Это backend foundation для deferred Created Decks UI; подтверждено service unit test и `@WebMvcTest`.
+
 **Public deployment/security blockers** (обязательны до первого публичного deployment):
-- [ ] G-04 unfiltered `GET /api/v1/decks`
+- [x] G-04 `GET /api/v1/decks` возвращает только public decks; private decks отфильтрованы repository query. Подтверждено service unit test и `@WebMvcTest`.
 - [ ] `CARD-04` unfiltered `GET /api/v1/cards`
 - [x] G-05 private visibility protection для `GET /decks/{id}` и `GET /cards/{id}`
 - [ ] Catch-all `500` не должен возвращать raw exception message

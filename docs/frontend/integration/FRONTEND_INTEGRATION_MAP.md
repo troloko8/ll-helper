@@ -54,13 +54,13 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 G-05 was **not** a vertical-implementation necessity for the local single-user smoke, but is now resolved: `GET /decks/{id}` and `GET /cards/{id}` share `DeckAccessPolicy`; public content and owner-private content return 200, while another user's private content returns controlled 403. Service and `@WebMvcTest` coverage protect the rule.
 
 **Public deployment/security blockers** (not required for local vertical smoke; required before first public deployment):
-- G-04 unfiltered `GET /api/v1/decks`
+- [x] G-04 resolved: `GET /api/v1/decks` is repository-filtered to public decks only.
 - `CARD-04` unfiltered `GET /api/v1/cards` (not "G-04 cards" — distinct endpoint, own inventory item)
 - [x] G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
 - Catch-all `500` handler must not return the raw exception message (`GlobalExceptionHandler.handleException`)
 
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
-- Owner-scoped Created list; public-only Discover list/search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout.
+- Discover search and required `cardCount`/`isEnrolled` fields; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. The owner-scoped Created list contract is now implemented as DECK-06, while its UI remains deferred.
 
 ### 0.5 Accepted Stitch/design follow-up
 
@@ -159,7 +159,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-01 | No `GET /api/v1/users/me`; JWT subject is email and the frontend has no current `User.id` after login. | All authenticated shell/session bootstrap; especially Created and owner routing. | Backend blocker before Auth integration. |
 | G-02 | Register creates `AuthUser` only; no accepted Register → Profile flow or canonical Complete Profile screen exists. *(Historical Phase 0.4B finding; the flow and canonical references are now resolved by §0.3/§0.5.)* | Register and every new-user authenticated flow. | Backend + product + Stitch blocker before Auth integration. *(Historical status; superseded by §0.)* |
 | G-03 | Expired/malformed/invalid-signature JWT has no controlled, verified 401 contract. | Every JWT screen and app-level session-expiry handling. | Backend/error-contract blocker before Auth integration. |
-| G-04 | `GET /decks` returns every deck; no owner-scoped or public-only list contract. Client-side filtering is prohibited because it transmits private data. | Created, Discover, Creator Profile. | Security/backend blocker. |
+| G-04 | `GET /decks` previously returned every deck. | Created, Discover, Creator Profile. | ✅ Resolved: the existing endpoint now uses a repository-enforced `isPublic=true` query, and DECK-06 provides the separate owner-scoped Created collection. Richer Discover and creator-scoped contracts remain separate gaps. |
 | G-05 | `GET /decks/{id}` and `GET /cards/{id}` previously lacked owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | ✅ Resolved by shared `DeckAccessPolicy`: public or owner-private reads succeed; another user's private content returns 403. |
 | G-06 | Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | ✅ Resolved by LEARN-05: active current-user enrollments, deterministic Continue/Start ordering, and mastered/total aggregation. |
 | G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
@@ -268,28 +268,28 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Candidate route | `/created` |
 | Auth | JWT |
 | Domain owner | Deck content ownership |
-| Endpoint | Missing owner-scoped list. `DECK-03 GET /api/v1/decks` is globally unfiltered and prohibited for this use. |
-| Request / response DTO | Required owner-scoped list request/response not defined. Existing unsafe response is `List<DeckListResponse>`. |
-| Errors | Cannot finalize until endpoint exists; must cover shared JWT, 5xx, and any future query validation. |
+| Endpoint | `DECK-06 GET /api/v1/decks/mine`; distinct from public-only `DECK-03 GET /api/v1/decks`. |
+| Request / response DTO | No request body; response reuses `List<DeckListResponse>`. |
+| Errors | Shared JWT; 404 when the authenticated account has no linked `User` profile; catch-all 5xx. |
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
-| Backend status | Missing safe contract; existing `DECK-03` partial/unsafe (G-04). |
-| Candidate frontend phase | After Auth, `GET /api/v1/users/me`, and owner-scoped backend contract. |
-| Blocker / gap | Client filtering is a privacy leak. Current-user identity is also missing (G-01). |
+| Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
+| Candidate frontend phase | Deferred by the accepted Level 1 route scope; backend contract is ready. |
+| Blocker / gap | No contract-specific blocker. The UI route remains product-deferred, and per-deck card count remains unresolved. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **blocked** |
-| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **blocked** |
+| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **deferred** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **deferred** |
 
 **Missing DTO — minimal required shape** (read-only review of `created_decks_llhelper_refined_mvp` and `created_decks_mobile_with_bottom_nav`, which show only deck titles plus a "Create New Deck" action):
 
 | Field | Status | Note |
 |---|---|---|
 | `id`, `title`, `description`, `sourceLanguage`, `targetLanguage`, `isPublic`, `owner` | Existing (`DeckListResponse`) | No new response field needed. |
-| Owner-scoped filter (only the current user's decks) | Missing | No query param or endpoint filters by owner; `DECK-03` returns every deck to every authenticated user (G-04). |
+| Owner-scoped filter (only the current user's decks) | Implemented | DECK-06 resolves the current user server-side and filters by `ownerId`; `DECK-03` remains public-only. |
 | Per-deck card count | Unresolved | `DeckListResponse` already carries a known `// FIXME: add cardCount` backend gap; whether the canonical screen requires a visible count could not be confirmed from the extracted screen text alone. |
 
-Minimal required response: `List<DeckListResponse>` reused as-is, behind a new owner-scoped query (e.g. `GET /api/v1/decks?owner=me` or `GET /api/v1/decks/mine`), which also requires resolving current-user identity server-side (G-01). No new response fields are required.
+Implemented response: `DECK-06 GET /api/v1/decks/mine` returns `List<DeckListResponse>` and resolves current-user identity server-side. No new response fields were required.
 
 ### 5.5 Create Deck
 
@@ -326,7 +326,7 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Loading / error / empty | Initial prefill loading; load error; field validation; submitting/submission error; destructive confirmation/delete error. Empty not applicable. No dedicated canonical state variants. |
 | Backend status | Read and mutations implemented; G-05 resolved. |
 | Candidate frontend phase | Content management after Auth and security read fix. |
-| Blocker / gap | Screen-local read/mutation contract is sufficient; navigation from deferred Created remains unavailable because G-04 is unresolved. |
+| Blocker / gap | Screen-local read/mutation contract is sufficient; navigation from Created remains unavailable only because that UI route is product-deferred, not because of a backend contract gap. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -366,9 +366,9 @@ Minimal required response: `List<DeckListResponse>` reused as-is, behind a new o
 | Request / response DTO | Detail `DeckResponse`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
 | Errors | Detail 403 for another user's private deck / 404; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
 | Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
-| Backend status | Enroll and detail visibility implemented; G-05 resolved. Safe discovery entry point remains missing (G-04, deferred — not required for the accepted direct-link-only MVP flow). |
+| Backend status | Enroll and detail visibility implemented; G-04 and G-05 resolved. A complete Discover response remains deferred and is not required for the accepted direct-link-only MVP flow. |
 | Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. The accepted Level 1 flow uses the direct URL; no Owner Deck Details shortcut is required. |
-| Blocker / gap | Vertical: none. Release/security: G-04 (`GET /decks` remains globally unfiltered, though this screen does not use it) must be closed before public deployment. |
+| Blocker / gap | Vertical: none. The public deck collection exposure from G-04 is closed. |
 
 **Runtime status:** Public Deck Details and enrollment are implemented at the
 accepted direct-link-only `/decks/:deckId` route. The page consumes `DECK-02`,
@@ -481,13 +481,13 @@ was added.
 | Candidate route | `/discover` |
 | Auth | JWT under current backend |
 | Domain owner | Public Deck content discovery |
-| Endpoint | Missing public-only list/search contract. `DECK-03 GET /api/v1/decks` is globally unfiltered and prohibited. |
-| Request / response DTO | Required public-list query/response not defined. Existing unsafe response is `List<DeckListResponse>` with no search/sort/pagination parameters. |
+| Endpoint | `DECK-03 GET /api/v1/decks` is a safe public-only list. Search/filter parameters are not defined. |
+| Request / response DTO | Existing `List<DeckListResponse>` lacks required `cardCount` and per-user `isEnrolled`; it has no search/sort/pagination parameters. |
 | Errors | Cannot finalize until endpoint exists; must include shared JWT, query validation if added, and page-level 5xx. |
 | Loading / error / empty | Canonical loading, API-error, and no-results/empty states on both platforms. No-results must be driven by server-safe public results, not client filtering. |
-| Backend status | Missing safe list contract; `DECK-03` partial/unsafe (G-04). Detail security G-05 is resolved. |
-| Candidate frontend phase | After public-only contract and private read protection. |
-| Blocker / gap | Implementing against `GET /decks` would expose private decks. No search contract exists. |
+| Backend status | Public-only filtering is implemented (G-04 resolved). The Discover-specific response remains incomplete; detail security G-05 is resolved. |
+| Candidate frontend phase | After the required `cardCount` and `isEnrolled` fields are available. |
+| Blocker / gap | No private data is exposed, but the current response cannot render the canonical card count or enrolled badge. No search contract exists. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -499,12 +499,12 @@ was added.
 | Field | Status | Note |
 |---|---|---|
 | `id`, `title`, `sourceLanguage`, `targetLanguage`, `owner.username`, `owner.avatarUrl` | Existing (`DeckListResponse`) | `owner` is already a nested `UserResponse` carrying `username`/`avatarUrl`. |
-| Public-only filter | Missing | No query/endpoint returns only `isPublic=true` decks; `DECK-03` is unfiltered (G-04). |
+| Public-only filter | Implemented | `DECK-03` uses `DeckRepository.findAllByIsPublicTrue()`; private decks never reach the response. |
 | `cardCount` per deck | Missing | Canonical UI displays a card count per deck (e.g. "842 Cards"). `DeckListResponse` has the known `// FIXME: add cardCount` gap; not implemented anywhere. Required in the minimal response shape. |
 | `isEnrolled` per deck | Missing | Canonical UI shows an `Enrolled` badge on at least one deck. Requires cross-referencing each public deck against the current user's `UserDeckProgress`; no endpoint returns this combined shape today. This reflects the existing enrollment domain (not a social feature), but the join does not exist. Required in the minimal response shape. |
 | Search/sort/language-filter controls | Unresolved | Not confirmed as an interactive control from the extracted screen content; do not invent a search/pagination contract on this basis alone. |
 
-Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, behind a new public-only query (e.g. `GET /api/v1/decks?public=true`). `cardCount` requires resolving the existing `DeckListResponse` FIXME; `isEnrolled` requires a per-user join against `UserDeckProgress` for each returned deck — both are concrete required fields, not open design questions. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
+Minimal required response: extend the existing public-only DECK-03 response to `List<DeckListResponse & {cardCount, isEnrolled}>`. `cardCount` requires resolving the existing `DeckListResponse` FIXME; `isEnrolled` requires a per-user join against `UserDeckProgress` for each returned deck — both are concrete required fields, not open design questions. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
 
 ### 5.13 Creator Profile
 
@@ -515,10 +515,10 @@ Minimal required response: `List<DeckListResponse & {cardCount, isEnrolled}>`, b
 | Auth | JWT under current backend |
 | Domain owner | User profile + public Deck content |
 | Endpoint | Profile `USER-03 GET /api/v1/users/username/{username}`; creator-public-decks endpoint missing. |
-| Request / response DTO | Profile `UserResponse`; creator deck list DTO/query missing. Existing `DECK-03` is prohibited. |
+| Request / response DTO | Profile `UserResponse`; creator-scoped deck list DTO/query missing. Existing `DECK-03` is public-only but not creator-scoped. |
 | Errors | Profile 404 plus shared JWT; future collection errors unknown. |
 | Loading / error / empty | Profile loading/error; creator-decks loading/error/empty. No canonical state variants. Follow/follower states are explicitly excluded. |
-| Backend status | Profile lookup implemented; required creator deck collection missing (G-10) and affected by G-04. Detail security G-05 is resolved. |
+| Backend status | Profile lookup implemented; required creator-scoped deck collection remains missing (G-10). G-04 and G-05 are resolved. |
 | Candidate frontend phase | Candidate post-MVP deferral as of Phase 0.4B. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)* |
 | Blocker / gap | The visual surface cannot be completed with public creator decks. If kept in MVP, it becomes blocked rather than deferred. |
 
@@ -576,7 +576,7 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — §0.1/§0.2 (Creator Profile deferred).
 2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Resolved — flow accepted in §0.3/§0.7 and canonical references completed in §0.5.
 3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
-4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created, Discover, Progress-aggregate, and creator-public-decks response shapes are **resolved by explicit deferral; shape intentionally not accepted** (§0.2) — no accepted MVP flow needs them, so no shape is defined.
+4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created now has the implemented DECK-06 `List<DeckListResponse>` contract even though its UI remains deferred. Discover, Progress-aggregate, and creator-public-decks shapes remain intentionally unaccepted under the deferred product scope (§0.2).
 5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).
 6. ~~Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.~~ Resolved — §0.1/§0.2/§0.6: manual Add Card is the Level 1 requirement; single-card AI is a separate optional task after manual smoke; bulk AI remains deferred pending the partial-failure contract.
 7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6, and reflected in `docs/roadmap/current-sprint.md`.
@@ -587,8 +587,8 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
 - Using contract-local semantics (§2), the map now identifies **8 ready**, **7 partial**, **9 blocked**, and **2 deferred** references after G-06 resolution.
-- For the five surfaces with no backend contract at all (Learning dashboard, Created Decks, Discover, Creator Profile, Progress), read-only review of the canonical Stitch base screens produced minimal required request/response field sketches (§5.3, §5.4, §5.12–§5.14), explicitly separating fields that already exist on current DTOs from fields that are missing or unresolved. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
+- For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. Learning and Created collection contracts have since been implemented; Discover, Creator Profile deck listing, and aggregate Progress remain without complete backend contracts. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/read/update/delete and single-card AI are independently `Ready`; bulk AI remains `Partial` because of G-09.
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
-- The remaining highest-impact blockers are unfinished Auth/profile UI orchestration (G-02), private-data exposure in unfiltered lists (G-04 / `CARD-04`), and the deferred aggregate Progress contract (G-07). G-01, G-03, G-05, G-06, and G-08 are resolved.
+- The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-06 and G-08 are resolved, including the public-only DECK-03 and owner-scoped DECK-06 contracts; `CARD-04` and the deferred aggregate Progress contract (G-07) remain open.
 - Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*

@@ -12,6 +12,7 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckListResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.mapper.DeckMapper;
@@ -34,6 +35,7 @@ class DeckServiceImplTest {
     private static final Long OWNER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
     private static final Long DECK_ID = 10L;
+    private static final Long PRIVATE_DECK_ID = 11L;
 
     @Mock
     private DeckRepository deckRepository;
@@ -128,6 +130,71 @@ class DeckServiceImplTest {
             .hasMessage("Access denied: private deck");
 
         verify(deckMapper, never()).toResponse(any());
+    }
+
+    @Test
+    void getPublicDecks_shouldReturnOnlyRepositoryFilteredPublicDecks() {
+        Deck publicDeck = deckOwnedBy(OWNER_ID);
+        publicDeck.setIsPublic(true);
+        DeckListResponse response = new DeckListResponse(
+            DECK_ID,
+            publicDeck.getTitle(),
+            null,
+            publicDeck.getSourceLanguage(),
+            publicDeck.getTargetLanguage(),
+            null,
+            null,
+            null,
+            true
+        );
+        when(deckRepository.findAllByIsPublicTrue()).thenReturn(List.of(publicDeck));
+        when(deckMapper.toListResponse(publicDeck)).thenReturn(response);
+
+        List<DeckListResponse> result = deckService.getPublicDecks();
+
+        assertThat(result).containsExactly(response);
+        verify(deckRepository).findAllByIsPublicTrue();
+        verify(deckRepository, never()).findAll();
+    }
+
+    @Test
+    void getCurrentUserDecks_shouldReturnPublicAndPrivateDecksOwnedByCurrentUser() {
+        Deck publicDeck = deckOwnedBy(OWNER_ID);
+        publicDeck.setIsPublic(true);
+        Deck privateDeck = deckOwnedBy(OWNER_ID);
+        privateDeck.setId(PRIVATE_DECK_ID);
+        privateDeck.setIsPublic(false);
+        DeckListResponse publicResponse = new DeckListResponse(
+            DECK_ID,
+            publicDeck.getTitle(),
+            null,
+            publicDeck.getSourceLanguage(),
+            publicDeck.getTargetLanguage(),
+            null,
+            null,
+            null,
+            true
+        );
+        DeckListResponse privateResponse = new DeckListResponse(
+            PRIVATE_DECK_ID,
+            privateDeck.getTitle(),
+            null,
+            privateDeck.getSourceLanguage(),
+            privateDeck.getTargetLanguage(),
+            null,
+            null,
+            null,
+            false
+        );
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findAllByOwnerId(OWNER_ID)).thenReturn(List.of(publicDeck, privateDeck));
+        when(deckMapper.toListResponse(publicDeck)).thenReturn(publicResponse);
+        when(deckMapper.toListResponse(privateDeck)).thenReturn(privateResponse);
+
+        List<DeckListResponse> result = deckService.getCurrentUserDecks();
+
+        assertThat(result).containsExactly(publicResponse, privateResponse);
+        verify(deckRepository).findAllByOwnerId(OWNER_ID);
     }
 
     @Test

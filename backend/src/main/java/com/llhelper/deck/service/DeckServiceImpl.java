@@ -78,8 +78,17 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeckListResponse> getAll() {
-        return deckRepository.findAll().stream()
+    public List<DeckListResponse> getPublicDecks() {
+        return deckRepository.findAllByIsPublicTrue().stream()
+            .map(deckMapper::toListResponse)
+            .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DeckListResponse> getCurrentUserDecks() {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        return deckRepository.findAllByOwnerId(currentUserId).stream()
             .map(deckMapper::toListResponse)
             .toList();
     }
