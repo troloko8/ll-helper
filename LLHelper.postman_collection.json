@@ -1161,7 +1161,7 @@
           ]
         },
         {
-          "name": "Get All Cards",
+          "name": "Get Public Cards",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1174,6 +1174,7 @@
               ]
             },
             "method": "GET",
+            "description": "Returns only cards whose parent deck is public. Private-deck cards are filtered by the backend repository query.",
             "header": [],
             "url": {
               "raw": "{{url}}/cards",

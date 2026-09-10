@@ -16,9 +16,11 @@ import static com.llhelper.card.support.CardTestData.defaultResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
+import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -85,6 +87,20 @@ class CardControllerTest {
         mockMvc.perform(get("/api/v1/cards/{id}", CARD_ID))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: private deck")));
+    }
+
+    // --- getPublicCards ---
+
+    @Test
+    void getPublicCards_shouldReturn200WithPublicCards() throws Exception {
+        CardResponse response = defaultResponse(CARD_ID);
+        when(cardService.getPublicCards()).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/cards"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id", is(CARD_ID), Long.class))
+            .andExpect(jsonPath("$[0].deckId", is(response.deckId()), Long.class))
+            .andExpect(jsonPath("$[0].title", is(response.title())));
     }
 
     // --- createBulk ---

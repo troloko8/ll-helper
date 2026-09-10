@@ -287,7 +287,8 @@ CardService.save(cards)
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user, including public and private decks | `List<DeckListResponse>` ⚠️ no cards/card count |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
-| `/api/v1/cards` | GET/POST | JWT | List / create cards | `CardResponse` (includes `deckId`) |
+| `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
+| `/api/v1/cards` | POST | JWT | Create card in an owned deck | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD; GET inherits public/private visibility from the parent deck | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |

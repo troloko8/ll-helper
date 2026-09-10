@@ -174,8 +174,9 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
-    public List<CardResponse> getAll() {
-        return cardRepository.findAll().stream()
+    @Transactional(readOnly = true)
+    public List<CardResponse> getPublicCards() {
+        return cardRepository.findAllByDeckIsPublicTrue().stream()
             .map(cardMapper::toResponse)
             .toList();
     }

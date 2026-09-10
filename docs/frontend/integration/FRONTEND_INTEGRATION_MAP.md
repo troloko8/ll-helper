@@ -55,7 +55,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 
 **Public deployment/security blockers** (not required for local vertical smoke; required before first public deployment):
 - [x] G-04 resolved: `GET /api/v1/decks` is repository-filtered to public decks only.
-- `CARD-04` unfiltered `GET /api/v1/cards` (not "G-04 cards" — distinct endpoint, own inventory item)
+- [x] `CARD-04` resolved: `GET /api/v1/cards` is repository-filtered to cards from public decks only (not "G-04 cards" — distinct endpoint, own inventory item).
 - [x] G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
 - Catch-all `500` handler must not return the raw exception message (`GlobalExceptionHandler.handleException`)
 
@@ -590,5 +590,5 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 - For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. Learning and Created collection contracts have since been implemented; Discover, Creator Profile deck listing, and aggregate Progress remain without complete backend contracts. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/read/update/delete and single-card AI are independently `Ready`; bulk AI remains `Partial` because of G-09.
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
-- The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-06 and G-08 are resolved, including the public-only DECK-03 and owner-scoped DECK-06 contracts; `CARD-04` and the deferred aggregate Progress contract (G-07) remain open.
+- The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-06, G-08, and `CARD-04` are resolved, including the public-only DECK-03, public-deck-only CARD-04, and owner-scoped DECK-06 contracts; the deferred aggregate Progress contract (G-07) remains open.
 - Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*

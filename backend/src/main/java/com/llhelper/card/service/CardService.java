@@ -9,7 +9,7 @@ public interface CardService {
     CardResponse create(CardRequest request);
     List<CardResponse> createBulk(BulkCardGenerateRequest request);
     CardResponse getById(Long id);
-    List<CardResponse> getAll();
+    List<CardResponse> getPublicCards();
     CardResponse update(Long id, CardRequest request);
     void delete(Long id);
 }

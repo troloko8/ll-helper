@@ -158,6 +158,20 @@ class CardServiceImplTest {
     }
 
     @Test
+    void getPublicCards_shouldReturnOnlyRepositoryFilteredPublicCards() {
+        Card publicCard = card();
+        CardResponse response = cardResponse();
+        when(cardRepository.findAllByDeckIsPublicTrue()).thenReturn(List.of(publicCard));
+        when(cardMapper.toResponse(publicCard)).thenReturn(response);
+
+        List<CardResponse> result = cardService.getPublicCards();
+
+        assertThat(result).containsExactly(response);
+        verify(cardRepository).findAllByDeckIsPublicTrue();
+        verify(cardRepository, never()).findAll();
+    }
+
+    @Test
     void create_shouldThrowForbidden_whenUserIsNotDeckOwner() {
         Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserEmail()).thenReturn("other@example.com");

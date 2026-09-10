@@ -44,8 +44,8 @@ public class CardController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CardResponse>> getAll() {
-        return ResponseEntity.ok(cardService.getAll());
+    public ResponseEntity<List<CardResponse>> getPublicCards() {
+        return ResponseEntity.ok(cardService.getPublicCards());
     }
 
     @PutMapping("/{id}")
