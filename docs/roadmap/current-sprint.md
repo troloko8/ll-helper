@@ -160,7 +160,7 @@ G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют �
 - [x] G-04 `GET /api/v1/decks` возвращает только public decks; private decks отфильтрованы repository query. Подтверждено service unit test и `@WebMvcTest`.
 - [x] `CARD-04` `GET /api/v1/cards` возвращает только cards из public decks; private-deck cards отфильтрованы repository query. Подтверждено service unit test и `@WebMvcTest`.
 - [x] G-05 private visibility protection для `GET /decks/{id}` и `GET /cards/{id}`
-- [ ] Catch-all `500` не должен возвращать raw exception message
+- [x] Catch-all `500` не возвращает raw exception message; безопасный контракт описан в inventory §7. Подтверждено `@WebMvcTest` для исключений с внутренними деталями и без message.
 
 ### Ordered backend → Stitch → frontend tasks
 

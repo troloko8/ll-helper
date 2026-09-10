@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "6a792a93-33f3-45b2-9736-656869d9966f",
     "name": "LLHelper API",
-    "description": "Коллекция запросов для LLHelper backend\\n\\n## Timestamp Format\\n\\nAll timestamps in API responses use ISO-8601 format with UTC timezone (Z suffix):\\n- Format: `YYYY-MM-DDTHH:mm:ssZ`\\n- Example: `2024-01-15T07:30:00Z`\\n- Timezone: Always UTC\\n\\n**Client Responsibility:**\\n- Backend returns timestamps in UTC\\n- Client must convert to user's local timezone for display\\n- When sending timestamps to backend, use UTC or include timezone offset",
+    "description": "Коллекция запросов для LLHelper backend. Catch-all HTTP 500 returns {\"message\":\"Internal server error\"}; exception details are logged server-side only.\\n\\n## Timestamp Format\\n\\nAll timestamps in API responses use ISO-8601 format with UTC timezone (Z suffix):\\n- Format: `YYYY-MM-DDTHH:mm:ssZ`\\n- Example: `2024-01-15T07:30:00Z`\\n- Timezone: Always UTC\\n\\n**Client Responsibility:**\\n- Backend returns timestamps in UTC\\n- Client must convert to user's local timezone for display\\n- When sending timestamps to backend, use UTC or include timezone offset",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "30503412",
     "_collection_link": "https://go.postman.co/collection/30503412-6a792a93-33f3-45b2-9736-656869d9966f?source=collection_link"

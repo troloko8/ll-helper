@@ -91,8 +91,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(Exception exception) {
+        log.error("Unhandled exception", exception);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(Map.of("message", exception.getMessage()));
+            .body(Map.of("message", "Internal server error"));
     }
 
     @ExceptionHandler(AiServiceException.class)

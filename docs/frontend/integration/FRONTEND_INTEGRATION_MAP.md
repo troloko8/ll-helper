@@ -57,7 +57,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] G-04 resolved: `GET /api/v1/decks` is repository-filtered to public decks only.
 - [x] `CARD-04` resolved: `GET /api/v1/cards` is repository-filtered to cards from public decks only (not "G-04 cards" — distinct endpoint, own inventory item).
 - [x] G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
-- Catch-all `500` handler must not return the raw exception message (`GlobalExceptionHandler.handleException`)
+- [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
 - Discover search and required `cardCount`/`isEnrolled` fields; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. The owner-scoped Created list contract is now implemented as DECK-06, while its UI remains deferred.

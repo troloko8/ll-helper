@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import static com.llhelper.card.support.CardTestData.CARD_ID;
@@ -90,6 +91,26 @@ class CardControllerTest {
     }
 
     // --- getPublicCards ---
+
+    @Test
+    void getPublicCards_shouldReturnSafe500_whenUnexpectedExceptionContainsInternalDetails() throws Exception {
+        when(cardService.getPublicCards()).thenThrow(
+            new RuntimeException("SQL failed on internal_cards: password=secret",
+                new RuntimeException("Internal database connection details")));
+
+        mockMvc.perform(get("/api/v1/cards"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string("{\"message\":\"Internal server error\"}"));
+    }
+
+    @Test
+    void getPublicCards_shouldReturnSafe500_whenUnexpectedExceptionHasNoMessage() throws Exception {
+        when(cardService.getPublicCards()).thenThrow(new RuntimeException());
+
+        mockMvc.perform(get("/api/v1/cards"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string("{\"message\":\"Internal server error\"}"));
+    }
 
     @Test
     void getPublicCards_shouldReturn200WithPublicCards() throws Exception {

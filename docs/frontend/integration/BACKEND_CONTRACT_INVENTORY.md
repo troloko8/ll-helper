@@ -196,11 +196,11 @@ Only fields with non-trivial validation/default/nesting are annotated; trivial `
 | 409 | `{"message": "Data integrity violation"}` | `DataIntegrityViolationException` not matching the specific duplicate-enroll constraint text | Any DB constraint violation not explicitly translated | `GlobalExceptionHandler.handleDataIntegrityViolation` | `LearningControllerTest.enroll_shouldReturn409_whenDataIntegrityViolation` |
 | 429 | `{"error":"RATE_LIMIT_EXCEEDED","message":"...","timestamp":"..."}` | `RateLimitExceededException` — per-user (`UserRateLimiter`) or AI provider (`AiRateLimiter`) limit exceeded | Login, Register, Profile update, Deck create/update/delete, Card create/update/delete, Card bulk-generate (both endpoint and provider layer) | `GlobalExceptionHandler.handleRateLimitExceeded` | `AuthControllerTest.login_shouldReturn429_whenRateLimitExceeded` |
 | 503 | `{"message": "AI service unavailable: ..."}` | `AiServiceException` — API key missing, OpenAI HTTP error, JSON parse failure | Card create with `autoGenerate:true`, bulk-generate | `GlobalExceptionHandler.handleAiServiceException` | No `@WebMvcTest` evidence found for the 503 HTTP mapping specifically; unit-level evidence in `AiCardGenerationServiceTest`/`OpenAiProviderTest` for the exception itself |
-| 500 | `{"message": <exception message, possibly null>}` | Any uncaught `Exception` | Any endpoint | `GlobalExceptionHandler.handleException` (catch-all) | No test evidence found; code path only (`GlobalExceptionHandler.java:92-96`) |
+| 500 | `{"message":"Internal server error"}` | Any uncaught `Exception` | Any endpoint | `GlobalExceptionHandler.handleException` (catch-all) | `CardControllerTest`: unexpected exception with internal details/cause and exception without a message |
 
 **Every JWT-protected operation in §4 implicitly carries both 401 rows above as possible responses**, in addition to whatever endpoint-specific errors are listed in its `Errors` column (see the shared-401-contract note in §4).
 
-**Note:** the catch-all 500 handler returns `exception.getMessage()` directly in the body, which can leak internal exception text to the client — flagged as a candidate gap in §9, not a discrepancy item requested in §8.
+**Note:** the catch-all 500 handler returns a fixed safe message, including when the exception message is null. Exception details and stack trace are logged server-side at ERROR level and are not included in the response.
 
 ## 8. Candidate discrepancy investigation (Task items A–P)
 
@@ -229,7 +229,7 @@ Only fields with non-trivial validation/default/nesting are annotated; trivial `
 
 ## 9. Candidate backend gaps
 
-**Count: 6 confirmed candidate backend gaps** (main table below). Items that are frontend integration mappings, confirmed absent/out-of-current-scope capabilities, or known deferred limitations are listed separately in §9.1–§9.3 and are **not** included in this count. G-04/Discrepancies C and D, G-05/Discrepancies F and H, G-06, G-08/Discrepancy K, and CARD-04/Discrepancy G are resolved.
+**Count: 5 confirmed candidate backend gaps** (main table below). Items that are frontend integration mappings, confirmed absent/out-of-current-scope capabilities, or known deferred limitations are listed separately in §9.1–§9.3 and are **not** included in this count. G-04/Discrepancies C and D, G-05/Discrepancies F and H, G-06, G-08/Discrepancy K, CARD-04/Discrepancy G, and the catch-all 500 message leak are resolved.
 
 | Gap | Classification | Description | Evidence |
 |---|---|---|---|
@@ -238,7 +238,6 @@ Only fields with non-trivial validation/default/nesting are annotated; trivial `
 | No aggregate Progress endpoint | missing endpoint | See Discrepancy J. | `LearningController` |
 | No Creator-owned/public Decks endpoint | missing endpoint | See Discrepancy M. | `UserController`, `DeckController` |
 | Bulk generation drops failed titles | incomplete DTO | See Discrepancy N. | `CardServiceImpl.createBulk()` |
-| Catch-all 500 leaks exception message | error-contract gap | `GlobalExceptionHandler.handleException` returns raw `exception.getMessage()`. | `GlobalExceptionHandler.java:92-96` |
 
 ### 9.1 Frontend integration mapping (not a backend gap)
 
@@ -292,9 +291,9 @@ Preserved boundaries (per `docs/frontend/DESIGN.md` and `docs/architecture/curre
 
 - **26 existing HTTP operations:** 24 `implemented`, 2 `partial`, 0 `planned`, 0 `missing`, 0 `unclear` (§4). `DECK-03` is public-only, DECK-06 is owner-scoped, and `CARD-04` returns only cards whose parent deck is public.
 - **Missing product capabilities/backend contracts (3):** Discover/public Deck list, aggregate Progress endpoint, Creator-owned/public Decks endpoint (§9).
-- **Confirmed security/filtering gaps (0):** G-04 closed the `GET /decks` collection exposure, CARD-04 closed the `GET /cards` collection exposure, and G-05 closed detail-read exposure. One separate error-contract gap — the catch-all 500 message leak — remains documented in §9. The JWT filter exception path (formerly Discrepancy O) is resolved — see §6/§7/§8.
+- **Confirmed security/filtering gaps (0):** G-04 closed the `GET /decks` collection exposure, CARD-04 closed the `GET /cards` collection exposure, and G-05 closed detail-read exposure. The separate catch-all 500 message leak is resolved (§7). The JWT filter exception path (formerly Discrepancy O) is resolved — see §6/§7/§8.
 - **Frontend integration mappings (1):** `isPublic` (backend) ↔ `isPrivate` (UI) inversion — a required frontend-side mapping, not a backend gap (§9.1).
 - **Confirmed absent/out-of-scope capabilities (2):** refresh token (deferred to Level 3), backend logout endpoint (intentional for Level 1) (§9.2). Pagination is a related but distinct **known deferred limitation** (Level 2, §9.3), not an out-of-scope capability and not an unresolved product decision.
 - **Unresolved questions (0):** the public-vs-owned collection split is resolved by DECK-03 plus DECK-06 (§10). Register→Profile UX sequence and private detail-read visibility remain resolved.
 
-Total candidate backend gaps counted in §9's main table: **6**. Endpoint-operation counts (26 total, 24 implemented / 2 partial) and domain-capability counts (§11) are tracked separately and must not be summed together.
+Total candidate backend gaps counted in §9's main table: **5**. Endpoint-operation counts (26 total, 24 implemented / 2 partial) and domain-capability counts (§11) are tracked separately and must not be summed together.
