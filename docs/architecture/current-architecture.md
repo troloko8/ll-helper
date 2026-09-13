@@ -207,6 +207,15 @@ Typical secured request:
 
 ### Authentication Flow
 
+Backend configuration requires `JWT_SECRET`, `DB_URL`, `DB_USERNAME`, and
+`DB_PASSWORD` from the runtime environment (or explicitly supplied Spring
+configuration); `application.yaml` provides no fallback values for them.
+For local IntelliJ runs, load the ignored `backend/.env` through EnvFile.
+Production supplies these values through the deployment environment or secret
+manager. Spring does not automatically load `.env`; `backend/.env.example`
+is the tracked, secret-free template. `JWT_EXPIRATION` retains the non-secret
+default of 86400000 milliseconds.
+
 ```text
 POST /api/v1/auth/register  ──▶  Create AuthUser only    ──▶  Return JWT
 POST /api/v1/auth/login     ──▶  Validate credentials    ──▶  Return JWT
