@@ -9,20 +9,37 @@ import {
     Button,
     FormField,
     Input,
+    InlineError,
     Textarea,
 } from '@/shared/ui'
 import { useAddCardMutation } from '../api/add-card-api'
 import {
+    ADD_CARD_LIMITS,
     addCardFormSchema,
     cardTitleSchema,
     parseExamples,
     parseSynonyms,
     type AddCardFormValues,
 } from '../model/add-card-form-schema'
+import type { AddCardRequestDto } from '../model/types'
 import styles from './add-card-form.module.css'
 
 const CARD_FIELDS = ['title', 'definition', 'translation', 'synonyms'] as const
-type AddCardAction = 'manual' | 'ai'
+const ADD_CARD_ACTION = {
+    MANUAL: 'manual',
+    AI: 'ai',
+} as const
+type AddCardAction = (typeof ADD_CARD_ACTION)[keyof typeof ADD_CARD_ACTION]
+
+const SUBMIT_ERROR_TITLES: Record<AddCardAction, string> = {
+    [ADD_CARD_ACTION.MANUAL]: 'Unable to save card',
+    [ADD_CARD_ACTION.AI]: 'AI generation failed',
+}
+
+interface SubmitFailure {
+    action: AddCardAction
+    error: unknown
+}
 
 export interface AddCardFormProps {
     deckId: number
@@ -48,16 +65,24 @@ function applyFieldErrors(
         }
     }
 
+    const examplesMessage = Object.entries(fieldErrors).find(
+        ([field]) => field === 'examples' || field.startsWith('examples['),
+    )?.[1]
+    if (examplesMessage) {
+        setError('examples', {
+            type: 'server',
+            message: examplesMessage,
+        })
+        applied = true
+    }
+
     return applied
 }
 
 export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
-    const [submitError, setSubmitError] = useState<unknown>()
-    const [submitErrorTitle, setSubmitErrorTitle] = useState(
-        'Unable to save card',
-    )
+    const [submitFailure, setSubmitFailure] = useState<SubmitFailure>()
     const [activeAction, setActiveAction] = useState<AddCardAction>()
-    const [addCard, { isLoading }] = useAddCardMutation()
+    const [addCard] = useAddCardMutation()
     const {
         control,
         register,
@@ -81,38 +106,52 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
         control,
         name: 'examples',
     })
-    const isBusy = isLoading || isSubmitting
+    const isBusy = isSubmitting || activeAction !== undefined
 
-    const onSubmit = handleSubmit(async (values) => {
+    const prepareSubmission = () => {
         clearErrors()
-        setSubmitError(undefined)
-        setSubmitErrorTitle('Unable to save card')
-        setActiveAction('manual')
+        setSubmitFailure(undefined)
+    }
+
+    const submitCard = async (
+        action: AddCardAction,
+        request: AddCardRequestDto,
+    ) => {
+        setActiveAction(action)
 
         try {
-            const response = await addCard({
-                title: values.title,
-                definition: values.definition || null,
-                translation: values.translation || null,
-                synonyms: parseSynonyms(values.synonyms),
-                examples: parseExamples(values.examples),
-                deckId,
-                autoGenerate: false,
-            }).unwrap()
-            await onSuccess?.(response)
-        } catch (error) {
-            if (!applyFieldErrors(error, setError)) {
-                setSubmitError(error)
+            let response: CardResponseDto
+
+            try {
+                response = await addCard(request).unwrap()
+            } catch (error) {
+                if (!applyFieldErrors(error, setError)) {
+                    setSubmitFailure({ action, error })
+                }
+                return
             }
+
+            await onSuccess?.(response)
         } finally {
             setActiveAction(undefined)
         }
+    }
+
+    const onSubmit = handleSubmit(async (values) => {
+        prepareSubmission()
+        await submitCard(ADD_CARD_ACTION.MANUAL, {
+            title: values.title,
+            definition: values.definition || null,
+            translation: values.translation || null,
+            synonyms: parseSynonyms(values.synonyms),
+            examples: parseExamples(values.examples),
+            deckId,
+            autoGenerate: false,
+        })
     })
 
     const handleAiGenerate = async () => {
-        clearErrors()
-        setSubmitError(undefined)
-        setSubmitErrorTitle('AI generation failed')
+        prepareSubmission()
 
         const titleResult = cardTitleSchema.safeParse(getValues('title'))
         if (!titleResult.success) {
@@ -123,25 +162,15 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
             return
         }
 
-        setActiveAction('ai')
-        try {
-            const response = await addCard({
-                title: titleResult.data,
-                definition: null,
-                translation: null,
-                synonyms: null,
-                examples: null,
-                deckId,
-                autoGenerate: true,
-            }).unwrap()
-            await onSuccess?.(response)
-        } catch (error) {
-            if (!applyFieldErrors(error, setError)) {
-                setSubmitError(error)
-            }
-        } finally {
-            setActiveAction(undefined)
-        }
+        await submitCard(ADD_CARD_ACTION.AI, {
+            title: titleResult.data,
+            definition: null,
+            translation: null,
+            synonyms: null,
+            examples: null,
+            deckId,
+            autoGenerate: true,
+        })
     }
 
     return (
@@ -158,7 +187,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                             <Input
                                 {...register('title')}
                                 autoComplete="off"
-                                maxLength={100}
+                                maxLength={ADD_CARD_LIMITS.TITLE_MAX_LENGTH}
                                 placeholder="e.g., Ephemeral"
                             />
                         </FormField>
@@ -166,7 +195,9 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                             type="button"
                             variant="secondary"
                             className={styles.aiButton}
-                            isLoading={isBusy && activeAction === 'ai'}
+                            isLoading={
+                                isBusy && activeAction === ADD_CARD_ACTION.AI
+                            }
                             loadingLabel="Generating card"
                             onClick={() => void handleAiGenerate()}
                         >
@@ -187,7 +218,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     >
                         <Textarea
                             {...register('definition')}
-                            maxLength={1000}
+                            maxLength={ADD_CARD_LIMITS.DEFINITION_MAX_LENGTH}
                             placeholder="Meaning in target language..."
                         />
                     </FormField>
@@ -199,7 +230,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     >
                         <Textarea
                             {...register('translation')}
-                            maxLength={200}
+                            maxLength={ADD_CARD_LIMITS.TRANSLATION_MAX_LENGTH}
                             placeholder="Meaning in native language..."
                         />
                     </FormField>
@@ -234,12 +265,19 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                         <Button
                             type="button"
                             variant="secondary"
-                            disabled={fields.length >= 20}
+                            disabled={
+                                fields.length >=
+                                ADD_CARD_LIMITS.EXAMPLES_MAX_COUNT
+                            }
                             onClick={() => append({ value: '' })}
                         >
                             Add another
                         </Button>
                     </div>
+
+                    {errors.examples?.message && (
+                        <InlineError message={errors.examples.message} />
+                    )}
 
                     <div className={styles.exampleList}>
                         {fields.map((field, index) => (
@@ -259,7 +297,9 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                                 >
                                     <Textarea
                                         {...register(`examples.${index}.value`)}
-                                        maxLength={500}
+                                        maxLength={
+                                            ADD_CARD_LIMITS.EXAMPLE_MAX_LENGTH
+                                        }
                                         rows={2}
                                         placeholder="Sentence demonstrating usage..."
                                     />
@@ -280,26 +320,30 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     </div>
                 </section>
 
-                {submitError !== undefined && (
+                {submitFailure !== undefined && (
                     <ApiErrorPresentation
-                        error={submitError}
+                        error={submitFailure.error}
                         mode="inline"
-                        title={submitErrorTitle}
+                        title={SUBMIT_ERROR_TITLES[submitFailure.action]}
                     />
                 )}
 
                 <div className={styles.actions}>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={onCancel}
-                    >
-                        Cancel
-                    </Button>
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={onCancel}
+                        >
+                            Cancel
+                        </Button>
+                    )}
                     <Button
                         className={styles.submit}
                         type="submit"
-                        isLoading={isBusy && activeAction === 'manual'}
+                        isLoading={
+                            isBusy && activeAction === ADD_CARD_ACTION.MANUAL
+                        }
                         loadingLabel="Saving card"
                     >
                         Save card

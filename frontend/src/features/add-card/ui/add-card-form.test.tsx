@@ -199,6 +199,47 @@ describe('AddCardForm', () => {
         await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(createdCard))
     })
 
+    it('keeps the AI action busy until success orchestration finishes', async () => {
+        let finishSuccess: (() => void) | undefined
+        const onSuccess = vi.fn(
+            () =>
+                new Promise<void>((resolve) => {
+                    finishSuccess = resolve
+                }),
+        )
+        server.use(
+            http.post('http://localhost/api/v1/cards', () =>
+                HttpResponse.json(createdCard, { status: 201 }),
+            ),
+        )
+        renderWithProviders(<AddCardForm deckId={12} onSuccess={onSuccess} />)
+        const user = userEvent.setup()
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Target word' }),
+            'Ephemeral',
+        )
+        await user.click(
+            screen.getByRole('button', { name: /Generate with AI/i }),
+        )
+
+        await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(createdCard))
+        expect(
+            screen.getByRole('button', { name: 'Generating card' }),
+        ).toBeDisabled()
+        expect(
+            screen.getByRole('textbox', { name: 'Definition' }),
+        ).toBeDisabled()
+
+        finishSuccess?.()
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /Generate with AI/i }),
+            ).toBeEnabled()
+        })
+    })
+
     it('adds and removes optional example fields', async () => {
         const user = userEvent.setup()
         renderWithProviders(<AddCardForm deckId={12} />)
@@ -242,6 +283,40 @@ describe('AddCardForm', () => {
         expect(
             screen.getByRole('textbox', { name: 'Target word' }),
         ).toHaveAttribute('aria-invalid', 'true')
+    })
+
+    it('shows backend validation errors for the examples collection', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/cards', () =>
+                HttpResponse.json(
+                    {
+                        errors: {
+                            examples: 'Add at most 20 examples',
+                        },
+                    },
+                    { status: 400 },
+                ),
+            ),
+        )
+        renderWithProviders(<AddCardForm deckId={12} />)
+        const user = await fillCardForm()
+
+        await user.click(screen.getByRole('button', { name: 'Save card' }))
+
+        expect(
+            await screen.findByText('Add at most 20 examples'),
+        ).toBeInTheDocument()
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            'Add at most 20 examples',
+        )
+    })
+
+    it('hides the cancel action when no cancellation behavior is provided', () => {
+        renderWithProviders(<AddCardForm deckId={12} />)
+
+        expect(
+            screen.queryByRole('button', { name: 'Cancel' }),
+        ).not.toBeInTheDocument()
     })
 
     it('shows submitting and rate-limit states', async () => {
