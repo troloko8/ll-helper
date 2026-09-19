@@ -29,6 +29,7 @@ export function ReviewCardForm({
 }: ReviewCardFormProps) {
     const [submitError, setSubmitError] = useState<unknown>()
     const [reviewCard, { isLoading }] = useReviewCardMutation()
+
     const {
         register,
         handleSubmit,
@@ -52,6 +53,7 @@ export function ReviewCardForm({
                 deckId,
                 userAnswer,
             }).unwrap()
+            
             onReviewed({ response, userAnswer })
         } catch (error) {
             const message = getApiFieldErrors(error).userAnswer

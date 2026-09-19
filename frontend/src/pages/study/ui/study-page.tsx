@@ -196,6 +196,7 @@ export function StudyPage() {
     const { deckId: deckIdParam } = useParams()
     const deckId = Number(deckIdParam)
     const validDeckId = Number.isSafeInteger(deckId) && deckId > 0
+
     const [cardIndex, setCardIndex] = useState(0)
     const [reviewResult, setReviewResult] = useState<ReviewCardResult>()
     const [score, setScore] = useState<SessionScore>({
@@ -203,6 +204,7 @@ export function StudyPage() {
         correct: 0,
     })
     const [sessionComplete, setSessionComplete] = useState(false)
+
     const {
         data: studySession,
         error,
@@ -213,6 +215,7 @@ export function StudyPage() {
         skip: !validDeckId,
         refetchOnMountOrArgChange: true,
     })
+
     const deckTitle = studySession?.deckTitle ?? `Deck ${deckId}`
 
     if (!validDeckId) {
@@ -274,6 +277,7 @@ export function StudyPage() {
     const card = resolvedCards[cardIndex]
     const contextExample = getContextExample(card)
     const progressValue = ((cardIndex + 1) / resolvedCards.length) * 100
+    
     const handleReviewed = (result: ReviewCardResult) => {
         setReviewResult(result)
         setScore((current) => ({
