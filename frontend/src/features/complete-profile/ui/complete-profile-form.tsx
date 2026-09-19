@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import type { UseFormSetError } from 'react-hook-form'
+import type { SubmitHandler, UseFormSetError } from 'react-hook-form'
 import type { UserResponseDto } from '@/entities/user'
 import { getApiFieldErrors, isApiError } from '@/shared/api'
 import {
@@ -115,7 +115,9 @@ export function CompleteProfileForm({ onSuccess }: CompleteProfileFormProps) {
     })
     const isBusy = isLoading || isSubmitting
 
-    const onSubmit = handleSubmit(async (values) => {
+    const submitProfile: SubmitHandler<CompleteProfileFormValues> = async (
+        values,
+    ) => {
         clearErrors()
         setSubmitError(undefined)
 
@@ -130,7 +132,8 @@ export function CompleteProfileForm({ onSuccess }: CompleteProfileFormProps) {
                 setSubmitError(error)
             }
         }
-    })
+    }
+    const onSubmit = handleSubmit(submitProfile)
 
     const submitErrorCopy = getSubmitErrorCopy(submitError)
 

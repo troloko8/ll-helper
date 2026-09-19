@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+
 import { sessionReducer } from '@/entities/session'
 import { baseApi } from '@/shared/api'
 import { apiErrorListenerMiddleware } from './api-error-listener'
