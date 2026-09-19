@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useGetCurrentUserQuery } from '@/entities/user'
 import styles from './app-shell.module.css'
 
 function BrandMark() {
@@ -82,6 +83,9 @@ function MobileBottomNavigation() {
 }
 
 export function AppShell() {
+    // Keep the shared profile cache subscribed across authenticated routes.
+    useGetCurrentUserQuery()
+
     return (
         <div className={styles.shell}>
             <DesktopSidebar />

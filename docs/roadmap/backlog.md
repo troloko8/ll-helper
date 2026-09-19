@@ -98,6 +98,8 @@
 
 ### Frontend (Level 1)
 
+- [ ] Определить политику актуальности кеша `currentUser`: максимальный возраст данных и условия повторного запроса (например, возврат в приложение), обновление/инвалидация после изменения профиля. `AppShell` удерживает подписку на время авторизованной части приложения; это не TTL свежести данных и не срок действия JWT. Реализовать отдельно, без периодических запросов в текущей задаче.
+
 > Corrected Phase 0.4C — stack/architecture below previously described a stale pre-implementation plan (TanStack Query/Axios, no Redux) that no longer matches `frontend/CONVENTIONS.md`. This is a point fix of this block only, not a full backlog review.
 
 Стек: React + TypeScript + React Router 7 + RTK Query + Redux Toolkit (session state) — Axios удалён, см. `frontend/CONVENTIONS.md`.

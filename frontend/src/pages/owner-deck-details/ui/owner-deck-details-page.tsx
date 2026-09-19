@@ -36,6 +36,7 @@ function DetailsSkeleton() {
 function CardInventory({ cards }: { cards: DeckCardResponseDto[] }) {
     const [search, setSearch] = useState('')
     const normalizedSearch = search.trim().toLocaleLowerCase()
+    
     const visibleCards = useMemo(() => {
         if (!normalizedSearch) {
             return cards

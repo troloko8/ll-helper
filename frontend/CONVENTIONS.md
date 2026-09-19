@@ -184,6 +184,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - `entities/session` owns runtime client session lifecycle state (session status).
 - User/profile data fetched from backend remains RTK Query server state and must not be duplicated into the session Redux slice.
+- Authenticated `AppShell` maintains a `useGetCurrentUserQuery()` subscription for its entire mounted lifetime. This retains the shared profile cache across route changes, including pages that do not consume the profile. Page-level consumers keep the same hook and cache key; no second profile store or prop threading is needed. Login/bootstrap data is reused when cached; otherwise the subscription fetches `/users/me`. Logout/401 still clears the cache through the existing app-level lifecycle. Cache retention does not define freshness; a future revalidation policy is tracked in `docs/roadmap/backlog.md`.
 - Do not invent additional identity fields unless an actual backend/API contract requires them.
 
 **Ownership rules:**
