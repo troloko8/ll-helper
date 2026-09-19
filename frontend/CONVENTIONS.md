@@ -45,6 +45,8 @@ orchestration: registration persists the access token, enters `needsProfile`,
 and navigates to onboarding; profile creation enters `authenticated` and
 navigates to `/learning`. The pages remain route-level compositions and do not
 own token or session transitions.
+`RegisterForm` invokes its internal `useRegisterSuccess` hook directly;
+`RegisterPage` renders the complete feature without a success callback prop.
 
 The implemented `pages/learning/` slice owns the `/learning` route composition.
 It consumes the cacheable `LEARN-05` query from `entities/learning/`, renders

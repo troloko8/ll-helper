@@ -1,23 +1,47 @@
+import { configureStore } from '@reduxjs/toolkit'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { sessionReducer, selectSessionStatus } from '@/entities/session'
+import { useSelector } from 'react-redux'
+import { baseApi, clearToken, getToken } from '@/shared/api'
 import { Provider } from 'react-redux'
 import { HttpResponse, http } from 'msw'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
-import { createApiTestStore, server } from '@/shared/lib/test'
+import { afterEach, describe, expect, it } from 'vitest'
+import { server } from '@/shared/lib/test'
 import { RegisterForm } from './register-form'
 
-function renderRegisterForm(onSuccess = vi.fn()) {
-    const store = createApiTestStore()
-    const view = render(
+function OnboardingDestination() {
+    const status = useSelector(selectSessionStatus)
+    return status === 'needsProfile' ? <h1>Complete your profile</h1> : null
+}
+
+function renderRegisterForm() {
+    const store = configureStore({
+        reducer: {
+            session: sessionReducer,
+            [baseApi.reducerPath]: baseApi.reducer,
+        },
+        middleware: (getDefaultMiddleware) =>
+            getDefaultMiddleware().concat(baseApi.middleware),
+    })
+    return render(
         <Provider store={store}>
-            <RegisterForm onSuccess={onSuccess} />
+            <MemoryRouter initialEntries={['/register']}>
+                <Routes>
+                    <Route path="/register" element={<RegisterForm />} />
+                    <Route
+                        path="/onboarding/profile"
+                        element={<OnboardingDestination />}
+                    />
+                </Routes>
+            </MemoryRouter>
         </Provider>,
     )
-
-    return { ...view, onSuccess }
 }
 
 describe('RegisterForm', () => {
+    afterEach(() => clearToken())
     it('shows backend-aligned client validation errors', async () => {
         const user = userEvent.setup()
         renderRegisterForm()
@@ -37,15 +61,14 @@ describe('RegisterForm', () => {
         ).toBeInTheDocument()
     })
 
-    it('submits valid credentials and returns the authentication response', async () => {
+    it('stores the token and opens onboarding after successful registration', async () => {
         const user = userEvent.setup()
-        const onSuccess = vi.fn()
         server.use(
             http.post('http://localhost/api/v1/auth/register', () =>
                 HttpResponse.json({ accessToken: 'register-token' }),
             ),
         )
-        renderRegisterForm(onSuccess)
+        renderRegisterForm()
 
         await user.type(
             screen.getByRole('textbox', { name: 'Email' }),
@@ -54,11 +77,12 @@ describe('RegisterForm', () => {
         await user.type(screen.getByLabelText(/^Password/), 'password123')
         await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
-        await waitFor(() => {
-            expect(onSuccess).toHaveBeenCalledWith({
-                accessToken: 'register-token',
-            })
-        })
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Complete your profile',
+            }),
+        ).toBeInTheDocument()
+        expect(getToken()).toBe('register-token')
     })
 
     it('maps backend field validation errors to their controls', async () => {

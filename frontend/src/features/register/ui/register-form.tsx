@@ -2,17 +2,13 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import type { UseFormSetError } from 'react-hook-form'
-import type { AuthResponseDto } from '@/entities/session'
 import { getApiFieldErrors, isApiError } from '@/shared/api'
 import { ApiErrorPresentation, Button, FormField, Input } from '@/shared/ui'
 import { useRegisterMutation } from '../api/register-api'
+import { useRegisterSuccess } from '../model/use-register-success'
 import { registerFormSchema } from '../model/register-form-schema'
 import type { RegisterFormValues } from '../model/register-form-schema'
 import styles from './register-form.module.css'
-
-export interface RegisterFormProps {
-    onSuccess?: (response: AuthResponseDto) => void | Promise<void>
-}
 
 function applyFieldErrors(
     error: unknown,
@@ -54,7 +50,8 @@ function getSubmitErrorCopy(error: unknown) {
     return {}
 }
 
-export function RegisterForm({ onSuccess }: RegisterFormProps) {
+export function RegisterForm() {
+    const handleRegisterSuccess = useRegisterSuccess()
     const [submitError, setSubmitError] = useState<unknown>()
     const [createAccount, { isLoading }] = useRegisterMutation()
     const {
@@ -76,7 +73,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
         try {
             const response = await createAccount(values).unwrap()
-            await onSuccess?.(response)
+            await handleRegisterSuccess(response)
         } catch (error) {
             if (!applyFieldErrors(error, setError)) {
                 setSubmitError(error)
