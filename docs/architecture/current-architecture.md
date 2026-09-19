@@ -242,10 +242,10 @@ Create UserDeckProgress (status=ACTIVE)
 Create UserCardProgress for each card (status=NEW)
         │
         ▼
-GET /api/v1/decks/{id}/study/cards
+GET /api/v1/decks/{id}/study
         │
         ▼
-Return up to 10 cards (LEARNING priority, then NEW)
+Return {deckId, deckTitle, cards} (max 10: LEARNING → REVIEWING → NEW)
         │
         ▼
 POST /api/v1/cards/{id}/review
@@ -302,7 +302,7 @@ CardService.save(cards)
 | `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
-| `/api/v1/decks/{id}/study/cards` | GET | JWT | Get up to 10 cards for study | `List<DeckCardResponse>` |
+| `/api/v1/decks/{id}/study` | GET | JWT | Get deck metadata and up to 10 cards for study | `StudySessionResponse {deckId, deckTitle, cards}` |
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
 | `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
 

@@ -10,6 +10,7 @@ import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
@@ -153,10 +154,12 @@ public class LearningServiceImpl implements LearningService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeckCardResponse> getStudyCards(Long deckId) {
+    public StudySessionResponse getStudySession(Long deckId) {
         DeckCardsData data = loadDeckCardsWithProgress(deckId);
+        Deck deck = deckRepository.findById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
-        return data.allCardProgress().stream()
+        List<DeckCardResponse> cards = data.allCardProgress().stream()
             .filter(progress -> progress.getStatus() != CardLearningStatus.MASTERED)
             .sorted(Comparator
                 .comparingInt((UserCardProgress progress) -> studyPriority(progress.getStatus()))
@@ -164,6 +167,7 @@ public class LearningServiceImpl implements LearningService {
             .limit(10)
             .map(progress -> toDeckCardResponse(data.cardMap().get(progress.getCardId()), progress))
             .toList();
+        return new StudySessionResponse(deck.getId(), deck.getTitle(), cards);
     }
 
     private static int studyPriority(CardLearningStatus status) {

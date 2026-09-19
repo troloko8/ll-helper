@@ -24,7 +24,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 - List the current user's active learning decks with aggregate progress
 - Create deck-level progress (`UserDeckProgress`)
 - Create card-level progress (`UserCardProgress`) for all deck cards
-- Get up to 10 cards for study (prioritized by status)
+- Get deck metadata and up to 10 cards for study (prioritized by status)
 - Submit answer and get result
 - Update progress counters
 - Update card learning status
@@ -66,7 +66,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 |--------|------|-------------|
 | `GET` | `/api/v1/learning/decks` | List current user's active learning decks |
 | `POST` | `/api/v1/decks/{deckId}/enroll` | Enroll in a public deck |
-| `GET` | `/api/v1/decks/{deckId}/study/cards` | Get up to 10 cards for study |
+| `GET` | `/api/v1/decks/{deckId}/study` | Get deck metadata and up to 10 cards for study |
 | `GET` | `/api/v1/decks/{deckId}/cards` | Get all deck cards with progress info |
 | `POST` | `/api/v1/cards/{cardId}/review` | Submit answer, update progress |
 
@@ -110,9 +110,11 @@ inline so the public deck content is not replaced by a false success state.
 
 ---
 
-### 5.3 Get Study Cards
+### 5.3 Get Study Session
 
-`GET /api/v1/decks/{deckId}/study/cards`
+`GET /api/v1/decks/{deckId}/study`
+
+**Response:** `StudySessionResponse {deckId, deckTitle, cards}`. Deck metadata is returned even when `cards` is empty. Study uses this title directly; it does not fetch the Learning collection for metadata.
 
 **Selection algorithm:**
 
@@ -123,7 +125,7 @@ inline so the public deck content is not replaced by a false success state.
 4. Batch-load all corresponding `Card` entities (single query).
 5. Exclude cards with `status = MASTERED`.
 6. Sort the remaining cards by status priority `LEARNING` → `REVIEWING` → `NEW`, then by `card.id ASC` inside each status.
-7. Return the first 10 cards. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with an empty array.
+7. Return the first 10 cards. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with `cards: []` in the session response.
 
 ---
 
@@ -211,7 +213,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 | Enroll public deck | `201 Created` |
 | Duplicate enroll | `409 Conflict` |
 | Enroll private deck | `403 Forbidden` |
-| Study empty deck | `200 OK` with empty array |
+| Study empty deck | `200 OK` with `{deckId, deckTitle, cards: []}` |
 | Study cards without enrollment | `409 Conflict` (see §5.3, G-12) |
 | Review card without enrollment | `409 Conflict` (see §5.5, G-12) |
 | Non-existent deck / card | `404 Not Found` |
@@ -226,7 +228,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - Private deck enroll attempt → `403`
 - Duplicate enroll → `409`
 - Study/review without enrollment → `409` (see G-12)
-- Empty deck study request → `200` with empty array
+- Empty deck study request → `200` with `{deckId, deckTitle, cards: []}`
 
 ## 11. Known Open Risks
 

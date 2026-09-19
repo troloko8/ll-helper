@@ -162,7 +162,7 @@
   Файлы: `Card.java`, `DeckService.java`
 
 - [x] **`REVIEWING` карточки участвуют в подборке для study**
-  Реализовано: `LearningServiceImpl.getStudyCards()` использует приоритет `LEARNING` → `REVIEWING` → `NEW`, исключает `MASTERED` и возвращает не более 10 карточек
+  Реализовано: `LearningServiceImpl.getStudySession()` использует приоритет `LEARNING` → `REVIEWING` → `NEW`, исключает `MASTERED` и возвращает не более 10 карточек
   Файлы: `LearningServiceImpl.java`
 
 - [ ] **Просмотр прогресса других пользователей**  

@@ -22,6 +22,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
@@ -351,10 +352,10 @@ class LearningServiceImplTest {
         verifyNoInteractions(deckRepository, userCardProgressRepository);
     }
 
-    // --- getStudyCards ---
+    // --- getStudySession ---
 
     @Test
-    void getStudyCards_shouldPrioritizeLearningThenReviewingThenNew_andExcludeMastered() {
+    void getStudySession_shouldPrioritizeLearningThenReviewingThenNew_andExcludeMastered() {
         UserDeckProgress deckProgress = deckProgressWithId();
         List<UserCardProgress> progress = List.of(
             cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.NEW),
@@ -380,7 +381,15 @@ class LearningServiceImplTest {
                 return deckCardResponse(mappedCard, mappedProgress);
             });
 
-        List<DeckCardResponse> result = learningService.getStudyCards(DECK_ID);
+        Deck deck = new Deck();
+        deck.setId(DECK_ID);
+        deck.setTitle("English Basics");
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        StudySessionResponse session = learningService.getStudySession(DECK_ID);
+        assertThat(session.deckId()).isEqualTo(DECK_ID);
+        assertThat(session.deckTitle()).isEqualTo("English Basics");
+        List<DeckCardResponse> result = session.cards();
 
         assertThat(result).extracting(DeckCardResponse::id)
             .containsExactly(10L, 30L, 20L, 5L);
@@ -394,7 +403,7 @@ class LearningServiceImplTest {
     }
 
     @Test
-    void getStudyCards_shouldReturnAtMostTenCards_acrossPrioritizedStatuses() {
+    void getStudySession_shouldReturnAtMostTenCards_acrossPrioritizedStatuses() {
         UserDeckProgress deckProgress = deckProgressWithId();
         List<UserCardProgress> progress = List.of(
             cardProgress(USER_DECK_PROGRESS_ID, 4L, CardLearningStatus.LEARNING),
@@ -428,11 +437,60 @@ class LearningServiceImplTest {
                 return deckCardResponse(mappedCard, mappedProgress);
             });
 
-        List<DeckCardResponse> result = learningService.getStudyCards(DECK_ID);
+        Deck deck = new Deck();
+        deck.setId(DECK_ID);
+        deck.setTitle("English Basics");
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        StudySessionResponse session = learningService.getStudySession(DECK_ID);
+        assertThat(session.deckId()).isEqualTo(DECK_ID);
+        assertThat(session.deckTitle()).isEqualTo("English Basics");
+        List<DeckCardResponse> result = session.cards();
 
         assertThat(result).hasSize(10);
         assertThat(result).extracting(DeckCardResponse::id)
             .containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
+    }
+
+    @Test
+    void getStudySession_shouldReturnDeckMetadata_whenQueueIsEmpty() {
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
+            .thenReturn(Optional.of(deckProgressWithId()));
+        Deck deck = new Deck();
+        deck.setId(DECK_ID);
+        deck.setTitle("Empty deck");
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        StudySessionResponse result = learningService.getStudySession(DECK_ID);
+
+        assertThat(result.deckId()).isEqualTo(DECK_ID);
+        assertThat(result.deckTitle()).isEqualTo("Empty deck");
+        assertThat(result.cards()).isEmpty();
+    }
+
+    @Test
+    void getStudySession_shouldThrowNotFound_whenDeckDoesNotExist() {
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
+            .thenReturn(Optional.of(deckProgressWithId()));
+        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+            .thenReturn(List.of());
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> learningService.getStudySession(DECK_ID))
+            .isInstanceOf(EntityNotFoundException.class)
+            .hasMessage("Deck not found: " + DECK_ID);
+    }
+
+    @Test
+    void getStudySession_shouldRejectAccess_whenNotEnrolled() {
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+
+        assertThatThrownBy(() -> learningService.getStudySession(DECK_ID))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Deck not enrolled. Please enroll first.");
+        verifyNoInteractions(deckRepository, cardRepository, userCardProgressRepository);
     }
 
     private static DeckCardResponse deckCardResponse(Card card, UserCardProgress progress) {

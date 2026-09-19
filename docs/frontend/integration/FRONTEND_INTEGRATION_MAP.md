@@ -452,8 +452,8 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Candidate route | `/study/:deckId`; `/study` entry behavior requires 0.4C decision |
 | Auth | JWT + enrollment |
 | Domain owner | Learning |
-| Endpoint | Load `LEARN-02 GET /api/v1/decks/{deckId}/study/cards`; submit `LEARN-04 POST /api/v1/cards/{cardId}/review`. |
-| Request / response DTO | Load `List<DeckCardResponse>`; submit `CardReviewRequest {userAnswer}` → `CardReviewResponse {correct,correctAnswer,status,correctStreak,totalCorrect}`. |
+| Endpoint | Load `LEARN-02 GET /api/v1/decks/{deckId}/study`; submit `LEARN-04 POST /api/v1/cards/{cardId}/review`. |
+| Request / response DTO | Load `StudySessionResponse {deckId, deckTitle, cards}`; submit `CardReviewRequest {userAnswer}` → `CardReviewResponse {correct,correctAnswer,status,correctStreak,totalCorrect}`. |
 | Errors | Load/review 409 not enrolled; review 400/404; shared JWT. Answer correctness must come only from response. |
 | Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. With G-08 resolved, an empty study response truthfully means no `LEARNING`, `REVIEWING`, or `NEW` cards remain. |
 | Backend status | Review and study selection implemented; G-08 resolved. |
@@ -463,7 +463,7 @@ The canonical desktop reference stays `partial` at the reference level because i
 **Runtime status:** Study is implemented at the accepted contextual
 `/study/:deckId` route and is linked only from Learning Deck Details when a
 non-`MASTERED` card exists. The page renders the backend-ordered `LEARN-02`
-batch, submits each answer through `LEARN-04`, derives correctness only from
+batch and deck title from one response without subscribing to the Learning list, submits each answer through `LEARN-04`, derives correctness only from
 the backend response, and covers loading, API error, all-caught-up, per-answer
 result, and session-complete states. No persistent Study navigation destination
 was added.

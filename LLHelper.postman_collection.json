@@ -1601,7 +1601,7 @@
           "response": []
         },
         {
-          "name": "Get Study Cards",
+          "name": "Get Study Session",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1614,9 +1614,10 @@
               ]
             },
             "method": "GET",
+            "description": "Returns {deckId, deckTitle, cards}. cards is an ordered study batch of at most 10 items with progress; an empty queue returns cards: []. Requires enrollment (409 otherwise).",
             "header": [],
             "url": {
-              "raw": "{{url}}/decks/{{deckId}}/study/cards",
+              "raw": "{{url}}/decks/{{deckId}}/study",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1627,8 +1628,7 @@
                 "v1",
                 "decks",
                 "{{deckId}}",
-                "study",
-                "cards"
+                "study"
               ]
             }
           },

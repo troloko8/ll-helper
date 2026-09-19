@@ -7,21 +7,11 @@ import { renderWithProviders } from '@/app/test'
 import type {
     CardReviewResponseDto,
     DeckCardResponseDto,
-    LearningDeckResponseDto,
+    StudySessionResponseDto,
 } from '@/entities/learning'
 import { setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { StudyPage } from './study-page'
-
-const learningDeck: LearningDeckResponseDto = {
-    deckId: 12,
-    title: 'English B1 Vocabulary',
-    sourceLanguage: 'EN',
-    targetLanguage: 'RU',
-    enrolledAt: '2026-09-01T10:00:00Z',
-    lastStudiedAt: null,
-    progress: { masteredCount: 0, totalCount: 2 },
-}
 
 const cards: DeckCardResponseDto[] = [
     {
@@ -56,6 +46,12 @@ const cards: DeckCardResponseDto[] = [
     },
 ]
 
+const studySession: StudySessionResponseDto = {
+    deckId: 12,
+    deckTitle: 'English B1 Vocabulary',
+    cards,
+}
+
 function renderStudy(route = '/study/12') {
     return renderWithProviders(
         <Routes>
@@ -68,22 +64,14 @@ function renderStudy(route = '/study/12') {
 describe('StudyPage', () => {
     beforeEach(() => {
         setToken('study-token')
-        server.use(
-            http.get('http://localhost/api/v1/learning/decks', () =>
-                HttpResponse.json([learningDeck]),
-            ),
-        )
     })
 
     it('shows the canonical loading state', () => {
         server.use(
-            http.get(
-                'http://localhost/api/v1/decks/12/study/cards',
-                async () => {
-                    await delay('infinite')
-                    return HttpResponse.json([])
-                },
-            ),
+            http.get('http://localhost/api/v1/decks/12/study', async () => {
+                await delay('infinite')
+                return HttpResponse.json({ ...studySession, cards: [] })
+            }),
         )
 
         renderStudy()
@@ -95,8 +83,8 @@ describe('StudyPage', () => {
 
     it('shows all caught up for an empty backend queue', async () => {
         server.use(
-            http.get('http://localhost/api/v1/decks/12/study/cards', () =>
-                HttpResponse.json([]),
+            http.get('http://localhost/api/v1/decks/12/study', () =>
+                HttpResponse.json({ ...studySession, cards: [] }),
             ),
         )
 
@@ -115,8 +103,8 @@ describe('StudyPage', () => {
 
     it('renders a definition prompt without revealing the answer in context', async () => {
         server.use(
-            http.get('http://localhost/api/v1/decks/12/study/cards', () =>
-                HttpResponse.json(cards),
+            http.get('http://localhost/api/v1/decks/12/study', () =>
+                HttpResponse.json(studySession),
             ),
         )
 
@@ -138,9 +126,14 @@ describe('StudyPage', () => {
     })
 
     it('uses backend correctness, advances cards, and summarizes the session', async () => {
+        let learningListRequests = 0
         server.use(
-            http.get('http://localhost/api/v1/decks/12/study/cards', () =>
-                HttpResponse.json(cards),
+            http.get('http://localhost/api/v1/learning/decks', () => {
+                learningListRequests += 1
+                return HttpResponse.json([])
+            }),
+            http.get('http://localhost/api/v1/decks/12/study', () =>
+                HttpResponse.json(studySession),
             ),
             http.post(
                 'http://localhost/api/v1/cards/:cardId/review',
@@ -170,6 +163,9 @@ describe('StudyPage', () => {
         await screen.findByRole('heading', {
             name: 'A detailed plan or outline used to guide a project.',
         })
+        expect(
+            screen.getByRole('heading', { name: studySession.deckTitle }),
+        ).toBeInTheDocument()
         await user.type(
             screen.getByRole('textbox', { name: 'Your answer' }),
             'something else',
@@ -209,23 +205,25 @@ describe('StudyPage', () => {
         const summary = screen.getByRole('heading', {
             name: 'Session complete',
         }).parentElement
+        expect(summary).toHaveTextContent(studySession.deckTitle)
         expect(summary).toHaveTextContent('Reviewed2')
         expect(summary).toHaveTextContent('Correct1')
         expect(summary).toHaveTextContent('Incorrect1')
         expect(summary).toHaveTextContent('50% accuracy')
+        expect(learningListRequests).toBe(0)
     })
 
     it('shows a load error and retries the study queue', async () => {
         let requestCount = 0
         server.use(
-            http.get('http://localhost/api/v1/decks/12/study/cards', () => {
+            http.get('http://localhost/api/v1/decks/12/study', () => {
                 requestCount += 1
                 return requestCount === 1
                     ? HttpResponse.json(
                           { message: 'Not enrolled' },
                           { status: 409 },
                       )
-                    : HttpResponse.json(cards)
+                    : HttpResponse.json(studySession)
             }),
         )
         const user = userEvent.setup()

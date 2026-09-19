@@ -2,7 +2,7 @@ export {
     learningApi,
     useGetLearningDecksQuery,
     useGetLearningDeckCardsQuery,
-    useGetStudyCardsQuery,
+    useGetStudySessionQuery,
 } from './api/learning-api'
 export { getDeckProgressCounts } from './lib/progress-counts'
 export { getLanguageLabel } from './lib/language-labels'
@@ -17,5 +17,6 @@ export type {
     DeckProgressCounts,
     EnrollResponseDto,
     LearningDeckResponseDto,
+    StudySessionResponseDto,
     LearningProgressSummaryDto,
 } from './model/types'

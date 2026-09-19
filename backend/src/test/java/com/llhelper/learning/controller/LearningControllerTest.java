@@ -20,6 +20,9 @@ import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.StudySessionResponse;
+import com.llhelper.learning.dto.response.DeckCardResponse;
+import com.llhelper.learning.enums.CardLearningStatus;
 import com.llhelper.learning.service.LearningService;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Instant;
@@ -94,6 +97,47 @@ class LearningControllerTest {
         mockMvc.perform(get("/api/v1/learning/decks"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()", is(0)));
+    }
+
+    @Test
+    void getStudySession_shouldReturnSessionMetadataAndCards() throws Exception {
+        DeckCardResponse card = new DeckCardResponse(
+            CARD_ID, "hello", "A greeting", null, null, null,
+            new DeckCardResponse.CardProgressInfo(CardLearningStatus.NEW, 0, 0, 0, 0)
+        );
+        when(learningService.getStudySession(DECK_ID))
+            .thenReturn(new StudySessionResponse(DECK_ID, "English Basics", List.of(card)));
+
+        mockMvc.perform(get("/api/v1/decks/{deckId}/study", DECK_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deckId", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$.deckTitle", is("English Basics")))
+            .andExpect(jsonPath("$.cards.length()", is(1)))
+            .andExpect(jsonPath("$.cards[0].id", is(CARD_ID), Long.class))
+            .andExpect(jsonPath("$.cards[0].title", is("hello")))
+            .andExpect(jsonPath("$.cards[0].progress.status", is("NEW")));
+    }
+
+    @Test
+    void getStudySession_shouldReturnMetadata_whenQueueIsEmpty() throws Exception {
+        when(learningService.getStudySession(DECK_ID))
+            .thenReturn(new StudySessionResponse(DECK_ID, "English Basics", List.of()));
+
+        mockMvc.perform(get("/api/v1/decks/{deckId}/study", DECK_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deckId", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$.deckTitle", is("English Basics")))
+            .andExpect(jsonPath("$.cards").isEmpty());
+    }
+
+    @Test
+    void getStudySession_shouldReturn409_whenNotEnrolled() throws Exception {
+        when(learningService.getStudySession(DECK_ID))
+            .thenThrow(new IllegalStateException("Deck not enrolled. Please enroll first."));
+
+        mockMvc.perform(get("/api/v1/decks/{deckId}/study", DECK_ID))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message", is("Deck not enrolled. Please enroll first.")));
     }
 
     // --- enrollDeck ---

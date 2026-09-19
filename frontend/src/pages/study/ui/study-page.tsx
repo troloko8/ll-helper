@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-    useGetLearningDecksQuery,
-    useGetStudyCardsQuery,
+    useGetStudySessionQuery,
     type DeckCardResponseDto,
 } from '@/entities/learning'
 import { ReviewCardForm, type ReviewCardResult } from '@/features/review-card'
@@ -205,21 +204,16 @@ export function StudyPage() {
     })
     const [sessionComplete, setSessionComplete] = useState(false)
     const {
-        data: cards,
+        data: studySession,
         error,
         isLoading,
         isFetching,
         refetch,
-    } = useGetStudyCardsQuery(deckId, {
+    } = useGetStudySessionQuery(deckId, {
         skip: !validDeckId,
         refetchOnMountOrArgChange: true,
     })
-    const { data: learningDecks } = useGetLearningDecksQuery(undefined, {
-        skip: !validDeckId,
-    })
-    const deckTitle =
-        learningDecks?.find((deck) => deck.deckId === deckId)?.title ??
-        `Deck ${deckId}`
+    const deckTitle = studySession?.deckTitle ?? `Deck ${deckId}`
 
     if (!validDeckId) {
         return (
@@ -251,7 +245,7 @@ export function StudyPage() {
         )
     }
 
-    const resolvedCards = cards ?? []
+    const resolvedCards = studySession?.cards ?? []
 
     if (resolvedCards.length === 0) {
         return <StudyEmptyState deckId={deckId} />

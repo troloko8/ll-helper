@@ -73,3 +73,9 @@ export interface DeckProgressCounts {
     reviewing: number
     mastered: number
 }
+
+export interface StudySessionResponseDto {
+    deckId: number
+    deckTitle: string
+    cards: DeckCardResponseDto[]
+}

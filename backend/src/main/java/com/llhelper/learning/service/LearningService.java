@@ -5,6 +5,7 @@ import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.StudySessionResponse;
 import java.util.List;
 
 public interface LearningService {
@@ -13,7 +14,7 @@ public interface LearningService {
 
     EnrollResponse enrollDeck(Long deckId);
 
-    List<DeckCardResponse> getStudyCards(Long deckId);
+    StudySessionResponse getStudySession(Long deckId);
 
     List<DeckCardResponse> getDeckCards(Long deckId);
 

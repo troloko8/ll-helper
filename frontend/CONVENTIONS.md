@@ -84,8 +84,10 @@ cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`
-route. It consumes the backend-ordered, maximum-ten-card `LEARN-02` session,
-keeps only transient position/result/score state locally, and composes
+route. It consumes the `LEARN-02` response `{deckId, deckTitle, cards}` with a
+backend-ordered, maximum-ten-card batch. The title comes from this response
+without a Learning-list subscription. It keeps only transient
+position/result/score state locally, and composes
 `features/review-card/` for `LEARN-04`. Answer correctness always comes from
 the review response; the page never compares answers itself. Reviews invalidate
 the affected Learning card/detail caches, while the session advances through
