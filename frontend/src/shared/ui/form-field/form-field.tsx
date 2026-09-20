@@ -35,9 +35,11 @@ export function FormField({
     const controlId = children.props.id ?? id ?? `field-${generatedId}`
     const descriptionId = description ? `${controlId}-description` : undefined
     const errorId = `${controlId}-error`
+
     const hasError = error !== undefined && error !== null && error !== ''
     const isRequired = Boolean(children.props.required || required)
     const isDisabled = Boolean(children.props.disabled || disabled)
+
     const describedBy = [
         children.props['aria-describedby'],
         descriptionId,
@@ -45,6 +47,7 @@ export function FormField({
     ]
         .filter(Boolean)
         .join(' ')
+        
     const classes = [styles.field, className].filter(Boolean).join(' ')
 
     const control = cloneElement(children, {
