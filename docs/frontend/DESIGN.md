@@ -106,19 +106,21 @@ this pair. No other active-state color combination is canonical.
 
 ## Application shell
 
-> **Level 1 vertical MVP scoping note (Phase 0.4C):** the full five-destination
-> shell below (desktop sidebar and mobile bottom navigation) remains the
-> canonical post-vertical target and the canonical Stitch screens are not
-> changed by this note. For the Level 1 vertical MVP, the implemented
-> authenticated navigation is a temporary reduced subset: only **Learning** is
-> a persistent destination. **Created**, **Discover**, and **Progress** are
-> fully hidden (not shown disabled/"coming soon"). **Create Deck** is reached
-> via a CTA on the Learning screen (e.g. its empty state), not via a
-> persistent "Created" destination. **Study** is reached contextually from
-> Learning Deck Details (`/study/:deckId`), not as a standalone persistent nav
-> item, since a deck-less `/study` entry has no defined product behavior at
-> Level 1. No route in the reduced shell is a clickable dead link. See
-> `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP scope.
+> **Level 1 reachable-flow scope (accepted revision):** implement the ordered
+> subset **Learning, Created, Discover** of the full five-destination shell
+> below. The existing runtime currently exposes only Learning; add each new
+> navigation entry with its working route. Created restores access to owned
+> decks; Discover opens public decks for enrollment. **Study** remains
+> contextual from Learning Deck Details (`/study/:deckId`); **Progress** remains
+> hidden, since per-card progress is displayed on Learning Deck Details.
+> **Create Deck** must be available with both empty and populated collections.
+> Empty Learning offers Browse public decks and Create Deck. Provide a labelled
+> **Log out** action in the desktop sidebar footer and mobile header, using
+> the existing local logout flow; it is not a Settings page or a bottom-nav
+> destination. No dead links or disabled future destinations. The remote
+> canonical references remain unchanged; implementation and live verification
+> status belong to `docs/roadmap/current-sprint.md`, and route/product decisions
+> to integration map §0.10.
 
 ### Desktop
 
@@ -141,6 +143,27 @@ this pair. No other active-state color combination is canonical.
 - The desktop sidebar must never be squeezed into the mobile layout.
 - **Settings is not a destination** in the current canonical navigation
   (desktop or mobile).
+
+### Level 1 collection-screen adaptation
+
+Use the existing Created/Discover desktop/mobile references in the registry;
+exact IDs and loading/error/empty references remain in `design-reference/MANIFEST.md`.
+The five-destination shell above is the full target; the Level 1 subset in the
+scoping note takes precedence during this implementation.
+
+- Created cards: title, language pair, backend card count, Public/Private,
+  Open → Owner Deck Details; Create New Deck works for empty/populated lists.
+- Discover cards: title, language pair, creator username, backend card count,
+  Public/Enrolled indication and a link to Public Deck Details. Already-enrolled
+  public details offer Open learning; no learning-progress counters on public cards.
+- The inspected Discover desktop/mobile prototypes include search/load-more;
+  mobile also includes filter/topic/level chips, covers and bookmarks. These
+  controls/data are outside the accepted first list scope. Omit them rather
+  than inventing fields, values or inactive controls. Keep the canonical
+  responsive layout, tokens, typography and meaningful API/loading/empty states.
+- Do not render a fake zero while count/enrollment data are unavailable. The
+  backend data prerequisite is owned by integration map §0.10; current DTOs
+  must be extended before these screens are considered complete.
 
 ## Domain / UI boundaries
 

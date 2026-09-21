@@ -53,6 +53,7 @@ export const addCardFormSchema = z.object({
     translation: z
         .string()
         .trim()
+        .min(1, 'Translation is required')
         .max(
             ADD_CARD_LIMITS.TRANSLATION_MAX_LENGTH,
             `Translation must be at most ${ADD_CARD_LIMITS.TRANSLATION_MAX_LENGTH} characters`,

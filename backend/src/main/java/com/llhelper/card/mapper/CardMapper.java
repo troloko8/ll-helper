@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * MapStruct mapper for Card entity.
- * Converts between Card entity and DTOs (CardRequest/CardResponse).
+ * Converts between Card entity and create/update requests or responses.
  * Generated implementation is auto-injected as Spring bean.
  */
 @Component
@@ -26,7 +26,7 @@ public interface CardMapper {
     @Mapping(target = "deck", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    // FIXME check it later
+    @Mapping(target = "deckId", ignore = true)
     Card toEntity(CardRequest request);
 
     @Mapping(target = "id", ignore = true)

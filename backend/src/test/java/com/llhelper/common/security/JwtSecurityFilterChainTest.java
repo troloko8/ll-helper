@@ -2,11 +2,16 @@ package com.llhelper.common.security;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.llhelper.user.controller.UserController;
+import com.llhelper.card.controller.CardGenerationController;
+import com.llhelper.card.service.CardService;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.service.UserService;
 import io.jsonwebtoken.Jwts;
@@ -36,7 +41,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * protected endpoint, unlike the controller slice tests which run with
  * {@code addFilters = false}.
  */
-@WebMvcTest(UserController.class)
+@WebMvcTest({UserController.class, CardGenerationController.class})
 @Import({SecurityConfig.class, JwtSecurityFilterChainTest.SecurityBeansConfig.class})
 @TestPropertySource(properties = {
         "jwt.secret=test-secret-key-for-jwt-filter-chain-tests-32-chars-min",
@@ -56,7 +61,19 @@ class JwtSecurityFilterChainTest {
     private UserService userService;
 
     @MockitoBean
+    private CardService cardService;
+
+    @MockitoBean
     private UserDetailsService userDetailsService;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/v1/card-generations", "/api/v1/card-generations/bulk"})
+    void generate_shouldReturn401_whenNoAuthorizationHeader(String path) throws Exception {
+        mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(content().json(EXPECTED_BODY));
+        org.mockito.Mockito.verifyNoInteractions(cardService);
+    }
 
     @Test
     void getCurrentUser_shouldReturn401_whenNoAuthorizationHeader() throws Exception {

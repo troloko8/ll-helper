@@ -1127,10 +1127,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\",\n  \"deckId\": {{deckId}}\n}"
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\"\n}"
             },
             "url": {
-              "raw": "{{url}}/cards",
+              "raw": "{{url}}/decks/{{deckId}}/cards",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1139,6 +1139,8 @@
               "path": [
                 "api",
                 "v1",
+                "decks",
+                "{{deckId}}",
                 "cards"
               ]
             }
@@ -1258,7 +1260,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\",\n  \"deckId\": {{deckId}}\n}"
+              "raw": "{\n  \"title\": \"burp\",\n  \"definition\": \"to release air from the stomach noisily through the mouth\",\n  \"synonyms\": [\"belch\", \"erupt\", \"expel\"],\n  \"examples\": [\"He had to _ _ _ _ after drinking the soda too quickly.\"],\n  \"translation\": \"отрыжка\"\n}"
             },
             "url": {
               "raw": "{{url}}/cards/{{cardId}}",
@@ -1299,10 +1301,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"serendipity\",\n  \"deckId\": {{deckId}},\n  \"autoGenerate\": true\n}"
+              "raw": "{\n  \"title\": \"serendipity\",\n  \"deckId\": {{deckId}}\n}"
             },
             "url": {
-              "raw": "{{url}}/cards",
+              "raw": "{{url}}/card-generations",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1311,7 +1313,7 @@
               "path": [
                 "api",
                 "v1",
-                "cards"
+                "card-generations"
               ]
             }
           },
@@ -1342,7 +1344,7 @@
               "raw": "{\n  \"titles\": [\"serendipity\", \"ephemeral\", \"luminous\", \"resilience\", \"mellifluous\"],\n  \"deckId\": {{deckId}}\n}"
             },
             "url": {
-              "raw": "{{url}}/cards/bulk-generate",
+              "raw": "{{url}}/card-generations/bulk",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1351,8 +1353,8 @@
               "path": [
                 "api",
                 "v1",
-                "cards",
-                "bulk-generate"
+                "card-generations",
+                "bulk"
               ]
             }
           },
@@ -1402,7 +1404,7 @@
               "raw": "{\n  \"titles\": [\"serendipity\"],\n  \"deckId\": {{deckId}}\n}"
             },
             "url": {
-              "raw": "{{url}}/cards/bulk-generate",
+              "raw": "{{url}}/card-generations/bulk",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1411,8 +1413,8 @@
               "path": [
                 "api",
                 "v1",
-                "cards",
-                "bulk-generate"
+                "card-generations",
+                "bulk"
               ]
             },
             "description": "Send this request more than 3 times within 1 minute to trigger CARD_BULK_GENERATE rate limit (429)"
@@ -1454,7 +1456,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"test\",\n  \"deckId\": {{nonExistentDeckId}},\n  \"autoGenerate\": false,\n  \"definition\": \"test\"\n}",
+              "raw": "{\n  \"title\": \"test\",\n  \"definition\": \"test\",\n  \"translation\": \"перевод\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1462,7 +1464,7 @@
               }
             },
             "url": {
-              "raw": "{{url}}/cards",
+              "raw": "{{url}}/decks/{{nonExistentDeckId}}/cards",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1471,6 +1473,8 @@
               "path": [
                 "api",
                 "v1",
+                "decks",
+                "{{nonExistentDeckId}}",
                 "cards"
               ]
             },

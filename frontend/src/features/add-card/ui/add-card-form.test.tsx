@@ -63,24 +63,40 @@ describe('AddCardForm', () => {
         ).toBeInTheDocument()
     })
 
+    it('requires translation for a manual card', async () => {
+        const user = userEvent.setup()
+        renderWithProviders(<AddCardForm deckId={12} />)
+
+        await user.type(
+            screen.getByRole('textbox', { name: 'Target word' }),
+            'Ephemeral',
+        )
+        await user.click(screen.getByRole('button', { name: 'Save card' }))
+
+        expect(
+            await screen.findByText('Translation is required'),
+        ).toBeInTheDocument()
+    })
+
     it('creates a manual card with normalized list fields', async () => {
         const onSuccess = vi.fn()
         server.use(
-            http.post('http://localhost/api/v1/cards', async ({ request }) => {
-                expect(request.headers.get('Authorization')).toBe(
-                    'Bearer card-token',
-                )
-                expect(await request.json()).toEqual({
-                    title: 'Ephemeral',
-                    definition: 'Lasting for a very short time.',
-                    translation: 'Мимолётный',
-                    synonyms: ['fleeting', 'transient'],
-                    examples: ['The moment was ephemeral.'],
-                    deckId: 12,
-                    autoGenerate: false,
-                })
-                return HttpResponse.json(createdCard, { status: 201 })
-            }),
+            http.post(
+                'http://localhost/api/v1/decks/12/cards',
+                async ({ request }) => {
+                    expect(request.headers.get('Authorization')).toBe(
+                        'Bearer card-token',
+                    )
+                    expect(await request.json()).toEqual({
+                        title: 'Ephemeral',
+                        definition: 'Lasting for a very short time.',
+                        translation: 'Мимолётный',
+                        synonyms: ['fleeting', 'transient'],
+                        examples: ['The moment was ephemeral.'],
+                    })
+                    return HttpResponse.json(createdCard, { status: 201 })
+                },
+            ),
         )
         renderWithProviders(<AddCardForm deckId={12} onSuccess={onSuccess} />)
         const user = await fillCardForm()
@@ -95,18 +111,16 @@ describe('AddCardForm', () => {
     it('creates and saves a card with AI from the target word only', async () => {
         const onSuccess = vi.fn()
         server.use(
-            http.post('http://localhost/api/v1/cards', async ({ request }) => {
-                expect(await request.json()).toEqual({
-                    title: 'Ephemeral',
-                    definition: null,
-                    translation: null,
-                    synonyms: null,
-                    examples: null,
-                    deckId: 12,
-                    autoGenerate: true,
-                })
-                return HttpResponse.json(createdCard, { status: 201 })
-            }),
+            http.post(
+                'http://localhost/api/v1/card-generations',
+                async ({ request }) => {
+                    expect(await request.json()).toEqual({
+                        title: 'Ephemeral',
+                        deckId: 12,
+                    })
+                    return HttpResponse.json(createdCard, { status: 201 })
+                },
+            ),
         )
         renderWithProviders(<AddCardForm deckId={12} onSuccess={onSuccess} />)
         const user = userEvent.setup()
@@ -139,7 +153,7 @@ describe('AddCardForm', () => {
 
     it('shows the AI loading state and locks manual fields', async () => {
         server.use(
-            http.post('http://localhost/api/v1/cards', async () => {
+            http.post('http://localhost/api/v1/card-generations', async () => {
                 await delay('infinite')
                 return HttpResponse.json(createdCard, { status: 201 })
             }),
@@ -167,7 +181,7 @@ describe('AddCardForm', () => {
         let requestCount = 0
         const onSuccess = vi.fn()
         server.use(
-            http.post('http://localhost/api/v1/cards', () => {
+            http.post('http://localhost/api/v1/card-generations', () => {
                 requestCount += 1
                 return requestCount === 1
                     ? HttpResponse.json(
@@ -208,7 +222,7 @@ describe('AddCardForm', () => {
                 }),
         )
         server.use(
-            http.post('http://localhost/api/v1/cards', () =>
+            http.post('http://localhost/api/v1/card-generations', () =>
                 HttpResponse.json(createdCard, { status: 201 }),
             ),
         )
@@ -261,7 +275,7 @@ describe('AddCardForm', () => {
 
     it('maps backend validation errors to the target word field', async () => {
         server.use(
-            http.post('http://localhost/api/v1/cards', () =>
+            http.post('http://localhost/api/v1/decks/12/cards', () =>
                 HttpResponse.json(
                     {
                         errors: {
@@ -287,7 +301,7 @@ describe('AddCardForm', () => {
 
     it('shows backend validation errors for the examples collection', async () => {
         server.use(
-            http.post('http://localhost/api/v1/cards', () =>
+            http.post('http://localhost/api/v1/decks/12/cards', () =>
                 HttpResponse.json(
                     {
                         errors: {
@@ -321,7 +335,7 @@ describe('AddCardForm', () => {
 
     it('shows submitting and rate-limit states', async () => {
         server.use(
-            http.post('http://localhost/api/v1/cards', async () => {
+            http.post('http://localhost/api/v1/decks/12/cards', async () => {
                 await delay('infinite')
                 return HttpResponse.json(createdCard, { status: 201 })
             }),
@@ -341,7 +355,7 @@ describe('AddCardForm', () => {
 
     it('shows the canonical inline submission error', async () => {
         server.use(
-            http.post('http://localhost/api/v1/cards', () =>
+            http.post('http://localhost/api/v1/decks/12/cards', () =>
                 HttpResponse.json(
                     { message: 'Too many requests' },
                     { status: 429 },

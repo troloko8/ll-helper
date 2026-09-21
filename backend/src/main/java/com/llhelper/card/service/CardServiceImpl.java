@@ -2,9 +2,11 @@ package com.llhelper.card.service;
 
 import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
+import com.llhelper.ai.exception.AiServiceException;
 import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
+import com.llhelper.card.dto.request.GenerateCardRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
@@ -84,33 +86,52 @@ public class CardServiceImpl implements CardService {
         }
     }
 
+    private void validateGeneratedTranslation(AiCardData aiData) {
+        if (aiData.translation() == null || aiData.translation().isBlank()) {
+            throw new AiServiceException("Generated card has no translation");
+        }
+    }
 
     @Override
     @Transactional
-    public CardResponse create(CardRequest request) {
+    public CardResponse create(Long deckId, CardRequest request) {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_CREATE);
 
-        Deck deck = deckRepository.findWithOwnerById(request.deckId())
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
+        Deck deck = deckRepository.findWithOwnerById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
         validateDeckOwnership(deck);
 
         Card card = cardMapper.toEntity(request);
 
-        if (Boolean.TRUE.equals(request.autoGenerate())) {
-            AiCardData aiData = aiCardGenerationService.generateCardData(
-                request.title(),
-                deck.getSourceLanguage(),
-                deck.getTargetLanguage()
-            );
-            card.setDefinition(aiData.definition());
-            card.setSynonyms(aiData.synonyms());
-            card.setExamples(aiData.examples());
-            card.setTranslation(aiData.translation());
-        }
-
         card.setDeck(deck);
+        return saveCard(card);
+    }
+
+    @Override
+    @Transactional
+    public CardResponse generate(GenerateCardRequest request) {
+        userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_CREATE);
+
+        Deck deck = deckRepository.findWithOwnerById(request.deckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
+        validateDeckOwnership(deck);
+
+        AiCardData aiData = aiCardGenerationService.generateCardData(
+            request.title(), deck.getSourceLanguage(), deck.getTargetLanguage());
+
+        validateGeneratedTranslation(aiData);
+
+        return saveCard(cardMapper.fromAiData(request.title(), aiData, deck));
+    }
+
+    private CardResponse saveCard(Card card) {
+        String definition = card.getDefinition();
+        String translation = card.getTranslation();
+        card.setDefinition(definition == null || definition.isBlank() ? null : definition.trim());
+        card.setTranslation(translation == null || translation.isBlank() ? null : translation.trim());
+
         Card saved = cardRepository.saveAndFlush(card);
         entityManager.refresh(saved);
         return cardMapper.toResponse(saved);
@@ -140,12 +161,10 @@ public class CardServiceImpl implements CardService {
                     deck.getSourceLanguage(),
                     deck.getTargetLanguage()
                 );
+                validateGeneratedTranslation(aiData);
 
                 Card card = cardMapper.fromAiData(title, aiData, deck);
-
-                Card saved = cardRepository.saveAndFlush(card);
-                entityManager.refresh(saved);
-                results.add(cardMapper.toResponse(saved));
+                results.add(saveCard(card));
             } catch (Exception e) {
                 failedTitles.add(title);
                 log.debug("Failed to generate card for title='{}' in deckId={}", title, deck.getId(), e);
@@ -192,9 +211,7 @@ public class CardServiceImpl implements CardService {
         validateCardOwnership(card);
 
         cardMapper.updateEntity(request, card);
-        Card saved = cardRepository.saveAndFlush(card);
-        entityManager.refresh(saved);
-        return cardMapper.toResponse(saved);
+        return saveCard(card);
     }
 
     @Override

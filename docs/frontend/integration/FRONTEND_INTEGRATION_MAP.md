@@ -4,6 +4,7 @@
 > **Scope:** documentation and analysis only. Phase 0.4C does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code — it only records accepted product/routing decisions on top of the Phase 0.4B read-only snapshot below.
 > **Phase 0.4B date:** 2026-08-23 (repository baseline: `master` after commit `758a565`). **§2–§7 below are preserved as the historical Phase 0.4B result and are not rewritten**, except where a specific field is explicitly superseded by an accepted §0 decision (marked inline, e.g. the `/decks/:deckId` route replacing the `/discover/decks/:deckId` candidate).
 > **Phase 0.4C date:** 2026-08-24. §0 records the accepted Level 1 vertical MVP decisions; where §0 and §2–§7 disagree, §0 governs.
+> **User-requested scope revision (2026-09-20):** §0.10 supersedes the original Created/Discover deferral and direct-link-only product path. These are accepted implementation tasks, not a claim that the new UI or DTOs already exist. Runtime completion and verification belong to `docs/roadmap/current-sprint.md`.
 
 ## 0. Phase 0.4C accepted decisions
 
@@ -11,11 +12,11 @@ This section supersedes the "candidate, not accepted" status stated in §1 item 
 
 ### 0.1 Accepted Level 1 MVP surfaces
 
-Login, Register, Complete Profile, Learning list, Create Deck, Owner Deck Details, Manual Add Card, Public Deck Details + Enroll, Learning Deck Details, Study.
+Login, Register, Complete Profile, Learning list, Created Decks list, Create Deck, Owner Deck Details, Manual Add Card, Discover public list, Public Deck Details + Enroll, Learning Deck Details, Study, and a visible local Logout action. Created/Discover/Logout UI completion is governed by §0.10.
 
 ### 0.2 Accepted deferred surfaces/functions
 
-Created Decks list; Discover list/search; Creator Profile; aggregate Progress dashboard; Edit Deck; Edit Card (full Card Editor — target: after first deployment); single-card AI generation (optional, separate task after manual-add smoke succeeds — not bundled into the same PR); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks.
+Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashboard; Edit Deck; Edit Card (full Card Editor — target: after first deployment); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks. Single-card AI remains optional and cannot substitute for manual-card acceptance; runtime status belongs to the current sprint. Basic Created and Discover lists are now in scope (§0.10).
 
 ### 0.3 Accepted route map
 
@@ -28,12 +29,12 @@ Created Decks list; Discover list/search; Creator Profile; aggregate Progress da
 | `/learning` | accepted | `learning_llhelper_refined_navigation` / `learning_mobile_dashboard` | G-06 backend contract implemented as LEARN-05 |
 | `/learning/:deckId` | accepted | `learning_deck_details_llhelper_refined` | |
 | `/decks/new` | accepted | `create_deck_llhelper` | |
-| `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | Public Deck Details; JWT-protected route, "public" is the product-surface name, not anonymous HTTP access; reachable only by direct link since Discover is deferred |
+| `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | JWT-protected Public Deck Details; accepted entry from Discover (§0.10), while direct links remain valid. Current runtime entry is still direct-link-only until implemented. |
 | `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
-| `/created` | deferred | — | |
-| `/discover` | deferred | — | |
+| `/created` | accepted, implementation pending | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Owned public/private decks → Owner Deck Details; §0.10 |
+| `/discover` | accepted, implementation pending | `discover_llhelper_refined` / `discover_mobile` | Public decks → Public Deck Details; bounded list adaptation, §0.10 |
 | `/progress` | deferred | — | |
 | `/creators/:username` | deferred | — | |
 | `/decks/:deckId/edit` | deferred | — | |
@@ -60,7 +61,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
-- Discover search and required `cardCount`/`isEnrolled` fields; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. The owner-scoped Created list contract is now implemented as DECK-06, while its UI remains deferred.
+- Discover search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. Collection `cardCount` and public-list `isEnrolled` are now prerequisites for the accepted collection screens (§0.10); DECK-06 already supplies the owner-scoped base collection.
 
 ### 0.5 Accepted Stitch/design follow-up
 
@@ -82,10 +83,10 @@ This section owns only the stable accepted sequence and dependency boundaries. D
 10. Frontend Manual Add Card.
 11. Frontend Public Deck Details + Enroll.
 12. Frontend Study + per-card progress display (§0.8).
-13. Manual end-to-end smoke + Postman sync.
-14. Release hardening: G-04, `CARD-04`, G-05 regression verification, and safe catch-all 500 body.
-15. First deployment.
-16. Optional, separate single-card AI generation after the manual-add smoke succeeds; it does not block first deployment.
+13. Close the UI reachability gaps under §0.10: validate manual creation → collection contracts → Created → Discover/Enroll → verify Study/progress → visible Logout/re-entry.
+14. Manual end-to-end UI smoke, Postman verification, reusable AI workflow prompts and sprint closure. Single-card AI is optional and does not replace manual-card verification.
+15. Release hardening: G-04, `CARD-04`, G-05 regression verification, and safe catch-all 500 body.
+16. First deployment.
 
 ### 0.7 Session state (accepted)
 
@@ -98,7 +99,7 @@ Implemented `GET /api/v1/users/me` bootstrap semantics:
 - `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
 - `401 {message}` → missing/invalid/expired JWT → `anonymous`.
 
-The backend contract above is implemented; the frontend lifecycle is pending and its execution status is owned by `docs/roadmap/current-sprint.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
+The backend contract and frontend session lifecycle are implemented; execution and live verification status are owned by `docs/roadmap/current-sprint.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
 
 - Register stores the token, enters `needsProfile`, completes `POST /users`, then enters `authenticated` and navigates to `/learning`.
 - Login stores the token and resolves `GET /users/me`: `200` navigates to `/learning`, `404` enters `needsProfile` and navigates to `/onboarding/profile`, and `401` clears the session and returns to `/login`.
@@ -118,6 +119,32 @@ The backend contract above is implemented; the frontend lifecycle is pending and
 - **This document** stays active through implementation of the accepted Level 1 routes above; it then converts to a compact screen integration registry that does not duplicate Stitch IDs already owned by `docs/frontend/design-reference/MANIFEST.md`.
 - **`docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md`** stays active as the repository-grounded HTTP-contract snapshot until OpenAPI adoption (`backend/IMPROVEMENTS.md`); after OpenAPI, it reduces to security semantics, integration warnings, and known gaps. OpenAPI itself is out of scope for Level 1/Phase 0.4C.
 - No document is renamed or deleted now; `AGENTS.md` pointers and any validator checks are updated only at the actual retirement/conversion point.
+
+### 0.10 Reachable Level 1 product flow — accepted scope revision
+
+The user requested that the complete Level 1 path be executable through visible UI. This replaces the original Created/Discover deferral and the assumption that manually constructing a public-deck URL is sufficient for product acceptance. It does not require the full future product or change runtime code by itself.
+
+**Accepted navigation and transitions:**
+- Persistent destinations: Learning, Created, Discover, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual; aggregate Progress and Settings are not added.
+- Created → Create Deck → Owner Deck Details → Add Card → Owner Deck Details; Created provides a way back to existing owned decks. Create Deck is available for empty and populated lists.
+- Discover → Public Deck Details → Start learning/Enroll → Learning Deck Details → Study → Learning Deck Details progress → Learning list. Created never substitutes for the Learning collection.
+- Public Deck Details provides Open learning for an existing enrollment, including after refresh/direct entry. Use backend state, such as the existing LEARN-05 list; do not rely only on state passed from Discover. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates Discover and Learning caches.
+- Visible local Logout → Login → reopen Created/Learning and continue. A manual token clear does not meet the user-facing logout criterion.
+- No Owner → Public shortcut is required to pass the revised flow: Discover is the entry. A private deck remains owner-visible in Created and cannot be enrolled under the current backend, even by its owner. Smoke uses a public deck populated before enrollment.
+
+**Collection data prerequisite (planned, not implemented):**
+- DECK-03 remains server-filtered to public decks; DECK-06 remains scoped to the current owner's public/private decks.
+- Both collection responses must supply backend `cardCount` (content cards, zero for empty decks). The public collection additionally needs `isEnrolled` for the current user's ACTIVE enrollment, independent of deck ownership.
+- These fields do not exist in current collection DTOs. Choose/record the public-list DTO and aggregation implementation in the backend task before frontend work; preserve existing fields and use bounded batch/aggregate retrieval rather than one detail request per item. Update inventory/Postman only with the executable contract as it is implemented.
+- Create/add-card mutations must refresh affected list counts and detail caches; enrollment refreshes the public collection's enrollment state and Learning list. Do not copy server collection data into ordinary Redux slices.
+
+**Stitch evidence and bounded adaptation:**
+- Canonical project metadata and Created/Discover desktop/mobile screens were retrieved via Stitch MCP; both HTML and screenshots were inspected on 2026-09-20. Exact resource IDs remain owned by `docs/frontend/design-reference/MANIFEST.md`.
+- Created desktop/mobile show language pair, title, card count, Public/Private, Open and Create New Deck. This confirms cardCount is needed for Created too, superseding the earlier uncertainty in §5.4.
+- Discover desktop shows title/creator search, Public/Enrolled badges, language pair, creator, card count and Load Additional Decks. Mobile includes search, filter/topic/level chips, cover images, bookmark controls and Load more; these extra controls are not proof of backend support.
+- Accepted first implementation is the list/card/navigation subset: title, languages, creator, count, truthful enrollment indication and detail link. Search, filters, sorting, load-more/pagination, topic/level chips, cover imagery and bookmarks are omitted on both devices. Reuse canonical layout/tokens and state references; do not invent metadata or ship non-working prototype controls. This bounded adaptation is owned by `DESIGN.md` and does not require changing remote Stitch screens in this planning task.
+
+**Acceptance boundary:** groups in `current-sprint.md` distinguish existing implementation, missing integration and user-verified behavior. Study/review/per-card progress already exist; remaining work is integration verification and fixes. A successful AI card creation does not establish manual validation correctness. A live UI flow and re-entry with saved progress are required to close Level 1.
 
 ## 1. Source precedence and boundaries
 
@@ -262,6 +289,8 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 
 ### 5.4 Created Decks
 
+> **Superseded scope:** basic Created is accepted by §0.10; the deferred labels below describe the earlier snapshot. Current implementation/verification tasks are in the sprint. Screenshot + HTML inspection confirms cardCount on both canonical devices, so the existing base collection needs this additional field before matching the accepted card design.
+
 | Field | Mapping |
 |---|---|
 | Product surface | My Decks — Created list |
@@ -281,13 +310,13 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **deferred** |
 | Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **deferred** |
 
-**Missing DTO — minimal required shape** (read-only review of `created_decks_llhelper_refined_mvp` and `created_decks_mobile_with_bottom_nav`, which show only deck titles plus a "Create New Deck" action):
+**Missing DTO — minimal required shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck; updated evidence supersedes the earlier text-only extraction):
 
 | Field | Status | Note |
 |---|---|---|
 | `id`, `title`, `description`, `sourceLanguage`, `targetLanguage`, `isPublic`, `owner` | Existing (`DeckListResponse`) | No new response field needed. |
 | Owner-scoped filter (only the current user's decks) | Implemented | DECK-06 resolves the current user server-side and filters by `ownerId`; `DECK-03` remains public-only. |
-| Per-deck card count | Unresolved | `DeckListResponse` already carries a known `// FIXME: add cardCount` backend gap; whether the canonical screen requires a visible count could not be confirmed from the extracted screen text alone. |
+| Per-deck card count | Missing; required by accepted §0.10 | `DeckListResponse` has the `// FIXME: add cardCount` gap. Both screenshot and HTML now confirm the visible count. |
 
 Implemented response: `DECK-06 GET /api/v1/decks/mine` returns `List<DeckListResponse>` and resolves current-user identity server-side. No new response fields were required.
 
@@ -356,6 +385,8 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns `List<DeckListRes
 
 ### 5.8 Deck Details — Public
 
+> **Superseded scope:** §0.10 requires Discover → Public Deck Details and an existing-enrollment path to Learning. The direct-link-only statements below describe the runtime baseline before that work, not the final acceptance requirement.
+
 | Field | Mapping |
 |---|---|
 | Product surface | Public Deck Details and enroll action; no learning progress |
@@ -410,8 +441,8 @@ Deck Details entry point was added.
 | Candidate route | Add `/decks/:deckId/cards/new`; edit `/decks/:deckId/cards/:cardId/edit` |
 | Auth | JWT; deck-owner mutation |
 | Domain owner | Card content; AI generation is backend-owned |
-| Endpoint | Add/manual or single AI `CARD-01 POST /api/v1/cards`; edit prefill `CARD-03 GET /api/v1/cards/{id}`; update `CARD-05 PUT`; optional delete `CARD-06 DELETE`; bulk AI `CARD-02 POST /api/v1/cards/bulk-generate`. |
-| Request / response DTO | `CardRequest` → `CardResponse`; bulk `BulkCardGenerateRequest` → `List<CardResponse>` successes only. |
+| Endpoint | Manual `CARD-01 POST /api/v1/decks/{deckId}/cards`; single AI `CARD-07 POST /api/v1/card-generations`; edit prefill `CARD-03 GET /api/v1/cards/{id}`; update `CARD-05 PUT`; optional delete `CARD-06 DELETE`; bulk AI `CARD-02 POST /api/v1/card-generations/bulk`. |
+| Request / response DTO | Manual POST/PUT `CardRequest`; AI `GenerateCardRequest` → `CardResponse`; bulk `BulkCardGenerateRequest` → `List<CardResponse>` successes only. |
 | Errors | 400/403/404/429; AI 503; edit prefill returns 403 for another user's private parent deck; shared JWT. Bulk partial failures are not represented (G-09). |
 | Loading / error / empty | Form submit/validation/submission errors; AI loading/error; edit prefill loading/error; empty not applicable. Desktop has all form/AI variants; mobile Add has none. |
 | Backend status | Manual create/read/update/delete implemented; bulk response partial. |
@@ -420,10 +451,11 @@ Deck Details entry point was added.
 
 **Runtime status:** Manual Add Card and optional single-card AI generation are
 implemented at the accepted `/decks/:deckId/cards/new` route. Manual creation
-uses `autoGenerate: false`; AI creation validates the target word and uses
-`autoGenerate: true`, with dedicated pending and `429`/`503` error states. Both
-paths save immediately, invalidate the deck cache, and return to Owner Deck
-Details. Edit, delete, and bulk AI remain outside this runtime slice; their
+uses `POST /decks/{deckId}/cards` and requires Translation; Definition is optional.
+AI creation sends only title and deckId to `POST /card-generations`;
+the backend rejects a generated result without a non-blank translation; dedicated pending and `429`/`503` error states remain in place.
+Both paths save immediately, invalidate the deck cache, and return to Owner
+Deck Details. Edit, delete, and bulk AI remain outside this runtime slice; their
 operation-level readiness below is unchanged.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -435,12 +467,12 @@ operation-level readiness below is unchanged.
 
 | Operation | Endpoint | Backend status | Blocker / gap | MVP readiness |
 |---|---|---|---|---|
-| Manual add | `CARD-01 POST /api/v1/cards` (`autoGenerate` omitted/false) | implemented | None | Ready |
+| Manual add | `CARD-01 POST /api/v1/decks/{deckId}/cards` | implemented | None | Ready |
 | Edit prefill | `CARD-03 GET /api/v1/cards/{id}` | implemented | Parent-deck visibility enforced by `DeckAccessPolicy` | Ready |
 | Manual update | `CARD-05 PUT /api/v1/cards/{id}` | implemented | None | Ready |
 | Manual delete | `CARD-06 DELETE /api/v1/cards/{id}` | implemented | None | Ready |
-| Single-card AI generation | `CARD-01 POST /api/v1/cards` (`autoGenerate: true`) | implemented | Shared AI 429/503 errors only | Ready |
-| Bulk AI generation | `CARD-02 POST /api/v1/cards/bulk-generate` | partial | Response returns successful cards only; failed titles/reasons are lost (G-09) | Partial (partial-failure UX not truthful) |
+| Single-card AI generation | `CARD-07 POST /api/v1/card-generations` | implemented | Shared AI 429/503 errors only | Ready |
+| Bulk AI generation | `CARD-02 POST /api/v1/card-generations/bulk` | partial | Response returns successful cards only; failed titles/reasons are lost (G-09) | Partial (partial-failure UX not truthful) |
 
 The canonical desktop reference stays `partial` at the reference level because it spans mixed-readiness operations. Phase 0.4C may split the runtime implementation so manual add/update/delete and single-card AI ship as part of the manual Cards MVP, while bulk AI partial-failure UX is deferred separately without blocking the rest of this reference.
 
@@ -475,6 +507,8 @@ was added.
 
 ### 5.12 Discover
 
+> **Superseded scope:** §0.10 accepts the basic list and explicitly defers search/filter/load-more and other unsupported prototype controls. cardCount/isEnrolled remain backend prerequisites; this is no longer a deferred product screen. The contract gaps below remain implementation work, not completed fields.
+
 | Field | Mapping |
 |---|---|
 | Product surface | Discover public decks/search |
@@ -502,7 +536,7 @@ was added.
 | Public-only filter | Implemented | `DECK-03` uses `DeckRepository.findAllByIsPublicTrue()`; private decks never reach the response. |
 | `cardCount` per deck | Missing | Canonical UI displays a card count per deck (e.g. "842 Cards"). `DeckListResponse` has the known `// FIXME: add cardCount` gap; not implemented anywhere. Required in the minimal response shape. |
 | `isEnrolled` per deck | Missing | Canonical UI shows an `Enrolled` badge on at least one deck. Requires cross-referencing each public deck against the current user's `UserDeckProgress`; no endpoint returns this combined shape today. This reflects the existing enrollment domain (not a social feature), but the join does not exist. Required in the minimal response shape. |
-| Search/sort/language-filter controls | Unresolved | Not confirmed as an interactive control from the extracted screen content; do not invent a search/pagination contract on this basis alone. |
+| Search/filter/load-more controls | Visible in screenshot/HTML; deferred by §0.10 | Desktop has search and Load Additional Decks; mobile also has filter/topic/level chips. Their presence does not create an HTTP contract. Omit these controls in the accepted first list implementation. |
 
 Minimal required response: extend the existing public-only DECK-03 response to `List<DeckListResponse & {cardCount, isEnrolled}>`. `cardCount` requires resolving the existing `DeckListResponse` FIXME; `isEnrolled` requires a per-user join against `UserDeckProgress` for each returned deck — both are concrete required fields, not open design questions. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
 

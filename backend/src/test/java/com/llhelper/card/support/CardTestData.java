@@ -16,17 +16,13 @@ public final class CardTestData {
     public static final Long DECK_ID = 2L;
 
     public static CardRequest defaultRequest() {
-        return new CardRequest("word", "definition", List.of(), List.of(), "translation", DECK_ID, false);
-    }
-
-    public static CardRequest defaultRequest(long deckId) {
-        return new CardRequest("word", "definition", List.of(), List.of(), "translation", deckId, false);
+        return new CardRequest("word", "definition", List.of(), List.of(), "translation");
     }
 
     public static CardResponse defaultResponse(long id, CardRequest request) {
         return new CardResponse(
             id,
-            request.deckId(),
+            DECK_ID,
             request.title(),
             request.definition(),
             request.synonyms(),

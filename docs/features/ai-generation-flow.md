@@ -3,14 +3,14 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** see `docs/roadmap/current-sprint.md`
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-09-09
+> **Last updated:** 2026-09-21
 > **Status:** Reflects current backend generation flow and single-card frontend entry
 
 ---
 
 ## 1. Purpose
 
-Describe the current AI card generation flow: how card content (definition, synonyms, examples, translation) is generated via OpenAI when a user creates a card with `autoGenerate: true` or submits a bulk generation request.
+Describe the current AI card generation flow: how card content (definition, synonyms, examples, translation) is generated via OpenAI through dedicated single-card or bulk generation endpoints.
 
 This document does not define prompt versioning, AI provider abstraction, generation history, cost estimation, or AI-powered answer checking.
 
@@ -20,8 +20,8 @@ This document does not define prompt versioning, AI provider abstraction, genera
 
 ### Current MVP Scope
 
-- Single card AI generation (`autoGenerate: true` in `POST /api/v1/cards`)
-- Bulk card generation (`POST /api/v1/cards/bulk-generate`, up to 100 titles)
+- Single card AI generation (`POST /api/v1/card-generations`)
+- Bulk card generation (`POST /api/v1/card-generations/bulk`, up to 100 titles)
 - Rate limiting: max 10 requests/second per JVM instance
 - Token estimation guard: reject if estimated tokens > 4000
 - JSON response parsing from OpenAI Chat Completions API
@@ -53,7 +53,7 @@ This document does not define prompt versioning, AI provider abstraction, genera
 | AI Response DTO | `AiCardData` | Record: definition, synonyms, examples, translation |
 | Configuration | `AiProperties` | Config via `@ConfigurationProperties(prefix = "ai")` |
 | Rate Limiter | `AiRateLimiter` | Semaphore-based, per JVM, resets every 1 second |
-| Bulk Endpoint Rate Limiter | `UserRateLimiter` | Per-user/email bucket for `POST /api/v1/cards/bulk-generate` |
+| Bulk Endpoint Rate Limiter | `UserRateLimiter` | Per-user/email bucket for `POST /api/v1/card-generations/bulk` |
 | AI Exception | `AiServiceException` | RuntimeException for all AI errors |
 | Rate Limit Exception | `RateLimitExceededException` | Thrown by `AiRateLimiter` (permit/token) and `UserRateLimiter` (per-user bulk) |
 
@@ -61,12 +61,12 @@ This document does not define prompt versioning, AI provider abstraction, genera
 
 ## 4. API Endpoints
 
-AI generation is **not a standalone endpoint** — it is embedded in the Card module's create/bulk-generate endpoints.
+`CardGenerationController` owns single and bulk generation. `CardController` owns manual creation and CRUD. Request DTOs contain data only; manual create/PUT require translation and allow optional definition.
 
 | Method | Path | AI Trigger | Description |
 |--------|------|------------|-------------|
-| `POST` | `/api/v1/cards` | `autoGenerate: true` | Create card, optionally with AI-generated fields |
-| `POST` | `/api/v1/cards/bulk-generate` | Always | Generate multiple cards by title list, always uses AI |
+| `POST` | `/api/v1/card-generations` | Always | Generate and save one card from `GenerateCardRequest {title, deckId}` |
+| `POST` | `/api/v1/card-generations/bulk` | Always | Generate multiple cards by title list, always uses AI |
 
 ---
 
@@ -74,32 +74,22 @@ AI generation is **not a standalone endpoint** — it is embedded in the Card mo
 
 ### 5.1 Single Card with AI
 
-`POST /api/v1/cards` with `autoGenerate: true`
+`POST /api/v1/card-generations`
 
 ```text
-CardController.create(CardRequest)
-  └── CardServiceImpl.create()
-        ├── Find Deck (deck) by deckId
-        │     └── If not found → RuntimeException
-        ├── Check autoGenerate flag
-        │     ├── [true] → AiCardGenerationService.generateCardData()
-        │     │     ├── Check AiProvider.isAvailable() → API key present?
-        │     │     │     └── If not → AiServiceException
-        │     │     ├── RateLimiter.acquirePermit() → semaphore, 5s timeout
-        │     │     │     └── If timeout → RateLimitExceededException
-        │     │     ├── RateLimiter.validateTokenCount(estimateTokens(title))
-        │     │     │     └── If > 4000 → RateLimitExceededException
-        │     │     └── OpenAiProvider.generate(title, sourceLanguage, targetLanguage)
-        │     │           ├── Build prompt from PROMPT_TEMPLATE
-        │     │           ├── POST https://api.openai.com/v1/chat/completions
-        │     │           │     model: gpt-4o-mini
-        │     │           │     response_format: json_object
-        │     │           │     max_tokens: 4000
-        │     │           └── parseResponse() → AiCardData record
-        │     └── [false/null] → Use fields from request body
-        ├── Create Card entity, set AI-generated or manual fields
-        ├── Save Card to DB
-        └── Return CardResponse
+CardGenerationController.generate(GenerateCardRequest)
+  └── CardServiceImpl.generate()
+        ├── Apply per-user CARD_CREATE limit (shared with manual creation)
+        ├── Find deck → 404 if missing
+        ├── Validate ownership → 403 before calling AI
+        ├── AiCardGenerationService.generateCardData()
+        │     ├── Check provider availability
+        │     ├── Acquire AI permit and validate estimated token count
+        │     └── OpenAiProvider.generate() → parse response into AiCardData
+        ├── Validate generated translation → 503 if missing or blank
+        ├── CardMapper.fromAiData()
+        ├── Shared saveCard(): normalize, saveAndFlush, refresh
+        └── Return CardResponse (201)
 ```
 
 #### Frontend single-card entry
@@ -108,8 +98,7 @@ The authenticated Add Card screen at `/decks/:deckId/cards/new` exposes AI
 generation as an optional action next to the target-word field. The frontend:
 
 1. validates and trims the required target word;
-2. sends `POST /api/v1/cards` with the selected `deckId`, null manual content
-   fields, and `autoGenerate: true`;
+2. sends `POST /api/v1/card-generations` with only `title` and `deckId`;
 3. disables all form controls and shows the AI generation loading state while
    the request is pending;
 4. on `201`, invalidates the deck-detail cache and returns to Owner Deck
@@ -122,10 +111,10 @@ compare generated fields, or implement bulk generation in this screen.
 
 ### 5.2 Bulk Generation
 
-`POST /api/v1/cards/bulk-generate`
+`POST /api/v1/card-generations/bulk`
 
 ```text
-CardController.createBulk(BulkCardGenerateRequest)
+CardGenerationController.generateBulk(BulkCardGenerateRequest)
   └── CardServiceImpl.createBulk()
         ├── Get current user email from `SecurityUtils`
         ├── userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE)
@@ -211,7 +200,7 @@ Parsed into `AiCardData` record:
 - `definition` — String
 - `synonyms` — List<String>
 - `examples` — List<String>
-- `translation` — String
+- `translation` — String; required by the card-generation boundary even though the provider DTO itself is nullable
 
 ---
 
@@ -250,6 +239,8 @@ Two independent mechanisms protect AI generation.
 - **Token guard:** rejects if `estimatedTokens > aiProperties.maxTokensPerRequest` (default: 4000)
 - **Where applied:** inside `AiCardGenerationService.generateCardData()` before calling `OpenAiProvider`
 - **No distributed rate limiting** across multiple JVMs
+
+Single-card generation retains the `CARD_CREATE` per-user bucket shared with manual creation, plus the provider limiter below. Endpoint separation does not reset or bypass that quota.
 
 ### `UserRateLimiter` — per-user limit on bulk endpoint
 
@@ -307,7 +298,7 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 - **Rate limiter scope (`AiRateLimiter`):** Per JVM, not per user — one heavy user can exhaust permits for all. `UserRateLimiter` already protects the bulk endpoint per user.
 - ~~**Rate limiter reset bug:** `resetIfNeeded()` releases `10 - availablePermits()` — hardcoded to 10, ignores actual `maxRequestsPerSecond` config if changed.~~ ✅ Fixed — `resetIfNeeded()` now uses the injected `maxRequestsPerSecond` field.
 - **Availability double-check:** `isAvailable()` is checked in both `AiCardGenerationService` and `OpenAiProvider` — redundant.
-- ~~**No ownership check**~~ ✅ Fixed — `validateDeckOwnership()` enforced in both `create()` and `createBulk()`. See `current-architecture.md` §16.
+- ~~**No ownership check**~~ ✅ Fixed — `validateDeckOwnership()` enforced in `generate()` and `createBulk()`. See `current-architecture.md` §16.
 - **`AiCardData` naming:** DTO not clearly marked as response (TODO in code).
 - **`validateTokenCount()` fixed:** Token limit now read from `AiProperties.maxTokensPerRequest` (default: 4000). Configurable via `ai.max-tokens-per-request`.
 - **`response_format: json_object`:** Relies on OpenAI honouring JSON mode — no fallback if non-JSON returned.
@@ -335,7 +326,7 @@ ai/
 ```
 
 **Callers (outside `ai/` module):**
-- `CardServiceImpl.create()` — when `autoGenerate: true`
+- `CardServiceImpl.generate()` — single-card generation
 - `CardServiceImpl.createBulk()` — always
 
 ---
@@ -343,7 +334,7 @@ ai/
 ## 13. Implementation Status
 
 - [x] AI generates card content via OpenAI API
-- [x] Single card generation works with `autoGenerate: true`
+- [x] Single card generation uses a dedicated endpoint and request
 - [x] Bulk generation processes titles (up to `AiProperties.maxBulkSize`, default 100, enforced by `@Size(max=100)` + `validateBulkSize()`)
 - [x] Rate limiter exists (semaphore-based, per JVM)
 - [x] API key absence is checked before each call

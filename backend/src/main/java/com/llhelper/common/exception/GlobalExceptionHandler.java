@@ -4,9 +4,11 @@ import com.llhelper.ai.exception.AiServiceException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,6 +19,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @Slf4j
 @RestControllerAdvice
@@ -32,6 +35,34 @@ public class GlobalExceptionHandler {
             ));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(Map.of("errors", fieldErrors));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleHandlerMethodValidation(
+        HandlerMethodValidationException exception
+    ) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+
+        exception.getParameterValidationResults().forEach(result -> {
+            MethodParameter parameter = result.getMethodParameter();
+            String parameterName = parameter.getParameterName() != null ? parameter.getParameterName() : "request";
+
+            result.getResolvableErrors().forEach(error -> {
+                String field = error instanceof FieldError fieldError
+                    ? fieldError.getField()
+                    : parameterName;
+                String message = error.getDefaultMessage() != null
+                    ? error.getDefaultMessage()
+                    : "Invalid value";
+                fieldErrors.putIfAbsent(field, message);
+            });
+        });
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("errors", fieldErrors));
+    }
+
+    private String getParameterName(MethodParameter parameter) {
+        return parameter.getParameterName() != null ? parameter.getParameterName() : "request";
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

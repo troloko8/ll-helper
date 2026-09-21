@@ -264,7 +264,7 @@ Return result (correct/incorrect, new status, streak)
 ### AI Generation Flow
 
 ```text
-POST /api/v1/cards/bulk-generate
+POST /api/v1/card-generations/bulk
         │
         ▼
 AiRateLimiter.acquirePermit()
@@ -297,14 +297,17 @@ CardService.save(cards)
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
-| `/api/v1/cards` | POST | JWT | Create card in an owned deck | `CardResponse` (includes `deckId`) |
+| `/api/v1/decks/{deckId}/cards` | POST | JWT | Manually create card in an owned deck; translation required, definition optional | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD; GET inherits public/private visibility from the parent deck | `CardResponse` (includes `deckId`) |
-| `/api/v1/cards/bulk-generate` | POST | JWT | AI generate cards | `List<CardResponse>` |
+| `/api/v1/card-generations` | POST | JWT | AI generate one card (`GenerateCardRequest`: title, deckId) | `CardResponse` |
+| `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study` | GET | JWT | Get deck metadata and up to 10 cards for study | `StudySessionResponse {deckId, deckTitle, cards}` |
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
 | `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
+
+`CardGenerationController` owns both generation routes; `CardController` owns manual create and CRUD. Manual POST gets `deckId` from `/decks/{deckId}/cards`; POST and PUT share `CardRequest`, where title/translation are required and optional content is replaced on PUT. The parent deck is unchanged by PUT. `CardServiceImpl` provides separate create/generate/update methods and shared normalization/persistence. Single AI generation shares the existing `CARD_CREATE` per-user quota with manual creation.
 
 **Base URL:** `/api/v1`  
 **Auth:** `Authorization: Bearer <JWT>` on all secured endpoints
@@ -383,6 +386,7 @@ backend/src/main/java/com/llhelper/
 │   └── dto/{request, response}/
 ├── card/
 │   ├── controller/CardController.java
+│   ├── controller/CardGenerationController.java
 │   ├── service/CardService.java
 │   ├── entity/Card.java
 │   ├── repository/CardRepository.java
@@ -477,7 +481,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | DTO = Java `record` | No Lombok on records — records generate everything |
 | Entity = Lombok | `@Getter` / `@Setter` / `@NoArgsConstructor`, never `@Data` |
 | No `equals`/`hashCode`/`toString` on entities | Avoids lazy-load issues and infinite recursion |
-| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()` and `createBulk()` check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
+| AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()`, `generate()` and `createBulk()` check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
 | Deck/Card reads inherit deck visibility | `DeckAccessPolicy` permits any authenticated user to read a public deck and its cards, permits the owner to read a private deck and its cards, and returns `403 Forbidden` for another user's private content. `DeckServiceImpl.getById()` and `CardServiceImpl.getById()` apply the shared policy before DTO mapping. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses partial-success strategy | Failed titles are logged with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Level 1. |
@@ -542,13 +546,14 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | `PUT /api/v1/users/{id}` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/login` | 5 | 1 minute | email ✅ | 🔴 High |
 | `POST /api/v1/auth/register` | 3 | 5 minutes | email ✅⚠️ | 🔴 High |
-| `POST /api/v1/cards` | 20 | 1 minute | email ✅ | 🟡 Medium |
+| `POST /api/v1/decks/{deckId}/cards` | 20 | 1 minute | email ✅ | 🟡 Medium |
+| `POST /api/v1/card-generations` | shared `CARD_CREATE` bucket (20 total manual + AI) | 1 minute | email ✅ | 🟡 Medium |
 | `PUT /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
 | `DELETE /api/v1/cards/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
 | `POST /api/v1/decks` | 5 | 1 hour | email ✅ | 🟡 Medium |
 | `PUT /api/v1/decks/{id}` | 10 | 1 minute | email ✅ | 🟢 Low |
 | `DELETE /api/v1/decks/{id}` | 5 | 1 hour | email ✅ | 🟢 Low |
-| `POST /api/v1/cards/bulk-generate` | 3 | 1 minute | email ✅ | 🔴 High |
+| `POST /api/v1/card-generations/bulk` | 3 | 1 minute | email ✅ | 🔴 High |
 
 ### Error Response
 
@@ -579,7 +584,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 Two independent layers:
 
-- **Endpoint layer (`UserRateLimiter`, per-user):** `POST /cards/bulk-generate` limited to 3 req/min per user email (`CARD_BULK_GENERATE`) — see Protected Endpoints above.
+- **Endpoint layer (`UserRateLimiter`, per-user):** `POST /card-generations/bulk` limited to 3 req/min per user email (`CARD_BULK_GENERATE`) — see Protected Endpoints above.
 - **Provider layer (`AiRateLimiter`, global per-JVM):** caps outbound OpenAI calls at 10 req/sec across all users, independent of which user triggered the request.
 
 **Planned (Level 2):** Per-user AI generation quota (e.g. 10 generations/hour) at the provider layer, in addition to the existing per-JVM cap.

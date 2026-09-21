@@ -4,14 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.llhelper.ai.config.AiProperties;
 import com.llhelper.ai.dto.AiCardData;
+import com.llhelper.ai.exception.AiServiceException;
 import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
+import com.llhelper.card.dto.request.GenerateCardRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
@@ -30,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -94,7 +98,7 @@ class CardServiceImplTest {
     }
 
     private static CardRequest cardRequest() {
-        return new CardRequest("title", "def", List.of(), List.of(), "translation", DECK_ID, false);
+        return new CardRequest("title", "def", List.of(), List.of(), "translation");
     }
 
     private static Card card() {
@@ -107,6 +111,79 @@ class CardServiceImplTest {
 
     private static CardResponse cardResponse() {
         return new CardResponse(CARD_ID, DECK_ID, "title", "def", List.of(), List.of(), "translation", null, null);
+    }
+
+
+    @Test
+    void generate_shouldSaveGeneratedContent_whenUserIsOwner() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        var request = new GenerateCardRequest("word", DECK_ID);
+        var aiData = new AiCardData(null, List.of(), List.of(), " перевод ");
+        Card generated = new Card();
+        generated.setTranslation(aiData.translation());
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData("word", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenReturn(aiData);
+        when(cardMapper.fromAiData("word", aiData, deck)).thenReturn(generated);
+        when(cardRepository.saveAndFlush(generated)).thenReturn(generated);
+        when(cardMapper.toResponse(generated)).thenReturn(cardResponse());
+
+        assertThat(cardService.generate(request)).isEqualTo(cardResponse());
+        assertThat(generated.getTranslation()).isEqualTo("перевод");
+        assertThat(generated.getDefinition()).isNull();
+        verify(cardRepository).saveAndFlush(generated);
+    }
+
+    @Test
+    void generate_shouldRejectNonOwner_beforeCallingAi() {
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        assertThatThrownBy(() -> cardService.generate(new GenerateCardRequest("word", DECK_ID)))
+            .isInstanceOf(AccessDeniedException.class);
+        verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
+        verify(cardRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void update_shouldClearOptionalContentAndKeepDeck_whenReplacingCard() {
+        Card existing = card();
+        existing.setDefinition("old definition");
+        existing.setExamples(List.of("old example"));
+        existing.setSynonyms(List.of("old synonym"));
+        existing.setTranslation("old translation");
+        var request = new CardRequest("new title", null, null, null, " new translation ");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(existing));
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        doAnswer(invocation -> {
+            Mappers.getMapper(CardMapper.class).updateEntity(request, existing);
+            return null;
+        }).when(cardMapper).updateEntity(request, existing);
+        when(cardRepository.saveAndFlush(existing)).thenReturn(existing);
+
+        cardService.update(CARD_ID, request);
+
+        assertThat(existing.getTitle()).isEqualTo("new title");
+        assertThat(existing.getTranslation()).isEqualTo("new translation");
+        assertThat(existing.getDefinition()).isNull();
+        assertThat(existing.getExamples()).isNull();
+        assertThat(existing.getSynonyms()).isNull();
+        assertThat(existing.getDeckId()).isEqualTo(DECK_ID);
+        verify(cardRepository).saveAndFlush(existing);
+        verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
+    }
+
+    @Test
+    void update_shouldRejectNonOwner_withoutSaving() {
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        assertThatThrownBy(() -> cardService.update(CARD_ID,
+            new CardRequest("word", null, null, null, "translation")))
+            .isInstanceOf(AccessDeniedException.class);
+        verify(cardMapper, never()).updateEntity(any(), any());
+        verify(cardRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -178,7 +255,7 @@ class CardServiceImplTest {
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
 
-        assertThatThrownBy(() -> cardService.create(cardRequest()))
+        assertThatThrownBy(() -> cardService.create(DECK_ID, cardRequest()))
             .isInstanceOf(AccessDeniedException.class)
             .hasMessageContaining("not deck owner");
 
@@ -221,12 +298,56 @@ class CardServiceImplTest {
         when(cardRepository.saveAndFlush(card)).thenReturn(card);
         when(cardMapper.toResponse(card)).thenReturn(response);
 
-        CardResponse result = cardService.create(request);
+        CardResponse result = cardService.create(DECK_ID, request);
 
         assertThat(result).isEqualTo(response);
         verify(cardRepository).saveAndFlush(card);
         verify(entityManager).refresh(card);
         verify(cardMapper).toResponse(card);
+        verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
+    }
+
+    @Test
+    void create_shouldNormalizeBlankDefinition_whenTranslationIsPresent() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        CardRequest request = new CardRequest(
+            "title", "  ", List.of(), List.of(), " translation ");
+        Card card = new Card();
+        card.setDefinition(request.definition());
+        card.setTranslation(request.translation());
+        CardResponse response = cardResponse();
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(cardMapper.toEntity(request)).thenReturn(card);
+        when(cardRepository.saveAndFlush(card)).thenReturn(card);
+        when(cardMapper.toResponse(card)).thenReturn(response);
+
+        cardService.create(DECK_ID, request);
+
+        assertThat(card.getDefinition()).isNull();
+        assertThat(card.getTranslation()).isEqualTo("translation");
+        verify(cardRepository).saveAndFlush(card);
+    }
+
+    @Test
+    void generate_shouldRejectAiCard_whenTranslationIsMissingEvenWithDefinition() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        GenerateCardRequest request = new GenerateCardRequest("title", DECK_ID);
+        AiCardData emptyAiData = new AiCardData("Useful definition", List.of(), List.of(), null);
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(
+            request.title(), deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenReturn(emptyAiData);
+
+        assertThatThrownBy(() -> cardService.generate(request))
+            .isInstanceOf(AiServiceException.class)
+            .hasMessage("Generated card has no translation");
+
+        verify(cardRepository, never()).saveAndFlush(any());
+        verify(entityManager, never()).refresh(any());
     }
 
     @Test
@@ -256,6 +377,25 @@ class CardServiceImplTest {
         verify(cardRepository).saveAndFlush(generatedCard);
         verify(entityManager).refresh(generatedCard);
         verify(cardMapper).toResponse(generatedCard);
+    }
+
+    @Test
+    void generateBulk_shouldSkipCard_whenTranslationIsMissingEvenWithDefinition() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        AiCardData emptyAiData = new AiCardData("Useful definition", List.of(), List.of(), "  ");
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(
+            "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenReturn(emptyAiData);
+
+        List<CardResponse> results = cardService.createBulk(
+            new BulkCardGenerateRequest(List.of("hello"), DECK_ID));
+
+        assertThat(results).isEmpty();
+        verify(cardRepository, never()).saveAndFlush(any());
+        verify(entityManager, never()).refresh(any());
     }
 
     @Test

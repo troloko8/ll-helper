@@ -12,7 +12,10 @@ import {
     InlineError,
     Textarea,
 } from '@/shared/ui'
-import { useAddCardMutation } from '../api/add-card-api'
+import {
+    useAddCardMutation,
+    useGenerateCardMutation,
+} from '../api/add-card-api'
 import {
     ADD_CARD_LIMITS,
     addCardFormSchema,
@@ -21,7 +24,6 @@ import {
     parseSynonyms,
     type AddCardFormValues,
 } from '../model/add-card-form-schema'
-import type { AddCardRequestDto } from '../model/types'
 import styles from './add-card-form.module.css'
 
 const CARD_FIELDS = ['title', 'definition', 'translation', 'synonyms'] as const
@@ -83,6 +85,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
     const [submitFailure, setSubmitFailure] = useState<SubmitFailure>()
     const [activeAction, setActiveAction] = useState<AddCardAction>()
     const [addCard] = useAddCardMutation()
+    const [generateCard] = useGenerateCardMutation()
     const {
         control,
         register,
@@ -115,7 +118,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
 
     const submitCard = async (
         action: AddCardAction,
-        request: AddCardRequestDto,
+        save: () => Promise<CardResponseDto>,
     ) => {
         setActiveAction(action)
 
@@ -123,7 +126,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
             let response: CardResponseDto
 
             try {
-                response = await addCard(request).unwrap()
+                response = await save()
             } catch (error) {
                 if (!applyFieldErrors(error, setError)) {
                     setSubmitFailure({ action, error })
@@ -139,15 +142,18 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
 
     const onSubmit = handleSubmit(async (values) => {
         prepareSubmission()
-        await submitCard(ADD_CARD_ACTION.MANUAL, {
-            title: values.title,
-            definition: values.definition || null,
-            translation: values.translation || null,
-            synonyms: parseSynonyms(values.synonyms),
-            examples: parseExamples(values.examples),
-            deckId,
-            autoGenerate: false,
-        })
+        await submitCard(ADD_CARD_ACTION.MANUAL, () =>
+            addCard({
+                deckId,
+                body: {
+                    title: values.title,
+                    definition: values.definition || null,
+                    translation: values.translation,
+                    synonyms: parseSynonyms(values.synonyms),
+                    examples: parseExamples(values.examples),
+                },
+            }).unwrap(),
+        )
     })
 
     const handleAiGenerate = async () => {
@@ -162,15 +168,12 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
             return
         }
 
-        await submitCard(ADD_CARD_ACTION.AI, {
-            title: titleResult.data,
-            definition: null,
-            translation: null,
-            synonyms: null,
-            examples: null,
-            deckId,
-            autoGenerate: true,
-        })
+        await submitCard(ADD_CARD_ACTION.AI, () =>
+            generateCard({
+                title: titleResult.data,
+                deckId,
+            }).unwrap(),
+        )
     }
 
     return (
@@ -225,6 +228,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
 
                     <FormField
                         label="Translation"
+                        required
                         description="Meaning in your native language."
                         error={errors.translation?.message}
                     >

@@ -33,9 +33,10 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 
 The implemented `widgets/app-shell/` slice owns the responsive authenticated
 layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
-navigation, and the protected route outlet. Its Level 1 navigation intentionally
-exposes only the working `/learning` destination; deferred destinations are not
-rendered.
+navigation, and the protected route outlet. The current runtime exposes only
+`/learning`. The accepted collection/navigation expansion is specified in
+`docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.10 and
+`docs/frontend/DESIGN.md`; it is not implemented by this documentation change.
 
 The implemented `pages/login/`, `pages/register/`, and
 `pages/complete-profile/` slices compose that layout with their feature-owned
@@ -67,10 +68,11 @@ cacheable `DECK-02` query from `entities/deck/`, verifies the current user is
 the response owner, and renders the response's content-card inventory without
 learning progress. The implemented `pages/add-card/` slice owns
 `/decks/:deckId/cards/new`, verifies deck ownership before rendering, and
-composes the `features/add-card/` form. That feature owns both `CARD-01` create
-modes: backend-aligned manual validation/list normalization and optional
-single-card AI generation from the validated target word. AI generation sends
-`autoGenerate: true`, disables the editable fields while pending, and presents
+composes the `features/add-card/` form. That feature owns manual creation
+(`CARD-01`, `POST /decks/{deckId}/cards`, required translation and optional
+definition) and single-card AI generation (`CARD-07`). AI generation sends
+`POST /card-generations` with only title and deckId, disables the editable
+fields while pending, and presents
 the shared `429`/`503` errors without implementing provider logic in the
 frontend. Shared `CardResponse` contract data lives in `entities/card/`.
 Successful creation invalidates the selected deck detail cache before
@@ -82,6 +84,10 @@ learning progress or social controls, and composes `features/enroll-deck/` for
 the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
 cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
+
+The accepted next integration adds Discover as the public-detail entry and a
+visible local Logout action. These are pending UI tasks; the existing enrollment,
+learning, study and logout use cases remain the implementation foundation.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`
 route. It consumes the `LEARN-02` response `{deckId, deckTitle, cards}` with a

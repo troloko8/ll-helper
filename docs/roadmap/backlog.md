@@ -9,14 +9,14 @@
 ### Sprint 1.0 — Vertical Flow
 
 > **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему.
-> Один вертикальный сценарий (accepted, Phase 0.4C) — Register → Complete Profile → authenticated app → Create Deck → Manual Add Card → Owner Deck Details → Public Deck Details → Enroll → Learning list/details → Study → per-card progress → повторное открытие Learning list и продолжение позже. Login проверяется отдельно как повторный вход существующего пользователя: clear/logout session → Login → Learning list → continue.
+> Актуальный пользовательский flow и обязательные задачи закрытия перенесены в `current-sprint.md` (группы 4A–6); product decisions — integration map §0.10. В Level 1 включены базовые Created, Discover и видимый Logout, чтобы сценарий выполнялся через UI. Этот блок не является второй очередью задач спринта.
 > UI может быть простым. Цель — не красивый Dashboard, а работающий full-stack flow.
 
 1. Создать React/TS app
 2. Настроить routes и API client
 3. Login / Register
-4. Create deck + Add cards
-5. Enroll + Study + See progress
+4. Created → Create deck + Manual Add Card
+5. Discover → Public Deck Details → Enroll → Study → See progress → Logout/Login
 
 ### Sprint 1.1 — First Deployment (Level 1.5)
 
@@ -64,7 +64,7 @@
 - **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант: добавить `card.getDeckId() == deckId` проверку, возможно рефактор URL на `/decks/{deckId}/cards/{cardId}`
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card
-- Добавить `cardCount` в `DeckListResponse` — `@Formula` в entity или отдельный query для эффективного подсчёта без загрузки всего списка
+- `cardCount` для Created/Discover перенесён в `current-sprint.md` → Группа 4B вместе с public-list `isEnrolled`; реализацию расчёта выбрать в той задаче без загрузки всех карточек каждой колоды.
 
 ### Backend — Learning API, AI generation, User self-service
 
@@ -104,9 +104,9 @@
 
 Стек: React + TypeScript + React Router 7 + RTK Query + Redux Toolkit (session state) — Axios удалён, см. `frontend/CONVENTIONS.md`.
 
-Accepted Level 1 vertical MVP screens (см. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3): Login · Register · Complete Profile · Learning list · Create Deck · Owner Deck Details · Manual Add Card · Public Deck Details + Enroll · Learning Deck Details · Study.
+Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3/§0.10. Базовые Created/Discover, cardCount для коллекций, isEnrolled для Discover и видимый local Logout включены в текущий спринт; здесь повторно не планируются.
 
-Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created Decks list · Discover list/search · Creator Profile · aggregate Progress dashboard · Edit Deck/Edit Card (Card Editor, после первого deployment) · single-card AI (optional, отдельная задача после manual smoke) · bulk AI · pagination · refresh token · backend logout.
+Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discover search/filter/sort/load-more · Creator Profile · aggregate Progress dashboard · Edit Deck/Edit Card (Card Editor, после первого deployment) · bulk AI · pagination · refresh token · backend logout · social/bookmarks/cover/topic metadata. Single-card AI — optional, статус реализации в current sprint; его успешная проверка не заменяет manual smoke.
 
 Архитектура: FSD (`app/pages/widgets/features/entities/shared`), см. `frontend/CONVENTIONS.md`.
 
@@ -126,7 +126,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created
 
 ### AI Workflow (Level 1)
 
-Создать `.windsurf/prompts/`: `update-postman.md`, `suggest-tests.md`, `design-note.md`, `code-review.md`
+Минимальные reusable prompts для закрытия Level 1 ведутся в `current-sprint.md` → Группа 6; каталог `ai-workflows/` уже предусмотрен `roadmap.md` → Level 1 AI workflow. Прежнее предложение `.windsurf/prompts/` не является владельцем Codex workflow. Не создавать второй набор одинаковых инструкций; специализированная дальнейшая автоматизация остаётся в Sprint 1.3.
 
 ## Level 2 — Portfolio / Interview-ready (детали)
 
@@ -161,7 +161,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Created
 - IP-based rate limiting — extract IP, обработка `X-Forwarded-For`/`X-Real-IP`
 - Distributed rate limiting (Redis) — замена Caffeine, `INCR` + `EXPIRE`, Lua для atomic operations
 - Global rate limits — 100 req/min per user, 20 req/min per IP (anonymous)
-- Per-user AI generation limit — `userId` параметр в `AiCardGenerationService.generateCardData()`, `checkLimitByUserId(userId, 10, Duration.ofHours(1))`
+- [ ] Отделить лимит одиночной AI-генерации от ручного создания карточек: добавить `RateLimitAction.CARD_GENERATE` для `POST /api/v1/card-generations` (ориентир — 10 генераций в час на пользователя) вместо общего bucket `CARD_CREATE`; после переноса authenticated rate limiting на `userId` применять этот лимит через `UserRateLimiter.checkLimitByUserId()`
 - Rate limit headers — `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 - `UserRateLimiter.reset(email, RateLimitAction)` — explicit bucket clearing method + `reset_shouldClearBucket_whenCalled` test (currently `@Disabled` in Level 0 test suite)
 

@@ -1,7 +1,11 @@
 package com.llhelper.card.controller;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -15,8 +19,12 @@ import static com.llhelper.card.support.CardTestData.defaultRequest;
 import static com.llhelper.card.support.CardTestData.defaultResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.llhelper.card.dto.request.BulkCardGenerateRequest;
+import com.llhelper.ai.exception.AiServiceException;
+import com.llhelper.card.dto.request.GenerateCardRequest;
 import com.llhelper.card.dto.request.CardRequest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
 import com.llhelper.common.security.JwtService;
@@ -32,7 +40,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(CardController.class)
+@WebMvcTest({CardController.class, CardGenerationController.class})
 @AutoConfigureMockMvc(addFilters = false)
 class CardControllerTest {
 
@@ -53,14 +61,85 @@ class CardControllerTest {
     @MockitoBean
     private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
+
+    @Test
+    void update_shouldReturn200_whenTranslationPresentAndDefinitionOmitted() throws Exception {
+        when(cardService.update(eq(CARD_ID), any()))
+            .thenReturn(defaultResponse(CARD_ID, defaultRequest()));
+        mockMvc.perform(put("/api/v1/cards/{id}", CARD_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"title":"word","translation":"слово"}
+                    """))
+            .andExpect(status().isOk());
+        verify(cardService).update(CARD_ID,
+            new CardRequest("word", null, null, null, "слово"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "\"\"", "\"   \""})
+    void update_shouldReturn400_whenTranslationMissingOrBlank(String translation) throws Exception {
+        mockMvc.perform(put("/api/v1/cards/{id}", CARD_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"word\",\"definition\":\"meaning\",\"translation\":" + translation + "}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors.translation", is("Translation is required")));
+        verifyNoInteractions(cardService);
+    }
+
+    @Test
+    void generate_shouldReturn201_whenOnlyTitleAndDeckProvided() throws Exception {
+        var request = new GenerateCardRequest("word", 2L);
+        when(cardService.generate(request)).thenReturn(defaultResponse(CARD_ID, defaultRequest()));
+        mockMvc.perform(post("/api/v1/card-generations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id", is(CARD_ID), Long.class));
+        verify(cardService).generate(request);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"title\":\" \",\"deckId\":2}",
+        "{\"title\":\"word\"}",
+        "{\"title\":\"word\",\"deckId\":0}"
+    })
+    void generate_shouldReturn400_whenInputInvalid(String body) throws Exception {
+        mockMvc.perform(post("/api/v1/card-generations")
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists());
+        verifyNoInteractions(cardService);
+    }
+
+    @Test
+    void generate_shouldReturn503_whenProviderFails() throws Exception {
+        when(cardService.generate(any())).thenThrow(new AiServiceException("unavailable"));
+        mockMvc.perform(post("/api/v1/card-generations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"word\",\"deckId\":2}"))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void generate_shouldReturn403_whenNotOwner() throws Exception {
+        when(cardService.generate(any())).thenThrow(new AccessDeniedException("Access denied: not deck owner"));
+        mockMvc.perform(post("/api/v1/card-generations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"word\",\"deckId\":2}"))
+            .andExpect(status().isForbidden());
+    }
+
     // --- create ---
 
     @Test
     void create_shouldReturn201_whenValid() throws Exception {
         CardRequest request = defaultRequest();
-        when(cardService.create(any(CardRequest.class))).thenReturn(defaultResponse(CARD_ID, request));
+        when(cardService.create(eq(2L), any(CardRequest.class))).thenReturn(defaultResponse(CARD_ID, request));
 
-        mockMvc.perform(post("/api/v1/cards")
+        mockMvc.perform(post("/api/v1/decks/{deckId}/cards", 2L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -69,11 +148,52 @@ class CardControllerTest {
     }
 
     @Test
+    void create_shouldReturn400_whenDeckIdIsNotPositive() throws Exception {
+        mockMvc.perform(post("/api/v1/decks/{deckId}/cards", 0L)
+            .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(defaultRequest())))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors.deckId").exists());
+
+        verifyNoInteractions(cardService);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void create_shouldReturn400_whenTranslationIsMissingEvenWithDefinition(String translation) throws Exception {
+        CardRequest request = new CardRequest(
+            "word", "definition", List.of(), List.of(), translation);
+
+        mockMvc.perform(post("/api/v1/decks/{deckId}/cards", 2L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors.translation",
+                is("Translation is required")));
+
+        verifyNoInteractions(cardService);
+    }
+
+    @Test
+    void create_shouldReturn201_whenManualCardHasTranslationOnly() throws Exception {
+        CardRequest request = new CardRequest(
+            "word", null, List.of(), List.of(), "слово");
+        when(cardService.create(eq(2L), any(CardRequest.class))).thenReturn(defaultResponse(CARD_ID, request));
+
+        mockMvc.perform(post("/api/v1/decks/{deckId}/cards", 2L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.translation", is("слово")));
+    }
+
+    @Test
     void create_shouldReturn403_whenNotDeckOwner() throws Exception {
-        when(cardService.create(any(CardRequest.class)))
+        when(cardService.create(eq(2L), any(CardRequest.class)))
             .thenThrow(new AccessDeniedException("Access denied: not deck owner"));
 
-        mockMvc.perform(post("/api/v1/cards")
+        mockMvc.perform(post("/api/v1/decks/{deckId}/cards", 2L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(defaultRequest())))
             .andExpect(status().isForbidden())
@@ -130,7 +250,7 @@ class CardControllerTest {
     void generateBulk_shouldReturn400_whenSizeExceedsLimit() throws Exception {
         BulkCardGenerateRequest request = bulkGenerateRequest(101);
 
-        mockMvc.perform(post("/api/v1/cards/bulk-generate")
+        mockMvc.perform(post("/api/v1/card-generations/bulk")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
