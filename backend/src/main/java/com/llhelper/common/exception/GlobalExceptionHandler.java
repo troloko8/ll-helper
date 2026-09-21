@@ -61,10 +61,6 @@ public class GlobalExceptionHandler {
             .body(Map.of("errors", fieldErrors));
     }
 
-    private String getParameterName(MethodParameter parameter) {
-        return parameter.getParameterName() != null ? parameter.getParameterName() : "request";
-    }
-
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException exception) {
         Map<String, String> fieldErrors = exception.getConstraintViolations().stream()
