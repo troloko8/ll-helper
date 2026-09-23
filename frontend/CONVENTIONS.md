@@ -254,7 +254,7 @@ shared/api/
 - API DTO types accurately represent backend request/response contracts.
 - Frontend domain/UI models may differ from DTOs where semantic/shape transformation exists.
 - Add DTO → domain mapping only when an actual transformation is needed, not for architectural purity.
-- Keep distinct backend response shapes distinct (e.g. `DeckListResponse` ≠ `DeckResponse`).
+- Keep distinct backend response shapes distinct (e.g. `PublicDeckListResponse` ≠ `OwnedDeckListResponse` ≠ `DeckResponse`).
 - Do not invent frontend fields based on database/JPA knowledge.
 - **Domain DTO types** (e.g. `DeckResponse`, `CardResponse`, `AuthResponse`) live in the relevant entity or feature slice (`entities/*/model/` or `features/*/model/`).
 - **`shared/api/types/`** may contain only business-agnostic transport infrastructure types (e.g. `ApiError`, pagination metadata, generic response wrappers). Domain-specific DTOs must not live in shared.

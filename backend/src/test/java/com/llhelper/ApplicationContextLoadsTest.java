@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * DB smoke test: verifies that Liquibase migrations (V1-V11) run successfully
+ * DB smoke test: verifies that Liquibase migrations (V1-V12) run successfully
  * against a clean PostgreSQL instance, and that the resulting schema is valid
  * for Hibernate (ddl-auto: validate).
  *
@@ -32,6 +32,7 @@ class ApplicationContextLoadsTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("jwt.secret", () -> "01234567890123456789012345678901");
     }
 
     @Autowired

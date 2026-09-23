@@ -21,3 +21,5 @@ databaseChangeLog:
       file: db/changelog/changes/V10__convert_learning_progress_timestamps_to_timestamptz.yaml
   - include:
       file: db/changelog/changes/V11__add_enrolled_at_to_user_deck_progress.yaml
+  - include:
+      file: db/changelog/changes/V12__index_cards_by_deck.yaml

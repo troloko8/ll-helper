@@ -1,8 +1,9 @@
 package com.llhelper.deck.controller;
 
 import com.llhelper.deck.dto.request.DeckRequest;
-import com.llhelper.deck.dto.response.DeckListResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
+import com.llhelper.deck.dto.response.OwnedDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.service.DeckService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -33,7 +34,7 @@ public class DeckController {
     }
 
     @GetMapping("/mine")
-    public ResponseEntity<List<DeckListResponse>> getCurrentUserDecks() {
+    public ResponseEntity<List<OwnedDeckListResponse>> getCurrentUserDecks() {
         return ResponseEntity.ok(deckService.getCurrentUserDecks());
     }
 
@@ -43,7 +44,7 @@ public class DeckController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DeckListResponse>> getPublicDecks() {
+    public ResponseEntity<List<PublicDeckListResponse>> getPublicDecks() {
         return ResponseEntity.ok(deckService.getPublicDecks());
     }
 

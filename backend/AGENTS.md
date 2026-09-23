@@ -1,31 +1,19 @@
-# Cascade Agent Instructions — LLHelper Backend
+# Backend instructions
 
-Backend-specific hard gates. Applies to all code inside `backend/**`.
-Repository-wide gates: see root `AGENTS.md`.
+Applies to `backend/**`; inherit root `AGENTS.md`.
 
 ## Hard gates
 
-- Controllers must not contain business logic.
-- Services own business use cases and transaction boundaries.
-- Never expose JPA entities through the API.
-- Liquibase owns the database schema; Hibernate/JPA only maps to it — never use `ddl-auto: update`.
-- Owner-controlled resources may be mutated only by their authenticated owner unless the current architecture explicitly defines another authorization policy. Verify authorization before mutating, inside the transaction.
-- Backend behavior changes require appropriate tests. Critical business logic requires service-level unit tests; critical HTTP contracts require `@WebMvcTest` coverage.
+- Controllers have no business logic; services own use cases and transactions.
+- Never expose JPA entities through APIs.
+- Liquibase owns schema; JPA maps it. Never use `ddl-auto: update`.
+- Check authenticated ownership inside the transaction before mutation, unless architecture explicitly defines another policy.
+- Test behavior changes: critical business logic needs service unit tests; critical HTTP contracts need `@WebMvcTest`.
+- For naming, DTOs, database queries and migrations, and rate limiting, read the relevant sections of `backend/CONVENTIONS.md`.
+
 ## Where to look
 
-- Load only the rule, skill, reference, or normative document required by the current task. Do not read all linked files by default.
-
-| Need | Read |
-|------|------|
-| JPA entity conventions | `backend/.windsurf/rules/entity-conventions.md` — auto-loads on entity files |
-| Test conventions | `backend/.windsurf/rules/testing-conventions.md` — auto-loads on test files |
-| Liquibase migration conventions | `backend/.windsurf/rules/liquibase-conventions.md` — auto-loads on changelog files |
-| MapStruct conventions | `backend/.windsurf/rules/mapstruct-conventions.md` — auto-loads on mapper files |
-| Cross-cutting entity + migration, FK, index, cascade, constraint, or timestamp decisions | `.windsurf/skills/database/SKILL.md` |
-| Test strategy decisions | `.windsurf/skills/testing/SKILL.md` |
-| Current architecture | `docs/architecture/current-architecture.md` |
-| Current DB relationships | `docs/database/relationships.md` |
-| Learning flow | `docs/features/learning-flow.md` |
-| AI generation flow | `docs/features/ai-generation-flow.md` |
-| Backend conventions (naming, DTO, rate limiting) | `backend/CONVENTIONS.md` |
-| Known issues / tech debt | `backend/IMPROVEMENTS.md` |
+Load only task-relevant entries; root `AGENTS.md` routes architecture, DB, flows and known issues.
+Windsurf: entity, migration, mapper and test conventions are in `backend/.windsurf/rules/` (`entity-conventions.md`, `liquibase-conventions.md`, `mapstruct-conventions.md`, `testing-conventions.md`).
+Cross-cutting entity/schema/FK/index/constraint/cascade/timestamp decisions: `.windsurf/skills/database/SKILL.md`.
+Test strategy: `.windsurf/skills/testing/SKILL.md`.

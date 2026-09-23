@@ -153,8 +153,9 @@ scoping note takes precedence during this implementation.
 
 - Created cards: title, language pair, backend card count, Public/Private,
   Open → Owner Deck Details; Create New Deck works for empty/populated lists.
-- Discover cards: title, language pair, creator username, backend card count,
-  Public/Enrolled indication and a link to Public Deck Details. Already-enrolled
+- Discover cards: title, owner identity, language pair, backend card count,
+  Public/Enrolled indication and a link to Public Deck Details. The first
+  response carries the full owner; replacing it with a compact owner shape is a follow-up. Already-enrolled
   public details offer Open learning; no learning-progress counters on public cards.
 - The inspected Discover desktop/mobile prototypes include search/load-more;
   mobile also includes filter/topic/level chips, covers and bookmarks. These

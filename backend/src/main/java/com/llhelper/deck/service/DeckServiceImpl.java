@@ -1,8 +1,9 @@
 package com.llhelper.deck.service;
 
 import com.llhelper.deck.dto.request.DeckRequest;
-import com.llhelper.deck.dto.response.DeckListResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
+import com.llhelper.deck.dto.response.OwnedDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.mapper.DeckMapper;
 import com.llhelper.deck.repository.DeckRepository;
@@ -78,18 +79,19 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeckListResponse> getPublicDecks() {
-        return deckRepository.findAllByIsPublicTrue().stream()
-            .map(deckMapper::toListResponse)
+    public List<PublicDeckListResponse> getPublicDecks() {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        return deckRepository.findPublicDecks(currentUserId).stream()
+            .map(deckMapper::toPublicListResponse)
             .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeckListResponse> getCurrentUserDecks() {
+    public List<OwnedDeckListResponse> getCurrentUserDecks() {
         Long currentUserId = securityUtils.getCurrentUserId();
-        return deckRepository.findAllByOwnerId(currentUserId).stream()
-            .map(deckMapper::toListResponse)
+        return deckRepository.findOwnedDecks(currentUserId).stream()
+            .map(deckMapper::toOwnedListResponse)
             .toList();
     }
 

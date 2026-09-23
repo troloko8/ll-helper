@@ -61,7 +61,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
 **Deferred backend capabilities** (no accepted MVP flow depends on them):
-- Discover search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. Collection `cardCount` and public-list `isEnrolled` are now prerequisites for the accepted collection screens (§0.10); DECK-06 already supplies the owner-scoped base collection.
+- Discover search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. Collection `cardCount`, public-list owner and `isEnrolled` are implemented. Replacing the full public-list `UserResponse owner` with a compact representation is a follow-up. DECK-06 supplies the owner-scoped base collection with `cardCount`.
 
 ### 0.5 Accepted Stitch/design follow-up
 
@@ -132,17 +132,17 @@ The user requested that the complete Level 1 path be executable through visible 
 - Visible local Logout → Login → reopen Created/Learning and continue. A manual token clear does not meet the user-facing logout criterion.
 - No Owner → Public shortcut is required to pass the revised flow: Discover is the entry. A private deck remains owner-visible in Created and cannot be enrolled under the current backend, even by its owner. Smoke uses a public deck populated before enrollment.
 
-**Collection data prerequisite (planned, not implemented):**
+**Collection data contract (implemented):**
 - DECK-03 remains server-filtered to public decks; DECK-06 remains scoped to the current owner's public/private decks.
-- Both collection responses must supply backend `cardCount` (content cards, zero for empty decks). The public collection additionally needs `isEnrolled` for the current user's ACTIVE enrollment, independent of deck ownership.
-- These fields do not exist in current collection DTOs. Choose/record the public-list DTO and aggregation implementation in the backend task before frontend work; preserve existing fields and use bounded batch/aggregate retrieval rather than one detail request per item. Update inventory/Postman only with the executable contract as it is implemented.
+- `OwnedDeckListResponse` supplies Created with `id`, title, language pair, visibility and backend `cardCount` (content cards, zero for empty decks). Owner is implied by the authenticated endpoint and is omitted.
+- `PublicDeckListResponse` supplies Discover with `id`, title, language pair, full `UserResponse owner`, `cardCount` and `isEnrolled` for the current user's ACTIVE enrollment, independent of deck ownership. Only a future compact replacement for the owner representation is deferred.
 - Create/add-card mutations must refresh affected list counts and detail caches; enrollment refreshes the public collection's enrollment state and Learning list. Do not copy server collection data into ordinary Redux slices.
 
 **Stitch evidence and bounded adaptation:**
 - Canonical project metadata and Created/Discover desktop/mobile screens were retrieved via Stitch MCP; both HTML and screenshots were inspected on 2026-09-20. Exact resource IDs remain owned by `docs/frontend/design-reference/MANIFEST.md`.
 - Created desktop/mobile show language pair, title, card count, Public/Private, Open and Create New Deck. This confirms cardCount is needed for Created too, superseding the earlier uncertainty in §5.4.
 - Discover desktop shows title/creator search, Public/Enrolled badges, language pair, creator, card count and Load Additional Decks. Mobile includes search, filter/topic/level chips, cover images, bookmark controls and Load more; these extra controls are not proof of backend support.
-- Accepted first implementation is the list/card/navigation subset: title, languages, creator, count, truthful enrollment indication and detail link. Search, filters, sorting, load-more/pagination, topic/level chips, cover imagery and bookmarks are omitted on both devices. Reuse canonical layout/tokens and state references; do not invent metadata or ship non-working prototype controls. This bounded adaptation is owned by `DESIGN.md` and does not require changing remote Stitch screens in this planning task.
+- Accepted first implementation is the list/card/navigation subset: title, languages, owner identity, count, truthful enrollment indication and detail link. The response currently carries the full `UserResponse owner`; replacing it with a compact owner shape follows later. Search, filters, sorting, load-more/pagination, topic/level chips, cover imagery and bookmarks are omitted on both devices. Reuse canonical layout/tokens and state references; do not invent metadata or ship non-working prototype controls. This bounded adaptation is owned by `DESIGN.md` and does not require changing remote Stitch screens in this planning task.
 
 **Acceptance boundary:** groups in `current-sprint.md` distinguish existing implementation, missing integration and user-verified behavior. Study/review/per-card progress already exist; remaining work is integration verification and fixes. A successful AI card creation does not establish manual validation correctness. A live UI flow and re-entry with saved progress are required to close Level 1.
 
@@ -157,6 +157,8 @@ The user requested that the complete Level 1 path be executable through visible 
 The map preserves the content/learning boundary: `Deck`/`Card` are owner-managed content; `UserDeckProgress`/`UserCardProgress` are per-user learning state. Owner/Public Deck Details must not display learning progress, while Learning Deck Details may.
 
 ## 2. Status definitions
+
+> Sections 2–7 preserve the Phase 0.4B status labels and counts as a historical snapshot. Inline **Superseded scope** notes record current decisions and contract readiness; preserved `blocked` and `deferred` cells must not be read as current implementation status.
 
 ### Canonical-reference integration status
 
@@ -279,8 +281,8 @@ Every subsection applies its contract fields to every canonical reference in its
 
 | Field | Status | Note |
 |---|---|---|
-| `deckId`, `title` | Existing (`Deck`) | Already returned by `DeckListResponse`/`DeckResponse`. |
-| `sourceLanguage`, `targetLanguage` | Existing (`Deck`) | Already returned by `DeckListResponse`. |
+| `deckId`, `title` | Existing (`Deck`) | Already returned by the deck list/detail responses. |
+| `sourceLanguage`, `targetLanguage` | Existing (`Deck`) | Already returned by the deck list responses. |
 | Per-deck aggregate learning progress | Implemented | LEARN-05 returns `progress.masteredCount` and `progress.totalCount`, aggregated server-side in one batch read. |
 | "Continue Learning" / "Start Learning" highlight selection | Implemented contract | Response order is authoritative: studied decks first by `lastStudiedAt DESC`; if none has been studied, the newest `enrolledAt` is first. The UI labels a first item with non-null `lastStudiedAt` as Continue Learning, otherwise Start Learning. |
 | Ratings/likes/popularity/follower badges | Not in MVP | Not present on the canonical screen; must not be added. |
@@ -289,7 +291,7 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 
 ### 5.4 Created Decks
 
-> **Superseded scope:** basic Created is accepted by §0.10; the deferred labels below describe the earlier snapshot. Current implementation/verification tasks are in the sprint. Screenshot + HTML inspection confirms cardCount on both canonical devices, so the existing base collection needs this additional field before matching the accepted card design.
+> **Superseded scope:** basic Created is accepted by §0.10; the deferred labels below describe the earlier snapshot. Current implementation/verification tasks are in the sprint. Screenshot + HTML inspection confirmed cardCount on both canonical devices; the backend collection now supplies it.
 
 | Field | Mapping |
 |---|---|
@@ -298,27 +300,27 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Auth | JWT |
 | Domain owner | Deck content ownership |
 | Endpoint | `DECK-06 GET /api/v1/decks/mine`; distinct from public-only `DECK-03 GET /api/v1/decks`. |
-| Request / response DTO | No request body; response reuses `List<DeckListResponse>`. |
+| Request / response DTO | No request body; `List<OwnedDeckListResponse>` includes title, language pair, visibility and `cardCount`. |
 | Errors | Shared JWT; 404 when the authenticated account has no linked `User` profile; catch-all 5xx. |
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
 | Candidate frontend phase | Deferred by the accepted Level 1 route scope; backend contract is ready. |
-| Blocker / gap | No contract-specific blocker. The UI route remains product-deferred, and per-deck card count remains unresolved. |
+| Blocker / gap | No backend collection blocker: per-deck `cardCount` is implemented. The UI route remains to be integrated. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
 | Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **deferred** |
 | Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **deferred** |
 
-**Missing DTO — minimal required shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck; updated evidence supersedes the earlier text-only extraction):
+**Implemented DTO shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck):
 
 | Field | Status | Note |
 |---|---|---|
-| `id`, `title`, `description`, `sourceLanguage`, `targetLanguage`, `isPublic`, `owner` | Existing (`DeckListResponse`) | No new response field needed. |
+| `id`, `title`, `sourceLanguage`, `targetLanguage`, `isPublic`, `cardCount` | Implemented (`OwnedDeckListResponse`) | Owner is implied by the authenticated endpoint; description and timestamps remain detail-only fields. |
 | Owner-scoped filter (only the current user's decks) | Implemented | DECK-06 resolves the current user server-side and filters by `ownerId`; `DECK-03` remains public-only. |
-| Per-deck card count | Missing; required by accepted §0.10 | `DeckListResponse` has the `// FIXME: add cardCount` gap. Both screenshot and HTML now confirm the visible count. |
+| Per-deck card count | Implemented | `OwnedDeckListResponse.cardCount` is calculated from content cards, including `0`, by one owner-scoped aggregate query. |
 
-Implemented response: `DECK-06 GET /api/v1/decks/mine` returns `List<DeckListResponse>` and resolves current-user identity server-side. No new response fields were required.
+Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<OwnedDeckListResponse>` with visibility and `cardCount`, and resolves current-user identity server-side. Its aggregate query includes the owner's public and private decks without joining users or loading card collections.
 
 ### 5.5 Create Deck
 
@@ -507,7 +509,7 @@ was added.
 
 ### 5.12 Discover
 
-> **Superseded scope:** §0.10 accepts the basic list and explicitly defers search/filter/load-more and other unsupported prototype controls. cardCount/isEnrolled remain backend prerequisites; this is no longer a deferred product screen. The contract gaps below remain implementation work, not completed fields.
+> **Superseded scope:** §0.10 accepts the basic list and explicitly defers search/filter/load-more and other unsupported prototype controls. `owner`, `cardCount` and `isEnrolled` are implemented. This is no longer a deferred product screen.
 
 | Field | Mapping |
 |---|---|
@@ -516,29 +518,29 @@ was added.
 | Auth | JWT under current backend |
 | Domain owner | Public Deck content discovery |
 | Endpoint | `DECK-03 GET /api/v1/decks` is a safe public-only list. Search/filter parameters are not defined. |
-| Request / response DTO | Existing `List<DeckListResponse>` lacks required `cardCount` and per-user `isEnrolled`; it has no search/sort/pagination parameters. |
-| Errors | Cannot finalize until endpoint exists; must include shared JWT, query validation if added, and page-level 5xx. |
+| Request / response DTO | `List<PublicDeckListResponse>` includes title, language pair, full `UserResponse owner`, `cardCount` and current-user `isEnrolled`; it has no search/sort/pagination parameters. |
+| Errors | Shared JWT `401`; `404` when the authenticated account has no linked `User` profile; page-level `5xx`. Search/query-validation errors are not part of the accepted bounded list because search and filters are deferred. |
 | Loading / error / empty | Canonical loading, API-error, and no-results/empty states on both platforms. No-results must be driven by server-safe public results, not client filtering. |
-| Backend status | Public-only filtering is implemented (G-04 resolved). The Discover-specific response remains incomplete; detail security G-05 is resolved. |
-| Candidate frontend phase | After the required `cardCount` and `isEnrolled` fields are available. |
-| Blocker / gap | No private data is exposed, but the current response cannot render the canonical card count or enrolled badge. No search contract exists. |
+| Backend status | Public-only filtering, full owner, aggregate `cardCount` and current-user ACTIVE `isEnrolled` are implemented; detail security G-05 is resolved. |
+| Candidate frontend phase | Backend contract is ready for the accepted first Discover implementation. |
+| Blocker / gap | No backend collection blocker for the accepted first list. No search contract exists because search is deferred. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
 | Desktop | `discover_llhelper_refined` | `97b05b9f24f84410845beb00803e26df` | loading `5a3ee7028bcb4b7d9b8d3ecebfa41231`; API error `7d6fc47e2a4d487789efb22fe6ba0009`; empty/no results `c93b42eb746249e3b5f06cd7d2ec47e6` | **blocked** |
 | Mobile | `discover_mobile` | `9aaf765ffdfb4a0595da18e8c28d0bb6` | loading `6ab80ffecc5d40c6ac73f3684a6f764b`; API error `f87fd1a533a4495194720d6d3a3d065a`; empty/no results `6332e210465d47d58f011bc22a663d72` | **blocked** |
 
-**Missing DTO — minimal required shape** (read-only review of `discover_llhelper_refined`, which lists per-deck title, source/target language, card count, owner `@username`, a `Public` badge, and an `Enrolled` badge on at least one card):
+**Implemented DTO shape** (the `discover_llhelper_refined` reference lists per-deck title, source/target language, card count, owner `@username`, a `Public` badge, and an `Enrolled` badge on at least one card):
 
 | Field | Status | Note |
 |---|---|---|
-| `id`, `title`, `sourceLanguage`, `targetLanguage`, `owner.username`, `owner.avatarUrl` | Existing (`DeckListResponse`) | `owner` is already a nested `UserResponse` carrying `username`/`avatarUrl`. |
-| Public-only filter | Implemented | `DECK-03` uses `DeckRepository.findAllByIsPublicTrue()`; private decks never reach the response. |
-| `cardCount` per deck | Missing | Canonical UI displays a card count per deck (e.g. "842 Cards"). `DeckListResponse` has the known `// FIXME: add cardCount` gap; not implemented anywhere. Required in the minimal response shape. |
-| `isEnrolled` per deck | Missing | Canonical UI shows an `Enrolled` badge on at least one deck. Requires cross-referencing each public deck against the current user's `UserDeckProgress`; no endpoint returns this combined shape today. This reflects the existing enrollment domain (not a social feature), but the join does not exist. Required in the minimal response shape. |
+| `id`, `title`, `sourceLanguage`, `targetLanguage`, `owner.id`, `owner.username`, `owner.avatarUrl` | Implemented (`PublicDeckListResponse`) | `owner` is the full nested `UserResponse`; Discover consumes the listed subset. A compact replacement is deferred, not owner identity itself. |
+| Public-only filter | Implemented | `DECK-03` uses the native SQL projection `DeckRepository.findPublicDecks()` with `d.is_public = true`; private decks never reach the response. |
+| `cardCount` per deck | Implemented | A single public-only aggregate query calculates content-card count, including `0`, without loading card collections or issuing per-deck queries. |
+| `isEnrolled` per deck | Implemented | One current-user-aware aggregate query checks ACTIVE `UserDeckProgress` while preserving public-only results. |
 | Search/filter/load-more controls | Visible in screenshot/HTML; deferred by §0.10 | Desktop has search and Load Additional Decks; mobile also has filter/topic/level chips. Their presence does not create an HTTP contract. Omit these controls in the accepted first list implementation. |
 
-Minimal required response: extend the existing public-only DECK-03 response to `List<DeckListResponse & {cardCount, isEnrolled}>`. `cardCount` requires resolving the existing `DeckListResponse` FIXME; `isEnrolled` requires a per-user join against `UserDeckProgress` for each returned deck — both are concrete required fields, not open design questions. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
+Implemented required response: public-only DECK-03 returns `PublicDeckListResponse` with full `UserResponse owner`, `cardCount` and current-user ACTIVE `isEnrolled` in one aggregate query. Ratings/likes/popularity sort remain explicitly out of scope per `DESIGN.md`.
 
 ### 5.13 Creator Profile
 
@@ -566,11 +568,11 @@ Minimal required response: extend the existing public-only DECK-03 response to `
 | Field | Status | Note |
 |---|---|---|
 | Creator profile (`username`, name, avatar) | Existing (`UserResponse` via `USER-03`) | No new field needed. |
-| Creator's public deck list (`id`, `title`, `sourceLanguage`, `targetLanguage`) | Missing | No endpoint filters decks by a given owner plus `isPublic=true` (G-10); would reuse `DeckListResponse` fields. |
-| `cardCount` per deck | Missing | Canonical UI shows a per-deck card count (e.g. "1,250 Cards"). Same `// FIXME: add cardCount` gap as Discover/Created Decks — not implemented anywhere. |
+| Creator's public deck list (`id`, `title`, `sourceLanguage`, `targetLanguage`) | Missing | No endpoint filters decks by a given owner plus `isPublic=true` (G-10); a future endpoint can reuse the compact public-list fields. |
+| `cardCount` per deck | Aggregate pattern exists; creator-scoped contract missing | `PublicDeckListResponse.cardCount` is available for DECK-03; a future creator-scoped endpoint can reuse the aggregate pattern without selecting full entities. |
 | Follow/follower counts, social behavior | Excluded | Forbidden per `DESIGN.md`; must not be added regardless of the 0.4C MVP decision. |
 
-Minimal required response if this surface enters MVP: existing `UserResponse` + `List<DeckListResponse & {cardCount}>`, behind a creator-scoped and public-only query. This sketch does not resolve the `deferred` status. *(Historical — §0.1/§0.2 has since confirmed Creator Profile remains deferred, not entering MVP.)*
+Minimal required response if this surface enters MVP: existing `UserResponse` + a creator-scoped public list using the compact deck fields and `cardCount`. This sketch does not resolve the `deferred` status. *(Historical — §0.1/§0.2 has since confirmed Creator Profile remains deferred, not entering MVP.)*
 
 ### 5.14 Progress
 
@@ -610,7 +612,7 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — §0.1/§0.2 (Creator Profile deferred).
 2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Resolved — flow accepted in §0.3/§0.7 and canonical references completed in §0.5.
 3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
-4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created now has the implemented DECK-06 `List<DeckListResponse>` contract even though its UI remains deferred. Discover, Progress-aggregate, and creator-public-decks shapes remain intentionally unaccepted under the deferred product scope (§0.2).
+4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created uses the implemented DECK-06 `List<OwnedDeckListResponse>` contract, and Discover uses DECK-03 `List<PublicDeckListResponse>`. The creator-scoped public list remains deferred with Creator Profile (§0.2).
 5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).
 6. ~~Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.~~ Resolved — §0.1/§0.2/§0.6: manual Add Card is the Level 1 requirement; single-card AI is a separate optional task after manual smoke; bulk AI remains deferred pending the partial-failure contract.
 7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6, and reflected in `docs/roadmap/current-sprint.md`.
@@ -621,7 +623,7 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
 - Using contract-local semantics (§2), the map now identifies **8 ready**, **7 partial**, **9 blocked**, and **2 deferred** references after G-06 resolution.
-- For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. Learning and Created collection contracts have since been implemented; Discover, Creator Profile deck listing, and aggregate Progress remain without complete backend contracts. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
+- For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. Learning, Created and the accepted bounded Discover collection contracts have since been implemented; Creator Profile deck listing and aggregate Progress remain without complete backend contracts. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/read/update/delete and single-card AI are independently `Ready`; bulk AI remains `Partial` because of G-09.
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
 - The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-06, G-08, and `CARD-04` are resolved, including the public-only DECK-03, public-deck-only CARD-04, and owner-scoped DECK-06 contracts; the deferred aggregate Progress contract (G-07) remains open.

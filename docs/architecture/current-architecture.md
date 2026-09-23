@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 1 — Vertical Full-Stack Flow
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-30
+> **Last updated:** 2026-09-21
 > **Status:** Backend foundation complete (Level 0). Frontend Technical Foundation complete (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router, testing infrastructure). Auth/product flow screens next.
 
 ---
@@ -27,7 +27,7 @@
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
 - ✅ Mapper layer, rate limiting, ownership checks completed
-- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V11 defined; V11 adds G-06 enrollment ordering support)
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V12 defined; V11 adds G-06 enrollment ordering support, V12 indexes deck-card aggregation)
 - ⏸ Additional performance indexes deferred to Level 2
 
 **Frontend (Level 1 — in progress):**
@@ -52,7 +52,7 @@
 | Layer | Technology |
 |-------|------------|
 | **Backend** | Java 21, Spring Boot 4.0.6 |
-| **Database** | PostgreSQL, Spring Data JPA (Hibernate), Liquibase |
+| **Database** | PostgreSQL, Spring Data JPA (Hibernate) for persistence/simple CRUD and static native SQL projections, `NamedParameterJdbcTemplate` for dynamic/batch/reporting reads, Liquibase |
 | **Security** | Spring Security, JWT (jjwt 0.12.6) |
 | **AI** | OpenAI API (gpt-4o-mini), WebFlux HTTP client |
 | **Mapper** | MapStruct 1.6.3 |
@@ -292,8 +292,8 @@ CardService.save(cards)
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
-| `/api/v1/decks` | GET | JWT | List public decks (lite); private decks are filtered in the repository query | `List<DeckListResponse>` ⚠️ no cards/card count/enrollment state |
-| `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user, including public and private decks | `List<DeckListResponse>` ⚠️ no cards/card count |
+| `/api/v1/decks` | GET | JWT | List public decks with owner, aggregate content-card count and current-user ACTIVE enrollment state | `List<PublicDeckListResponse>`: id, title, language pair, full `UserResponse owner`, `cardCount`, `isEnrolled`; no cards/detail-only deck fields |
+| `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
@@ -447,7 +447,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 **Current mappers:**
 - `CardMapper` — `Card` ↔ `CardResponse` / `CardRequest`
-- `DeckMapper` — `Deck` ↔ `DeckResponse` / `DeckListResponse`
+- `DeckMapper` — `Deck` ↔ `DeckResponse`; maps scalar query projections to `PublicDeckListResponse` and `OwnedDeckListResponse`, with `DeckServiceImpl` delegating the conversion
 - `UserMapper` — `User` ↔ `UserResponse`, `updateEntity(UpdateUserRequest, User)`
 
 **Service responsibilities updated:**
@@ -488,6 +488,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
+| SQL-first custom data access | New joins, aggregations, reporting, and non-trivial filtered reads use PostgreSQL SQL. Static feature-local queries stay in the existing Spring Data repository through `@Query(nativeQuery = true)` and return minimal scalar interface projections. `NamedParameterJdbcTemplate` is reserved for dynamic SQL, batch/reporting workloads, or bespoke result mapping. Do not add JPQL/HQL or `select new` constructor projections. Native SQL behavior is verified against PostgreSQL with Testcontainers. |
 | Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
 
 ### Open Decisions

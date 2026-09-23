@@ -16,12 +16,12 @@
 |---|---|---|
 | Register / Complete Profile | Уже отмечены выполненными в этом спринте | Повторить в полном smoke |
 | Create Deck | Пользователь подтвердил создание колоды | Проверить public/private в сквозном сценарии |
-| Manual Add Card | Форма, API и тесты есть; пользователь сообщил о проблеме валидации | Воспроизвести и исправить; отдельно подтвердить ручное сохранение без AI (4A) |
+| Manual Add Card | Валидация исправлена; ручное сохранение, отображение после refresh и AI-regression подтверждены пользователем 2026-09-21 | Повторить в полном smoke группы 5 |
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
-| Created / Discover | Маршрутов и frontend queries списков нет; backend DECK-06/DECK-03 есть, но без cardCount/isEnrolled | Подготовить данные и создать экраны (4B–4D) |
+| Created / Discover | Маршрутов и frontend queries списков ещё нет; backend DECK-06/DECK-03 возвращают отдельные DTO с `cardCount`, а DECK-03 также current-user ACTIVE `isEnrolled` | Реализовать Created и Discover (4C–4D) |
 | Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; публичная колода доступна только через URL | Связать через Discover, проверить обновление и сохранение прогресса (4D–5) |
 | Logout | Функция очистки есть, production UI её не вызывает | Добавить доступную кнопку и проверить повторный вход (4F) |
-| Postman / AI workflow prompts | Коллекция есть; факт полного прогона не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Явные задачи проверки и подготовки (5–6) |
+| Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
 
 **Группа 0: Frontend scaffold & technical foundation**
 
@@ -102,24 +102,25 @@
 
 ### Группа 4A — Надёжное ручное добавление карточки
 
-Основа уже существует: `features/add-card`, `pages/add-card`, `CARD-01`. Автоматическая проверка нового learning-content contract выполнена; успешный ручной smoke ещё не подтверждён.
+Основа уже существует: `features/add-card`, `pages/add-card`, `CARD-01`. Автоматическая проверка нового learning-content contract выполнена; успешный ручной smoke и AI-regression подтверждены пользователем 2026-09-21.
 
 - [x] Воспроизведён title-only сценарий: frontend Zod и backend `CardRequest` разрешали сохранить карточку без `definition` и `translation`, после чего Study не имел содержательной подсказки.
 - [x] По решению пользователя ручной POST и PUT используют общий `CardRequest`: `title` и `translation` обязательны, `definition`/`examples`/`synonyms` необязательны. `deckId` создания перенесён в `POST /decks/{deckId}/cards`. AI вынесен в `CardGenerationController` (`POST /card-generations`, `/card-generations/bulk`), `autoGenerate` удалён; frontend, Postman и контракт синхронизированы. AI-результат без непустого `translation` отклоняется до сохранения; проверки frontend/backend покрывают новые контракты.
-- [ ] Вручную сохранить карточку через Save (`POST /decks/{deckId}/cards`), увидеть её на Owner Deck Details и после refresh. Для study-fixture заполнить definition/translation, чтобы подсказка была осмысленной.
-- [ ] Повторить AI-ветку как regression: созданная карточка сохраняется, loading/error не ломают дальнейший ручной ввод. Успех AI не закрывает предыдущий пункт.
+- [x] Вручную сохранить карточку через Save (`POST /decks/{deckId}/cards`), увидеть её на Owner Deck Details и после refresh. Для study-fixture заполнить definition/translation, чтобы подсказка была осмысленной.
+- [x] Повторить AI-ветку как regression: созданная карточка сохраняется, loading/error не ломают дальнейший ручной ввод. Успех AI не закрывает предыдущий пункт.
 
 **Результат:** подтверждён обязательный Manual Add Card, можно готовить колоды для следующего сценария.
 
 ### Группа 4B — Контракты карточек Created / Discover
 
-Основа: `DECK-06 GET /decks/mine`, `DECK-03 GET /decks`. Канонические Created desktop/mobile тоже показывают количество карточек; прежняя неопределённость по этому полю снята визуальной проверкой Stitch. Текущие DTO ещё не содержат новые поля.
+Основа: `DECK-06 GET /decks/mine`, `DECK-03 GET /decks`. Канонические Created desktop/mobile тоже показывают количество карточек; прежняя неопределённость по этому полю снята визуальной проверкой Stitch. Коллекции используют отдельные минимальные DTO: Created не возвращает избыточного owner, Discover пока сохраняет полный `UserResponse owner`; его будущая compact-форма отложена как follow-up.
 
-- [ ] Добавить backend-provided `cardCount` для обеих коллекций; значение — число content cards, включая `0`, а не число карточек в обучении. Сохранить различие public-only DECK-03 и owner-scoped DECK-06 (включая private).
-- [ ] Добавить в публичную коллекцию `isEnrolled` для текущего пользователя с согласованной семантикой ACTIVE enrollment; выбрать и зафиксировать DTO публичного списка до frontend-интеграции. Не выдавать значение другого пользователя и не путать владение с enrollment.
-- [ ] Получать counts/enrollment без загрузки всех карточек каждой колоды и без отдельного запроса на каждый элемент списка. Фронтенд не должен собирать карточку каталога серией detail-запросов.
-- [ ] Проверить расчёт и пользовательскую изоляцию service-тестами; JSON полей, пустые списки и сохранение HTTP-контракта — controller-тестами. Реальные query/visibility/count результаты проверить на PostgreSQL в живом прогоне; mocks не считаются проверкой SQL.
-- [ ] В той же задаче синхронизировать backend inventory, integration map и Postman с реально реализованными DTO; затем обновить frontend types/fixtures. Сейчас новые поля остаются планом.
+- [x] Добавить backend-provided `cardCount` для обеих коллекций; значение — число content cards, включая `0`, а не число карточек в обучении. DECK-03 и DECK-06 используют по одному агрегирующему запросу с `LEFT JOIN`/`COUNT`, без загрузки карточек и N+1; public-only и owner-scoped (включая private) границы сохранены.
+- [x] Добавить в публичную коллекцию `isEnrolled` для текущего пользователя с семантикой ACTIVE enrollment. DECK-03 возвращает `PublicDeckListResponse` с owner, DECK-06 — отдельный минимальный `OwnedDeckListResponse` без owner. Timestamps и detail-only поля удалены из коллекций; compact-представление public owner отложено.
+- [x] Получать counts/enrollment без загрузки всех карточек каждой колоды и без отдельного запроса на каждый элемент списка. Оба ответа строятся одним bounded aggregate query на коллекцию.
+- [x] Проверить расчёт и пользовательскую изоляцию service/controller-тестами.
+- Дополнительно уже добавлен repository-focused PostgreSQL Testcontainers regression для query/visibility/count/enrollment. Это опережающее покрытие, а не требование Level 1; систематическое внедрение repository/integration tests и их учебная практика остаются в Level 2.
+- [x] Синхронизировать backend inventory, integration map и Postman с реализованными DTO. Frontend types/fixtures создаются вместе с экранами 4C/4D, которых пока нет.
 
 **Результат:** обе коллекции возвращают всё необходимое для принятого набора данных в макетах.
 
@@ -139,7 +140,7 @@
 
 Зависимость: 4B/4C. References: `discover_llhelper_refined`, `discover_mobile` и их loading/error/empty states в manifest. Принята ограниченная адаптация: список и переходы; поиск, фильтры, Load more, bookmark, декоративные обложки и topic/level chips остаются вне этого спринта (map §0.10).
 
-- [ ] Добавить query DECK-03 и `/discover`: public deck title, language pair, creator username, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`.
+- [ ] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
 - [ ] Подключить Discover в desktop/mobile navigation и добавить Browse public decks в пустой Learning state. Create Deck должен оставаться доступным и после появления learning decks.
 - [ ] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
 - [ ] Доработать Public Deck Details: до enrollment — Start learning; для уже добавленной колоды — Open learning → `/learning/:deckId`. Состояние получать из server state (например, существующего LEARN-05), включая прямое открытие/refresh, а не только из navigation state.
@@ -179,7 +180,7 @@
 - [ ] Проверка вторым аккаунтом: публичная колода первого находится через Discover и enroll-ится; его private-колода отсутствует в Discover и Created второго. Private deck остаётся доступной владельцу в Created; её enrollment сейчас запрещён даже владельцу.
 - [ ] Проверить desktop/mobile/keyboard, пустые состояния, ошибки и retry на изменённых переходах. Исправить блокирующие дефекты и повторить затронутый сценарий.
 - [x] Postman collection/environment ранее синхронизированы с существующим API. Это не отметка о прохождении сценариев.
-- [ ] После 4B обновить Postman для новых DTO и пройти Auth/Profile → Deck/Create/List/Mine → Manual Card → Public Detail → Enroll → Learning/List/Details → Study/Review → повторное чтение progress; проверить ключевые success/error assertions и записать результат.
+- [ ] Postman для новых DTO группы 4B уже обновлён; пройти Auth/Profile → Deck/Create/List/Mine → Manual Card → Public Detail → Enroll → Learning/List/Details → Study/Review → повторное чтение progress, проверить ключевые success/error assertions и записать результат.
 
 ### Группа 6 — AI workflow prompts, документация и закрытие
 
@@ -195,7 +196,7 @@
 - [x] Есть frontend
 - [x] Можно зарегистрироваться и завершить Complete Profile
 - [x] Можно создать deck — подтверждено пользователем 2026-09-20; public/private regression входит в группу 5.
-- [ ] Можно создать card **вручную**, с корректной валидацией и сохранением после refresh — 4A. AI-успех подтверждён отдельно и не закрывает этот критерий.
+- [x] Можно создать card **вручную**, с корректной валидацией и сохранением после refresh — 4A подтверждена пользователем 2026-09-21; AI-regression пройден отдельно.
 - [ ] Можно повторно найти свои колоды через Created — 4B/4C/5.
 - [ ] Можно найти public deck через Discover, открыть Public Deck Details и enroll-иться — 4B/4D/5.
 - [ ] Можно пройти Study из Learning через UI — 4E/5.
@@ -207,14 +208,14 @@
 
 **Приоритет выполнения:**
 
-1. **4A:** воспроизвести и исправить валидацию, подтвердить Manual Add Card.
-2. **4B:** подготовить cardCount для Created/Discover и isEnrolled для Discover, синхронизировать контракты.
-3. **4C:** Created и возврат к созданным колодам.
-4. **4D:** Discover → Public Deck Details → Enroll → Learning.
-5. **4E:** проверить существующие Study/progress и исправить найденные дефекты.
-6. **4F:** видимый Logout → Login → продолжение.
-7. **5:** полный пользовательский smoke и Postman с фиксацией результатов.
-8. **6:** prompts, документация, итоговые checks и закрытие. Группы 0–4 описывают уже созданный фундамент.
+4A и 4B завершены; актуальный порядок оставшихся работ:
+
+1. **4C:** Created и возврат к созданным колодам.
+2. **4D:** Discover → Public Deck Details → Enroll → Learning.
+3. **4E:** проверить существующие Study/progress и исправить найденные дефекты.
+4. **4F:** видимый Logout → Login → продолжение.
+5. **5:** полный пользовательский smoke и Postman с фиксацией результатов.
+6. **6:** prompts, документация, итоговые checks и закрытие. Группы 0–4 описывают уже созданный фундамент.
 
 ## Phase 0.4 — Global Frontend Integration Audit
 
@@ -254,7 +255,7 @@
 G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют общий `DeckAccessPolicy`; public и owner-private чтение разрешено, чужой private контент возвращает контролируемый 403. Подтверждено service unit tests и `@WebMvcTest`.
 
 **Completed backend foundations for collection screens:**
-- [x] Owner-scoped deck collection `GET /api/v1/decks/mine` возвращает все public/private decks текущего пользователя; подтверждено service unit test и `@WebMvcTest`. Created UI теперь в scope (4C), дополнение cardCount — 4B.
+- [x] Owner-scoped DECK-06 возвращает `cardCount`; public DECK-03 возвращает `cardCount` и current-user ACTIVE `isEnrolled`. Service/controller coverage синхронизировано в 4B; frontend-интеграция остаётся в 4C/4D.
 
 **Public deployment/security blockers** (обязательны до первого публичного deployment):
 - [x] G-04 `GET /api/v1/decks` возвращает только public decks; private decks отфильтрованы repository query. Подтверждено service unit test и `@WebMvcTest`.

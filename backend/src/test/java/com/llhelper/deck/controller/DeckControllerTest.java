@@ -19,8 +19,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.deck.dto.request.DeckRequest;
-import com.llhelper.deck.dto.response.DeckListResponse;
 import com.llhelper.deck.service.DeckService;
+import com.llhelper.deck.dto.response.OwnedDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckListResponse;
+import com.llhelper.user.dto.response.UserResponse;
 import java.time.Instant;
 import java.util.List;
 import jakarta.persistence.EntityNotFoundException;
@@ -108,15 +110,25 @@ class DeckControllerTest {
     @Test
     void getPublicDecks_shouldReturn200WithPublicDecks() throws Exception {
         DeckRequest request = defaultRequest();
-        DeckListResponse response = new DeckListResponse(
+        UserResponse owner = new UserResponse(
+            7L,
+            "deck-owner",
+            "Deck",
+            "Owner",
+            "EN",
+            "RU",
+            null,
+            "EN",
+            Instant.parse("2026-09-20T10:00:00Z"),
+            Instant.parse("2026-09-21T10:00:00Z")
+        );
+        PublicDeckListResponse response = new PublicDeckListResponse(
             DECK_ID,
             request.title(),
-            request.description(),
             request.sourceLanguage(),
             request.targetLanguage(),
-            Instant.EPOCH,
-            Instant.EPOCH,
-            null,
+            owner,
+            3,
             true
         );
         when(deckService.getPublicDecks()).thenReturn(List.of(response));
@@ -125,7 +137,11 @@ class DeckControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id", is(DECK_ID), Long.class))
             .andExpect(jsonPath("$[0].title", is(request.title())))
-            .andExpect(jsonPath("$[0].isPublic", is(true)));
+            .andExpect(jsonPath("$[0].owner.id", is(7L), Long.class))
+            .andExpect(jsonPath("$[0].owner.username", is("deck-owner")))
+            .andExpect(jsonPath("$[0].cardCount", is(3)))
+            .andExpect(jsonPath("$[0].isEnrolled", is(true)))
+            .andExpect(jsonPath("$[0].isPublic").doesNotExist());
     }
 
     // --- getCurrentUserDecks ---
@@ -133,36 +149,34 @@ class DeckControllerTest {
     @Test
     void getCurrentUserDecks_shouldReturn200WithOwnedPublicAndPrivateDecks() throws Exception {
         DeckRequest request = defaultRequest();
-        DeckListResponse publicDeck = new DeckListResponse(
+        OwnedDeckListResponse publicDeck = new OwnedDeckListResponse(
             DECK_ID,
             request.title(),
-            request.description(),
             request.sourceLanguage(),
             request.targetLanguage(),
-            Instant.EPOCH,
-            Instant.EPOCH,
-            null,
-            true
+            true,
+            2
         );
-        DeckListResponse privateDeck = new DeckListResponse(
+        OwnedDeckListResponse privateDeck = new OwnedDeckListResponse(
             2L,
             "Private deck",
-            request.description(),
             request.sourceLanguage(),
             request.targetLanguage(),
-            Instant.EPOCH,
-            Instant.EPOCH,
-            null,
-            false
+            false,
+            0
         );
         when(deckService.getCurrentUserDecks()).thenReturn(List.of(publicDeck, privateDeck));
 
         mockMvc.perform(get("/api/v1/decks/mine"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].owner").doesNotExist())
             .andExpect(jsonPath("$[0].isPublic", is(true)))
+            .andExpect(jsonPath("$[0].cardCount", is(2)))
+            .andExpect(jsonPath("$[0].description").doesNotExist())
             .andExpect(jsonPath("$[1].id", is(2L), Long.class))
-            .andExpect(jsonPath("$[1].isPublic", is(false)));
+            .andExpect(jsonPath("$[1].isPublic", is(false)))
+            .andExpect(jsonPath("$[1].cardCount", is(0)));
     }
 
     // --- update ---

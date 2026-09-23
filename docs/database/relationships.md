@@ -3,8 +3,9 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-08-30
-> **Status:** Liquibase migrations V1–V10 applied; V11 defined for G-06. Remaining index gaps: `idx_ucp_next_review`, `idx_cards_deck` (Backlog).
+> **Last updated:** 2026-09-21
+> **Status:** Liquibase migrations V1–V10 applied; V11 defined for G-06; V12 defines `idx_cards_deck_id`.
+> **Remaining index gap:** `idx_ucp_next_review` (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
 
@@ -20,7 +21,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1–V10 Liquibase migrations applied and V11 is defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`, `idx_cards_deck`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
+**Note:** V1–V10 Liquibase migrations applied and V11–V12 are defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -28,10 +29,10 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Current schema definition through Liquibase migration V11.
+**Scope:** Current schema definition through Liquibase migration V12.
 
 **Not in this document:**
-- Remaining index work (`idx_ucp_next_review`, `idx_cards_deck`) — see Section 8
+- Remaining index work (`idx_ucp_next_review`) — see Section 8
 - Soft delete implementation — deferred to Level 1
 
 ---
@@ -345,7 +346,9 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 
 ## 8. Indexes
 
-**Status:** Partially implemented — G-06 added the user/status lookup index; `idx_ucp_next_review` and `idx_cards_deck` remain pending (Backlog).
+**Status:** Partially implemented. G-06 added the user/status lookup index, and V12 adds `idx_cards_deck_id`.
+
+`idx_ucp_next_review` remains pending (Backlog).
 
 | Index | Table | Columns | Purpose | Status |
 |-------|-------|---------|---------|--------|
@@ -354,13 +357,13 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 | `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status | ✅ Added in V1 baseline |
 | `uk_user_card_progress_deck_card` | `user_card_progress` | `user_deck_progress_id, card_id` | Fast card lookup (unique) | ✅ Added in V3 (replaces the incorrect V1 `idx_ucp_user_card`) |
 | `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending (Backlog) |
-| `idx_cards_deck` | `cards` | `deck_id` | Fast card lookup by deck (for deck deletion check) | Pending (Backlog) |
+| `idx_cards_deck_id` | `cards` | `deck_id` | Per-deck card counts, card lookup and deck deletion checks | ✅ Added in V12 |
 
 **Current State:**
 - `users` table: `idx_user_username` (unique). `idx_user_auth` was a duplicate of `uk_users_auth_user_id` and was removed in V8.
 - `user_card_progress`: `idx_ucp_user_deck` (V1), `uk_user_card_progress_deck_card` (V3, unique)
 - `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique), `idx_user_deck_progress_user_status` (V11)
-- Still pending: `idx_ucp_next_review`, `idx_cards_deck` — tracked in `docs/roadmap/backlog.md`.
+- Still pending: `idx_ucp_next_review` — tracked in `docs/roadmap/backlog.md`.
 
 ---
 
@@ -492,7 +495,7 @@ AuthUser (credentials)
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **Missing performance indexes** | `idx_ucp_next_review`, `idx_cards_deck` not created; see §8 and `docs/roadmap/backlog.md` | Backlog |
+| **Missing performance index** | `idx_ucp_next_review` not created; see §8 and `docs/roadmap/backlog.md` | Backlog |
 | **Cross-reference consistency is not enforced in DB** | Independent FKs do not guarantee that `UserCardProgress.userId` matches the parent `UserDeckProgress.userId`, or that `cardId` belongs to the enrolled Deck. Currently enforced by application logic. | Backlog |
 | ~~**Languages stored as VARCHAR, not enum**~~ | ~~Invalid language values possible~~ | ✅ Fixed — `CHECK` constraints via V6 |
 | ~~**No DB-level CHECK constraints**~~ | ~~Invalid status values possible via raw SQL~~ | ✅ Fixed — V6 (language), V7 (progress counters) |
@@ -548,11 +551,10 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- ✅ DONE (V10): Migrated business `last_studied_at`/`last_reviewed_at`/`next_review_at` columns from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using `AT TIME ZONE 'Asia/Jerusalem'`.
 ```
 
-### 13.2 Pending Indexes
+### 13.2 Pending Index
 
 ```sql
 CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, next_review_at);
-CREATE INDEX idx_cards_deck ON cards(deck_id);
 ```
 
 ### 13.3 Decisions Made

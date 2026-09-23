@@ -64,7 +64,8 @@
 - **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант: добавить `card.getDeckId() == deckId` проверку, возможно рефактор URL на `/decks/{deckId}/cards/{cardId}`
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card
-- `cardCount` для Created/Discover перенесён в `current-sprint.md` → Группа 4B вместе с public-list `isEnrolled`; реализацию расчёта выбрать в той задаче без загрузки всех карточек каждой колоды.
+- `cardCount` для Created/Discover и public-list `isEnrolled` реализованы в `current-sprint.md` → Группа 4B одним агрегирующим запросом на коллекцию.
+- Заменить полный `UserResponse owner` в `PublicDeckListResponse` на compact owner (`id`, `username`, при необходимости `avatarUrl`); Created уже использует минимальный `OwnedDeckListResponse` без owner.
 
 ### Backend — Learning API, AI generation, User self-service
 
@@ -134,7 +135,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 
 **Database quality:** Liquibase fully adopted, `ddl-auto=validate`, indexes, unique constraints, FK checked, cascade strategy documented
 - Unique constraints и indexes уже описаны нормативно в `docs/database/relationships.md` §7–8 — не дублировать точные имена таблиц/колонок здесь
-- Проверить и реализовать pending indexes из `docs/database/relationships.md` §8 (`idx_ucp_next_review`, `idx_cards_deck`); индекс `(user_id, status)` для `user_deck_progress` закрыт в V11 как часть G-06.
+- Проверить и реализовать pending index из `docs/database/relationships.md` §8 (`idx_ucp_next_review`); индекс `(user_id, status)` для `user_deck_progress` закрыт в V11 как часть G-06, `idx_cards_deck_id` — в V12 вместе с агрегированным `cardCount`.
 
 **Индексация БД:**
 
@@ -253,8 +254,8 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 - [ ] Проверить все 500 ошибки и заменить на соответствующие HTTP коды — **дублирует Sprint 0.4 Группа 4**, см. `current-sprint.md`
 - [ ] ~~Создать систему миграции для проекта (Liquibase)~~ — **вероятно устарело**: Liquibase уже внедрён и используется (schema defined through V11; см. `changelog.md` Sprint 0.3)
 - [ ] Проверить структуру базы данных: constraints, FK, cascade, индексы, типы данных, связи — частично покрыто Sprint 0.3, но периодический ревью остаётся полезным
-- [ ] Переписать сложные Hibernate запросы на ручные SQL (кроме простых CRUD)
-- [ ] Установить правило: SQL-запросы вместо Hibernate/JPQL для сложных операций (`@Query(nativeQuery = true)`/`JdbcTemplate`; запрещено для сложных join/агрегаций/фильтров; базовые CRUD — можно Hibernate)
+- [~] Постепенно переписать существующие сложные Hibernate/JPQL-запросы на PostgreSQL SQL; простые CRUD и derived lookups пока могут оставаться на Spring Data JPA. Статические feature-local запросы размещать в существующем Spring Data repository через `@Query(nativeQuery = true)` с минимальной scalar interface projection; динамические, batch/reporting и требующие ручного маппинга запросы — через `NamedParameterJdbcTemplate`. Deck list queries уже переведены; остальные запросы мигрировать в scope затрагиваемой функции с PostgreSQL Testcontainers regression-покрытием.
+- [x] Установить правило: новые сложные `JOIN`, агрегации, отчётные и нетривиальные фильтрующие запросы пишутся на PostgreSQL SQL. Не добавлять JPQL/HQL и `select new ...`; выбирать между статическим `@Query(nativeQuery = true)` и `NamedParameterJdbcTemplate` по сложности и динамичности запроса.
 - [ ] Установить правило: Lombok + Constructor Injection вместо `@Autowired` на полях — **вероятно уже стандарт в коде** (см. `@RequiredArgsConstructor` в существующих сервисах), проверить остались ли исключения
 - [ ] Вынести `getCurrentUserId` в общий метод/сервис — **вероятно уже сделано** через `SecurityUtils.getCurrentUserId()`/`getCurrentUserEmail()` (см. `backend/AGENTS.md`, `CONVENTIONS.md`), проверить не осталось ли дублей в контроллерах/сервисах
 - [ ] Продумать UX и логику прохождения карточек (флэшкарты/quiz/input режимы) — **терминология устарела** (`card_desc` → сейчас `deck`); функционально во многом уже покрыто `docs/features/learning-flow.md` (enroll → study-cards → review → progress), уточнить что именно осталось не реализованным сверх этого
