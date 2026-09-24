@@ -23,3 +23,5 @@ databaseChangeLog:
       file: db/changelog/changes/V11__add_enrolled_at_to_user_deck_progress.yaml
   - include:
       file: db/changelog/changes/V12__index_cards_by_deck.yaml
+  - include:
+      file: db/changelog/changes/V13__rename_cards_deck_index.yaml

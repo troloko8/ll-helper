@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: V13-1
+      author: llhelper
+      comment: Rename the original V12 index without rebuilding it; the published V12 variant already uses the final name
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: ALTER INDEX IF EXISTS idx_cards_deck RENAME TO idx_cards_deck_id;

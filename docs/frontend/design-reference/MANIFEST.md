@@ -192,6 +192,16 @@ No separate mobile Login/Register reference exists. Use the desktop Login/Regist
 
 ## Add/Edit Card
 
+### Card Details (Owner, desktop) — `card_details_owner`
+
+- Platform: Desktop; also owns the content hierarchy for the responsive mobile adaptation defined in `DESIGN.md`.
+- Screen ID: `6e069c7228fd4bf3b7f6d3bf7f6a5b2d`
+- Stitch title: "Card Details — Owner — Design System Test"
+- Purpose: canonical read-only Card Details reference opened from a card in Owner Deck Details; the Edit Card action continues to the separate editor route.
+- Mobile adaptation: no separate mobile Stitch resource is canonical. Use this screen's content hierarchy inside the canonical mobile shell and apply the mobile rules from `DESIGN.md`.
+- Warnings: "Design System Test" is a Stitch working-title suffix, not product copy. `DESIGN.md` overrides any uppercase labels, literal color values, or generated theme drift in the screen HTML.
+- Do not copy: raw Stitch HTML/JS; hardcoded token values; technical-grid metadata; alternate mobile themes.
+
 ### Add/Edit Card (desktop) — `add_edit_card_llhelper_refined`
 
 - Platform: Desktop
@@ -292,7 +302,7 @@ current product surface and must not be used:
 
 ## Summary
 
-- All 26 canonical registry entries (14 desktop + 12 mobile) are resolved to
+- All 27 canonical registry entries (15 desktop + 12 mobile) are resolved to
   an exact Stitch screen resource ID in the canonical project. None remain
   ambiguous.
 - 2 naming-drift notes (screen exists, Stitch title text differs slightly

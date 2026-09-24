@@ -27,6 +27,15 @@ When sources conflict, resolve in this order:
    copied as production architecture or behavior — no Tailwind, no raw DOM
    structure, no embedded JS logic.
 
+This priority applies equally to desktop and mobile. A canonical Stitch screen
+may supply composition, hierarchy, and content placement, but it does not
+override this document's tokens, typography, brand, application shell, or
+responsive rules. When a Stitch screen uses another generated theme, the
+frontend must normalize it through the semantic CSS variables and shared UI
+patterns defined here rather than reproduce that theme. A missing dedicated
+mobile Stitch variant is implemented as a responsive adaptation of the
+canonical content model inside the mobile shell below.
+
 ## Product and brand
 
 - **Formal product name:** CyberCognition LL Helper.
@@ -207,6 +216,7 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `create_deck_llhelper`
 - `edit_deck_llhelper_refined_1`
 - `deck_details_owner_llhelper_refined`
+- `card_details_owner`
 - `deck_details_public_llhelper_refined`
 - `learning_deck_details_llhelper_refined`
 - `add_edit_card_llhelper_refined`
@@ -231,6 +241,12 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `discover_mobile`
 - `creator_profile_mobile` — layout only; do not add Follow behavior.
 - `learning_progress_mobile_2`
+
+`card_details_owner` has no separate mobile Stitch resource. Its mobile design
+is the same read-only content hierarchy adapted to the canonical compact header,
+16px mobile gutters, single-column content, full-width actions where needed,
+and the canonical bottom navigation. Do not borrow a differently themed mobile
+screen to fill this gap.
 
 ### State naming families to preserve
 
@@ -258,6 +274,7 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `StatusBadge`
 - Thin `ProgressBar`
 - `CardInventory` — desktop table / mobile list
+- `CardDetails` — read-only card content; responsive single-column adaptation
 - `Skeleton`
 - `PageState` / `InlineError` / `ApiErrorPresentation`
 - Destructive confirmation dialog

@@ -88,7 +88,7 @@
 - [x] Owner Deck Details (`/decks/:deckId/manage`).
 - [x] Manual Add Card screen (`/decks/:deckId/cards/new`) — Level 1 требование.
 - [x] Single-card AI generation реализована; успешное создание подтверждено пользователем. Optional: не закрывает обязательную ручную ветку, которая проверяется в 4A.
-- [ ] Принять UX-решение для карточки в Owner Deck Details: либо карточка открывает отдельный read-only Card Details с последующим действием Edit (тогда нужны новый canonical Stitch reference и отдельный route), либо действие Edit сразу открывает существующую Add/Edit Card форму с заполненными данными. Зафиксировать выбранный entry point и route в integration map; при выборе отдельного Card Details сначала подготовить desktop/mobile дизайн и зарегистрировать его в `DESIGN.md`/`MANIFEST.md`. Runtime-реализация остаётся вместе с deferred полноценным Card Editor после первого deployment.
+- [x] Принято: карточка в Owner Deck Details открывает отдельный read-only Card Details (`/decks/:deckId/cards/:cardId`), а действие Edit ведёт в `/decks/:deckId/cards/:cardId/edit`. Desktop canonical reference — `card_details_owner` (`6e069c7228fd4bf3b7f6d3bf7f6a5b2d`); mobile использует зафиксированную в `DESIGN.md` responsive-адаптацию этого content hierarchy под canonical mobile shell, без заимствования другой темы Stitch. Entry point, route и deferred runtime зафиксированы в integration map; реализация остаётся вместе с полноценным Card Editor после первого deployment.
 - Created Decks list включён в продолжение этого спринта (4C); полноценный Card Editor/Edit Deck остаётся вне scope.
 
 **Группа 4: Public deck, enroll & study flow**

@@ -33,7 +33,7 @@
 ## Database
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `validate`
-- **Migrations:** Liquibase (schema defined through V12; see `docs/database/relationships.md` for current schema state)
+- **Migrations:** Liquibase (schema defined through V13; see `docs/database/relationships.md` for current schema state)
 - **Static custom reads:** write joins, aggregations, and non-trivial filters in PostgreSQL SQL. When the SQL is static and belongs to one feature aggregate, keep it in that feature's Spring Data repository with `@Query(nativeQuery = true)` and return a minimal scalar interface projection. Select only fields required by the API/use case.
 - **JDBC-template boundary:** use `NamedParameterJdbcTemplate` for dynamic SQL, batch/reporting workloads, or result mapping that cannot stay clear as a small Spring Data projection. Create a separate query repository only when that boundary is actually needed.
 - **JPA boundary:** Spring Data JPA remains available for entity persistence and simple CRUD/derived lookups. Do not introduce JPQL/HQL or constructor expressions such as `select new ...`.

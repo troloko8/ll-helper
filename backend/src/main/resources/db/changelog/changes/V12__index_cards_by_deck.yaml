@@ -3,6 +3,9 @@ databaseChangeLog:
       id: V12-1
       author: llhelper
       comment: Support per-deck card counts and deck-scoped card lookups
+      # Accept the legacy checksum from databases where V12 created idx_cards_deck.
+      validCheckSum:
+        - "9:62340d0ec15d7236dbff1f1f4542a257"
       changes:
         - createIndex:
             indexName: idx_cards_deck_id
