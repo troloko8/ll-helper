@@ -17,15 +17,14 @@ export const deckApi = baseApi.injectEndpoints({
             query: () => '/decks/mine',
             providesTags: (result) => [
                 { type: 'Deck', id: 'LIST' },
-                ...(result?.map(({ id }) => ({ type: 'Deck' as const, id })) ??
-                    []),
+                ...(result?.map(({ id }) => ({ type: 'Deck' as const, id })) ?? []),
             ],
         }),
         getPublicDecks: builder.query<PublicDeckListResponseDto[], void>({
             query: () => '/decks',
             providesTags: (result) => [
                 { type: 'Deck', id: 'LIST' },
-                ...(result?.map(({ id }) => ({ type: 'Deck', id })) ?? []),
+                ...(result?.map(({ id }) => ({ type: 'Deck' as const, id })) ?? []),
             ],
         }),
     }),

@@ -4,6 +4,13 @@
 }
 
 .pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.pageHeader > div {
     display: grid;
     max-width: 720px;
     gap: 8px;
@@ -118,27 +125,55 @@
     font-size: 0.875rem;
 }
 
-.createDeckLink {
+.createDeckLink,
+.browseDecksLink {
     display: inline-flex;
     min-height: 44px;
-    margin-top: 8px;
     align-items: center;
     justify-content: center;
     padding: 10px 20px;
     border-radius: 6px;
-    color: var(--on-primary);
-    background-color: var(--primary-container);
     font-weight: 650;
     text-decoration: none;
 }
 
+.createDeckLink {
+    flex: 0 0 auto;
+    border: 1px solid var(--outline-variant);
+    color: var(--on-surface);
+    background-color: var(--surface-container-high);
+}
+
+.browseDecksLink {
+    margin-top: 8px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+}
+
 .createDeckLink:hover {
+    border-color: var(--outline);
+    background-color: var(--surface-container-highest);
+}
+
+.browseDecksLink:hover {
     background-color: var(--primary);
 }
 
-.createDeckLink:focus-visible {
+.createDeckLink:focus-visible,
+.browseDecksLink:focus-visible {
     outline: 2px solid var(--primary-container);
     outline-offset: 3px;
+}
+
+@media (max-width: 35rem) {
+    .pageHeader {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .createDeckLink {
+        width: 100%;
+    }
 }
 
 @media (min-width: 48rem) {

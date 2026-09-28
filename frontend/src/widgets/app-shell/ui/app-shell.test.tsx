@@ -89,7 +89,7 @@ describe('AppShell', () => {
         expect(requests).toBe(1)
         view.unmount()
     })
-    it('renders the working Learning and Created navigation entries', () => {
+    it('renders the working Learning, Created, and Discover navigation entries', () => {
         render(
             <Provider store={createApiTestStore()}>
                 <MemoryRouter initialEntries={['/learning']}>
@@ -126,12 +126,46 @@ describe('AppShell', () => {
             expect(
                 within(navigation).getByRole('link', { name: 'Created' }),
             ).not.toHaveAttribute('aria-current')
-            expect(within(navigation).getAllByRole('link')).toHaveLength(2)
+            expect(
+                within(navigation).getByRole('link', { name: 'Discover' }),
+            ).toHaveAttribute('href', '/discover')
+            expect(
+                within(navigation).getByRole('link', { name: 'Discover' }),
+            ).not.toHaveAttribute('aria-current')
+            expect(within(navigation).getAllByRole('link')).toHaveLength(3)
         }
 
-        expect(screen.queryByText('Discover')).not.toBeInTheDocument()
         expect(screen.queryByText('Study')).not.toBeInTheDocument()
         expect(screen.queryByText('Progress')).not.toBeInTheDocument()
+    })
+
+    it('marks Discover active in desktop and mobile navigation', () => {
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={['/discover']}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route
+                                path="/discover"
+                                element={<h1>Discover content</h1>}
+                            />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        for (const navigationName of [
+            'Primary navigation',
+            'Mobile navigation',
+        ]) {
+            const navigation = screen.getByRole('navigation', {
+                name: navigationName,
+            })
+            expect(
+                within(navigation).getByRole('link', { name: 'Discover' }),
+            ).toHaveAttribute('aria-current', 'page')
+        }
     })
 
     it('marks Created active in desktop and mobile navigation', () => {

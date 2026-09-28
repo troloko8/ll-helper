@@ -66,6 +66,30 @@ function MobileCreatedLink() {
     )
 }
 
+function MobileDiscoverLink() {
+    return (
+        <NavLink
+            className={({ isActive }) =>
+                [
+                    styles.navLink,
+                    styles.mobileNavLink,
+                    isActive && styles.active,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+            }
+            to="/discover"
+        >
+            <span className={styles.navIcon}>
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm3.8 6.2-2.12 5.48-5.48 2.12 2.12-5.48 5.48-2.12Zm-4.18 3.42-.7 1.46 1.46-.7.7-1.46-1.46.7Z" />
+                </svg>
+            </span>
+            <span>Discover</span>
+        </NavLink>
+    )
+}
+
 export function MobileNavigation() {
     return (
         <>
@@ -78,6 +102,7 @@ export function MobileNavigation() {
             >
                 <MobileLearningLink />
                 <MobileCreatedLink />
+                <MobileDiscoverLink />
             </nav>
         </>
     )

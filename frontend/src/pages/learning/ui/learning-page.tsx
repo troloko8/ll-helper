@@ -35,8 +35,8 @@ function EmptyLearningState() {
                 Enrolled decks will appear here with your current mastery
                 progress.
             </p>
-            <Link className={styles.createDeckLink} to="/decks/new">
-                Create Deck
+            <Link className={styles.browseDecksLink} to="/discover">
+                Browse public decks
             </Link>
         </section>
     )
@@ -48,11 +48,16 @@ export function LearningPage() {
     return (
         <div className={styles.page}>
             <header className={styles.pageHeader}>
-                <p className={styles.eyebrow}>My decks</p>
-                <h1>Learning</h1>
-                <p className={styles.subtitle}>
-                    Continue where you left off and track your mastery.
-                </p>
+                <div>
+                    <p className={styles.eyebrow}>My decks</p>
+                    <h1>Learning</h1>
+                    <p className={styles.subtitle}>
+                        Continue where you left off and track your mastery.
+                    </p>
+                </div>
+                <Link className={styles.createDeckLink} to="/decks/new">
+                    Create Deck
+                </Link>
             </header>
 
             {isLoading && <LearningDecksSkeleton />}

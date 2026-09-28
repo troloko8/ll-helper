@@ -78,6 +78,9 @@ describe('LearningPage', () => {
         expect(
             screen.getByRole('link', { name: /English essentials/ }),
         ).toHaveAttribute('href', '/learning/12')
+        expect(
+            screen.getByRole('link', { name: 'Create Deck' }),
+        ).toHaveAttribute('href', '/decks/new')
     })
 
     it('labels an unstudied first deck as ready to start', async () => {
@@ -92,7 +95,7 @@ describe('LearningPage', () => {
         expect(await screen.findByText('Start learning')).toBeInTheDocument()
     })
 
-    it('shows an empty state with a working Create Deck CTA', async () => {
+    it('shows an empty state with Create and Browse public decks actions', async () => {
         server.use(
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
@@ -109,6 +112,9 @@ describe('LearningPage', () => {
         expect(
             screen.getByRole('link', { name: 'Create Deck' }),
         ).toHaveAttribute('href', '/decks/new')
+        expect(
+            screen.getByRole('link', { name: 'Browse public decks' }),
+        ).toHaveAttribute('href', '/discover')
     })
 
     it('shows a page error and retries the request', async () => {

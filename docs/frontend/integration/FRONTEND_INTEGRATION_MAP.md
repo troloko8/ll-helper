@@ -35,7 +35,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
-| `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | DECK-03 public decks → Public Deck Details; bounded list adaptation, §0.10. Shell navigation and enrollment reconciliation remain follow-ups. |
+| `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks → Public Deck Details; bounded list adaptation, §0.10. Enrollment reconciliation remains a follow-up. |
 | `/progress` | deferred | — | |
 | `/creators/:username` | deferred | — | |
 | `/decks/:deckId/edit` | deferred | — | |

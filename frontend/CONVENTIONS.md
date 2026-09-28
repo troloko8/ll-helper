@@ -33,9 +33,9 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 
 The implemented `widgets/app-shell/` slice owns the responsive authenticated
 layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
-navigation, and the protected route outlet. The shell navigation currently
-exposes the working `/learning` and `/created` destinations; further accepted
-collection/navigation expansion is specified in
+navigation, and the protected route outlet. The shell navigation exposes the
+working `/learning`, `/created`, and `/discover` destinations accepted for the
+current Level 1 subset. Further navigation expansion is specified in
 `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.10 and
 `docs/frontend/DESIGN.md`.
 
@@ -104,11 +104,11 @@ the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
 cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
 
-Discover is now the public-detail entry route, while adding it to the
-desktop/mobile shell navigation and completing enrollment reconciliation remain
-follow-up integration work. A visible local Logout action is also still pending.
-The existing Created navigation, enrollment, learning, study and logout use
-cases remain the implementation foundation.
+Discover is now the public-detail entry route in both desktop and mobile shell
+navigation. Completing enrollment reconciliation remains follow-up integration
+work. A visible local Logout action is also still pending. The existing Created
+navigation, enrollment, learning, study and logout use cases remain the
+implementation foundation.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`
 route. It consumes the `LEARN-02` response `{deckId, deckTitle, cards}` with a
