@@ -277,7 +277,7 @@ export function StudyPage() {
     const card = resolvedCards[cardIndex]
     const contextExample = getContextExample(card)
     const progressValue = ((cardIndex + 1) / resolvedCards.length) * 100
-    
+
     const handleReviewed = (result: ReviewCardResult) => {
         setReviewResult(result)
         setScore((current) => ({

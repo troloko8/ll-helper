@@ -53,7 +53,7 @@ export function ReviewCardForm({
                 deckId,
                 userAnswer,
             }).unwrap()
-            
+
             onReviewed({ response, userAnswer })
         } catch (error) {
             const message = getApiFieldErrors(error).userAnswer
