@@ -1,7 +1,8 @@
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { HttpResponse, http } from 'msw'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
     sessionAuthenticated,
@@ -211,6 +212,98 @@ describe('router session boundaries', () => {
         expect(
             screen.getByRole('link', { name: 'Create New Deck' }),
         ).toHaveAttribute('href', '/decks/new')
+    })
+
+    it('refreshes Created after creating a deck without a browser reload', async () => {
+        let ownedDeckRequests = 0
+        let ownedDecks: Array<{
+            id: number
+            title: string
+            sourceLanguage: string
+            targetLanguage: string
+            isPublic: boolean
+            cardCount: number
+        }> = []
+        const createdDeck = {
+            id: 73,
+            title: 'Travel Japanese',
+            description: '',
+            sourceLanguage: 'EN',
+            targetLanguage: 'JA',
+            createdAt: '2026-09-28T10:00:00Z',
+            updatedAt: '2026-09-28T10:00:00Z',
+            owner: {
+                id: 42,
+                username: 'learner',
+                firstName: 'Test',
+                lastName: 'Learner',
+                nativeLanguage: 'en',
+                targetLanguage: 'es',
+                avatarUrl: null,
+                uiLanguage: 'en',
+                createdAt: '2026-09-01T10:00:00Z',
+                updatedAt: '2026-09-01T10:00:00Z',
+            },
+            isPublic: true,
+            cards: [],
+        }
+        server.use(
+            http.get('http://localhost/api/v1/decks/mine', () => {
+                ownedDeckRequests += 1
+                return HttpResponse.json(ownedDecks)
+            }),
+            http.post('http://localhost/api/v1/decks', () => {
+                ownedDecks = [
+                    {
+                        id: createdDeck.id,
+                        title: createdDeck.title,
+                        sourceLanguage: createdDeck.sourceLanguage,
+                        targetLanguage: createdDeck.targetLanguage,
+                        isPublic: createdDeck.isPublic,
+                        cardCount: 0,
+                    },
+                ]
+                return HttpResponse.json(createdDeck, { status: 201 })
+            }),
+            http.get('http://localhost/api/v1/decks/73', () =>
+                HttpResponse.json(createdDeck),
+            ),
+        )
+        const user = userEvent.setup()
+        const { router } = renderRoute('/created', 'authenticated')
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'No created decks yet',
+            }),
+        ).toBeInTheDocument()
+
+        await user.click(screen.getByRole('link', { name: 'Create New Deck' }))
+        await user.type(
+            await screen.findByRole('textbox', { name: 'Deck title' }),
+            createdDeck.title,
+        )
+        await user.selectOptions(
+            screen.getByRole('combobox', { name: 'Target language' }),
+            'JA',
+        )
+        await user.click(screen.getByRole('button', { name: 'Create Deck' }))
+
+        await waitFor(() => {
+            expect(router.state.location.pathname).toBe('/decks/73/manage')
+        })
+
+        const desktopNavigation = screen.getByRole('navigation', {
+            name: 'Primary navigation',
+        })
+        await user.click(
+            within(desktopNavigation).getByRole('link', { name: 'Created' }),
+        )
+
+        expect(
+            await screen.findByRole('heading', { name: createdDeck.title }),
+        ).toBeInTheDocument()
+        expect(ownedDeckRequests).toBe(2)
     })
 
     it('allows an authenticated user to reach learning deck details', async () => {

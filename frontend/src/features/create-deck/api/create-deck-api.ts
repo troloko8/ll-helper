@@ -10,6 +10,8 @@ export const createDeckApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body,
             }),
+            invalidatesTags: (result) =>
+                result ? [{ type: 'Deck', id: 'LIST' }] : [],
         }),
     }),
 })

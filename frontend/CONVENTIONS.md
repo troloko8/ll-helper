@@ -69,7 +69,8 @@ The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
 `features/create-deck/` form inside the authenticated `AppShell`. The feature
 owns the `DECK-01` mutation, backend-aligned validation, submission states, and
 the required `isPrivate` UI → `isPublic` wire inversion. Successful creation
-navigates directly to `/decks/:deckId/manage` so the owner can add cards.
+navigates directly to `/decks/:deckId/manage` so the owner can add cards and
+invalidates `Deck/LIST`, ensuring the next Created visit reloads the collection.
 Shared Deck response types and the backend Language enum live in
 `entities/deck/`. The implemented
 `pages/owner-deck-details/` slice owns `/decks/:deckId/manage`, consumes the
@@ -85,7 +86,9 @@ fields while pending, and presents
 the shared `429`/`503` errors without implementing provider logic in the
 frontend. Shared `CardResponse` contract data lives in `entities/card/`.
 Successful creation invalidates the selected deck detail cache before
-navigation returns to Owner Deck Details.
+navigation returns to Owner Deck Details. Because the Created collection also
+provides each `Deck/{deckId}` tag, the same invalidation refreshes its
+backend-provided `cardCount` after both manual and single-card AI creation.
 
 The implemented `pages/public-deck-details/` slice owns the direct-link-only
 `/decks/:deckId` route. It consumes `DECK-02`, renders public content without

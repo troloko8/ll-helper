@@ -307,12 +307,12 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
 | Accepted frontend phase | Level 1 Created flow; route and collection page implemented. |
-| Blocker / gap | Collection invalidation remains in current-sprint Group 4C follow-ups. |
+| Blocker / gap | None for collection freshness: successful deck creation invalidates `Deck/LIST`; manual and AI card creation invalidate `Deck/{deckId}`, refreshing both owner detail and the matching Created count. Live cross-account/mobile/keyboard smoke remains in current-sprint Group 4C. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **partial — page/navigation implemented; invalidation pending** |
-| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **partial — page/navigation implemented; invalidation pending** |
+| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **implemented; live smoke pending** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **implemented; live smoke pending** |
 
 **Implemented DTO shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck):
 

@@ -131,7 +131,7 @@
 - [x] Добавить query DECK-06 и страницу `/created`: title, language pair, public/private, cardCount, Open → `/decks/:deckId/manage`, Create New Deck → `/decks/new`.
 - [x] Подключить Created в desktop/mobile navigation вместе с готовым маршрутом. Сохранить доступный Create Deck и при пустом, и при непустом списке; после создания оставлять пользователя на Owner Deck Details для добавления карточек.
 - [x] Добавить loading/error/retry/empty состояния по references; убрать из адаптации действия редактирования/удаления, которых нет в принятом scope.
-- [ ] Связать invalidation: создание колоды обновляет Created; manual/AI add обновляет count в списках и detail. Проверить возврат без ручного refresh.
+- [x] Связать invalidation: создание колоды обновляет Created; manual/AI add обновляет count в списках и detail. Проверить возврат без ручного refresh.
 - [ ] Проверить через UI и RTL/MSW: после ухода со страницы и нового входа собственная колода снова находится в Created, чужая private не появляется; Open и Create доступны с клавиатуры и на mobile.
 
 **Результат:** созданная колода больше не теряется после ухода с Owner Deck Details.
