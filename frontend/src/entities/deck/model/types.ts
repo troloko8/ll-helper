@@ -69,3 +69,13 @@ export interface OwnedDeckListResponseDto {
     isPublic: boolean
     cardCount: number
 }
+
+export interface PublicDeckListResponseDto {
+    id: number
+    title: string
+    sourceLanguage: DeckLanguageCode
+    targetLanguage: DeckLanguageCode
+    owner: DeckOwnerResponseDto
+    cardCount: number
+    isEnrolled: boolean
+}

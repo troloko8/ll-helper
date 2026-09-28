@@ -285,15 +285,15 @@ Only fields with non-trivial validation/default/nesting are annotated; trivial `
 Preserved boundaries (per `docs/frontend/DESIGN.md` and `docs/architecture/current-architecture.md` §8):
 - `Deck`/`Card` = content (owner-mutable, no per-user state).
 - `UserDeckProgress`/`UserCardProgress` = learning state (created on enroll, mutated on review).
-- "Created" (owner content management), public discovery, and "Learning" (enrolled study) remain distinct product collections. `GET /decks` is a safe public-only collection; Created uses the separate current-user-scoped DECK-06 contract; Discover still requires richer fields. Learning has its own current-user-scoped LEARN-05 contract.
+- "Created" (owner content management), public discovery, and "Learning" (enrolled study) remain distinct product collections. `GET /decks` is a safe public-only collection and provides the fields required by the accepted bounded Discover list; Created uses the separate current-user-scoped DECK-06 contract, while Learning has its own current-user-scoped LEARN-05 contract. Discover search, sort, and pagination remain deferred.
 
 ## 12. Phase 0.4A summary
 
 - **26 existing HTTP operations:** 24 `implemented`, 2 `partial`, 0 `planned`, 0 `missing`, 0 `unclear` (§4). `DECK-03` is public-only, DECK-06 is owner-scoped, and `CARD-04` returns only cards whose parent deck is public.
-- **Missing product capabilities/backend contracts (3):** Discover/public Deck list, aggregate Progress endpoint, Creator-owned/public Decks endpoint (§9).
+- **Missing product capabilities/backend contracts (2):** aggregate Progress endpoint and Creator-owned/public Decks endpoint (§9).
 - **Confirmed security/filtering gaps (0):** G-04 closed the `GET /decks` collection exposure, CARD-04 closed the `GET /cards` collection exposure, and G-05 closed detail-read exposure. The separate catch-all 500 message leak is resolved (§7). The JWT filter exception path (formerly Discrepancy O) is resolved — see §6/§7/§8.
 - **Frontend integration mappings (1):** `isPublic` (backend) ↔ `isPrivate` (UI) inversion — a required frontend-side mapping, not a backend gap (§9.1).
 - **Confirmed absent/out-of-scope capabilities (2):** refresh token (deferred to Level 3), backend logout endpoint (intentional for Level 1) (§9.2). Pagination is a related but distinct **known deferred limitation** (Level 2, §9.3), not an out-of-scope capability and not an unresolved product decision.
 - **Unresolved questions (0):** the public-vs-owned collection split is resolved by DECK-03 plus DECK-06 (§10). Register→Profile UX sequence and private detail-read visibility remain resolved.
 
-Total candidate backend gaps counted in §9's main table: **5**. Endpoint-operation counts (27 total, 25 implemented / 2 partial) and domain-capability counts (§11) are tracked separately and must not be summed together.
+Total candidate backend gaps counted in §9's main table: **4**. Endpoint-operation counts (27 total, 25 implemented / 2 partial) and domain-capability counts (§11) are tracked separately and must not be summed together.

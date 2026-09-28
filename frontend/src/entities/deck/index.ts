@@ -2,6 +2,7 @@ export {
     deckApi,
     useGetDeckByIdQuery,
     useGetOwnedDecksQuery,
+    useGetPublicDecksQuery,
 } from './api/deck-api'
 export {
     DECK_LANGUAGE_OPTIONS,
@@ -14,4 +15,5 @@ export type {
     DeckOwnerResponseDto,
     DeckResponseDto,
     OwnedDeckListResponseDto,
+    PublicDeckListResponseDto,
 } from './model/types'

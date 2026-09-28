@@ -47,6 +47,9 @@ describe('router session boundaries', () => {
             http.get('http://localhost/api/v1/decks/mine', () =>
                 HttpResponse.json([]),
             ),
+            http.get('http://localhost/api/v1/decks', () =>
+                HttpResponse.json([]),
+            ),
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
@@ -212,6 +215,20 @@ describe('router session boundaries', () => {
         expect(
             screen.getByRole('link', { name: 'Create New Deck' }),
         ).toHaveAttribute('href', '/decks/new')
+    })
+
+    it('allows an authenticated user to reach Discover', async () => {
+        const { router } = renderRoute('/discover', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/discover')
+        expect(
+            await screen.findByRole('heading', { name: 'Discover' }),
+        ).toBeInTheDocument()
+        expect(
+            await screen.findByRole('heading', {
+                name: 'No public decks yet',
+            }),
+        ).toBeInTheDocument()
     })
 
     it('refreshes Created after creating a deck without a browser reload', async () => {

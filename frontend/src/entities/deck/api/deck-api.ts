@@ -1,5 +1,9 @@
 import { baseApi } from '@/shared/api'
-import type { DeckResponseDto, OwnedDeckListResponseDto } from '../model/types'
+import type {
+    DeckResponseDto,
+    OwnedDeckListResponseDto,
+    PublicDeckListResponseDto,
+} from '../model/types'
 
 export const deckApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
@@ -17,7 +21,18 @@ export const deckApi = baseApi.injectEndpoints({
                     []),
             ],
         }),
+        getPublicDecks: builder.query<PublicDeckListResponseDto[], void>({
+            query: () => '/decks',
+            providesTags: (result) => [
+                { type: 'Deck', id: 'LIST' },
+                ...(result?.map(({ id }) => ({ type: 'Deck', id })) ?? []),
+            ],
+        }),
     }),
 })
 
-export const { useGetDeckByIdQuery, useGetOwnedDecksQuery } = deckApi
+export const {
+    useGetDeckByIdQuery,
+    useGetOwnedDecksQuery,
+    useGetPublicDecksQuery,
+} = deckApi

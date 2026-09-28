@@ -4,6 +4,7 @@ import { AddCardPage } from '@/pages/add-card'
 import { CompleteProfilePage } from '@/pages/complete-profile'
 import { CreateDeckPage } from '@/pages/create-deck'
 import { CreatedPage } from '@/pages/created'
+import { DiscoverPage } from '@/pages/discover'
 import { LearningPage } from '@/pages/learning'
 import { LearningDeckDetailsPage } from '@/pages/learning-deck-details'
 import { LoginPage } from '@/pages/login'
@@ -61,6 +62,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/created',
                                 element: <CreatedPage />,
+                            },
+                            {
+                                path: '/discover',
+                                element: <DiscoverPage />,
                             },
                             {
                                 path: '/learning/:deckId',

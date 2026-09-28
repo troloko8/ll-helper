@@ -18,8 +18,8 @@
 | Create Deck | Пользователь подтвердил создание колоды | Проверить public/private в сквозном сценарии |
 | Manual Add Card | Валидация исправлена; ручное сохранение, отображение после refresh и AI-regression подтверждены пользователем 2026-09-21 | Повторить в полном smoke группы 5 |
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
-| Created / Discover | Created реализован: `/created`, DECK-06 query, состояния страницы и desktop/mobile navigation готовы. Для Discover backend DECK-03 готов, включая `cardCount` и current-user ACTIVE `isEnrolled`, но frontend route/query/page ещё не реализованы | Для Created завершить invalidation и UI smoke (4C); реализовать Discover (4D) |
-| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; публичная колода доступна только через URL | Связать через Discover, проверить обновление и сохранение прогресса (4D–5) |
+| Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список и состояния страницы с переходом в Public Deck Details; shell navigation и enrollment reconciliation ещё не реализованы | Для Created завершить UI smoke (4C); завершить Discover navigation/enrollment flow (4D) |
+| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; Public Deck Details теперь открывается из `/discover`, но shell navigation и enrollment reconciliation ещё не готовы | Связать Discover с navigation/enrollment state, проверить обновление и сохранение прогресса (4D–5) |
 | Logout | Функция очистки есть, production UI её не вызывает | Добавить доступную кнопку и проверить повторный вход (4F) |
 | Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
 
@@ -140,7 +140,7 @@
 
 Зависимость: 4B/4C. References: `discover_llhelper_refined`, `discover_mobile` и их loading/error/empty states в manifest. Принята ограниченная адаптация: список и переходы; поиск, фильтры, Load more, bookmark, декоративные обложки и topic/level chips остаются вне этого спринта (map §0.10).
 
-- [ ] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
+- [x] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
 - [ ] Подключить Discover в desktop/mobile navigation и добавить Browse public decks в пустой Learning state. Create Deck должен оставаться доступным и после появления learning decks.
 - [ ] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
 - [ ] Доработать Public Deck Details: до enrollment — Start learning; для уже добавленной колоды — Open learning → `/learning/:deckId`. Состояние получать из server state (например, существующего LEARN-05), включая прямое открытие/refresh, а не только из navigation state.
