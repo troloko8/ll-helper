@@ -142,7 +142,7 @@
 
 - [x] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
 - [x] Подключить Discover в desktop/mobile navigation и добавить Browse public decks в пустой Learning state. Create Deck должен оставаться доступным и после появления learning decks.
-- [ ] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
+- [x] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
 - [ ] Доработать Public Deck Details: до enrollment — Start learning; для уже добавленной колоды — Open learning → `/learning/:deckId`. Состояние получать из server state (например, существующего LEARN-05), включая прямое открытие/refresh, а не только из navigation state.
 - [ ] После успешного Enroll обновлять Discover enrollment state и Learning list, затем открывать Learning Deck Details. При конфликте 409 сверять актуальное enrollment и предоставлять путь в Learning; остальные ошибки не считать успехом.
 - [ ] Проверить RTL/MSW и вручную: Discover → public details → Enroll → Learning Details → Learning list; повторное открытие и enrollment без дубликатов. Для пустой колоды показать понятное состояние без обещания готовой study-сессии.

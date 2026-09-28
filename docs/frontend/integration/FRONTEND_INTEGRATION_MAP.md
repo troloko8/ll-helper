@@ -549,8 +549,8 @@ was added.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `discover_llhelper_refined` | `97b05b9f24f84410845beb00803e26df` | loading `5a3ee7028bcb4b7d9b8d3ecebfa41231`; API error `7d6fc47e2a4d487789efb22fe6ba0009`; empty/no results `c93b42eb746249e3b5f06cd7d2ec47e6` | **implemented (bounded list)** |
-| Mobile | `discover_mobile` | `9aaf765ffdfb4a0595da18e8c28d0bb6` | loading `6ab80ffecc5d40c6ac73f3684a6f764b`; API error `f87fd1a533a4495194720d6d3a3d065a`; empty/no results `6332e210465d47d58f011bc22a663d72` | **implemented (responsive adaptation)** |
+| Desktop | `discover_llhelper_refined` | `97b05b9f24f84410845beb00803e26df` | loading `5a3ee7028bcb4b7d9b8d3ecebfa41231`; API error `7d6fc47e2a4d487789efb22fe6ba0009`; empty/no results `c93b42eb746249e3b5f06cd7d2ec47e6` | **implemented; RTL/MSW verified** |
+| Mobile | `discover_mobile` | `9aaf765ffdfb4a0595da18e8c28d0bb6` | loading `6ab80ffecc5d40c6ac73f3684a6f764b`; API error `f87fd1a533a4495194720d6d3a3d065a`; empty/no results `6332e210465d47d58f011bc22a663d72` | **implemented responsive adaptation; RTL/MSW verified** |
 
 **Implemented DTO shape** (the `discover_llhelper_refined` reference lists per-deck title, source/target language, card count, owner `@username`, a `Public` badge, and an `Enrolled` badge on at least one card):
 

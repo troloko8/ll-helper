@@ -92,6 +92,13 @@ describe('DiscoverPage', () => {
         expect(
             screen.getByRole('link', { name: 'Open Spanish Core 1000' }),
         ).toHaveAttribute('href', '/decks/12')
+        expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: /load more/i }),
+        ).not.toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: /bookmark/i }),
+        ).not.toBeInTheDocument()
     })
 
     it('shows an empty state when the backend returns no public decks', async () => {

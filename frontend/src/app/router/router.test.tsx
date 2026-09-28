@@ -231,6 +231,53 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
+    it('opens Public Deck Details from a Discover card', async () => {
+        server.use(
+            http.get('http://localhost/api/v1/decks', () =>
+                HttpResponse.json([
+                    {
+                        id: 12,
+                        title: 'Spanish Core 1000',
+                        sourceLanguage: 'ES',
+                        targetLanguage: 'EN',
+                        owner: {
+                            id: 42,
+                            username: 'learner',
+                            firstName: 'Test',
+                            lastName: 'Learner',
+                            nativeLanguage: 'en',
+                            targetLanguage: 'es',
+                            avatarUrl: null,
+                            uiLanguage: 'en',
+                            createdAt: '2026-09-01T10:00:00Z',
+                            updatedAt: '2026-09-01T10:00:00Z',
+                        },
+                        cardCount: 10,
+                        isEnrolled: false,
+                    },
+                ]),
+            ),
+        )
+        const user = userEvent.setup()
+        const { router } = renderRoute('/discover', 'authenticated')
+
+        await user.click(
+            await screen.findByRole('link', {
+                name: 'Open Spanish Core 1000',
+            }),
+        )
+
+        await waitFor(() => {
+            expect(router.state.location.pathname).toBe('/decks/12')
+        })
+        expect(
+            await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Start learning' }),
+        ).toBeInTheDocument()
+    })
+
     it('refreshes Created after creating a deck without a browser reload', async () => {
         let ownedDeckRequests = 0
         let ownedDecks: Array<{
