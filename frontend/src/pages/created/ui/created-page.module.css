@@ -1,0 +1,250 @@
+.page {
+    display: grid;
+    gap: 40px;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.pageHeader > div {
+    display: grid;
+    max-width: 720px;
+    gap: 8px;
+}
+
+.eyebrow,
+.cardCount,
+.publicBadge,
+.privateBadge {
+    font-family: var(--font-family-metadata);
+}
+
+.eyebrow {
+    color: var(--primary-container);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.pageHeader h1 {
+    color: var(--on-background);
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 720;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.subtitle,
+.languages {
+    color: var(--on-surface-variant);
+}
+
+.createDeckLink,
+.openLink {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.createDeckLink {
+    flex: 0 0 auto;
+    padding: 10px 20px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+}
+
+.createDeckLink:hover {
+    background-color: var(--surface-tint);
+}
+
+.createDeckLink:focus-visible,
+.openLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+.deckSection {
+    display: grid;
+    gap: 20px;
+}
+
+.deckSection > h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+    font-weight: 650;
+}
+
+.deckGrid {
+    display: grid;
+    gap: 16px;
+}
+
+.deckCard,
+.skeletonCard {
+    display: grid;
+    min-width: 0;
+    min-height: 208px;
+    gap: 20px;
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.deckCard {
+    align-content: space-between;
+}
+
+.skeletonCard {
+    align-content: space-between;
+}
+
+.cardHeading {
+    display: grid;
+    justify-items: start;
+    gap: 14px;
+}
+
+.cardHeading h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+    font-weight: 650;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.publicBadge,
+.privateBadge {
+    padding: 5px 8px;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.publicBadge {
+    border-color: color-mix(in srgb, var(--primary-container) 48%, transparent);
+    color: var(--primary-container);
+    background-color: color-mix(
+        in srgb,
+        var(--primary-container) 10%,
+        transparent
+    );
+}
+
+.privateBadge {
+    border-color: color-mix(in srgb, var(--secondary) 42%, transparent);
+    color: var(--secondary);
+    background-color: color-mix(in srgb, var(--secondary) 10%, transparent);
+}
+
+.languages {
+    font-size: 0.875rem;
+}
+
+.cardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline-variant);
+}
+
+.cardCount {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+}
+
+.openLink {
+    min-width: 88px;
+    padding: 9px 16px;
+    border: 1px solid var(--outline-variant);
+    color: var(--on-surface);
+    background-color: var(--surface-container-high);
+}
+
+.openLink:hover {
+    border-color: var(--outline);
+    background-color: var(--surface-container-highest);
+}
+
+.emptyState {
+    display: grid;
+    min-height: 320px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+    text-align: center;
+}
+
+.emptyIcon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    place-items: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    color: var(--primary-container);
+    background-color: var(--surface-container);
+}
+
+.emptyIcon svg {
+    width: 28px;
+    height: 28px;
+    fill: currentcolor;
+}
+
+.emptyState h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    max-width: 420px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 35rem) {
+    .pageHeader {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .createDeckLink {
+        width: 100%;
+    }
+}
+
+@media (min-width: 48rem) {
+    .page {
+        gap: 48px;
+    }
+
+    .deckGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 75rem) {
+    .deckGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

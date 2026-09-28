@@ -34,7 +34,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
 | `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
-| `/created` | accepted, implementation pending | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Owned public/private decks → Owner Deck Details; §0.10 |
+| `/created` | implemented; navigation pending | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | accepted, implementation pending | `discover_llhelper_refined` / `discover_mobile` | Public decks → Public Deck Details; bounded list adaptation, §0.10 |
 | `/progress` | deferred | — | |
 | `/creators/:username` | deferred | — | |
@@ -306,13 +306,13 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Errors | Shared JWT; 404 when the authenticated account has no linked `User` profile; catch-all 5xx. |
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
-| Candidate frontend phase | Deferred by the accepted Level 1 route scope; backend contract is ready. |
-| Blocker / gap | No backend collection blocker: per-deck `cardCount` is implemented. The UI route remains to be integrated. |
+| Accepted frontend phase | Level 1 Created flow; route and collection page implemented. |
+| Blocker / gap | Navigation entry and collection invalidation remain in current-sprint Group 4C follow-ups. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **deferred** |
-| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **deferred** |
+| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **partial — page implemented; navigation/invalidation pending** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **partial — page implemented; navigation/invalidation pending** |
 
 **Implemented DTO shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck):
 

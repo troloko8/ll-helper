@@ -33,10 +33,12 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 
 The implemented `widgets/app-shell/` slice owns the responsive authenticated
 layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
-navigation, and the protected route outlet. The current runtime exposes only
-`/learning`. The accepted collection/navigation expansion is specified in
+navigation, and the protected route outlet. The shell navigation currently
+exposes only `/learning`; `/created` is implemented as a protected route and
+its navigation entry remains a current-sprint follow-up. The accepted
+collection/navigation expansion is specified in
 `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.10 and
-`docs/frontend/DESIGN.md`; it is not implemented by this documentation change.
+`docs/frontend/DESIGN.md`.
 
 The implemented `pages/login/`, `pages/register/`, and
 `pages/complete-profile/` slices compose that layout with their feature-owned
@@ -57,6 +59,12 @@ The implemented `pages/learning-deck-details/` slice owns `/learning/:deckId`.
 It consumes the full, unpaginated `LEARN-03` card list, renders each
 backend-provided card status, and derives display-only per-status counts from
 that response. The counts are neither persisted nor copied into client state.
+
+The implemented `pages/created/` slice owns the `/created` route composition.
+It consumes the owner-scoped `DECK-06` query from `entities/deck/`, renders the
+backend-provided visibility and content-card count, and links each item to its
+Owner Deck Details route. Its Create New Deck action remains available for
+both empty and populated collections.
 
 The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
 `features/create-deck/` form inside the authenticated `AppShell`. The feature
@@ -85,9 +93,10 @@ the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
 cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
 
-The accepted next integration adds Discover as the public-detail entry and a
-visible local Logout action. These are pending UI tasks; the existing enrollment,
-learning, study and logout use cases remain the implementation foundation.
+The accepted next integration adds Created navigation, Discover as the
+public-detail entry, and a visible local Logout action. These are pending UI
+tasks; the existing Created page, enrollment, learning, study and logout use
+cases remain the implementation foundation.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`
 route. It consumes the `LEARN-02` response `{deckId, deckTitle, cards}` with a
@@ -212,7 +221,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-03`, and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02` and owner collection query `DECK-06`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-03`, and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

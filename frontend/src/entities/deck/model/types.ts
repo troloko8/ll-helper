@@ -60,3 +60,12 @@ export interface DeckResponseDto {
     isPublic: boolean
     cards: DeckCardResponseDto[]
 }
+
+export interface OwnedDeckListResponseDto {
+    id: number
+    title: string
+    sourceLanguage: DeckLanguageCode
+    targetLanguage: DeckLanguageCode
+    isPublic: boolean
+    cardCount: number
+}

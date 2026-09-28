@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router-dom'
 import { AddCardPage } from '@/pages/add-card'
 import { CompleteProfilePage } from '@/pages/complete-profile'
 import { CreateDeckPage } from '@/pages/create-deck'
+import { CreatedPage } from '@/pages/created'
 import { LearningPage } from '@/pages/learning'
 import { LearningDeckDetailsPage } from '@/pages/learning-deck-details'
 import { LoginPage } from '@/pages/login'
@@ -56,6 +57,10 @@ export const appRoutes: RouteObject[] = [
                             {
                                 path: '/learning',
                                 element: <LearningPage />,
+                            },
+                            {
+                                path: '/created',
+                                element: <CreatedPage />,
                             },
                             {
                                 path: '/learning/:deckId',

@@ -1,4 +1,8 @@
-export { deckApi, useGetDeckByIdQuery } from './api/deck-api'
+export {
+    deckApi,
+    useGetDeckByIdQuery,
+    useGetOwnedDecksQuery,
+} from './api/deck-api'
 export {
     DECK_LANGUAGE_OPTIONS,
     getDeckLanguageLabel,
@@ -9,4 +13,5 @@ export type {
     DeckLanguageCode,
     DeckOwnerResponseDto,
     DeckResponseDto,
+    OwnedDeckListResponseDto,
 } from './model/types'
