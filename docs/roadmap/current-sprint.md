@@ -18,7 +18,7 @@
 | Create Deck | Пользователь подтвердил создание колоды | Проверить public/private в сквозном сценарии |
 | Manual Add Card | Валидация исправлена; ручное сохранение, отображение после refresh и AI-regression подтверждены пользователем 2026-09-21 | Повторить в полном smoke группы 5 |
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
-| Created / Discover | Маршрутов и frontend queries списков ещё нет; backend DECK-06/DECK-03 возвращают отдельные DTO с `cardCount`, а DECK-03 также current-user ACTIVE `isEnrolled` | Реализовать Created и Discover (4C–4D) |
+| Created / Discover | Created реализован: `/created`, DECK-06 query, состояния страницы и desktop/mobile navigation готовы. Для Discover backend DECK-03 готов, включая `cardCount` и current-user ACTIVE `isEnrolled`, но frontend route/query/page ещё не реализованы | Для Created завершить invalidation и UI smoke (4C); реализовать Discover (4D) |
 | Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; публичная колода доступна только через URL | Связать через Discover, проверить обновление и сохранение прогресса (4D–5) |
 | Logout | Функция очистки есть, production UI её не вызывает | Добавить доступную кнопку и проверить повторный вход (4F) |
 | Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
@@ -129,7 +129,7 @@
 Зависимость: 4B. References: `created_decks_llhelper_refined_mvp`, `created_decks_mobile_with_bottom_nav`; exact IDs и состояния — `docs/frontend/design-reference/MANIFEST.md` → My Decks — Created.
 
 - [x] Добавить query DECK-06 и страницу `/created`: title, language pair, public/private, cardCount, Open → `/decks/:deckId/manage`, Create New Deck → `/decks/new`.
-- [ ] Подключить Created в desktop/mobile navigation вместе с готовым маршрутом. Сохранить доступный Create Deck и при пустом, и при непустом списке; после создания оставлять пользователя на Owner Deck Details для добавления карточек.
+- [x] Подключить Created в desktop/mobile navigation вместе с готовым маршрутом. Сохранить доступный Create Deck и при пустом, и при непустом списке; после создания оставлять пользователя на Owner Deck Details для добавления карточек.
 - [x] Добавить loading/error/retry/empty состояния по references; убрать из адаптации действия редактирования/удаления, которых нет в принятом scope.
 - [ ] Связать invalidation: создание колоды обновляет Created; manual/AI add обновляет count в списках и detail. Проверить возврат без ручного refresh.
 - [ ] Проверить через UI и RTL/MSW: после ухода со страницы и нового входа собственная колода снова находится в Created, чужая private не появляется; Open и Create доступны с клавиатуры и на mobile.

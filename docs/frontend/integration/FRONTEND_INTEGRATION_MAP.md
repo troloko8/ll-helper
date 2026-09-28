@@ -34,7 +34,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
 | `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
-| `/created` | implemented; navigation pending | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Owned public/private decks → Owner Deck Details; §0.10 |
+| `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | accepted, implementation pending | `discover_llhelper_refined` / `discover_mobile` | Public decks → Public Deck Details; bounded list adaptation, §0.10 |
 | `/progress` | deferred | — | |
 | `/creators/:username` | deferred | — | |
@@ -307,12 +307,12 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
 | Accepted frontend phase | Level 1 Created flow; route and collection page implemented. |
-| Blocker / gap | Navigation entry and collection invalidation remain in current-sprint Group 4C follow-ups. |
+| Blocker / gap | Collection invalidation remains in current-sprint Group 4C follow-ups. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **partial — page implemented; navigation/invalidation pending** |
-| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **partial — page implemented; navigation/invalidation pending** |
+| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **partial — page/navigation implemented; invalidation pending** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **partial — page/navigation implemented; invalidation pending** |
 
 **Implemented DTO shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck):
 
@@ -337,7 +337,7 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 | Errors | 400 validation/malformed body; 404 current User absent; 429; shared JWT; catch-all 500. |
 | Loading / error / empty | Submitting state; field validation; submission error. Empty not applicable. Desktop has validation/submission references; mobile uses the same semantic patterns without dedicated variants. |
 | Backend status | `DECK-01` implemented and sufficient for the screen's own contract. The new-user prerequisite (G-01/G-02) is a shared sequencing blocker on when Create Deck can be reached with a valid session, not a gap in the Create Deck contract itself. |
-| Candidate frontend phase | After Auth/Onboarding (sequencing only), before Created list UI if direct post-create navigation is accepted. |
+| Accepted frontend phase | Implemented after Auth/Onboarding; a successful create navigates directly to `/decks/:deckId/manage` so the owner can add cards. |
 | Blocker / gap | None specific to this screen's own contract. G-01/G-02/G-03 are shared sequencing prerequisites; G-11 is a required mapping, not a blocker. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |

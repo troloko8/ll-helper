@@ -7,6 +7,7 @@ import {
     RouterProvider,
 } from 'react-router-dom'
 import { act, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useGetCurrentUserQuery, userApi } from '@/entities/user'
@@ -88,7 +89,7 @@ describe('AppShell', () => {
         expect(requests).toBe(1)
         view.unmount()
     })
-    it('renders protected content inside the reduced Learning navigation shell', () => {
+    it('renders the working Learning and Created navigation entries', () => {
         render(
             <Provider store={createApiTestStore()}>
                 <MemoryRouter initialEntries={['/learning']}>
@@ -119,12 +120,92 @@ describe('AppShell', () => {
             expect(
                 within(navigation).getByRole('link', { name: 'Learning' }),
             ).toHaveAttribute('aria-current', 'page')
-            expect(within(navigation).getAllByRole('link')).toHaveLength(1)
+            expect(
+                within(navigation).getByRole('link', { name: 'Created' }),
+            ).toHaveAttribute('href', '/created')
+            expect(
+                within(navigation).getByRole('link', { name: 'Created' }),
+            ).not.toHaveAttribute('aria-current')
+            expect(within(navigation).getAllByRole('link')).toHaveLength(2)
         }
 
-        expect(screen.queryByText('Created')).not.toBeInTheDocument()
         expect(screen.queryByText('Discover')).not.toBeInTheDocument()
         expect(screen.queryByText('Study')).not.toBeInTheDocument()
         expect(screen.queryByText('Progress')).not.toBeInTheDocument()
+    })
+
+    it('marks Created active in desktop and mobile navigation', () => {
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={['/created']}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route
+                                path="/created"
+                                element={<h1>Created content</h1>}
+                            />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        for (const navigationName of [
+            'Primary navigation',
+            'Mobile navigation',
+        ]) {
+            const navigation = screen.getByRole('navigation', {
+                name: navigationName,
+            })
+            expect(
+                within(navigation).getByRole('link', { name: 'Created' }),
+            ).toHaveAttribute('aria-current', 'page')
+        }
+    })
+
+    it('collapses and expands the My Decks navigation group', async () => {
+        const user = userEvent.setup()
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={['/learning']}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route
+                                path="/learning"
+                                element={<h1>Learning content</h1>}
+                            />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        const desktopNavigation = screen.getByRole('navigation', {
+            name: 'Primary navigation',
+        })
+        const trigger = within(desktopNavigation).getByRole('button', {
+            name: 'My Decks',
+        })
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true')
+        expect(
+            within(desktopNavigation).getByRole('link', { name: 'Learning' }),
+        ).toBeInTheDocument()
+
+        await user.click(trigger)
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'false')
+        expect(
+            within(desktopNavigation).queryByRole('link', {
+                name: 'Learning',
+            }),
+        ).not.toBeInTheDocument()
+
+        await user.click(trigger)
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true')
+        expect(
+            within(desktopNavigation).getByRole('link', { name: 'Created' }),
+        ).toBeInTheDocument()
     })
 })

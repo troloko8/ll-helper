@@ -34,8 +34,7 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 The implemented `widgets/app-shell/` slice owns the responsive authenticated
 layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
 navigation, and the protected route outlet. The shell navigation currently
-exposes only `/learning`; `/created` is implemented as a protected route and
-its navigation entry remains a current-sprint follow-up. The accepted
+exposes the working `/learning` and `/created` destinations; further accepted
 collection/navigation expansion is specified in
 `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.10 and
 `docs/frontend/DESIGN.md`.
@@ -69,8 +68,10 @@ both empty and populated collections.
 The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
 `features/create-deck/` form inside the authenticated `AppShell`. The feature
 owns the `DECK-01` mutation, backend-aligned validation, submission states, and
-the required `isPrivate` UI → `isPublic` wire inversion. Shared Deck response
-types and the backend Language enum live in `entities/deck/`. The implemented
+the required `isPrivate` UI → `isPublic` wire inversion. Successful creation
+navigates directly to `/decks/:deckId/manage` so the owner can add cards.
+Shared Deck response types and the backend Language enum live in
+`entities/deck/`. The implemented
 `pages/owner-deck-details/` slice owns `/decks/:deckId/manage`, consumes the
 cacheable `DECK-02` query from `entities/deck/`, verifies the current user is
 the response owner, and renders the response's content-card inventory without
@@ -93,10 +94,10 @@ the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
 cache and navigates to the enrolled deck's Learning Deck Details route; Owner
 Deck Details does not link to this public surface.
 
-The accepted next integration adds Created navigation, Discover as the
-public-detail entry, and a visible local Logout action. These are pending UI
-tasks; the existing Created page, enrollment, learning, study and logout use
-cases remain the implementation foundation.
+The accepted next integration adds Discover as the public-detail entry and a
+visible local Logout action. These are pending UI tasks; the existing Created
+navigation, enrollment, learning, study and logout use cases remain the
+implementation foundation.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`
 route. It consumes the `LEARN-02` response `{deckId, deckTitle, cards}` with a

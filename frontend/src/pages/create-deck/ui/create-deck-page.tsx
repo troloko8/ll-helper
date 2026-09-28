@@ -1,8 +1,5 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { DeckResponseDto } from '@/entities/deck'
 import { CreateDeckForm } from '@/features/create-deck'
-import { Button } from '@/shared/ui'
 import styles from './create-deck-page.module.css'
 
 function DeckIcon() {
@@ -15,7 +12,6 @@ function DeckIcon() {
 
 export function CreateDeckPage() {
     const navigate = useNavigate()
-    const [createdDeck, setCreatedDeck] = useState<DeckResponseDto>()
 
     return (
         <div className={styles.page}>
@@ -39,40 +35,12 @@ export function CreateDeckPage() {
                 </header>
 
                 <div className={styles.panelBody}>
-                    {createdDeck ? (
-                        <div className={styles.success} role="status">
-                            <span
-                                className={styles.successMark}
-                                aria-hidden="true"
-                            >
-                                ✓
-                            </span>
-                            <h2>Deck created</h2>
-                            <p>
-                                <strong>{createdDeck.title}</strong> is ready
-                                for cards.
-                            </p>
-                            <div className={styles.successActions}>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => setCreatedDeck(undefined)}
-                                >
-                                    Create another
-                                </Button>
-                                <Link
-                                    className={styles.manageLink}
-                                    to={`/decks/${createdDeck.id}/manage`}
-                                >
-                                    Manage deck
-                                </Link>
-                            </div>
-                        </div>
-                    ) : (
-                        <CreateDeckForm
-                            onSuccess={setCreatedDeck}
-                            onCancel={() => navigate('/learning')}
-                        />
-                    )}
+                    <CreateDeckForm
+                        onSuccess={(deck) =>
+                            navigate(`/decks/${deck.id}/manage`)
+                        }
+                        onCancel={() => navigate('/learning')}
+                    />
                 </div>
             </section>
         </div>

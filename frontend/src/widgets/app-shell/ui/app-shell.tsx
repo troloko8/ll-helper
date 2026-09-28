@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useGetCurrentUserQuery } from '@/entities/user'
 import styles from './app-shell.module.css'
@@ -14,6 +15,14 @@ function LearningIcon() {
     return (
         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
             <path d="M4 4.75A2.75 2.75 0 0 1 6.75 2H11v17H6.75A2.75 2.75 0 0 0 4 21.75v-17Zm16 0A2.75 2.75 0 0 0 17.25 2H13v17h4.25A2.75 2.75 0 0 1 20 21.75v-17Z" />
+        </svg>
+    )
+}
+
+function CreatedIcon() {
+    return (
+        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M6 2h9a3 3 0 0 1 3 3v1h1a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-1H5a3 3 0 0 1-3-3V6a4 4 0 0 1 4-4Zm2 16v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-1v7a3 3 0 0 1-3 3H8ZM6 4a2 2 0 0 0-2 2v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H6Z" />
         </svg>
     )
 }
@@ -51,7 +60,31 @@ function LearningLink({ mobile = false }: { mobile?: boolean }) {
     )
 }
 
+function CreatedLink({ mobile = false }: { mobile?: boolean }) {
+    return (
+        <NavLink
+            className={({ isActive }) =>
+                [
+                    styles.navLink,
+                    mobile && styles.mobileNavLink,
+                    isActive && styles.active,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+            }
+            to="/created"
+        >
+            <span className={styles.navIcon}>
+                <CreatedIcon />
+            </span>
+            <span>Created</span>
+        </NavLink>
+    )
+}
+
 function DesktopSidebar() {
+    const [isMyDecksOpen, setIsMyDecksOpen] = useState(true)
+
     return (
         <aside className={styles.sidebar} aria-label="Application sidebar">
             <Brand />
@@ -59,8 +92,31 @@ function DesktopSidebar() {
                 className={styles.desktopNavigation}
                 aria-label="Primary navigation"
             >
-                <p className={styles.navGroupLabel}>My Decks</p>
-                <LearningLink />
+                <button
+                    className={styles.navGroupTrigger}
+                    type="button"
+                    aria-controls="my-decks-navigation"
+                    aria-expanded={isMyDecksOpen}
+                    onClick={() => setIsMyDecksOpen((isOpen) => !isOpen)}
+                >
+                    <span>My Decks</span>
+                    <svg
+                        className={styles.navGroupChevron}
+                        viewBox="0 0 24 24"
+                        focusable="false"
+                        aria-hidden="true"
+                    >
+                        <path d="m7 10 5 5 5-5H7Z" />
+                    </svg>
+                </button>
+                <div
+                    id="my-decks-navigation"
+                    className={styles.navGroupItems}
+                    hidden={!isMyDecksOpen}
+                >
+                    <LearningLink />
+                    <CreatedLink />
+                </div>
             </nav>
         </aside>
     )
@@ -78,6 +134,7 @@ function MobileBottomNavigation() {
     return (
         <nav className={styles.mobileNavigation} aria-label="Mobile navigation">
             <LearningLink mobile />
+            <CreatedLink mobile />
         </nav>
     )
 }

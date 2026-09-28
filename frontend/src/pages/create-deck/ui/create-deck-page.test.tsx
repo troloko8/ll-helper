@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import type { DeckResponseDto } from '@/entities/deck'
 import { renderWithProviders } from '@/app/test'
@@ -32,14 +33,23 @@ const createdDeck: DeckResponseDto = {
 }
 
 describe('CreateDeckPage', () => {
-    it('shows backend-confirmed success and supports creating another deck', async () => {
+    it('opens Owner Deck Details after successful creation', async () => {
         server.use(
             http.post('http://localhost/api/v1/decks', () =>
                 HttpResponse.json(createdDeck, { status: 201 }),
             ),
         )
         const user = userEvent.setup()
-        renderWithProviders(<CreateDeckPage />, { route: '/decks/new' })
+        renderWithProviders(
+            <Routes>
+                <Route path="/decks/new" element={<CreateDeckPage />} />
+                <Route
+                    path="/decks/:deckId/manage"
+                    element={<h1>Owner Deck Details</h1>}
+                />
+            </Routes>,
+            { route: '/decks/new' },
+        )
 
         await user.type(
             screen.getByRole('textbox', { name: 'Deck title' }),
@@ -52,17 +62,9 @@ describe('CreateDeckPage', () => {
         await user.click(screen.getByRole('button', { name: 'Create Deck' }))
 
         expect(
-            await screen.findByRole('heading', { name: 'Deck created' }),
-        ).toBeInTheDocument()
-        expect(screen.getByText('Travel Japanese')).toBeInTheDocument()
-        expect(
-            screen.getByRole('link', { name: 'Manage deck' }),
-        ).toHaveAttribute('href', '/decks/73/manage')
-
-        await user.click(screen.getByRole('button', { name: 'Create another' }))
-
-        expect(
-            screen.getByRole('textbox', { name: 'Deck title' }),
+            await screen.findByRole('heading', {
+                name: 'Owner Deck Details',
+            }),
         ).toBeInTheDocument()
     })
 })

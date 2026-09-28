@@ -74,6 +74,7 @@
     bottom: 0;
     left: 0;
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     min-height: calc(72px + env(safe-area-inset-bottom));
     padding: 8px var(--mobile-margin) env(safe-area-inset-bottom);
     border-top: 1px solid var(--outline-variant);
@@ -90,14 +91,54 @@
     gap: 8px;
 }
 
-.navGroupLabel {
-    margin: 0 12px 4px;
+.navGroupTrigger {
+    display: flex;
+    min-height: 40px;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 6px;
     color: var(--on-surface-variant);
+    background: transparent;
     font-family: var(--font-family-metadata);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.08em;
+    text-align: left;
     text-transform: uppercase;
+    cursor: pointer;
+}
+
+.navGroupTrigger:hover {
+    color: var(--on-surface);
+    background-color: var(--surface-container-high);
+}
+
+.navGroupTrigger:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+}
+
+.navGroupChevron {
+    width: 18px;
+    height: 18px;
+    fill: currentcolor;
+    transition: transform 120ms ease;
+}
+
+.navGroupTrigger[aria-expanded='false'] .navGroupChevron {
+    transform: rotate(-90deg);
+}
+
+.navGroupItems {
+    display: grid;
+    gap: 8px;
+}
+
+.navGroupItems .navLink {
+    padding-left: 28px;
 }
 
 .navLink {
@@ -180,7 +221,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .navLink {
+    .navLink,
+    .navGroupChevron {
         transition: none;
     }
 }
