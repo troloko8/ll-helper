@@ -18,8 +18,8 @@
 | Create Deck | Пользователь подтвердил создание колоды | Проверить public/private в сквозном сценарии |
 | Manual Add Card | Валидация исправлена; ручное сохранение, отображение после refresh и AI-regression подтверждены пользователем 2026-09-21 | Повторить в полном smoke группы 5 |
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
-| Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список, состояния страницы, desktop/mobile navigation и переход в Public Deck Details; enrollment reconciliation ещё не реализован | Для Created завершить UI smoke (4C); завершить Discover enrollment flow (4D) |
-| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; Public Deck Details теперь открывается через Discover navigation, но enrollment reconciliation ещё не готов | Связать Discover с enrollment state, проверить обновление и сохранение прогресса (4D–5) |
+| Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список, состояния страницы, desktop/mobile navigation и переход в Public Deck Details; DECK-02 возвращает точечный `isEnrolled` для Public Deck Details | Для Created завершить UI smoke (4C); завершить conflict reconciliation после Enroll (4D) |
+| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; Public Deck Details всегда предлагает Start Learning, а до enrollment дополнительно предлагает отдельный Enroll без запуска study | Проверить обновление коллекций после Enroll, 409 reconciliation и сохранение прогресса (4D–5) |
 | Logout | Функция очистки есть, production UI её не вызывает | Добавить доступную кнопку и проверить повторный вход (4F) |
 | Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
 
@@ -94,11 +94,11 @@
 
 **Группа 4: Public deck, enroll & study flow**
 
-- [x] Public Deck Details + Enroll (`/decks/:deckId`) реализован по прямой ссылке. Вход через Discover ещё предстоит сделать (4D); сам экран повторно не создавать.
+- [x] Public Deck Details + Enroll (`/decks/:deckId`) доступен из Discover и по прямой ссылке; сам экран повторно не создавать.
 - [x] Enroll in deck через Public Deck Details.
-- [x] Study screen (`/study/:deckId`, достижим только контекстно из Learning Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
+- [x] Study screen (`/study/:deckId`, достижим контекстно из Learning Deck Details и через Start Learning на Public Deck Details): карточки, submit answer, see result — backend G-08 готов (`LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` исключён).
 - [x] Study получает `{deckId, deckTitle, cards}` одним запросом LEARN-02; загрузка Learning list ради заголовка удалена.
-- [x] После готовности `/study/:deckId` добавить контекстный Study CTA на Learning Deck Details; отдельный persistent Study destination не создавать.
+- [x] После готовности `/study/:deckId` добавить контекстные входы из Learning Deck Details и через Start Learning на Public Deck Details; отдельный persistent Study destination не создавать.
 - ~~Progress view (отдельный экран)~~ — aggregate Progress dashboard deferred (Phase 0.4C); progress показывается внутри Learning Deck Details.
 
 ### Группа 4A — Надёжное ручное добавление карточки
@@ -144,9 +144,9 @@
 - [x] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
 - [x] Подключить Discover в desktop/mobile navigation и добавить Browse public decks в пустой Learning state. Create Deck должен оставаться доступным и после появления learning decks.
 - [x] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
-- [ ] Доработать Public Deck Details: до enrollment — Start learning; для уже добавленной колоды — Open learning → `/learning/:deckId`. Состояние получать из server state (например, существующего LEARN-05), включая прямое открытие/refresh, а не только из navigation state.
-- [ ] После успешного Enroll обновлять Discover enrollment state и Learning list, затем открывать Learning Deck Details. При конфликте 409 сверять актуальное enrollment и предоставлять путь в Learning; остальные ошибки не считать успехом.
-- [ ] Проверить RTL/MSW и вручную: Discover → public details → Enroll → Learning Details → Learning list; повторное открытие и enrollment без дубликатов. Для пустой колоды показать понятное состояние без обещания готовой study-сессии.
+- [x] Доработать Public Deck Details: Start Learning доступна всегда и открывает `/study/:deckId`, предварительно выполняя enrollment для ещё не добавленной колоды; до enrollment дополнительно показывать Enroll, который только добавляет колоду в Learning и оставляет пользователя на Public Deck Details. Точечное состояние получать из `DECK-02 isEnrolled`, включая прямое открытие/refresh, а не из navigation state или полной LEARN-05 коллекции.
+- [ ] После успешного Enroll или auto-enroll обновлять Discover enrollment state и Learning list; standalone Enroll оставляет пользователя на Public Deck Details, Start Learning открывает Study. При конфликте 409 сверять актуальное enrollment перед продолжением; остальные ошибки не считать успехом.
+- [ ] Проверить RTL/MSW и вручную обе ветки: Discover → Public Deck Details → Start Learning → auto-enroll при необходимости → Study; отдельно Discover → Public Deck Details → Enroll (остаться на странице) → Learning list → Learning Details. Проверить повторное открытие и enrollment без дубликатов. Для пустой колоды показать понятное состояние без обещания готовой study-сессии.
 
 **Результат:** публичную колоду можно найти и добавить к обучению без знания её ID и изменения URL.
 
@@ -176,7 +176,7 @@
 Выполняется после 4A–4F с живыми frontend/backend/PostgreSQL. В каждом пункте при закрытии записать дату, окружение/ревизию и краткий результат без credentials/tokens.
 
 - [ ] Проверить API base URL и подключение браузера к backend. При dev proxy отдельно проверить нужную deployment-схему origin/CORS перед релизом; успешный proxy-запрос сам по себе не доказывает cross-origin CORS.
-- [ ] Основной flow без ручного URL: Register → Complete Profile → Created → Create **public** Deck → Manual Add Card → Created → повторное открытие Owner Deck Details → Discover → Public Deck Details → Enroll → Learning Details → Study → per-card progress → Learning list → повторное открытие.
+- [ ] Основной flow без ручного URL: Register → Complete Profile → Created → Create **public** Deck → Manual Add Card → Created → повторное открытие Owner Deck Details → Discover → Public Deck Details → Enroll (остаться на странице) → Learning list → Learning Details → Study → per-card progress → Learning list → повторное открытие. Отдельно проверить Start Learning → auto-enroll при необходимости → Study.
 - [ ] Через видимый Logout выйти, войти тем же пользователем и продолжить Study. Refresh на Created/Learning Details сохраняет доступ к колодам и backend-прогресс.
 - [ ] Проверка вторым аккаунтом: публичная колода первого находится через Discover и enroll-ится; его private-колода отсутствует в Discover и Created второго. Private deck остаётся доступной владельцу в Created; её enrollment сейчас запрещён даже владельцу.
 - [ ] Проверить desktop/mobile/keyboard, пустые состояния, ошибки и retry на изменённых переходах. Исправить блокирующие дефекты и повторить затронутый сценарий.
@@ -212,7 +212,7 @@
 4A и 4B завершены; актуальный порядок оставшихся работ:
 
 1. **4C:** Created и возврат к созданным колодам.
-2. **4D:** Discover → Public Deck Details → Enroll → Learning.
+2. **4D:** Discover → Public Deck Details → Start Learning → Study и отдельная ветка Enroll → Learning.
 3. **4E:** проверить существующие Study/progress и исправить найденные дефекты.
 4. **4F:** видимый Logout → Login → продолжение.
 5. **5:** полный пользовательский smoke и Postman с фиксацией результатов.

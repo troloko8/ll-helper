@@ -97,12 +97,16 @@ navigation returns to Owner Deck Details. Because the Created collection also
 provides each `Deck/{deckId}` tag, the same invalidation refreshes its
 backend-provided `cardCount` after both manual and single-card AI creation.
 
-The implemented `pages/public-deck-details/` slice owns the direct-link-only
-`/decks/:deckId` route. It consumes `DECK-02`, renders public content without
-learning progress or social controls, and composes `features/enroll-deck/` for
-the `LEARN-01` mutation. Successful enrollment invalidates the Learning list
-cache and navigates to the enrolled deck's Learning Deck Details route; Owner
-Deck Details does not link to this public surface.
+The implemented `pages/public-deck-details/` slice owns `/decks/:deckId`, reached
+from Discover or by direct link. It consumes `DECK-02`, including its
+current-user `isEnrolled` field, renders public content without learning
+progress or social controls, and composes
+`features/enroll-deck/` for the `LEARN-01` mutation. Start Learning is always
+available: for a new deck it enrolls first and then opens `/study/:deckId`; for
+an existing enrollment it opens Study directly. Before enrollment, a separate
+Enroll action adds the deck without leaving Public Deck Details. Successful
+enrollment invalidates the detail, Learning and Discover caches. Owner Deck
+Details does not link to this public surface.
 
 Discover is now the public-detail entry route in both desktop and mobile shell
 navigation. Completing enrollment reconciliation remains follow-up integration
@@ -119,6 +123,9 @@ position/result/score state locally, and composes
 the review response; the page never compares answers itself. Reviews invalidate
 the affected Learning card/detail caches, while the session advances through
 its original batch and explicitly refetches when the user chooses to continue.
+The route is entered contextually from Learning Deck Details or through Start
+Learning on Public Deck Details, which auto-enrolls first when needed; it is not
+a persistent shell destination.
 
 ### Slice internal segments
 

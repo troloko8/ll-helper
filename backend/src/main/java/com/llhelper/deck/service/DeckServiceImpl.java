@@ -1,6 +1,7 @@
 package com.llhelper.deck.service;
 
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
@@ -11,6 +12,8 @@ import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
+import com.llhelper.learning.enums.UserDeckStatus;
+import com.llhelper.learning.repository.UserDeckProgressRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
@@ -28,6 +31,7 @@ public class DeckServiceImpl implements DeckService {
     private final DeckMapper deckMapper;
     private final UserRateLimiter userRateLimiter;
     private final DeckAccessPolicy deckAccessPolicy;
+    private final UserDeckProgressRepository userDeckProgressRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -37,13 +41,15 @@ public class DeckServiceImpl implements DeckService {
         SecurityUtils securityUtils,
         DeckMapper deckMapper,
         UserRateLimiter userRateLimiter,
-        DeckAccessPolicy deckAccessPolicy
+        DeckAccessPolicy deckAccessPolicy,
+        UserDeckProgressRepository userDeckProgressRepository
     ) {
         this.deckRepository = deckRepository;
         this.securityUtils = securityUtils;
         this.deckMapper = deckMapper;
         this.userRateLimiter = userRateLimiter;
         this.deckAccessPolicy = deckAccessPolicy;
+        this.userDeckProgressRepository = userDeckProgressRepository;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -70,11 +76,17 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     @Transactional(readOnly = true)
-    public DeckResponse getById(Long id) {
+    public DeckDetailsResponse getById(Long id) {
         Deck deck = deckRepository.findWithOwnerById(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         deckAccessPolicy.validateReadAccess(deck);
-        return deckMapper.toResponse(deck);
+        // FIXME check if it's efficient later
+        Long currentUserId = securityUtils.getCurrentUserId();
+        boolean isEnrolled = userDeckProgressRepository
+            .findByUserIdAndDeckId(currentUserId, id)
+            .filter(progress -> progress.getStatus() == UserDeckStatus.ACTIVE)
+            .isPresent();
+        return deckMapper.toDetailsResponse(deck, isEnrolled);
     }
 
     @Override

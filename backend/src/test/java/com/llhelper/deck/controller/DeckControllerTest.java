@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.service.DeckService;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
@@ -84,6 +85,30 @@ class DeckControllerTest {
     }
 
     // --- getById ---
+
+    @Test
+    void getById_shouldReturnEnrollmentState_whenDeckExists() throws Exception {
+        DeckRequest request = defaultRequest();
+        DeckDetailsResponse response = new DeckDetailsResponse(
+            DECK_ID,
+            request.title(),
+            request.description(),
+            request.sourceLanguage(),
+            request.targetLanguage(),
+            Instant.EPOCH,
+            Instant.EPOCH,
+            null,
+            true,
+            List.of(),
+            true
+        );
+        when(deckService.getById(DECK_ID)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/decks/{id}", DECK_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$.isEnrolled", is(true)));
+    }
 
     @Test
     void getById_shouldReturn404_whenDeckNotFound() throws Exception {

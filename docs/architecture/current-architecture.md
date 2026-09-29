@@ -295,7 +295,7 @@ CardService.save(cards)
 | `/api/v1/decks` | GET | JWT | List public decks with owner, aggregate content-card count and current-user ACTIVE enrollment state | `List<PublicDeckListResponse>`: id, title, language pair, full `UserResponse owner`, `cardCount`, `isEnrolled`; no cards/detail-only deck fields |
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
-| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403 | `DeckResponse` (with cards) |
+| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
 | `/api/v1/decks/{deckId}/cards` | POST | JWT | Manually create card in an owned deck; translation required, definition optional | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD; GET inherits public/private visibility from the parent deck | `CardResponse` (includes `deckId`) |
@@ -447,7 +447,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 **Current mappers:**
 - `CardMapper` — `Card` ↔ `CardResponse` / `CardRequest`
-- `DeckMapper` — `Deck` ↔ `DeckResponse`; maps scalar query projections to `PublicDeckListResponse` and `OwnedDeckListResponse`, with `DeckServiceImpl` delegating the conversion
+- `DeckMapper` — `Deck` ↔ `DeckResponse` / `DeckDetailsResponse`; maps scalar query projections to `PublicDeckListResponse` and `OwnedDeckListResponse`, with `DeckServiceImpl` delegating the conversion
 - `UserMapper` — `User` ↔ `UserResponse`, `updateEntity(UpdateUserRequest, User)`
 
 **Service responsibilities updated:**

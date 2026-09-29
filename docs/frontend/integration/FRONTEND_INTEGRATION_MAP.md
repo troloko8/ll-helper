@@ -33,7 +33,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
 | `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
-| `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details; a deck-less `/study` is not needed at Level 1 |
+| `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks → Public Deck Details; bounded list adaptation, §0.10. Enrollment reconciliation remains a follow-up. |
 | `/progress` | deferred | — | |
@@ -129,8 +129,8 @@ The user requested that the complete Level 1 path be executable through visible 
 **Accepted navigation and transitions:**
 - Persistent destinations: Learning, Created, Discover, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual; aggregate Progress and Settings are not added.
 - Created → Create Deck → Owner Deck Details → Add Card → Owner Deck Details; Created provides a way back to existing owned decks. Create Deck is available for empty and populated lists.
-- Discover → Public Deck Details → Start learning/Enroll → Learning Deck Details → Study → Learning Deck Details progress → Learning list. Created never substitutes for the Learning collection.
-- Public Deck Details provides Open learning for an existing enrollment, including after refresh/direct entry. Use backend state, such as the existing LEARN-05 list; do not rely only on state passed from Discover. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates Discover and Learning caches.
+- Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. Start Learning is always available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on Public Deck Details. Created never substitutes for the Learning collection.
+- Public Deck Details derives enrollment from the current-user `isEnrolled` field in DECK-02, including after refresh/direct entry; it does not fetch the full LEARN-05 collection or rely on state passed from Discover. Enroll is hidden after enrollment while Start Learning remains available. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates detail, Discover and Learning caches.
 - Visible local Logout → Login → reopen Created/Learning and continue. A manual token clear does not meet the user-facing logout criterion.
 - No Owner → Public shortcut is required to pass the revised flow: Discover is the entry. A private deck remains owner-visible in Created and cannot be enrolled under the current backend, even by its owner. Smoke uses a public deck populated before enrollment.
 
@@ -389,32 +389,35 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 
 ### 5.8 Deck Details — Public
 
-> **Superseded scope:** §0.10 requires Discover → Public Deck Details and an existing-enrollment path to Learning. The direct-link-only statements below describe the runtime baseline before that work, not the final acceptance requirement.
+> **Superseded scope:** §0.10 requires Discover → Public Deck Details with enrollment-aware paths into Study and Learning. The direct-link-only statements below describe the runtime baseline before that work, not the final acceptance requirement.
 
 | Field | Mapping |
 |---|---|
 | Product surface | Public Deck Details and enroll action; no learning progress |
-| Route (**accepted, Phase 0.4C** — supersedes the `/discover/decks/:deckId` candidate below) | `/decks/:deckId` — reachable only by direct link since Discover is deferred; no dedicated navigation action from Owner Deck Details is required. Still a JWT-protected frontend route; "Public" names the product surface (public deck), not anonymous HTTP access. |
+| Route (**accepted, Phase 0.4C** — supersedes the `/discover/decks/:deckId` candidate below) | `/decks/:deckId` — reachable from Discover and by direct link; no dedicated navigation action from Owner Deck Details is required. Still a JWT-protected frontend route; "Public" names the product surface (public deck), not anonymous HTTP access. |
 | Auth | JWT under current backend; enroll requires JWT. |
 | Domain owner | Public Deck content + Learning enrollment boundary |
-| Endpoint | Detail `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
-| Request / response DTO | Detail `DeckResponse`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
+| Endpoint | Detail and current-user enrollment state `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
+| Request / response DTO | Detail `DeckDetailsResponse` with `isEnrolled`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
 | Errors | Detail 403 for another user's private deck / 404; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
-| Loading / error / empty | Detail loading; page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
-| Backend status | Enroll and detail visibility implemented; G-04 and G-05 resolved. A complete Discover response remains deferred and is not required for the accepted direct-link-only MVP flow. |
-| Accepted frontend phase (Phase 0.4C) | Included in Level 1 MVP; see §0.1/§0.3. The accepted Level 1 flow uses the direct URL; no Owner Deck Details shortcut is required. |
-| Blocker / gap | Vertical: none. The public deck collection exposure from G-04 is closed. |
+| Loading / error / empty | Combined detail/enrollment-state loading; retryable page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
+| Backend status | Enroll, detail visibility, DECK-02 detail enrollment state, Discover collection and LEARN-05 Learning list are implemented; G-04, G-05 and G-06 are resolved. |
+| Accepted frontend phase (Phase 0.4C/4D) | Included in Level 1 MVP; see §0.1/§0.3/§0.10. The accepted flow enters through Discover; direct links and refresh remain supported. |
+| Blocker / gap | 409 reconciliation remains in current-sprint group 4D. |
 
-**Runtime status:** Public Deck Details and enrollment are implemented at the
-accepted direct-link-only `/decks/:deckId` route. The page consumes `DECK-02`,
-exposes `LEARN-01` only for a public deck, presents inline enrollment errors,
-and navigates to `/learning/:deckId` after `201 Created`. No Discover or Owner
-Deck Details entry point was added.
+**Runtime status:** Public Deck Details is reachable from Discover and directly
+at `/decks/:deckId`. The page consumes the current-user `isEnrolled` field from
+DECK-02 and does not load the full LEARN-05 collection.
+Start Learning is always available: it invokes `LEARN-01` first when needed and
+then opens `/study/:deckId`; an existing enrollment opens Study without another
+enroll request. Before enrollment, a separate Enroll action invokes `LEARN-01`,
+stays on Public Deck Details and disappears after the detail, Learning and
+Discover caches refresh. 409 reconciliation remains separate current-sprint work.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **partial (accepted Level 1 MVP — see §0; direct-link-only, `blocked`-on-Discover superseded)** |
-| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **partial (accepted Level 1 MVP — see §0; direct-link-only, `blocked`-on-Discover superseded)** |
+| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **implemented; server-state enrollment CTA verified with RTL/MSW** |
+| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **implemented responsive adaptation; shared CTA behavior verified with RTL/MSW** |
 
 ### 5.9 Learning Deck Details
 
@@ -505,7 +508,7 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Field | Mapping |
 |---|---|
 | Product surface | Study session, answer review, all-caught-up, session complete |
-| Candidate route | `/study/:deckId`; `/study` entry behavior requires 0.4C decision |
+| Candidate route | `/study/:deckId`; a deck-less `/study` is not required at Level 1 |
 | Auth | JWT + enrollment |
 | Domain owner | Learning |
 | Endpoint | Load `LEARN-02 GET /api/v1/decks/{deckId}/study`; submit `LEARN-04 POST /api/v1/cards/{cardId}/review`. |
@@ -513,12 +516,13 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Errors | Load/review 409 not enrolled; review 400/404; shared JWT. Answer correctness must come only from response. |
 | Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. With G-08 resolved, an empty study response truthfully means no `LEARNING`, `REVIEWING`, or `NEW` cards remain. |
 | Backend status | Review and study selection implemented; G-08 resolved. |
-| Candidate frontend phase | After enrollment and Learning Deck Details; before aggregate Progress UI. |
+| Candidate frontend phase | After enrollment through Public Deck Details Start Learning or from Learning Deck Details; before aggregate Progress UI. |
 | Blocker / gap | None specific to the Study selection contract for Level 1. Advanced due-date scheduling remains out of scope. |
 
 **Runtime status:** Study is implemented at the accepted contextual
-`/study/:deckId` route and is linked only from Learning Deck Details when a
-non-`MASTERED` card exists. The page renders the backend-ordered `LEARN-02`
+`/study/:deckId` route and is linked from Learning Deck Details when a
+non-`MASTERED` card exists and from Public Deck Details through Start Learning,
+which auto-enrolls first when needed. The page renders the backend-ordered `LEARN-02`
 batch and deck title from one response without subscribing to the Learning list, submits each answer through `LEARN-04`, derives correctness only from
 the backend response, and covers loading, API error, all-caught-up, per-answer
 result, and session-complete states. No persistent Study navigation destination

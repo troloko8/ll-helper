@@ -1,6 +1,7 @@
 package com.llhelper.deck.controller;
 
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
@@ -39,7 +40,7 @@ public class DeckController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DeckResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<DeckDetailsResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(deckService.getById(id));
     }
 

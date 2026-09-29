@@ -4,7 +4,7 @@ import {
     type DeckCardResponseDto,
     useGetDeckByIdQuery,
 } from '@/entities/deck'
-import { EnrollDeckButton } from '@/features/enroll-deck'
+import { EnrollDeckActions } from '@/features/enroll-deck'
 import { ApiErrorPresentation, Button, PageState, Skeleton } from '@/shared/ui'
 import styles from './public-deck-details-page.module.css'
 
@@ -138,7 +138,6 @@ export function PublicDeckDetailsPage() {
     }
 
     const languagePair = `${getDeckLanguageLabel(deck.sourceLanguage)} → ${getDeckLanguageLabel(deck.targetLanguage)}`
-
     return (
         <div className={styles.page}>
             <section className={styles.hero} aria-labelledby="deck-title">
@@ -165,9 +164,10 @@ export function PublicDeckDetailsPage() {
                     </dl>
                 </div>
 
-                <EnrollDeckButton
+                <EnrollDeckActions
                     deckId={deck.id}
-                    onSuccess={() => navigate(`/learning/${deck.id}`)}
+                    isEnrolled={deck.isEnrolled}
+                    onStartLearning={() => navigate(`/study/${deck.id}`)}
                 />
             </section>
 

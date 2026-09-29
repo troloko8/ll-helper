@@ -11,6 +11,7 @@ export {
 export { DECK_LANGUAGE_CODES } from './model/types'
 export type {
     DeckCardResponseDto,
+    DeckDetailsResponseDto,
     DeckLanguageCode,
     DeckOwnerResponseDto,
     DeckResponseDto,

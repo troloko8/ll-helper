@@ -3,6 +3,7 @@ package com.llhelper.deck.mapper;
 import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.common.model.Language;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
@@ -26,6 +27,9 @@ import org.springframework.stereotype.Component;
 public interface DeckMapper {
 
     DeckResponse toResponse(Deck deck);
+
+    @Mapping(target = "isEnrolled", source = "isEnrolled")
+    DeckDetailsResponse toDetailsResponse(Deck deck, boolean isEnrolled);
 
     @Mapping(target = "sourceLanguage", source = "sourceLanguage", qualifiedByName = "toLanguage")
     @Mapping(target = "targetLanguage", source = "targetLanguage", qualifiedByName = "toLanguage")

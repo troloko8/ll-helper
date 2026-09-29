@@ -4,7 +4,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { renderWithProviders } from '@/app/test'
-import type { DeckResponseDto } from '@/entities/deck'
+import type { DeckDetailsResponseDto } from '@/entities/deck'
 import type { UserResponseDto } from '@/entities/user'
 import { setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
@@ -23,7 +23,7 @@ const currentUser: UserResponseDto = {
     updatedAt: '2026-09-01T10:00:00Z',
 }
 
-const deck: DeckResponseDto = {
+const deck: DeckDetailsResponseDto = {
     id: 12,
     title: 'Spanish Core 1000',
     description: 'Essential vocabulary.',
@@ -33,6 +33,7 @@ const deck: DeckResponseDto = {
     updatedAt: '2026-09-01T10:00:00Z',
     owner: currentUser,
     isPublic: false,
+    isEnrolled: false,
     cards: [],
 }
 

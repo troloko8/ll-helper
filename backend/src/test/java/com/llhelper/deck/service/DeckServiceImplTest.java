@@ -3,6 +3,7 @@ package com.llhelper.deck.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,7 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
@@ -21,6 +23,9 @@ import com.llhelper.deck.mapper.DeckMapper;
 import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.deck.repository.DeckRepository.OwnedDeckListProjection;
 import com.llhelper.deck.repository.DeckRepository.PublicDeckListProjection;
+import com.llhelper.learning.entity.UserDeckProgress;
+import com.llhelper.learning.enums.UserDeckStatus;
+import com.llhelper.learning.repository.UserDeckProgressRepository;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.dto.response.UserResponse;
 import jakarta.persistence.EntityManager;
@@ -58,6 +63,9 @@ class DeckServiceImplTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private UserDeckProgressRepository userDeckProgressRepository;
+
     private DeckServiceImpl deckService;
 
     @BeforeEach
@@ -68,7 +76,8 @@ class DeckServiceImplTest {
             securityUtils,
             deckMapper,
             userRateLimiter,
-            deckAccessPolicy
+            deckAccessPolicy,
+            userDeckProgressRepository
         );
         ReflectionTestUtils.setField(deckService, "entityManager", entityManager);
     }
@@ -93,35 +102,64 @@ class DeckServiceImplTest {
     @Test
     void getById_shouldSucceed_whenDeckIsPublic() {
         Deck deck = deckOwnedBy(OWNER_ID);
-        DeckResponse response = new DeckResponse(
+        UserDeckProgress progress = mock(UserDeckProgress.class);
+        DeckDetailsResponse response = new DeckDetailsResponse(
             DECK_ID, deck.getTitle(), null, deck.getSourceLanguage(), deck.getTargetLanguage(),
-            null, null, null, true, List.of()
+            null, null, null, true, List.of(), true
         );
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
-        when(deckMapper.toResponse(deck)).thenReturn(response);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(OTHER_USER_ID, DECK_ID))
+            .thenReturn(Optional.of(progress));
+        when(progress.getStatus()).thenReturn(UserDeckStatus.ACTIVE);
+        when(deckMapper.toDetailsResponse(deck, true)).thenReturn(response);
 
-        DeckResponse result = deckService.getById(DECK_ID);
+        DeckDetailsResponse result = deckService.getById(DECK_ID);
 
         assertThat(result).isEqualTo(response);
-        verify(deckMapper).toResponse(deck);
+        verify(userDeckProgressRepository).findByUserIdAndDeckId(OTHER_USER_ID, DECK_ID);
+        verify(deckMapper).toDetailsResponse(deck, true);
     }
 
     @Test
     void getById_shouldSucceed_whenPrivateDeckIsOwnedByCurrentUser() {
         Deck deck = deckOwnedBy(OWNER_ID);
         deck.setIsPublic(false);
-        DeckResponse response = new DeckResponse(
+        DeckDetailsResponse response = new DeckDetailsResponse(
             DECK_ID, deck.getTitle(), null, deck.getSourceLanguage(), deck.getTargetLanguage(),
-            null, null, null, false, List.of()
+            null, null, null, false, List.of(), false
         );
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
-        when(deckMapper.toResponse(deck)).thenReturn(response);
+        when(userDeckProgressRepository.findByUserIdAndDeckId(OWNER_ID, DECK_ID))
+            .thenReturn(Optional.empty());
+        when(deckMapper.toDetailsResponse(deck, false)).thenReturn(response);
 
-        DeckResponse result = deckService.getById(DECK_ID);
+        DeckDetailsResponse result = deckService.getById(DECK_ID);
 
         assertThat(result).isEqualTo(response);
-        verify(deckMapper).toResponse(deck);
+        verify(deckMapper).toDetailsResponse(deck, false);
+    }
+
+    @Test
+    void getById_shouldReturnNotEnrolled_whenEnrollmentIsNotActive() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        UserDeckProgress progress = mock(UserDeckProgress.class);
+        DeckDetailsResponse response = new DeckDetailsResponse(
+            DECK_ID, deck.getTitle(), null, deck.getSourceLanguage(), deck.getTargetLanguage(),
+            null, null, null, true, List.of(), false
+        );
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(userDeckProgressRepository.findByUserIdAndDeckId(OTHER_USER_ID, DECK_ID))
+            .thenReturn(Optional.of(progress));
+        when(progress.getStatus()).thenReturn(UserDeckStatus.PAUSED);
+        when(deckMapper.toDetailsResponse(deck, false)).thenReturn(response);
+
+        DeckDetailsResponse result = deckService.getById(DECK_ID);
+
+        assertThat(result.isEnrolled()).isFalse();
+        verify(deckMapper).toDetailsResponse(deck, false);
     }
 
     @Test
@@ -135,7 +173,8 @@ class DeckServiceImplTest {
             .isInstanceOf(AccessDeniedException.class)
             .hasMessage("Access denied: private deck");
 
-        verify(deckMapper, never()).toResponse(any());
+        verify(userDeckProgressRepository, never()).findByUserIdAndDeckId(any(), any());
+        verify(deckMapper, never()).toDetailsResponse(any(), anyBoolean());
     }
 
     @Test

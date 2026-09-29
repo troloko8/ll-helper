@@ -120,7 +120,8 @@ this pair. No other active-state color combination is canonical.
 > below. The existing runtime currently exposes only Learning; add each new
 > navigation entry with its working route. Created restores access to owned
 > decks; Discover opens public decks for enrollment. **Study** remains
-> contextual from Learning Deck Details (`/study/:deckId`); **Progress** remains
+> contextual from Learning Deck Details or Start Learning on Public Deck Details
+> (`/study/:deckId`); **Progress** remains
 > hidden, since per-card progress is displayed on Learning Deck Details.
 > **Create Deck** must be available with both empty and populated collections.
 > Empty Learning offers Browse public decks and Create Deck. Provide a labelled
@@ -164,8 +165,10 @@ scoping note takes precedence during this implementation.
   Open → Owner Deck Details; Create New Deck works for empty/populated lists.
 - Discover cards: title, owner identity, language pair, backend card count,
   Public/Enrolled indication and a link to Public Deck Details. The first
-  response carries the full owner; replacing it with a compact owner shape is a follow-up. Already-enrolled
-  public details offer Open learning; no learning-progress counters on public cards.
+  response carries the full owner; replacing it with a compact owner shape is a follow-up. Public details
+  always offer Start Learning; before enrollment they additionally offer Enroll
+  so the deck can be added without starting Study. No learning-progress counters
+  appear on public cards.
 - The inspected Discover desktop/mobile prototypes include search/load-more;
   mobile also includes filter/topic/level chips, covers and bookmarks. These
   controls/data are outside the accepted first list scope. Omit them rather

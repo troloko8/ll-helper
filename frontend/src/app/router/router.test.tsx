@@ -92,6 +92,7 @@ describe('router session boundaries', () => {
                         updatedAt: '2026-09-01T10:00:00Z',
                     },
                     isPublic: true,
+                    isEnrolled: false,
                     cards: [],
                 }),
             ),
@@ -276,7 +277,7 @@ describe('router session boundaries', () => {
             await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
         ).toBeInTheDocument()
         expect(
-            screen.getByRole('button', { name: 'Start learning' }),
+            screen.getByRole('button', { name: 'Start Learning' }),
         ).toBeInTheDocument()
     })
 
@@ -410,7 +411,7 @@ describe('router session boundaries', () => {
             await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
         ).toBeInTheDocument()
         expect(
-            screen.getByRole('button', { name: 'Start learning' }),
+            screen.getByRole('button', { name: 'Start Learning' }),
         ).toBeInTheDocument()
     })
 

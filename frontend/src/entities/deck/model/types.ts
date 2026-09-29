@@ -61,6 +61,10 @@ export interface DeckResponseDto {
     cards: DeckCardResponseDto[]
 }
 
+export interface DeckDetailsResponseDto extends DeckResponseDto {
+    isEnrolled: boolean
+}
+
 export interface OwnedDeckListResponseDto {
     id: number
     title: string

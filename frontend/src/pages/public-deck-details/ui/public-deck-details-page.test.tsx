@@ -4,12 +4,12 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { renderWithProviders } from '@/app/test'
-import type { DeckResponseDto } from '@/entities/deck'
+import type { DeckDetailsResponseDto } from '@/entities/deck'
 import { setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { PublicDeckDetailsPage } from './public-deck-details-page'
 
-const deck: DeckResponseDto = {
+const deck: DeckDetailsResponseDto = {
     id: 12,
     title: 'Medical Spanish Terminology',
     description: 'Specialized vocabulary for healthcare professionals.',
@@ -30,6 +30,7 @@ const deck: DeckResponseDto = {
         updatedAt: '2026-08-01T10:00:00Z',
     },
     isPublic: true,
+    isEnrolled: false,
     cards: [
         {
             id: 1,
@@ -63,6 +64,10 @@ function renderPublicDeck(route = '/decks/12') {
             <Route
                 path="/learning/:deckId"
                 element={<h1>Learning deck destination</h1>}
+            />
+            <Route
+                path="/study/:deckId"
+                element={<h1>Study session destination</h1>}
             />
         </Routes>,
         { route },
@@ -119,7 +124,7 @@ describe('PublicDeckDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('enrolls without a request body and opens learning deck details', async () => {
+    it('enrolls without a request body and starts studying', async () => {
         server.use(
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json(deck),
@@ -141,18 +146,84 @@ describe('PublicDeckDetailsPage', () => {
         const user = userEvent.setup()
         renderPublicDeck()
 
-        await user.click(
-            await screen.findByRole('button', { name: 'Start learning' }),
-        )
+        expect(
+            await screen.findByRole('button', { name: 'Enroll' }),
+        ).toBeInTheDocument()
+        await user.click(screen.getByRole('button', { name: 'Start Learning' }))
 
         expect(
             await screen.findByRole('heading', {
-                name: 'Learning deck destination',
+                name: 'Study session destination',
             }),
         ).toBeInTheDocument()
     })
 
-    it('shows the enrolling state and disables the action', async () => {
+    it('enrolls without starting a study session', async () => {
+        let enrolled = false
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json({ ...deck, isEnrolled: enrolled }),
+            ),
+            http.post('http://localhost/api/v1/decks/12/enroll', () => {
+                enrolled = true
+                return HttpResponse.json({ userDeckId: 501 }, { status: 201 })
+            }),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        await user.click(await screen.findByRole('button', { name: 'Enroll' }))
+
+        await waitFor(() => {
+            expect(
+                screen.queryByRole('button', { name: 'Enroll' }),
+            ).not.toBeInTheDocument()
+        })
+        expect(
+            screen.getByRole('button', { name: 'Start Learning' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('heading', {
+                name: 'Medical Spanish Terminology',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('uses server enrollment state on direct entry and starts studying without enrolling again', async () => {
+        let enrollRequests = 0
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', ({ request }) => {
+                expect(request.headers.get('Authorization')).toBe(
+                    'Bearer learner-token',
+                )
+                return HttpResponse.json({ ...deck, isEnrolled: true })
+            }),
+            http.post('http://localhost/api/v1/decks/12/enroll', () => {
+                enrollRequests += 1
+                return HttpResponse.json({ userDeckId: 501 }, { status: 201 })
+            }),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck('/decks/12')
+
+        expect(
+            await screen.findByRole('button', { name: 'Start Learning' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: 'Enroll' }),
+        ).not.toBeInTheDocument()
+
+        await user.click(screen.getByRole('button', { name: 'Start Learning' }))
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).toBeInTheDocument()
+        expect(enrollRequests).toBe(0)
+    })
+
+    it('shows the starting state and disables both actions', async () => {
         server.use(
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json(deck),
@@ -166,12 +237,13 @@ describe('PublicDeckDetailsPage', () => {
         renderPublicDeck()
 
         await user.click(
-            await screen.findByRole('button', { name: 'Start learning' }),
+            await screen.findByRole('button', { name: 'Start Learning' }),
         )
 
         expect(
             await screen.findByRole('button', { name: 'Starting learning' }),
         ).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'Enroll' })).toBeDisabled()
     })
 
     it('explains a duplicate enrollment without navigating', async () => {
@@ -190,7 +262,7 @@ describe('PublicDeckDetailsPage', () => {
         renderPublicDeck()
 
         await user.click(
-            await screen.findByRole('button', { name: 'Start learning' }),
+            await screen.findByRole('button', { name: 'Start Learning' }),
         )
 
         const errorTitle = await screen.findByText('Already enrolled')
@@ -199,7 +271,7 @@ describe('PublicDeckDetailsPage', () => {
         )
         expect(
             screen.queryByRole('heading', {
-                name: 'Learning deck destination',
+                name: 'Study session destination',
             }),
         ).not.toBeInTheDocument()
     })
@@ -231,7 +303,10 @@ describe('PublicDeckDetailsPage', () => {
             await screen.findByRole('heading', { name: 'Private deck' }),
         ).toBeInTheDocument()
         expect(
-            screen.queryByRole('button', { name: 'Start learning' }),
+            screen.queryByRole('button', { name: 'Start Learning' }),
+        ).not.toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: 'Enroll' }),
         ).not.toBeInTheDocument()
     })
 

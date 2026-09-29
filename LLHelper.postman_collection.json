@@ -779,8 +779,28 @@
                 "decks",
                 "{{deckId}}"
               ]
-            }
+            },
+            "description": "Returns deck details plus isEnrolled computed for the authenticated user's ACTIVE enrollment."
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var deck = pm.response.json();",
+                  "pm.test(\"Enrollment state is present\", function () {",
+                  "    pm.expect(deck).to.have.property(\"isEnrolled\");",
+                  "    pm.expect(deck.isEnrolled).to.be.a(\"boolean\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": [
             {
               "name": "Get Deck by ID - Success",
@@ -791,7 +811,7 @@
               },
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"title\": \"English Vocabulary\",\n  \"description\": \"Collection of English words\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"createdAt\": \"2024-01-15T07:30:00Z\",\n  \"updatedAt\": \"2024-01-15T07:30:00Z\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T05:00:00Z\",\n    \"updatedAt\": \"2024-01-12T06:15:00Z\"\n  },\n  \"isPublic\": true,\n  \"cards\": [\n    {\n      \"id\": 1,\n      \"deckId\": 1,\n      \"title\": \"serendipity\",\n      \"definition\": \"a fortunate accident\",\n      \"synonyms\": [\"chance\", \"luck\"],\n      \"examples\": [\"Finding this restaurant was pure serendipity.\"],\n      \"translation\": \"счастливая случайность\",\n      \"createdAt\": \"2024-01-15T07:35:00Z\",\n      \"updatedAt\": \"2024-01-15T07:35:00Z\"\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 1,\n  \"title\": \"English Vocabulary\",\n  \"description\": \"Collection of English words\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"createdAt\": \"2024-01-15T07:30:00Z\",\n  \"updatedAt\": \"2024-01-15T07:30:00Z\",\n  \"owner\": {\n    \"id\": 1,\n    \"username\": \"ivan_petrov\",\n    \"firstName\": \"Иван\",\n    \"lastName\": \"Петров\",\n    \"nativeLanguage\": \"ru\",\n    \"targetLanguage\": \"en\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\",\n    \"uiLanguage\": \"ru\",\n    \"createdAt\": \"2024-01-10T05:00:00Z\",\n    \"updatedAt\": \"2024-01-12T06:15:00Z\"\n  },\n  \"isPublic\": true,\n  \"isEnrolled\": false,\n  \"cards\": [\n    {\n      \"id\": 1,\n      \"deckId\": 1,\n      \"title\": \"serendipity\",\n      \"definition\": \"a fortunate accident\",\n      \"synonyms\": [\"chance\", \"luck\"],\n      \"examples\": [\"Finding this restaurant was pure serendipity.\"],\n      \"translation\": \"счастливая случайность\",\n      \"createdAt\": \"2024-01-15T07:35:00Z\",\n      \"updatedAt\": \"2024-01-15T07:35:00Z\"\n    }\n  ]\n}"
             },
             {
               "name": "Get Deck by ID - Private Deck Forbidden",

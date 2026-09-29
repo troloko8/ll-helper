@@ -101,9 +101,14 @@ The first returned deck is the highlight candidate. If its `lastStudiedAt` is no
 5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. Other data integrity violations are also mapped to `409 Conflict` by `GlobalExceptionHandler`. There is no upfront service-level duplicate check.
 6. Return `201 Created`.
 
-In the Level 1 frontend flow, Public Deck Details invokes this endpoint through
-its Start Learning action. A successful response opens the enrolled deck's
-Learning Deck Details screen; `403`, `409`, and server failures remain visible
+In the Level 1 frontend flow, Public Deck Details exposes two related actions.
+Its DECK-02 detail response supplies current-user ACTIVE `isEnrolled` directly,
+so the page does not load the full Learning collection to determine CTA state.
+Start Learning is always available: when the deck is not enrolled, the frontend
+first invokes this endpoint and then opens `/study/{deckId}`; when it is already
+enrolled, it opens Study directly. A separate Enroll action is visible only
+before enrollment and adds the deck without leaving Public Deck Details or
+starting a study session. `403`, `409`, and server failures remain visible
 inline so the public deck content is not replaced by a false success state.
 
 > **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.
