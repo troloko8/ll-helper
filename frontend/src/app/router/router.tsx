@@ -1,26 +1,16 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import type { RouteObject } from 'react-router-dom'
-import { AddCardPage } from '@/pages/add-card'
-import { CompleteProfilePage } from '@/pages/complete-profile'
-import { CreateDeckPage } from '@/pages/create-deck'
-import { CreatedPage } from '@/pages/created'
-import { DiscoverPage } from '@/pages/discover'
-import { LearningPage } from '@/pages/learning'
-import { LearningDeckDetailsPage } from '@/pages/learning-deck-details'
-import { LoginPage } from '@/pages/login'
-import { NotFoundPage } from '@/pages/not-found'
-import { OwnerDeckDetailsPage } from '@/pages/owner-deck-details'
-import { PublicDeckDetailsPage } from '@/pages/public-deck-details'
-import { RegisterPage } from '@/pages/register'
-import { StudyPage } from '@/pages/study'
 import { AppShell } from '@/widgets/app-shell'
 import { AuthRoute } from './auth-route'
 import { AuthenticatedRoute } from './authenticated-route'
 import { OnboardingRoute } from './onboarding-route'
 import { RouterErrorSurface } from './router-error-surface'
+import { RouteLoading, RoutePending } from './route-loading'
 
 export const appRoutes: RouteObject[] = [
     {
+        element: <RoutePending />,
+        hydrateFallbackElement: <RouteLoading />,
         errorElement: <RouterErrorSurface />,
         children: [
             {
@@ -28,11 +18,18 @@ export const appRoutes: RouteObject[] = [
                 children: [
                     {
                         path: '/login',
-                        element: <LoginPage />,
+                        lazy: async () => {
+                            const { LoginPage } = await import('@/pages/login')
+                            return { Component: LoginPage }
+                        },
                     },
                     {
                         path: '/register',
-                        element: <RegisterPage />,
+                        lazy: async () => {
+                            const { RegisterPage } =
+                                await import('@/pages/register')
+                            return { Component: RegisterPage }
+                        },
                     },
                 ],
             },
@@ -41,7 +38,11 @@ export const appRoutes: RouteObject[] = [
                 children: [
                     {
                         path: '/onboarding/profile',
-                        element: <CompleteProfilePage />,
+                        lazy: async () => {
+                            const { CompleteProfilePage } =
+                                await import('@/pages/complete-profile')
+                            return { Component: CompleteProfilePage }
+                        },
                     },
                 ],
             },
@@ -57,43 +58,85 @@ export const appRoutes: RouteObject[] = [
                             },
                             {
                                 path: '/learning',
-                                element: <LearningPage />,
+                                lazy: async () => {
+                                    const { LearningPage } =
+                                        await import('@/pages/learning')
+                                    return { Component: LearningPage }
+                                },
                             },
                             {
                                 path: '/created',
-                                element: <CreatedPage />,
+                                lazy: async () => {
+                                    const { CreatedPage } =
+                                        await import('@/pages/created')
+                                    return { Component: CreatedPage }
+                                },
                             },
                             {
                                 path: '/discover',
-                                element: <DiscoverPage />,
+                                lazy: async () => {
+                                    const { DiscoverPage } =
+                                        await import('@/pages/discover')
+                                    return { Component: DiscoverPage }
+                                },
                             },
                             {
                                 path: '/learning/:deckId',
-                                element: <LearningDeckDetailsPage />,
+                                lazy: async () => {
+                                    const { LearningDeckDetailsPage } =
+                                        await import('@/pages/learning-deck-details')
+                                    return {
+                                        Component: LearningDeckDetailsPage,
+                                    }
+                                },
                             },
                             {
                                 path: '/decks/new',
-                                element: <CreateDeckPage />,
+                                lazy: async () => {
+                                    const { CreateDeckPage } =
+                                        await import('@/pages/create-deck')
+                                    return { Component: CreateDeckPage }
+                                },
                             },
                             {
                                 path: '/decks/:deckId',
-                                element: <PublicDeckDetailsPage />,
+                                lazy: async () => {
+                                    const { PublicDeckDetailsPage } =
+                                        await import('@/pages/public-deck-details')
+                                    return { Component: PublicDeckDetailsPage }
+                                },
                             },
                             {
                                 path: '/decks/:deckId/manage',
-                                element: <OwnerDeckDetailsPage />,
+                                lazy: async () => {
+                                    const { OwnerDeckDetailsPage } =
+                                        await import('@/pages/owner-deck-details')
+                                    return { Component: OwnerDeckDetailsPage }
+                                },
                             },
                             {
                                 path: '/decks/:deckId/cards/new',
-                                element: <AddCardPage />,
+                                lazy: async () => {
+                                    const { AddCardPage } =
+                                        await import('@/pages/add-card')
+                                    return { Component: AddCardPage }
+                                },
                             },
                             {
                                 path: '/study/:deckId',
-                                element: <StudyPage />,
+                                lazy: async () => {
+                                    const { StudyPage } =
+                                        await import('@/pages/study')
+                                    return { Component: StudyPage }
+                                },
                             },
                             {
                                 path: '*',
-                                element: <NotFoundPage />,
+                                lazy: async () => {
+                                    const { NotFoundPage } =
+                                        await import('@/pages/not-found')
+                                    return { Component: NotFoundPage }
+                                },
                             },
                         ],
                     },

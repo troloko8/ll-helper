@@ -1,0 +1,15 @@
+.pending {
+    position: fixed;
+    z-index: 100;
+    inset-block-start: 8px;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 8px 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    font-size: 0.875rem;
+    pointer-events: none;
+}

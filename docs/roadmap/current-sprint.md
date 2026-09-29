@@ -33,6 +33,7 @@
 - [x] Настроить RTK Query base API (`shared/api/`).
 - [x] Настроить Redux store с session slice (`entities/session/`) и RTK Query middleware.
 - [x] Настроить начальный React Router scaffold: centralized config и базовый `ProtectedRoute`. Полное дерево маршрутов, layouts и guards остаются в Группе 1.
+- [x] **Дополнение по запросу пользователя — frontend performance foundation (2026-09-28):** route-level lazy imports, loading/error boundaries, ручной bundle analyzer, build-time JS budgets, правила зависимостей/изображений и HTTP cache contract. На production build максимальный JS chunk: 530,44 → 197,47 kB; cold Learning: ~125,28 kB gzip, максимальный cold route: ~153,23 kB gzip (entry + static dependencies + page, без повторного подсчёта). Правила — `frontend/CONVENTIONS.md` → Performance / Bundling; числовые лимиты — `frontend/bundle-budget.json`. Hosting cache implementation — Sprint 1.1; пункты 6–8 (Brotli, measured prefetch, CI monitoring) — Level 3 в `backlog.md`. Это не закрывает ручной smoke/Done Criteria.
 
 **Группа 0A: Minimal UI and application-boundary foundation — выполнить до feature-компонентов**
 

@@ -45,7 +45,7 @@ async function submitLogin() {
     const user = userEvent.setup()
 
     await user.type(
-        screen.getByRole('textbox', { name: 'Email' }),
+        await screen.findByRole('textbox', { name: 'Email' }),
         'learner@example.com',
     )
     await user.type(screen.getByLabelText(/^Password/), 'password123')

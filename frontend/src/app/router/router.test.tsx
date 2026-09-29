@@ -104,11 +104,11 @@ describe('router session boundaries', () => {
         '/onboarding/profile',
         '/',
         '/missing-page',
-    ])('blocks %s while the session is initializing', (path) => {
+    ])('blocks %s while the session is initializing', async (path) => {
         renderRoute(path)
 
         expect(
-            screen.getByRole('heading', {
+            await screen.findByRole('heading', {
                 name: 'Preparing your workspace',
             }),
         ).toBeInTheDocument()
@@ -137,7 +137,7 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
-    it.each(['/onboarding/profile', '/', '/missing-page'])(
+    it.each(['/onboarding/profile', '/', '/missing-page', '/discover'])(
         'redirects an anonymous user from %s to login',
         async (path) => {
             const { router } = renderRoute(path, 'anonymous')
@@ -161,7 +161,7 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
-    it.each(['/login', '/register', '/', '/missing-page'])(
+    it.each(['/login', '/register', '/', '/missing-page', '/discover'])(
         'redirects a user who needs a profile from %s to onboarding',
         async (path) => {
             const { router } = renderRoute(path, 'needsProfile')
@@ -193,12 +193,14 @@ describe('router session boundaries', () => {
         })
     })
 
-    it('allows an authenticated user to reach learning', () => {
+    it('allows an authenticated user to reach learning', async () => {
         const { router } = renderRoute('/learning', 'authenticated')
 
         expect(router.state.location.pathname).toBe('/learning')
         expect(
-            screen.getByRole('navigation', { name: 'Primary navigation' }),
+            await screen.findByRole('navigation', {
+                name: 'Primary navigation',
+            }),
         ).toBeInTheDocument()
         expect(
             screen.queryByRole('heading', { name: 'Preparing your workspace' }),

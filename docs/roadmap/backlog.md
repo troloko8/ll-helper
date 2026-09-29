@@ -31,6 +31,7 @@
 7. Базовые структурированные logs
 8. DB backup
 9. README: как запустить и задеплоить
+10. Реализовать frontend HTTP cache contract из `frontend/CONVENTIONS.md` → Performance / Bundling на выбранном hosting/CDN. Проверить заголовки hashed assets и HTML (включая direct-route fallback), настоящий 404 для отсутствующего chunk и доступность старых assets при rollout. До появления hosting config контракт не считается внедрённым.
 
 ### Sprint 1.2 — Architecture Documentation
 
@@ -120,6 +121,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 ### Security (Level 1)
 
 - **🔴 CRITICAL: IP-based rate limiting для `/auth/register`** — создать `IpRateLimiter.java` (аналогично `UserRateLimiter`), `AuthServiceImpl.register()` добавить `ipRateLimiter.checkLimit(ip, AUTH_REGISTER)`, extract IP через `HttpServletRequest.getRemoteAddr()`/`X-Forwarded-For`. Limit: 10 req/10 min per IP
+- [ ] **Frontend dependency audit:** разобрать baseline `npm audit` от 2026-09-29 — 14 findings (1 low, 5 moderate, 8 high; прежний результат 13 уже устарел). В первую очередь проверить применимость direct `react-router-dom`, `vite` и `vitest`, затем transitive findings, разделяя production SPA risk и local/dev-tool risk. Обновлять зависимости точечно, изучать breaking changes, не применять слепой `npm audit fix`; после обновления запустить frontend build/lint/tests/bundle checks и повторный audit. Критерий закрытия: устранённые findings подтверждены audit, а каждый оставшийся имеет документированное обоснование применимости, mitigation, владельца и срок пересмотра.
 
 ### Database (Level 1)
 
@@ -204,6 +206,12 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 - Semi-automated Postman: AI получает controller files → обновляет коллекцию → ручная проверка
 
 ## Level 3 — Production Candidate (детали)
+
+**Frontend performance — отложенные пункты 6–8:**
+
+- [ ] **6. Brotli:** включить на hosting/CDN с gzip fallback; проверить `Content-Encoding`, `Vary: Accept-Encoding`, MIME types и фактические transfer sizes. Не ограничиваться генерацией `.br` файлов без server negotiation.
+- [ ] **7. Prefetch:** по измерениям реальных переходов выбрать вероятные следующие маршруты; проверить выигрыш latency и лишний трафик на mobile/ограниченной сети. Не предзагружать все lazy pages автоматически.
+- [ ] **8. Регулярный bundle monitoring в CI:** сохранять отчёты и сравнивать размеры/дубли зависимостей с baseline в PR. Использовать существующий `bundle:check`, не создавать вторые лимиты. Локальный build gate и разовый анализ графа уже входят в базовую реализацию; автоматический history/PR monitoring — этот follow-up.
 
 **Product:** Landing page · Onboarding · Public/private decks · Share by link · Copy deck · Edit own enrolled deck/overrides · Better AI generation preview · Generation retry/error recovery · Basic user settings · Better progress dashboard
 

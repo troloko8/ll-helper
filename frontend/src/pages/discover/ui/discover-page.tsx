@@ -44,7 +44,15 @@ function EmptyDiscoverState() {
 function OwnerAvatar({ deck }: { deck: PublicDeckListResponseDto }) {
     if (deck.owner.avatarUrl) {
         return (
-            <img className={styles.avatar} src={deck.owner.avatarUrl} alt="" />
+            <img
+                className={styles.avatar}
+                src={deck.owner.avatarUrl}
+                alt=""
+                width={28}
+                height={28}
+                loading="lazy"
+                decoding="async"
+            />
         )
     }
 

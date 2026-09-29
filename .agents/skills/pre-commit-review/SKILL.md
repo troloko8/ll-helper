@@ -27,6 +27,10 @@ Review correctness, unnecessary complexity, duplicated logic, naming, validation
 
 Report critical issues, required fixes, and optional improvements separately.
 
+For frontend routes, dependencies, assets or build changes, apply
+`frontend/CONVENTIONS.md` → `Performance / Bundling` and report its required
+measurements/checks, including any justified budget change.
+
 ### Architecture and documentation
 
 For every changed architecture, package, API, DB, security, flow, frontend-integration, or roadmap fact, identify the normative owner through `.agents/guidance/documentation-sync.md`. Report documentation changed, documentation missing, or why no documentation update is required.

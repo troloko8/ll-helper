@@ -52,7 +52,7 @@ async function registerNewUser() {
     const user = userEvent.setup()
 
     await user.type(
-        screen.getByRole('textbox', { name: 'Email' }),
+        await screen.findByRole('textbox', { name: 'Email' }),
         'new-user@example.com',
     )
     await user.type(screen.getByLabelText(/^Password/), 'password123')
@@ -99,7 +99,7 @@ describe('Register to Complete Profile orchestration', () => {
         const user = userEvent.setup()
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Email' }),
+            await screen.findByRole('textbox', { name: 'Email' }),
             'new-user@example.com',
         )
         await user.type(screen.getByLabelText(/^Password/), 'password123')

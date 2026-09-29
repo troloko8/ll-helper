@@ -161,6 +161,76 @@ slice-name/
 - No circular imports between slices.
 - Import from slice public API (`index.ts`), not internal files.
 
+## Performance / Bundling
+
+### Loading boundaries
+
+- Route pages use React Router `route.lazy` with dynamic imports through their
+  slice public API. Keep route paths, guards, session bootstrap, store, shell,
+  loading and error boundaries eager. Downloading a page module is not an
+  authorization check; backend access control remains mandatory.
+- Consider dynamic imports for substantial, infrequently used functionality
+  (editors, charts, export tools) when measurements show initial-load savings.
+  Do not split every component, small utility, or immediately needed dependency:
+  extra requests and waterfalls can outweigh the benefit.
+- Each async boundary needs visible, accessible loading and recoverable error
+  handling. Initial routing uses `RouteLoading`; later navigation keeps the
+  current content with a pending announcement. Failed route imports reach
+  `RouterErrorSurface` with a manual reload action, never an automatic reload loop.
+- Keep FSD dependency direction and public APIs intact. Do not statically import
+  a lazy page from an eager barrel, or move session/API initialization behind an
+  optional UI action. Do not add manual vendor chunks without inspecting the
+  resulting dependency graph and cold-route cost.
+
+### Measurement and dependencies
+
+- `npm run build` creates the production manifest and runs `bundle:check`.
+  `bundle-budget.json` is the sole owner of numeric limits: eager-entry gzip,
+  cold-route gzip, and maximum raw JS chunk bytes. Initial limits include roughly
+  15% headroom over the measured split build; changing them requires before/after
+  evidence and a reason, not merely a failing build.
+- The checker sums per-file Node gzip sizes across transitive **static** imports,
+  deduplicates shared files, and includes both the entry and matched page for
+  cold routes. It verifies every `src/pages/<slice>/index.ts` remains a dynamic
+  boundary. Future non-route page slices or eager exceptions require an explicit
+  checker/convention decision. These are JS transfer estimates, not total-page
+  weight, browser timings, CSS/image budgets, or redirect-chain measurements.
+- Run `npm run analyze` for route splitting, significant dependency changes or
+  unexplained growth. Inspect `reports/bundle.html` for eager dependencies,
+  duplicate package versions/modules and unexpected sharing; the report is
+  ignored and outside deployment output. `npm run test:bundle` tests the budget
+  graph/checking logic. Do not raise Vite's warning threshold to hide regressions.
+- Before adding a dependency, consider platform APIs and existing dependencies;
+  check maintained/supported versions, tree-shaking, duplication and actual
+  production size after integration. Import only supported public entry points;
+  prefer type-only imports for types. Large optional functionality belongs behind
+  a measured async boundary, not in the application bootstrap.
+- Before committing relevant changes, run build, lint and affected behavioral
+  tests; for loading-boundary changes cover initial/direct load, in-app navigation,
+  guard redirects and module-load failure. Record size changes and any intentional
+  budget adjustment in the review. Measurement precedes memoization, prefetch or
+  other speculative optimizations.
+
+### Images and delivery
+
+- Reserve image space using intrinsic `width`/`height` or a stable aspect ratio.
+  Use appropriately sized assets, modern formats and responsive sources when
+  available. Use native lazy loading for noncritical/below-the-fold images and
+  async decoding where appropriate; never lazily load the primary above-the-fold
+  / LCP image. Decorative images have empty alt text. Do not fabricate responsive
+  variants of backend URLs when no resizing contract exists.
+- Deployment contract: content-hashed static assets use
+  `Cache-Control: public, max-age=31536000, immutable`; HTML (including SPA route
+  fallbacks) uses `Cache-Control: no-cache` so new requests revalidate it. Unhashed
+  public files need their own revalidation policy; do not apply immutable caching
+  to them or to authenticated API responses.
+- Deploy atomically and retain prior hashed assets for active clients during
+  rollouts. Missing assets must return an actual 404, not the SPA HTML fallback.
+  Verify headers, direct-route fallback and old-chunk availability on the real
+  hosting origin/CDN; `vite preview` does not establish production caching.
+  Hosting implementation and later delivery optimizations are tracked in
+  `docs/roadmap/backlog.md`.
+
 ## React APIs
 
 - The frontend runtime baseline is React 19. New components should use current React 19 APIs rather than legacy compatibility patterns.
