@@ -1,6 +1,6 @@
 import { baseApi } from '@/shared/api'
 import type {
-    DeckCardResponseDto,
+    LearningDeckDetailsResponseDto,
     LearningDeckResponseDto,
     StudySessionResponseDto,
 } from '../model/types'
@@ -11,9 +11,10 @@ export const learningApi = baseApi.injectEndpoints({
             query: () => '/learning/decks',
             providesTags: [{ type: 'LearningDeck', id: 'LIST' }],
         }),
-        getLearningDeckCards: builder.query<DeckCardResponseDto[], number>({
-            query: (deckId) => `/decks/${deckId}/cards`,
+        getLearningDeck: builder.query<LearningDeckDetailsResponseDto, number>({
+            query: (deckId) => `/learning/decks/${deckId}`,
             providesTags: (_result, _error, deckId) => [
+                { type: 'LearningDeck', id: deckId },
                 { type: 'LearningCards', id: deckId },
             ],
         }),
@@ -25,6 +26,6 @@ export const learningApi = baseApi.injectEndpoints({
 
 export const {
     useGetLearningDecksQuery,
-    useGetLearningDeckCardsQuery,
+    useGetLearningDeckQuery,
     useGetStudySessionQuery,
 } = learningApi

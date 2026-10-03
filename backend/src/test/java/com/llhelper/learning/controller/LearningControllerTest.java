@@ -19,6 +19,7 @@ import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
+import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
@@ -97,6 +98,45 @@ class LearningControllerTest {
         mockMvc.perform(get("/api/v1/learning/decks"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()", is(0)));
+    }
+
+    @Test
+    void getLearningDeck_shouldReturn200WithMetadataProgressAndCards() throws Exception {
+        DeckCardResponse card = new DeckCardResponse(
+            CARD_ID, "hello", "A greeting", null, null, null,
+            new DeckCardResponse.CardProgressInfo(CardLearningStatus.LEARNING, 1, 1, 0, 1)
+        );
+        LearningDeckDetailsResponse response = new LearningDeckDetailsResponse(
+            DECK_ID,
+            "English Basics",
+            Language.EN,
+            Language.RU,
+            Instant.parse("2024-01-01T10:00:00Z"),
+            Instant.parse("2024-01-02T10:00:00Z"),
+            new LearningDeckResponse.ProgressSummary(3, 10),
+            List.of(card)
+        );
+        when(learningService.getLearningDeck(DECK_ID)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/learning/decks/{deckId}", DECK_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deckId", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$.title", is("English Basics")))
+            .andExpect(jsonPath("$.progress.masteredCount", is(3)))
+            .andExpect(jsonPath("$.progress.totalCount", is(10)))
+            .andExpect(jsonPath("$.cards.length()", is(1)))
+            .andExpect(jsonPath("$.cards[0].id", is(CARD_ID), Long.class))
+            .andExpect(jsonPath("$.cards[0].progress.status", is("LEARNING")));
+    }
+
+    @Test
+    void getLearningDeck_shouldReturn409_whenEnrollmentIsNotActive() throws Exception {
+        when(learningService.getLearningDeck(DECK_ID))
+            .thenThrow(new IllegalStateException("Deck not enrolled. Please enroll first."));
+
+        mockMvc.perform(get("/api/v1/learning/decks/{deckId}", DECK_ID))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message", is("Deck not enrolled. Please enroll first.")));
     }
 
     @Test

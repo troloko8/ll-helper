@@ -4,6 +4,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
+import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.service.LearningService;
@@ -29,6 +30,13 @@ public class LearningController {
     @GetMapping("/learning/decks")
     public ResponseEntity<List<LearningDeckResponse>> getMyDecks() {
         return ResponseEntity.ok(learningService.getMyDecks());
+    }
+
+    @GetMapping("/learning/decks/{deckId}")
+    public ResponseEntity<LearningDeckDetailsResponse> getLearningDeck(
+        @PathVariable Long deckId
+    ) {
+        return ResponseEntity.ok(learningService.getLearningDeck(deckId));
     }
 
     @PostMapping("/decks/{deckId}/enroll")

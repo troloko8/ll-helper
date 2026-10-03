@@ -53,8 +53,19 @@ describe('router session boundaries', () => {
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
-            http.get('http://localhost/api/v1/decks/:deckId/cards', () =>
-                HttpResponse.json([]),
+            http.get(
+                'http://localhost/api/v1/learning/decks/:deckId',
+                ({ params }) =>
+                    HttpResponse.json({
+                        deckId: Number(params.deckId),
+                        title: `Deck ${params.deckId}`,
+                        sourceLanguage: 'ES',
+                        targetLanguage: 'EN',
+                        enrolledAt: '2026-09-01T10:00:00Z',
+                        lastStudiedAt: null,
+                        progress: { masteredCount: 0, totalCount: 0 },
+                        cards: [],
+                    }),
             ),
             http.get('http://localhost/api/v1/users/me', () =>
                 HttpResponse.json({

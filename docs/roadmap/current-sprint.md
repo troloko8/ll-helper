@@ -154,6 +154,8 @@
 
 Зависимость: 4D. `pages/learning`, `pages/learning-deck-details`, `pages/study`, `features/review-card` и LEARN-02–05 уже реализованы.
 
+- [x] Добавить LEARN-06 `GET /learning/decks/{deckId}` и перевести Learning Deck Details на единый server-state response без загрузки полной LEARN-05 коллекции. LEARN-05 агрегирует counts в PostgreSQL, а LEARN-02 применяет status ordering и `LIMIT 10` до загрузки Card rows. Карточки detail остаются непагинированными в текущем MVP.
+
 - [ ] Пройти Learning list → Learning Deck Details → Study по кнопкам. Исправить найденные разрывы переходов/ошибки; новые дубли этих экранов не создавать.
 - [ ] Проверить правильный и неправильный ответы, переход к следующей карточке, завершение партии (до 10) и Continue studying. Правильность и статусы брать из review response; пустую очередь обрабатывать без зависания.
 - [ ] Проверить, что после review обновляются Learning Details и Learning list; per-card status и derived counts соответствуют ответам сервера, сохраняются после refresh и повторного открытия. Mastery может оставаться 0% до MASTERED — один правильный ответ не равен освоению карточки.
@@ -249,8 +251,8 @@
   - [x] Complete Profile Stitch (desktop/mobile/validation/conflict/submitting) — canonical references зарегистрированы в `docs/frontend/DESIGN.md` и `docs/frontend/design-reference/MANIFEST.md`.
   - [x] Frontend onboarding orchestration (`/onboarding/profile` → `POST /users` → `/learning`, `needsProfile` session state).
   - [ ] End-to-end Register → Profile verification (ручной smoke).
-- [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, batch progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
-- [x] G-08 Study selection включает `REVIEWING`: приоритет `LEARNING` → `REVIEWING` → `NEW`, детерминированная сортировка по `card.id` внутри статуса, max 10; `MASTERED` исключён. Подтверждено service unit tests.
+- [x] G-06 Learning Decks list endpoint — `GET /api/v1/learning/decks`: только `ACTIVE` enrollment текущего пользователя, PostgreSQL `COUNT`/`GROUP BY` progress aggregation, Continue/Start ordering по `lastStudiedAt`/`enrolledAt`, V11 `enrolled_at` + индекс `(user_id, status)`.
+- [x] G-08 Study selection включает `REVIEWING`: PostgreSQL выбирает `LEARNING` → `REVIEWING` → `NEW`, `card_id ASC`, `LIMIT 10`; `MASTERED` исключён до загрузки Card rows. Подтверждено repository integration и service unit tests.
 - [x] G-12 `docs/features/learning-flow.md` исправлен (409, не 403)
 
 G-05 закрыт: `GET /decks/{id}` и `GET /cards/{id}` используют общий `DeckAccessPolicy`; public и owner-private чтение разрешено, чужой private контент возвращает контролируемый 403. Подтверждено service unit tests и `@WebMvcTest`.

@@ -65,6 +65,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/v1/learning/decks` | List current user's active learning decks |
+| `GET` | `/api/v1/learning/decks/{deckId}` | Get one active learning deck with metadata, aggregate progress, and cards |
 | `POST` | `/api/v1/decks/{deckId}/enroll` | Enroll in a public deck |
 | `GET` | `/api/v1/decks/{deckId}/study` | Get deck metadata and up to 10 cards for study |
 | `GET` | `/api/v1/decks/{deckId}/cards` | Get all deck cards with progress info |
@@ -79,14 +80,22 @@ This document does not define advanced spaced repetition, StudySession history, 
 `GET /api/v1/learning/decks`
 
 1. Resolve the authenticated user ID.
-2. Load only `UserDeckProgress` rows with `status = ACTIVE` for that user.
-3. Batch-load all corresponding `Deck` rows and all `UserCardProgress` rows; the query count is constant rather than one card-progress query per deck.
+2. Run one aggregate repository query across active `UserDeckProgress`, `Deck`, and `UserCardProgress` rows.
+3. Let PostgreSQL compute `totalCount` and conditional `masteredCount` with `COUNT`/`GROUP BY`, returning one row per enrolled deck rather than materializing all per-card progress in Java.
 4. Return deck metadata, `enrolledAt`, nullable `lastStudiedAt`, and `progress { masteredCount, totalCount }`.
-5. Sort studied decks first by `lastStudiedAt DESC`; then never-studied decks by `enrolledAt DESC`; use progress-row `id ASC` as the final deterministic tie-breaker.
+5. The same query orders studied decks first by `lastStudiedAt DESC`; then never-studied decks by `enrolledAt DESC`; progress-row `id ASC` is the final deterministic tie-breaker.
 
 The first returned deck is the highlight candidate. If its `lastStudiedAt` is non-null, the UI presents **Continue Learning**; otherwise it presents **Start Learning**. No enrollments returns `200 OK` with `[]`.
 
-### 5.2 Enroll Deck
+### 5.2 Get One Learning Deck
+
+`GET /api/v1/learning/decks/{deckId}`
+
+Requires an `ACTIVE` enrollment for the authenticated user. Missing or inactive enrollment returns `409 Conflict`. The response is `LearningDeckDetailsResponse`: the same metadata and aggregate progress shape as a Learning-list item plus the complete `cards` array with per-user progress. Learning Deck Details uses this response as its single server-state source on navigation, direct entry, and refresh; it does not load the full Learning collection and search it for metadata.
+
+The MVP response remains intentionally unpaginated. If deck size becomes unbounded, card pagination is a follow-up and the server-provided aggregate progress must remain independent of the current card page.
+
+### 5.3 Enroll Deck
 
 `POST /api/v1/decks/{deckId}/enroll`
 
@@ -115,7 +124,7 @@ inline so the public deck content is not replaced by a false success state.
 
 ---
 
-### 5.3 Get Study Session
+### 5.4 Get Study Session
 
 `GET /api/v1/decks/{deckId}/study`
 
@@ -126,24 +135,23 @@ inline so the public deck content is not replaced by a false success state.
 1. Resolve authenticated user.
 2. Find `UserDeckProgress` for this user + deck.
    - If not enrolled → `409 Conflict` (throws `IllegalStateException`, mapped by `GlobalExceptionHandler` to `409`). Corrects the previous `403` claim in this section — see §9/§10/§11 (G-12).
-3. Load all `UserCardProgress` for this enrollment.
-4. Batch-load all corresponding `Card` entities (single query).
-5. Exclude cards with `status = MASTERED`.
-6. Sort the remaining cards by status priority `LEARNING` → `REVIEWING` → `NEW`, then by `card.id ASC` inside each status.
-7. Return the first 10 cards. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with `cards: []` in the session response.
+3. Query `UserCardProgress` with `status != MASTERED`, order in PostgreSQL by `LEARNING` → `REVIEWING` → `NEW` and `card_id ASC`, and apply `LIMIT 10` in the database.
+4. Batch-load only the selected `Card` entities.
+5. Return the selected cards in repository order. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with `cards: []` in the session response.
 
 ---
 
-### 5.4 Get All Deck Cards
+### 5.5 Get All Deck Cards
 
 `GET /api/v1/decks/{deckId}/cards`
 
 Returns all cards in the deck with their current progress info for the authenticated user.
 Requires enrollment. Uses same batch-load pattern as study cards (no N+1).
+This legacy learning-scoped endpoint remains available, but the current Learning Deck Details page uses the unified endpoint in §5.2.
 
 ---
 
-### 5.5 Review Card
+### 5.6 Review Card
 
 `POST /api/v1/cards/{cardId}/review`
 
@@ -219,8 +227,8 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 | Duplicate enroll | `409 Conflict` |
 | Enroll private deck | `403 Forbidden` |
 | Study empty deck | `200 OK` with `{deckId, deckTitle, cards: []}` |
-| Study cards without enrollment | `409 Conflict` (see §5.3, G-12) |
-| Review card without enrollment | `409 Conflict` (see §5.5, G-12) |
+| Study cards without enrollment | `409 Conflict` (see §5.4, G-12) |
+| Review card without enrollment | `409 Conflict` (see §5.6, G-12) |
 | Non-existent deck / card | `404 Not Found` |
 
 ---

@@ -302,6 +302,7 @@ CardService.save(cards)
 | `/api/v1/card-generations` | POST | JWT | AI generate one card (`GenerateCardRequest`: title, deckId) | `CardResponse` |
 | `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
+| `/api/v1/learning/decks/{deckId}` | GET | JWT | Get one current user's active enrolled deck with metadata, aggregate progress, and cards | `LearningDeckDetailsResponse` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study` | GET | JWT | Get deck metadata and up to 10 cards for study | `StudySessionResponse {deckId, deckTitle, cards}` |
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |

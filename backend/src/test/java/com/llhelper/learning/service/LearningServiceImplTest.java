@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -21,6 +22,7 @@ import com.llhelper.deck.repository.DeckRepository;
 import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
+import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
@@ -30,6 +32,7 @@ import com.llhelper.learning.enums.UserDeckStatus;
 import com.llhelper.learning.mapper.LearningMapper;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
+import com.llhelper.learning.repository.UserDeckProgressRepository.LearningDeckSummaryProjection;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Clock;
 import java.time.Instant;
@@ -110,20 +113,6 @@ class LearningServiceImplTest {
         deckProgress.setId(USER_DECK_PROGRESS_ID);
         deckProgress.setDeckId(DECK_ID);
         return deckProgress;
-    }
-
-    private static UserDeckProgress deckProgress(
-        long progressId,
-        long deckId,
-        Instant enrolledAt,
-        Instant lastStudiedAt
-    ) {
-        UserDeckProgress progress = defaultDeckProgress();
-        progress.setId(progressId);
-        progress.setDeckId(deckId);
-        progress.setEnrolledAt(enrolledAt);
-        progress.setLastStudiedAt(lastStudiedAt);
-        return progress;
     }
 
     private static Deck deck(long deckId, String title) {
@@ -224,127 +213,30 @@ class LearningServiceImplTest {
     // --- getMyDecks ---
 
     @Test
-    void getMyDecks_shouldReturnOnlyActiveDecksWithAggregatedProgress_usingBatchQueries() {
-        UserDeckProgress firstProgress = deckProgress(
-            USER_DECK_PROGRESS_ID,
-            DECK_ID,
+    void getMyDecks_shouldMapAggregatedRepositoryRows() {
+        LearningDeckSummaryProjection summary = mock(LearningDeckSummaryProjection.class);
+        LearningDeckResponse response = new LearningDeckResponse(
+            DECK_ID, "First Deck", Language.EN, Language.RU,
             Instant.parse("2024-01-01T10:00:00Z"),
-            Instant.parse("2024-01-03T10:00:00Z")
-        );
-        UserDeckProgress secondProgress = deckProgress(
-            11L,
-            4L,
-            Instant.parse("2024-01-02T10:00:00Z"),
-            null
-        );
-        Deck firstDeck = deck(DECK_ID, "First Deck");
-        Deck secondDeck = deck(4L, "Second Deck");
-        List<UserCardProgress> allCardProgress = List.of(
-            cardProgress(USER_DECK_PROGRESS_ID, CardLearningStatus.MASTERED),
-            cardProgress(USER_DECK_PROGRESS_ID, CardLearningStatus.LEARNING),
-            cardProgress(11L, CardLearningStatus.NEW)
-        );
-
-        LearningDeckResponse firstResponse = new LearningDeckResponse(
-            DECK_ID,
-            "First Deck",
-            Language.EN,
-            Language.RU,
-            firstProgress.getEnrolledAt(),
-            firstProgress.getLastStudiedAt(),
+            Instant.parse("2024-01-03T10:00:00Z"),
             new LearningDeckResponse.ProgressSummary(1, 2)
         );
-        LearningDeckResponse secondResponse = new LearningDeckResponse(
-            4L,
-            "Second Deck",
-            Language.EN,
-            Language.RU,
-            secondProgress.getEnrolledAt(),
-            null,
-            new LearningDeckResponse.ProgressSummary(0, 1)
-        );
-
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(userDeckProgressRepository.findAllByUserIdAndStatus(USER_ID, UserDeckStatus.ACTIVE))
-            .thenReturn(List.of(secondProgress, firstProgress));
-        when(deckRepository.findAllById(List.of(4L, DECK_ID))).thenReturn(List.of(firstDeck, secondDeck));
-        when(userCardProgressRepository.findAllByUserDeckProgressIdIn(List.of(11L, USER_DECK_PROGRESS_ID)))
-            .thenReturn(allCardProgress);
-        when(learningMapper.toLearningDeckResponse(
-            firstProgress,
-            firstDeck,
-            new LearningDeckResponse.ProgressSummary(1, 2)
-        )).thenReturn(firstResponse);
-        when(learningMapper.toLearningDeckResponse(
-            secondProgress,
-            secondDeck,
-            new LearningDeckResponse.ProgressSummary(0, 1)
-        )).thenReturn(secondResponse);
+        when(userDeckProgressRepository.findLearningDeckSummaries(USER_ID)).thenReturn(List.of(summary));
+        LearningDeckResponse.ProgressSummary progress = new LearningDeckResponse.ProgressSummary(1, 2);
+        when(summary.getMasteredCount()).thenReturn(1L);
+        when(summary.getTotalCount()).thenReturn(2L);
+        when(learningMapper.toLearningDeckResponse(summary, progress)).thenReturn(response);
 
-        List<LearningDeckResponse> result = learningService.getMyDecks();
-
-        assertThat(result).containsExactly(firstResponse, secondResponse);
-        verify(userDeckProgressRepository).findAllByUserIdAndStatus(USER_ID, UserDeckStatus.ACTIVE);
-        verify(deckRepository).findAllById(List.of(4L, DECK_ID));
-        verify(userCardProgressRepository).findAllByUserDeckProgressIdIn(List.of(11L, USER_DECK_PROGRESS_ID));
-        verify(userCardProgressRepository, never()).findAllByUserDeckProgressId(any());
-    }
-
-    @Test
-    void getMyDecks_shouldSortStudiedByLastStudiedAndUnstudiedByEnrollment() {
-        UserDeckProgress unstudiedOlder = deckProgress(
-            40L, 40L, Instant.parse("2024-01-01T10:00:00Z"), null);
-        UserDeckProgress studiedOlder = deckProgress(
-            20L, 20L, Instant.parse("2024-01-04T10:00:00Z"), Instant.parse("2024-01-02T10:00:00Z"));
-        UserDeckProgress unstudiedNewer = deckProgress(
-            30L, 30L, Instant.parse("2024-01-03T10:00:00Z"), null);
-        UserDeckProgress studiedNewer = deckProgress(
-            10L, 10L, Instant.parse("2024-01-01T10:00:00Z"), Instant.parse("2024-01-04T10:00:00Z"));
-        UserDeckProgress studiedNewerTie = deckProgress(
-            15L, 15L, Instant.parse("2024-01-02T10:00:00Z"), Instant.parse("2024-01-04T10:00:00Z"));
-        UserDeckProgress unstudiedNewerTie = deckProgress(
-            35L, 35L, Instant.parse("2024-01-03T10:00:00Z"), null);
-        List<UserDeckProgress> progress = List.of(
-            unstudiedOlder, studiedOlder, unstudiedNewerTie, studiedNewerTie, unstudiedNewer, studiedNewer);
-        List<Deck> decks = List.of(
-            deck(10L, "10"), deck(15L, "15"), deck(20L, "20"),
-            deck(30L, "30"), deck(35L, "35"), deck(40L, "40"));
-
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(userDeckProgressRepository.findAllByUserIdAndStatus(USER_ID, UserDeckStatus.ACTIVE))
-            .thenReturn(progress);
-        when(deckRepository.findAllById(List.of(40L, 20L, 35L, 15L, 30L, 10L))).thenReturn(decks);
-        when(userCardProgressRepository.findAllByUserDeckProgressIdIn(List.of(40L, 20L, 35L, 15L, 30L, 10L)))
-            .thenReturn(List.of());
-        when(learningMapper.toLearningDeckResponse(
-            any(UserDeckProgress.class),
-            any(Deck.class),
-            eq(new LearningDeckResponse.ProgressSummary(0, 0))
-        )).thenAnswer(invocation -> {
-            UserDeckProgress deckProgress = invocation.getArgument(0);
-            Deck mappedDeck = invocation.getArgument(1);
-            return new LearningDeckResponse(
-                deckProgress.getDeckId(),
-                mappedDeck.getTitle(),
-                mappedDeck.getSourceLanguage(),
-                mappedDeck.getTargetLanguage(),
-                deckProgress.getEnrolledAt(),
-                deckProgress.getLastStudiedAt(),
-                new LearningDeckResponse.ProgressSummary(0, 0)
-            );
-        });
-
-        List<LearningDeckResponse> result = learningService.getMyDecks();
-
-        assertThat(result).extracting(LearningDeckResponse::deckId)
-            .containsExactly(10L, 15L, 20L, 30L, 35L, 40L);
+        assertThat(learningService.getMyDecks()).containsExactly(response);
+        verify(userDeckProgressRepository).findLearningDeckSummaries(USER_ID);
+        verifyNoInteractions(deckRepository, userCardProgressRepository);
     }
 
     @Test
     void getMyDecks_shouldReturnEmptyList_withoutLoadingDecksOrCards() {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(userDeckProgressRepository.findAllByUserIdAndStatus(USER_ID, UserDeckStatus.ACTIVE))
-            .thenReturn(List.of());
+        when(userDeckProgressRepository.findLearningDeckSummaries(USER_ID)).thenReturn(List.of());
 
         List<LearningDeckResponse> result = learningService.getMyDecks();
 
@@ -352,17 +244,63 @@ class LearningServiceImplTest {
         verifyNoInteractions(deckRepository, userCardProgressRepository);
     }
 
+    // --- getLearningDeck ---
+
+    @Test
+    void getLearningDeck_shouldReturnMetadataProgressAndCards_forActiveEnrollment() {
+        UserDeckProgress deckProgress = deckProgressWithId();
+        Deck deck = deck(DECK_ID, "English Basics");
+        UserCardProgress mastered = cardProgress(USER_DECK_PROGRESS_ID, 3L, CardLearningStatus.MASTERED);
+        UserCardProgress learning = cardProgress(USER_DECK_PROGRESS_ID, 4L, CardLearningStatus.LEARNING);
+        List<UserCardProgress> progressRows = List.of(mastered, learning);
+        List<Card> cards = List.of(card(3L, "hello"), card(4L, "world"));
+        List<DeckCardResponse> cardResponses = List.of(
+            deckCardResponse(cards.get(0), mastered),
+            deckCardResponse(cards.get(1), learning)
+        );
+        LearningDeckResponse.ProgressSummary progress = new LearningDeckResponse.ProgressSummary(1, 2);
+        LearningDeckDetailsResponse expected = new LearningDeckDetailsResponse(
+            DECK_ID, "English Basics", Language.EN, Language.RU,
+            deckProgress.getEnrolledAt(), deckProgress.getLastStudiedAt(), progress, cardResponses
+        );
+
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckIdAndStatus(USER_ID, DECK_ID, UserDeckStatus.ACTIVE))
+            .thenReturn(Optional.of(deckProgress));
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+            .thenReturn(progressRows);
+        when(cardRepository.findAllById(List.of(3L, 4L))).thenReturn(cards);
+        when(learningMapper.toDeckCardResponse(cards.get(0), mastered)).thenReturn(cardResponses.get(0));
+        when(learningMapper.toDeckCardResponse(cards.get(1), learning)).thenReturn(cardResponses.get(1));
+        when(learningMapper.toLearningDeckDetailsResponse(deckProgress, deck, progress, cardResponses))
+            .thenReturn(expected);
+
+        assertThat(learningService.getLearningDeck(DECK_ID)).isEqualTo(expected);
+    }
+
+    @Test
+    void getLearningDeck_shouldRejectMissingOrInactiveEnrollment() {
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findByUserIdAndDeckIdAndStatus(USER_ID, DECK_ID, UserDeckStatus.ACTIVE))
+            .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> learningService.getLearningDeck(DECK_ID))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Deck not enrolled. Please enroll first.");
+        verifyNoInteractions(deckRepository, cardRepository, userCardProgressRepository);
+    }
+
     // --- getStudySession ---
 
     @Test
-    void getStudySession_shouldPrioritizeLearningThenReviewingThenNew_andExcludeMastered() {
+    void getStudySession_shouldReturnRepositorySelectedQueueInOrder() {
         UserDeckProgress deckProgress = deckProgressWithId();
         List<UserCardProgress> progress = List.of(
-            cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.NEW),
-            cardProgress(USER_DECK_PROGRESS_ID, 1L, CardLearningStatus.MASTERED),
-            cardProgress(USER_DECK_PROGRESS_ID, 20L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.LEARNING),
             cardProgress(USER_DECK_PROGRESS_ID, 30L, CardLearningStatus.LEARNING),
-            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.LEARNING)
+            cardProgress(USER_DECK_PROGRESS_ID, 20L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.NEW)
         );
         List<Card> cards = progress.stream()
             .map(item -> card(item.getCardId(), "Card " + item.getCardId()))
@@ -371,9 +309,9 @@ class LearningServiceImplTest {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
         when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
             .thenReturn(Optional.of(deckProgress));
-        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+        when(userCardProgressRepository.findStudyQueue(USER_DECK_PROGRESS_ID))
             .thenReturn(progress);
-        when(cardRepository.findAllById(List.of(5L, 1L, 20L, 30L, 10L))).thenReturn(cards);
+        when(cardRepository.findAllById(List.of(10L, 30L, 20L, 5L))).thenReturn(cards);
         when(learningMapper.toDeckCardResponse(any(Card.class), any(UserCardProgress.class)))
             .thenAnswer(invocation -> {
                 Card mappedCard = invocation.getArgument(0);
@@ -403,21 +341,19 @@ class LearningServiceImplTest {
     }
 
     @Test
-    void getStudySession_shouldReturnAtMostTenCards_acrossPrioritizedStatuses() {
+    void getStudySession_shouldLoadOnlyTheTenRowsReturnedByRepository() {
         UserDeckProgress deckProgress = deckProgressWithId();
         List<UserCardProgress> progress = List.of(
-            cardProgress(USER_DECK_PROGRESS_ID, 4L, CardLearningStatus.LEARNING),
-            cardProgress(USER_DECK_PROGRESS_ID, 3L, CardLearningStatus.LEARNING),
-            cardProgress(USER_DECK_PROGRESS_ID, 2L, CardLearningStatus.LEARNING),
             cardProgress(USER_DECK_PROGRESS_ID, 1L, CardLearningStatus.LEARNING),
-            cardProgress(USER_DECK_PROGRESS_ID, 8L, CardLearningStatus.REVIEWING),
-            cardProgress(USER_DECK_PROGRESS_ID, 7L, CardLearningStatus.REVIEWING),
-            cardProgress(USER_DECK_PROGRESS_ID, 6L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 2L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 3L, CardLearningStatus.LEARNING),
+            cardProgress(USER_DECK_PROGRESS_ID, 4L, CardLearningStatus.LEARNING),
             cardProgress(USER_DECK_PROGRESS_ID, 5L, CardLearningStatus.REVIEWING),
-            cardProgress(USER_DECK_PROGRESS_ID, 12L, CardLearningStatus.NEW),
-            cardProgress(USER_DECK_PROGRESS_ID, 11L, CardLearningStatus.NEW),
-            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.NEW),
-            cardProgress(USER_DECK_PROGRESS_ID, 9L, CardLearningStatus.NEW)
+            cardProgress(USER_DECK_PROGRESS_ID, 6L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 7L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 8L, CardLearningStatus.REVIEWING),
+            cardProgress(USER_DECK_PROGRESS_ID, 9L, CardLearningStatus.NEW),
+            cardProgress(USER_DECK_PROGRESS_ID, 10L, CardLearningStatus.NEW)
         );
         List<Long> cardIds = progress.stream().map(UserCardProgress::getCardId).toList();
         List<Card> cards = progress.stream()
@@ -427,7 +363,7 @@ class LearningServiceImplTest {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
         when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
             .thenReturn(Optional.of(deckProgress));
-        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+        when(userCardProgressRepository.findStudyQueue(USER_DECK_PROGRESS_ID))
             .thenReturn(progress);
         when(cardRepository.findAllById(cardIds)).thenReturn(cards);
         when(learningMapper.toDeckCardResponse(any(Card.class), any(UserCardProgress.class)))
@@ -450,6 +386,7 @@ class LearningServiceImplTest {
         assertThat(result).hasSize(10);
         assertThat(result).extracting(DeckCardResponse::id)
             .containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
+        verify(userCardProgressRepository, never()).findAllByUserDeckProgressId(any());
     }
 
     @Test
@@ -457,6 +394,7 @@ class LearningServiceImplTest {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
         when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
             .thenReturn(Optional.of(deckProgressWithId()));
+        when(userCardProgressRepository.findStudyQueue(USER_DECK_PROGRESS_ID)).thenReturn(List.of());
         Deck deck = new Deck();
         deck.setId(DECK_ID);
         deck.setTitle("Empty deck");
@@ -474,7 +412,7 @@ class LearningServiceImplTest {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
         when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
             .thenReturn(Optional.of(deckProgressWithId()));
-        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+        when(userCardProgressRepository.findStudyQueue(USER_DECK_PROGRESS_ID))
             .thenReturn(List.of());
         when(deckRepository.findById(DECK_ID)).thenReturn(Optional.empty());
 

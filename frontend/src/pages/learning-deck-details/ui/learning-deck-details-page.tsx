@@ -2,13 +2,13 @@ import { Link, useParams } from 'react-router-dom'
 import {
     getDeckProgressCounts,
     getLanguageLabel,
-    useGetLearningDeckCardsQuery,
-    useGetLearningDecksQuery,
+    useGetLearningDeckQuery,
 } from '@/entities/learning'
 import type {
     CardLearningStatus,
     DeckCardResponseDto,
     DeckProgressCounts,
+    LearningProgressSummaryDto,
 } from '@/entities/learning'
 import { ApiErrorPresentation, Button, PageState, Skeleton } from '@/shared/ui'
 import styles from './learning-deck-details-page.module.css'
@@ -50,12 +50,18 @@ function DetailsSkeleton() {
     )
 }
 
-function ProgressOverview({ cards }: { cards: DeckCardResponseDto[] }) {
+function ProgressOverview({
+    cards,
+    progress,
+}: {
+    cards: DeckCardResponseDto[]
+    progress: LearningProgressSummaryDto
+}) {
     const counts = getDeckProgressCounts(cards)
     const masteryPercent =
-        cards.length === 0
+        progress.totalCount === 0
             ? 0
-            : Math.round((counts.mastered / cards.length) * 100)
+            : Math.round((progress.masteredCount / progress.totalCount) * 100)
 
     return (
         <section className={styles.progressSection} aria-label="Deck progress">
@@ -121,15 +127,11 @@ export function LearningDeckDetailsPage() {
     const deckId = Number(deckIdParam)
     const validDeckId = Number.isSafeInteger(deckId) && deckId > 0
     const {
-        data: cards,
+        data: deck,
         error,
         isLoading,
         refetch,
-    } = useGetLearningDeckCardsQuery(deckId, { skip: !validDeckId })
-    const { data: learningDecks } = useGetLearningDecksQuery(undefined, {
-        skip: !validDeckId,
-    })
-    const deck = learningDecks?.find((item) => item.deckId === deckId)
+    } = useGetLearningDeckQuery(deckId, { skip: !validDeckId })
 
     if (!validDeckId) {
         return (
@@ -161,7 +163,7 @@ export function LearningDeckDetailsPage() {
         )
     }
 
-    const resolvedCards = cards ?? []
+    const resolvedCards = deck?.cards ?? []
     const hasStudyCards = resolvedCards.some(
         (card) => card.progress.status !== 'MASTERED',
     )
@@ -189,7 +191,10 @@ export function LearningDeckDetailsPage() {
                 )}
             </header>
 
-            <ProgressOverview cards={resolvedCards} />
+            <ProgressOverview
+                cards={resolvedCards}
+                progress={deck?.progress ?? { masteredCount: 0, totalCount: 0 }}
+            />
 
             {resolvedCards.length === 0 ? (
                 <section className={styles.emptyState}>

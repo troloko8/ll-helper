@@ -1,16 +1,21 @@
 package com.llhelper.learning.mapper;
 
 import com.llhelper.card.entity.Card;
+import com.llhelper.common.model.Language;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
+import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
+import com.llhelper.learning.repository.UserDeckProgressRepository.LearningDeckSummaryProjection;
 import java.time.Instant;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.springframework.stereotype.Component;
 
 /**
@@ -72,6 +77,34 @@ public interface LearningMapper {
         Deck deck,
         LearningDeckResponse.ProgressSummary progress
     );
+
+    @Mapping(target = "sourceLanguage", source = "summary.sourceLanguage", qualifiedByName = "toLanguage")
+    @Mapping(target = "targetLanguage", source = "summary.targetLanguage", qualifiedByName = "toLanguage")
+    @Mapping(target = "progress", source = "progress")
+    LearningDeckResponse toLearningDeckResponse(
+        LearningDeckSummaryProjection summary,
+        LearningDeckResponse.ProgressSummary progress
+    );
+
+    @Mapping(target = "deckId", source = "deckProgress.deckId")
+    @Mapping(target = "title", source = "deck.title")
+    @Mapping(target = "sourceLanguage", source = "deck.sourceLanguage")
+    @Mapping(target = "targetLanguage", source = "deck.targetLanguage")
+    @Mapping(target = "enrolledAt", source = "deckProgress.enrolledAt")
+    @Mapping(target = "lastStudiedAt", source = "deckProgress.lastStudiedAt")
+    @Mapping(target = "progress", source = "progress")
+    @Mapping(target = "cards", source = "cards")
+    LearningDeckDetailsResponse toLearningDeckDetailsResponse(
+        UserDeckProgress deckProgress,
+        Deck deck,
+        LearningDeckResponse.ProgressSummary progress,
+        List<DeckCardResponse> cards
+    );
+
+    @Named("toLanguage")
+    default Language toLanguage(String value) {
+        return value == null ? null : Language.valueOf(value);
+    }
 
     @Mapping(target = "correct", source = "isCorrect")
     @Mapping(target = "correctAnswer", source = "card.title")

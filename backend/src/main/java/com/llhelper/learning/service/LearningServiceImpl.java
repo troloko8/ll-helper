@@ -9,6 +9,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
+import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
@@ -21,7 +22,6 @@ import com.llhelper.learning.repository.UserDeckProgressRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,70 +47,15 @@ public class LearningServiceImpl implements LearningService {
     @Transactional(readOnly = true)
     public List<LearningDeckResponse> getMyDecks() {
         Long userId = securityUtils.getCurrentUserId();
-        List<UserDeckProgress> myProgress = userDeckProgressRepository
-            .findAllByUserIdAndStatus(userId, UserDeckStatus.ACTIVE);
-
-        if (myProgress.isEmpty()) {
-            return List.of();
-        }
-
-        List<Long> deckIds = myProgress.stream()
-            .map(UserDeckProgress::getDeckId)
-            .collect(Collectors.toList());
-
-        Map<Long, Deck> deckMap = deckRepository.findAllById(deckIds).stream()
-            .collect(Collectors.toMap(Deck::getId, d -> d));
-
-        List<Long> deckProgressIds = myProgress.stream()
-            .map(UserDeckProgress::getId)
+        return userDeckProgressRepository.findLearningDeckSummaries(userId).stream()
+            .map(summary -> learningMapper.toLearningDeckResponse(
+                summary,
+                new LearningDeckResponse.ProgressSummary(
+                    summary.getMasteredCount(),
+                    summary.getTotalCount()
+                )
+            ))
             .toList();
-
-        Map<Long, List<UserCardProgress>> cardProgressByDeckProgressId = userCardProgressRepository
-            .findAllByUserDeckProgressIdIn(deckProgressIds)
-            .stream()
-            .collect(Collectors.groupingBy(UserCardProgress::getUserDeckProgressId));
-
-        return myProgress.stream()
-            .sorted(LearningServiceImpl::compareLearningDecks)
-            .map(p -> {
-                Deck deck = requireDeck(deckMap, p.getDeckId());
-                List<UserCardProgress> cardProgress = cardProgressByDeckProgressId
-                    .getOrDefault(p.getId(), List.of());
-                long total = cardProgress.size();
-                long mastered = cardProgress.stream()
-                    .filter(cp -> cp.getStatus() == CardLearningStatus.MASTERED)
-                    .count();
-                return learningMapper.toLearningDeckResponse(
-                    p, deck, new LearningDeckResponse.ProgressSummary(mastered, total));
-            })
-            .collect(Collectors.toList());
-    }
-
-    private static int compareLearningDecks(UserDeckProgress left, UserDeckProgress right) {
-        boolean leftStudied = left.getLastStudiedAt() != null;
-        boolean rightStudied = right.getLastStudiedAt() != null;
-
-        if (leftStudied != rightStudied) {
-            return leftStudied ? -1 : 1;
-        }
-
-        int activityComparison = leftStudied
-            ? right.getLastStudiedAt().compareTo(left.getLastStudiedAt())
-            : right.getEnrolledAt().compareTo(left.getEnrolledAt());
-
-        if (activityComparison != 0) {
-            return activityComparison;
-        }
-
-        return Comparator.nullsLast(Long::compareTo).compare(left.getId(), right.getId());
-    }
-
-    private static Deck requireDeck(Map<Long, Deck> deckMap, Long deckId) {
-        Deck deck = deckMap.get(deckId);
-        if (deck == null) {
-            throw new EntityNotFoundException("Deck not found: " + deckId);
-        }
-        return deck;
     }
 
     @Override
@@ -155,28 +100,37 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public StudySessionResponse getStudySession(Long deckId) {
-        DeckCardsData data = loadDeckCardsWithProgress(deckId);
+        Long userId = securityUtils.getCurrentUserId();
+        UserDeckProgress deckProgress = requireEnrollment(userId, deckId);
+        List<UserCardProgress> studyQueue = userCardProgressRepository.findStudyQueue(deckProgress.getId());
+        DeckCardsData data = loadCardsWithProgress(studyQueue);
         Deck deck = deckRepository.findById(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
-        List<DeckCardResponse> cards = data.allCardProgress().stream()
-            .filter(progress -> progress.getStatus() != CardLearningStatus.MASTERED)
-            .sorted(Comparator
-                .comparingInt((UserCardProgress progress) -> studyPriority(progress.getStatus()))
-                .thenComparing(UserCardProgress::getCardId))
-            .limit(10)
-            .map(progress -> toDeckCardResponse(data.cardMap().get(progress.getCardId()), progress))
-            .toList();
+        List<DeckCardResponse> cards = toDeckCardResponses(data);
         return new StudySessionResponse(deck.getId(), deck.getTitle(), cards);
     }
 
-    private static int studyPriority(CardLearningStatus status) {
-        return switch (status) {
-            case LEARNING -> 0;
-            case REVIEWING -> 1;
-            case NEW -> 2;
-            case MASTERED -> 3;
-        };
+    @Override
+    @Transactional(readOnly = true)
+    public LearningDeckDetailsResponse getLearningDeck(Long deckId) {
+        Long userId = securityUtils.getCurrentUserId();
+        UserDeckProgress deckProgress = userDeckProgressRepository
+            .findByUserIdAndDeckIdAndStatus(userId, deckId, UserDeckStatus.ACTIVE)
+            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
+        Deck deck = deckRepository.findById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
+        DeckCardsData data = loadDeckCardsWithProgress(deckProgress);
+        List<DeckCardResponse> cards = toDeckCardResponses(data);
+        long masteredCount = data.allCardProgress().stream()
+            .filter(progress -> progress.getStatus() == CardLearningStatus.MASTERED)
+            .count();
+        LearningDeckResponse.ProgressSummary progress = new LearningDeckResponse.ProgressSummary(
+            masteredCount,
+            data.allCardProgress().size()
+        );
+
+        return learningMapper.toLearningDeckDetailsResponse(deckProgress, deck, progress, cards);
     }
 
     @Override
@@ -184,15 +138,14 @@ public class LearningServiceImpl implements LearningService {
     public List<DeckCardResponse> getDeckCards(Long deckId) {
         DeckCardsData data = loadDeckCardsWithProgress(deckId);
 
-        return data.allCardProgress().stream()
-            .map(p -> toDeckCardResponse(data.cardMap().get(p.getCardId()), p))
-            .collect(Collectors.toList());
+        return toDeckCardResponses(data);
     }
 
     @Override
     @Transactional
     public CardReviewResponse reviewCard(Long cardId, CardReviewRequest request) {
-        // FIXME: maybe better to send userId from controller hence from frontend
+        // TODO: Read User.id from a JWT claim after the token migration tracked in
+        // backend/IMPROVEMENTS.md, instead of accepting identity from the client.
         Long userId = securityUtils.getCurrentUserId();
 
         Card card = cardRepository.findById(cardId)
@@ -205,9 +158,10 @@ public class LearningServiceImpl implements LearningService {
             .orElseThrow(() -> new EntityNotFoundException("Card progress not found: " + cardId));
 
         boolean isCorrect = request.userAnswer().trim().equalsIgnoreCase(card.getTitle().trim());
+        Instant reviewedAt = Instant.now(clock);
 
         cardProgress.setTimesSeen(cardProgress.getTimesSeen() + 1);
-        cardProgress.setLastReviewedAt(Instant.now(clock));
+        cardProgress.setLastReviewedAt(reviewedAt);
 
         if (isCorrect) {
             cardProgress.setTimesCorrect(cardProgress.getTimesCorrect() + 1);
@@ -222,7 +176,7 @@ public class LearningServiceImpl implements LearningService {
 
         userCardProgressRepository.save(cardProgress);
 
-        deckProgress.setLastStudiedAt(Instant.now(clock));
+        deckProgress.setLastStudiedAt(reviewedAt);
         userDeckProgressRepository.save(deckProgress);
 
         return learningMapper.toCardReviewResponse(isCorrect, card, newStatus, cardProgress);
@@ -242,12 +196,15 @@ public class LearningServiceImpl implements LearningService {
 
     private DeckCardsData loadDeckCardsWithProgress(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
+        return loadDeckCardsWithProgress(requireEnrollment(userId, deckId));
+    }
 
-        UserDeckProgress deckProgress = userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
-            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
-
+    private DeckCardsData loadDeckCardsWithProgress(UserDeckProgress deckProgress) {
         List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
+        return loadCardsWithProgress(allCardProgress);
+    }
 
+    private DeckCardsData loadCardsWithProgress(List<UserCardProgress> allCardProgress) {
         List<Long> cardIds = allCardProgress.stream()
             .map(UserCardProgress::getCardId)
             .collect(Collectors.toList());
@@ -258,8 +215,18 @@ public class LearningServiceImpl implements LearningService {
         return new DeckCardsData(allCardProgress, cardMap);
     }
 
-    private DeckCardResponse toDeckCardResponse(Card card, UserCardProgress progress) {
-        return learningMapper.toDeckCardResponse(card, progress);
+    private UserDeckProgress requireEnrollment(Long userId, Long deckId) {
+        return userDeckProgressRepository.findByUserIdAndDeckId(userId, deckId)
+            .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
+    }
+
+    private List<DeckCardResponse> toDeckCardResponses(DeckCardsData data) {
+        return data.allCardProgress().stream()
+            .map(progress -> learningMapper.toDeckCardResponse(
+                data.cardMap().get(progress.getCardId()),
+                progress
+            ))
+            .toList();
     }
 
     private record DeckCardsData(List<UserCardProgress> allCardProgress, Map<Long, Card> cardMap) {}

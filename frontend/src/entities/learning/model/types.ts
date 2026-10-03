@@ -35,6 +35,10 @@ export interface LearningDeckResponseDto {
     progress: LearningProgressSummaryDto
 }
 
+export interface LearningDeckDetailsResponseDto extends LearningDeckResponseDto {
+    cards: DeckCardResponseDto[]
+}
+
 export interface EnrollResponseDto {
     userDeckId: number
 }

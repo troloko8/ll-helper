@@ -6,21 +6,11 @@ import { Route, Routes } from 'react-router-dom'
 import { renderWithProviders } from '@/app/test'
 import type {
     DeckCardResponseDto,
-    LearningDeckResponseDto,
+    LearningDeckDetailsResponseDto,
 } from '@/entities/learning'
 import { setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { LearningDeckDetailsPage } from './learning-deck-details-page'
-
-const learningDeck: LearningDeckResponseDto = {
-    deckId: 12,
-    title: 'Spanish Core 1000',
-    sourceLanguage: 'ES',
-    targetLanguage: 'EN',
-    enrolledAt: '2026-09-01T10:00:00Z',
-    lastStudiedAt: '2026-09-08T18:30:00Z',
-    progress: { masteredCount: 1, totalCount: 5 },
-}
 
 function card(
     id: number,
@@ -53,6 +43,17 @@ const cards = [
     card(5, 'siempre', 'always', 'NEW'),
 ]
 
+const learningDeck: LearningDeckDetailsResponseDto = {
+    deckId: 12,
+    title: 'Spanish Core 1000',
+    sourceLanguage: 'ES',
+    targetLanguage: 'EN',
+    enrolledAt: '2026-09-01T10:00:00Z',
+    lastStudiedAt: '2026-09-08T18:30:00Z',
+    progress: { masteredCount: 1, totalCount: 5 },
+    cards,
+}
+
 function renderDetailsPage() {
     return renderWithProviders(
         <Routes>
@@ -66,20 +67,13 @@ function renderDetailsPage() {
 }
 
 describe('LearningDeckDetailsPage', () => {
-    beforeEach(() => {
-        setToken('learning-token')
-        server.use(
-            http.get('http://localhost/api/v1/learning/decks', () =>
-                HttpResponse.json([learningDeck]),
-            ),
-        )
-    })
+    beforeEach(() => setToken('learning-token'))
 
     it('shows a loading state while cards are requested', () => {
         server.use(
-            http.get('http://localhost/api/v1/decks/12/cards', async () => {
+            http.get('http://localhost/api/v1/learning/decks/12', async () => {
                 await delay('infinite')
-                return HttpResponse.json([])
+                return HttpResponse.json(learningDeck)
             }),
         )
 
@@ -93,12 +87,12 @@ describe('LearningDeckDetailsPage', () => {
     it('renders backend card statuses and derived per-deck counts', async () => {
         server.use(
             http.get(
-                'http://localhost/api/v1/decks/12/cards',
+                'http://localhost/api/v1/learning/decks/12',
                 ({ request }) => {
                     expect(request.headers.get('Authorization')).toBe(
                         'Bearer learning-token',
                     )
-                    return HttpResponse.json(cards)
+                    return HttpResponse.json(learningDeck)
                 },
             ),
         )
@@ -126,8 +120,12 @@ describe('LearningDeckDetailsPage', () => {
 
     it('shows the empty inventory state for a deck without cards', async () => {
         server.use(
-            http.get('http://localhost/api/v1/decks/12/cards', () =>
-                HttpResponse.json([]),
+            http.get('http://localhost/api/v1/learning/decks/12', () =>
+                HttpResponse.json({
+                    ...learningDeck,
+                    progress: { masteredCount: 0, totalCount: 0 },
+                    cards: [],
+                }),
             ),
         )
 
@@ -141,17 +139,17 @@ describe('LearningDeckDetailsPage', () => {
         expect(screen.getByText('0%')).toBeInTheDocument()
     })
 
-    it('shows a backend error and retries the card request', async () => {
+    it('shows a backend error and retries the detail request', async () => {
         let requestCount = 0
         server.use(
-            http.get('http://localhost/api/v1/decks/12/cards', () => {
+            http.get('http://localhost/api/v1/learning/decks/12', () => {
                 requestCount += 1
                 return requestCount === 1
                     ? HttpResponse.json(
                           { message: 'Enrollment required' },
                           { status: 409 },
                       )
-                    : HttpResponse.json(cards)
+                    : HttpResponse.json(learningDeck)
             }),
         )
         const user = userEvent.setup()

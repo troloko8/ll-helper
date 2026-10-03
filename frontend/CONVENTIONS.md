@@ -55,9 +55,11 @@ It consumes the cacheable `LEARN-05` query from `entities/learning/`, renders
 the backend-defined response order, and treats the first item as the
 Continue/Start highlight without copying server state into Redux slices.
 The implemented `pages/learning-deck-details/` slice owns `/learning/:deckId`.
-It consumes the full, unpaginated `LEARN-03` card list, renders each
-backend-provided card status, and derives display-only per-status counts from
-that response. The counts are neither persisted nor copied into client state.
+It consumes the unified, unpaginated `LEARN-06` detail response, renders its
+metadata and each backend-provided card status, and derives display-only
+per-status counts from the returned cards. It does not subscribe to the full
+Learning collection or combine public content state with learning state. The
+counts are neither persisted nor copied into client state.
 
 The implemented `pages/created/` slice owns the `/created` route composition.
 It consumes the owner-scoped `DECK-06` query from `entities/deck/`, renders the
@@ -310,7 +312,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02`, public collection query `DECK-03`, and owner collection query `DECK-06`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-03`, and `LEARN-05`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02`, public collection query `DECK-03`, and owner collection query `DECK-06`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-05`, and `LEARN-06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

@@ -1590,6 +1590,64 @@
           "response": []
         },
         {
+          "name": "Get Learning Deck Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var deck = pm.response.json();",
+                  "pm.test(\"Response contains unified learning deck details\", function () {",
+                  "    pm.expect(deck).to.have.all.keys(\"deckId\", \"title\", \"sourceLanguage\", \"targetLanguage\", \"enrolledAt\", \"lastStudiedAt\", \"progress\", \"cards\");",
+                  "    pm.expect(deck.progress).to.have.all.keys(\"masteredCount\", \"totalCount\");",
+                  "    pm.expect(deck.cards).to.be.an(\"array\");",
+                  "    deck.cards.forEach(function (card) {",
+                  "        pm.expect(card).to.have.property(\"progress\");",
+                  "        pm.expect(card.progress).to.have.property(\"status\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "description": "Returns one ACTIVE enrolled deck with metadata, aggregate progress, and the complete per-user card-progress list. Missing or inactive enrollment returns 409.",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/learning/decks/{{deckId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "learning",
+                "decks",
+                "{{deckId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Enroll Deck",
           "event": [
             {

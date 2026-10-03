@@ -111,9 +111,9 @@ The backend contract and frontend session lifecycle are implemented; execution a
 
 ### 0.8 Progress semantics (accepted, corrects any prior claim of a ready backend aggregate)
 
-- Backend source of truth: `LEARN-03` (`GET /decks/{deckId}/cards`) and its per-card `CardLearningStatus` inside `DeckCardResponse.progress`. **`LEARN-03` does not return a per-deck aggregate summary field** — no such field exists on the current DTO.
-- Frontend may compute **display-only** counts `{new, learning, reviewing, mastered}` from the full card array already returned by `LEARN-03` for the currently open deck. These derived counts are not persisted and do not become a new domain/server state.
-- This is permitted only while `LEARN-03` returns the full, unpaginated card list for a deck. If pagination is introduced for this endpoint (currently deferred, Level 2), the aggregate must move to the backend.
+- Backend source of truth: `LEARN-06` (`GET /learning/decks/{deckId}`), including server `progress {masteredCount,totalCount}` and per-card `CardLearningStatus` in `cards[].progress`.
+- Frontend may compute **display-only** counts `{new, learning, reviewing, mastered}` from the full card array already returned for the currently open deck. These derived status-bucket counts are not persisted and do not replace the server aggregate.
+- This is permitted only while LEARN-06 returns the full, unpaginated card list. If pagination is introduced (currently deferred, Level 2), the server aggregate remains authoritative and per-status totals need a backend contract.
 - The separate cross-deck aggregate `/progress` dashboard remains deferred (G-07); it requires data across all of a user's decks, which no accepted Level 1 endpoint provides.
 
 ### 0.9 Audit document lifecycle
@@ -198,7 +198,7 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-09 | Bulk AI response omits failed titles/reasons. | Add/Edit Card AI partial-failure UX. | Partial gap; manual cards are not blocked. |
 | G-10 | No creator-scoped public-deck list contract. | Creator Profile. | Backend blocker if the surface enters MVP. |
 | G-11 | `isPrivate` UI control maps inversely to wire field `isPublic`. | Create/Edit Deck. | Required frontend boundary mapping: `isPublic = !isPrivate`; not a backend gap. |
-| G-12 | Learning "not enrolled" is actually 409 while learning-flow prose says 403. | Learning Deck Details, Study, review submission. | Documentation-sync gap; frontend must follow the actual 409 contract until corrected. |
+| G-12 | Learning "not enrolled" was documented as 403 instead of the actual 409 contract. | Learning Deck Details, Study, review submission. | ✅ Resolved: learning-flow documentation and frontend integration now consistently use `409 Conflict` for missing/inactive enrollment. |
 
 Shared JWT errors on every authenticated endpoint: missing Bearer token → controlled `401 {message}`; expired/malformed token → unresolved G-03. Shared controller errors where applicable: validation `400 {errors}`, malformed body `400 {message}`, authorization `403 {message}`, missing resource `404 {message}`, state conflict `409 {message}`, rate limit `429 {error,message,timestamp}`, AI unavailable `503 {message}`, and catch-all `500 {message}`.
 
@@ -427,11 +427,11 @@ Discover caches refresh. 409 reconciliation remains separate current-sprint work
 | Candidate route | `/learning/:deckId` |
 | Auth | JWT + existing enrollment |
 | Domain owner | Learning (`UserDeckProgress`/`UserCardProgress`) |
-| Endpoint | Cards/progress `LEARN-03 GET /api/v1/decks/{deckId}/cards`; optional metadata `DECK-02 GET /api/v1/decks/{id}`. |
-| Request / response DTO | `List<DeckCardResponse {id,title,definition,synonyms,examples,translation,progress}>`; metadata `DeckResponse`. |
-| Errors | 409 not enrolled (not 403; G-12), shared JWT, possible 404 for optional metadata. |
+| Endpoint | Unified `LEARN-06 GET /api/v1/learning/decks/{deckId}`. |
+| Request / response DTO | `LearningDeckDetailsResponse {deckId,title,sourceLanguage,targetLanguage,enrolledAt,lastStudiedAt,progress,cards[]}`. |
+| Errors | 409 missing/inactive enrollment, including an unknown deck id at this learning-scoped boundary (not 403); shared JWT errors. |
 | Loading / error / empty | Initial skeleton; page API error; empty cards state. No dedicated variants; use shared patterns without borrowing Owner details' learning-free content semantics. |
-| Backend status | `LEARN-03` implemented; list navigation source implemented separately as LEARN-05 (G-06 resolved). |
+| Backend status | `LEARN-06` implemented as the single detail source; LEARN-03 remains available for compatibility. List navigation source is LEARN-05. |
 | Candidate frontend phase | Learning flow after Auth and Learning dashboard contract. |
 | Blocker / gap | Screen-specific data contract and reachability source are sufficient; shared Auth/onboarding prerequisites still apply. |
 

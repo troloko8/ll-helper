@@ -135,6 +135,8 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 
 **Architecture cleanup:** чистая доменная структура, clean service responsibilities, transaction boundaries, no fat controllers, no entity leakage, consistent DTOs/naming
 
+- [ ] **Согласовать семантику статусов learning enrollment:** решить, должны ли `PAUSED`/`ARCHIVED` запрещать detail, study и review. После фиксации решения в `docs/features/learning-flow.md` централизовать проверку в одном helper (например, `requireActiveEnrollment()`), чтобы learning endpoints применяли единое правило. Это отдельное Level 2 изменение поведения, не задача Level 1.
+
 **Database quality:** Liquibase fully adopted, `ddl-auto=validate`, indexes, unique constraints, FK checked, cascade strategy documented
 - Unique constraints и indexes уже описаны нормативно в `docs/database/relationships.md` §7–8 — не дублировать точные имена таблиц/колонок здесь
 - Проверить и реализовать pending index из `docs/database/relationships.md` §8 (`idx_ucp_next_review`); индекс `(user_id, status)` для `user_deck_progress` закрыт в V11 как часть G-06, `idx_cards_deck_id` — в V12 вместе с агрегированным `cardCount`.
