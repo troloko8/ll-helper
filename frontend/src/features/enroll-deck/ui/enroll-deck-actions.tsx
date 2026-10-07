@@ -7,6 +7,8 @@ import styles from './enroll-deck-actions.module.css'
 export interface EnrollDeckActionsProps {
     deckId: number
     isEnrolled: boolean
+    hasStudyCards: boolean
+    reconcileEnrollment: () => Promise<boolean>
     onStartLearning: () => void | Promise<void>
 }
 
@@ -19,6 +21,8 @@ type EnrollmentError = {
 export function EnrollDeckActions({
     deckId,
     isEnrolled,
+    hasStudyCards,
+    reconcileEnrollment,
     onStartLearning,
 }: EnrollDeckActionsProps) {
     const [submitError, setSubmitError] = useState<EnrollmentError>()
@@ -41,26 +45,45 @@ export function EnrollDeckActions({
                 await onStartLearning()
             }
         } catch (error) {
+            if (isApiError(error) && error.status === 409) {
+                try {
+                    const enrollmentIsCurrent = await reconcileEnrollment()
+
+                    if (enrollmentIsCurrent) {
+                        if (action === 'start') {
+                            await onStartLearning()
+                        }
+                        return
+                    }
+                } catch (reconciliationError) {
+                    setSubmitError({ action, error: reconciliationError })
+                    return
+                }
+            }
+
             setSubmitError({ action, error })
         } finally {
             setPendingAction(undefined)
         }
     }
 
-    const duplicateEnrollment =
-        isApiError(submitError?.error) && submitError.error.status === 409
-
     return (
         <div className={styles.action}>
-            <Button
-                className={styles.button}
-                disabled={isLoading}
-                isLoading={pendingAction === 'start'}
-                loadingLabel="Starting learning"
-                onClick={() => void handleAction('start')}
-            >
-                Start Learning
-            </Button>
+            {hasStudyCards ? (
+                <Button
+                    className={styles.button}
+                    disabled={isLoading}
+                    isLoading={pendingAction === 'start'}
+                    loadingLabel="Starting learning"
+                    onClick={() => void handleAction('start')}
+                >
+                    Start Learning
+                </Button>
+            ) : (
+                <p className={styles.emptyStudyMessage} role="status">
+                    This deck has no cards to study yet.
+                </p>
+            )}
 
             {!isEnrolled && (
                 <Button
@@ -80,16 +103,9 @@ export function EnrollDeckActions({
                     error={submitError.error}
                     mode="inline"
                     title={
-                        duplicateEnrollment
-                            ? 'Already enrolled'
-                            : submitError.action === 'enroll'
-                              ? 'Unable to enroll deck'
-                              : 'Unable to start learning'
-                    }
-                    message={
-                        duplicateEnrollment
-                            ? 'This deck is already in your Learning list.'
-                            : undefined
+                        submitError.action === 'enroll'
+                            ? 'Unable to enroll deck'
+                            : 'Unable to start learning'
                     }
                 />
             )}

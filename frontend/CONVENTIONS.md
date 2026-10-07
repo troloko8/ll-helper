@@ -103,17 +103,21 @@ The implemented `pages/public-deck-details/` slice owns `/decks/:deckId`, reache
 from Discover or by direct link. It consumes `DECK-02`, including its
 current-user `isEnrolled` field, renders public content without learning
 progress or social controls, and composes
-`features/enroll-deck/` for the `LEARN-01` mutation. Start Learning is always
-available: for a new deck it enrolls first and then opens `/study/:deckId`; for
-an existing enrollment it opens Study directly. Before enrollment, a separate
-Enroll action adds the deck without leaving Public Deck Details. Successful
-enrollment invalidates the detail, Learning and Discover caches. Owner Deck
-Details does not link to this public surface.
+`features/enroll-deck/` for the `LEARN-01` mutation. Start Learning is available
+when the deck contains cards: for a new deck it enrolls first and then opens
+`/study/:deckId`; for an existing enrollment it opens Study directly. An empty
+deck instead explains that there is nothing to study yet and does not present a
+ready-session action. Before enrollment, a separate Enroll action adds the deck
+without leaving Public Deck Details. Successful enrollment invalidates the
+detail, Learning and Discover caches. A `409` from enrollment is followed by a
+fresh DECK-02 read; only confirmed `isEnrolled=true` continues the requested
+action. Owner Deck Details does not link to this public surface.
 
 Discover is now the public-detail entry route in both desktop and mobile shell
-navigation. Completing enrollment reconciliation remains follow-up integration
-work. A visible local Logout action is also still pending. The existing Created
-navigation, enrollment, learning, study and logout use cases remain the
+navigation. The authenticated shell exposes the existing local Logout action in
+the desktop sidebar footer and mobile header; it clears token, session state and
+RTK Query cache without a backend endpoint or Settings destination. The existing
+Created navigation, enrollment, learning and study use cases remain the
 implementation foundation.
 
 The implemented `pages/study/` slice owns the contextual `/study/:deckId`

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { LogoutButton } from '@/features/logout'
 import styles from './app-shell.module.css'
 
 function Brand() {
@@ -116,6 +117,9 @@ export function DesktopSidebar() {
                 </div>
                 <DiscoverLink />
             </nav>
+            <footer className={styles.sidebarFooter}>
+                <LogoutButton className={styles.logoutButton} />
+            </footer>
         </aside>
     )
 }

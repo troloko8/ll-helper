@@ -10,7 +10,7 @@
 
 **Как читать checklist:** `[x]` в группах реализации означает наличие соответствующего кода, а не прохождение всего пользовательского сценария. Done Criteria закрываются после проверки сценария на живом backend. Существующие результаты реализации сохранены; новые пробелы и исправления перечислены в группах 4A–4F.
 
-**Основания ревизии:** проверены router, AppShell, Deck/Learning API slices, Add Card, Public/Owner/Learning Details, Study и logout; проверены HTML и изображения канонических Created/Discover desktop/mobile через Stitch MCP. Ручной smoke и тесты в рамках этой ревизии не запускались.
+**Основания ревизии:** проверены router, AppShell, Deck/Learning API slices, Add Card, Public/Owner/Learning Details, Study и logout; проверены HTML и изображения канонических Created/Discover desktop/mobile через Stitch MCP. При исходной ревизии ручной smoke и тесты не запускались; позднее для группы 4D выполнены RTL/MSW и ручной smoke, как зафиксировано ниже.
 
 | Возможность | Фактическое состояние на момент ревизии | Что ещё нужно |
 |---|---|---|
@@ -18,9 +18,9 @@
 | Create Deck | Пользователь подтвердил создание колоды | Проверить public/private в сквозном сценарии |
 | Manual Add Card | Валидация исправлена; ручное сохранение, отображение после refresh и AI-regression подтверждены пользователем 2026-09-21 | Повторить в полном smoke группы 5 |
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
-| Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список, состояния страницы, desktop/mobile navigation и переход в Public Deck Details; DECK-02 возвращает точечный `isEnrolled` для Public Deck Details | Для Created завершить UI smoke (4C); завершить conflict reconciliation после Enroll (4D) |
-| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; Public Deck Details всегда предлагает Start Learning, а до enrollment дополнительно предлагает отдельный Enroll без запуска study | Проверить обновление коллекций после Enroll, 409 reconciliation и сохранение прогресса (4D–5) |
-| Logout | Функция очистки есть, production UI её не вызывает | Добавить доступную кнопку и проверить повторный вход (4F) |
+| Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список, состояния страницы, desktop/mobile navigation и переход в Public Deck Details; DECK-02 возвращает точечный `isEnrolled` для Public Deck Details; 4D RTL/MSW и ручной smoke завершены | Для Created завершить UI smoke и сквозную приёмку в группе 5 |
+| Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; непустая Public Deck Details предлагает Start Learning, а до enrollment дополнительно предлагает отдельный Enroll без запуска study; пустая колода не обещает готовую сессию | В группе 5 подтвердить сохранение progress в полном пользовательском пути |
+| Logout | Локальная очистка и видимые desktop/mobile действия реализованы | Проверить живым кликом и повторный вход (4F) |
 | Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
 
 **Группа 0: Frontend scaffold & technical foundation**
@@ -144,9 +144,9 @@
 - [x] Добавить query DECK-03 и `/discover`: public deck title, owner, language pair, cardCount и Enrolled badge по backend-данным. Карточка открывает существующий `/decks/:deckId`; переход с полного `UserResponse owner` на compact owner остаётся отдельным follow-up.
 - [x] Подключить Discover в desktop/mobile navigation и добавить Browse public decks в пустой Learning state. Create Deck должен оставаться доступным и после появления learning decks.
 - [x] Реализовать loading/error/retry/empty состояния без dummy-карточек и неподдерживаемых элементов макета. Проверить public/private и переход Discover → Public Deck Details.
-- [x] Доработать Public Deck Details: Start Learning доступна всегда и открывает `/study/:deckId`, предварительно выполняя enrollment для ещё не добавленной колоды; до enrollment дополнительно показывать Enroll, который только добавляет колоду в Learning и оставляет пользователя на Public Deck Details. Точечное состояние получать из `DECK-02 isEnrolled`, включая прямое открытие/refresh, а не из navigation state или полной LEARN-05 коллекции.
-- [ ] После успешного Enroll или auto-enroll обновлять Discover enrollment state и Learning list; standalone Enroll оставляет пользователя на Public Deck Details, Start Learning открывает Study. При конфликте 409 сверять актуальное enrollment перед продолжением; остальные ошибки не считать успехом.
-- [ ] Проверить RTL/MSW и вручную обе ветки: Discover → Public Deck Details → Start Learning → auto-enroll при необходимости → Study; отдельно Discover → Public Deck Details → Enroll (остаться на странице) → Learning list → Learning Details. Проверить повторное открытие и enrollment без дубликатов. Для пустой колоды показать понятное состояние без обещания готовой study-сессии.
+- [x] Доработать Public Deck Details: для непустой колоды Start Learning открывает `/study/:deckId`, предварительно выполняя enrollment для ещё не добавленной колоды; до enrollment дополнительно показывать Enroll, который только добавляет колоду в Learning и оставляет пользователя на Public Deck Details. Для пустой колоды не обещать готовую study-сессию. Точечное состояние получать из `DECK-02 isEnrolled`, включая прямое открытие/refresh, а не из navigation state или полной LEARN-05 коллекции.
+- [x] После успешного Enroll или auto-enroll обновлять Discover enrollment state и Learning list; standalone Enroll оставляет пользователя на Public Deck Details, Start Learning открывает Study. При конфликте 409 сверять актуальное enrollment перед продолжением; остальные ошибки не считать успехом.
+- [x] RTL/MSW и ручной smoke на изолированном живом backend проверяют обе ветки: Discover → Public Deck Details → Start Learning → auto-enroll при необходимости → Study; отдельно Discover → Public Deck Details → Enroll (остаться на странице) → Learning list → Learning Details. Повторное открытие не создаёт дубликат; 409 сверяется через DECK-02; пустая колода не предлагает Start Learning. Discover обновляет Enrolled badge, а в БД остаётся по одной enrollment-записи на пользователя и колоду.
 
 **Результат:** публичную колоду можно найти и добавить к обучению без знания её ID и изменения URL.
 
@@ -156,18 +156,18 @@
 
 - [x] Добавить LEARN-06 `GET /learning/decks/{deckId}` и перевести Learning Deck Details на единый server-state response без загрузки полной LEARN-05 коллекции. LEARN-05 агрегирует counts в PostgreSQL, а LEARN-02 применяет status ordering и `LIMIT 10` до загрузки Card rows. Карточки detail остаются непагинированными в текущем MVP.
 
-- [ ] Пройти Learning list → Learning Deck Details → Study по кнопкам. Исправить найденные разрывы переходов/ошибки; новые дубли этих экранов не создавать.
-- [ ] Проверить правильный и неправильный ответы, переход к следующей карточке, завершение партии (до 10) и Continue studying. Правильность и статусы брать из review response; пустую очередь обрабатывать без зависания.
-- [ ] Проверить, что после review обновляются Learning Details и Learning list; per-card status и derived counts соответствуют ответам сервера, сохраняются после refresh и повторного открытия. Mastery может оставаться 0% до MASTERED — один правильный ответ не равен освоению карточки.
-- [ ] При найденных дефектах добавить адресные behavioral regressions. Для основного smoke сначала наполнить колоду, затем enroll; синхронизация карточек, добавленных после enrollment, отдельно от этого сценария и не должна подразумеваться UI-текстом без проверки backend.
+- [x] Пройти Learning list → Learning Deck Details → Study по кнопкам. 2026-10-03: живой smoke на локальных Vite + Spring/PostgreSQL прошёл через существующие `/learning` → `/learning/1` → `/study/1`; переходы и загрузка партии из 10 карточек работают, ошибок браузера не обнаружено. Добавлен router regression на полный переход; дубли экранов не создавались.
+- [x] Проверить правильный и неправильный ответы, переход к следующей карточке, завершение партии (до 10) и Continue studying. 2026-10-04: на живом локальном Vite + Spring/PostgreSQL пройдена партия из 10 карточек (1 правильный, 9 неправильных); UI показал backend-returned correctness/status/streak, итог `Reviewed 10 / Correct 1 / Incorrect 9`, а Continue studying загрузил новую очередь и сбросил позицию на `1 / 10`. Пустая очередь отдельной enrolled-колоды показала `You're all caught up` без зависания. Behavioral test дополнен проверкой refetch и сброса формы по Continue studying.
+- [x] Проверить, что после review обновляются Learning Details и Learning list; per-card status и derived counts соответствуют ответам сервера, сохраняются после refresh и повторного открытия. 2026-10-04: после живой партии Learning list показал `0 / 86 mastered`, а Details — `Mastered 0 / Reviewing 1 / Learning 9 / New 76`; конкретные reviewed-карточки показали backend-returned `Reviewing`/`Learning`. Те же значения сохранились после browser refresh и повторного открытия через Learning list. Один правильный ответ не был ошибочно засчитан как MASTERED.
+- [x] При найденных дефектах добавить адресные behavioral regressions. Для основного smoke сначала наполнить колоду, затем enroll; синхронизация карточек, добавленных после enrollment, отдельно от этого сценария и не должна подразумеваться UI-текстом без проверки backend. В smoke использована заранее наполненная enrolled-колода; дефектов не найдено, поэтому production-код не менялся. Router/MSW regression расширен проверкой review response, invalidation Learning Details/List, derived counts и сохранения `0 mastered` после одного правильного ответа; позднее добавленные карточки и их синхронизация этим результатом не объявляются проверенными.
 
 **Результат:** Study и progress подтверждены на живых данных, а не только на mocked responses.
 
 ### Группа 4F — Logout и повторный вход через интерфейс
 
-Зависимость для финальной проверки: 4E. `features/logout/model/logout.ts` уже очищает token/session/cache; production-кнопки нет.
+Зависимость для финальной проверки: 4E. `features/logout/model/logout.ts` очищает token/session/cache; authenticated shell вызывает его из видимых desktop/mobile действий.
 
-- [ ] Добавить видимое действие Log out в authenticated shell на desktop/mobile, использующее существующий logout use case. Не вводить backend logout или Settings page; размещение — `DESIGN.md` → Application shell.
+- [x] Добавить видимое действие Log out в authenticated shell на desktop/mobile, использующее существующий logout use case. 2026-10-04: действие добавлено в footer desktop sidebar и mobile header; оно вызывает существующую локальную очистку token/session/RTK Query cache. Backend logout и Settings page не добавлялись. AppShell и logout-flow покрыты пользовательским кликом в RTL.
 - [ ] Проверить реальным кликом очистку сессии, переход в Login и отсутствие protected content при Back/refresh; расширить тесты до пользовательского действия, а не только вызова функции.
 - [ ] Войти тем же пользователем: Created и Learning доступны, сохранённый прогресс восстановлен, Study можно продолжить. Войти другим пользователем: кеш колод/профиля/прогресса предыдущего пользователя не виден.
 
@@ -211,14 +211,11 @@
 
 **Приоритет выполнения:**
 
-4A и 4B завершены; актуальный порядок оставшихся работ:
+4A–4E отмечены выполненными в checklist реализации; сквозная приёмка остаётся в группе 5. Актуальный порядок оставшихся работ:
 
-1. **4C:** Created и возврат к созданным колодам.
-2. **4D:** Discover → Public Deck Details → Start Learning → Study и отдельная ветка Enroll → Learning.
-3. **4E:** проверить существующие Study/progress и исправить найденные дефекты.
-4. **4F:** видимый Logout → Login → продолжение.
-5. **5:** полный пользовательский smoke и Postman с фиксацией результатов.
-6. **6:** prompts, документация, итоговые checks и закрытие. Группы 0–4 описывают уже созданный фундамент.
+1. **4F:** видимый Logout → Login → продолжение.
+2. **5:** полный пользовательский smoke и Postman с фиксацией результатов.
+3. **6:** prompts, документация, итоговые checks и закрытие. Группы 0–4 описывают уже созданный фундамент.
 
 ## Phase 0.4 — Global Frontend Integration Audit
 

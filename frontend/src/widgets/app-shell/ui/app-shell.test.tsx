@@ -137,6 +137,9 @@ describe('AppShell', () => {
 
         expect(screen.queryByText('Study')).not.toBeInTheDocument()
         expect(screen.queryByText('Progress')).not.toBeInTheDocument()
+        expect(screen.getAllByRole('button', { name: 'Log out' })).toHaveLength(
+            2,
+        )
     })
 
     it('marks Discover active in desktop and mobile navigation', () => {

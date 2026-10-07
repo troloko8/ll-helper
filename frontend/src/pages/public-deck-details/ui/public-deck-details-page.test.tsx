@@ -246,14 +246,80 @@ describe('PublicDeckDetailsPage', () => {
         expect(screen.getByRole('button', { name: 'Enroll' })).toBeDisabled()
     })
 
-    it('explains a duplicate enrollment without navigating', async () => {
+    it('continues to Study after a 409 when refreshed detail confirms enrollment', async () => {
+        let enrolled = false
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json({ ...deck, isEnrolled: enrolled }),
+            ),
+            http.post('http://localhost/api/v1/decks/12/enroll', () => {
+                enrolled = true
+                return HttpResponse.json(
+                    { message: 'Already enrolled' },
+                    { status: 409 },
+                )
+            }),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        await user.click(
+            await screen.findByRole('button', { name: 'Start Learning' }),
+        )
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).toBeInTheDocument()
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('keeps standalone Enroll on details after a confirmed 409', async () => {
+        let enrolled = false
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json({ ...deck, isEnrolled: enrolled }),
+            ),
+            http.post('http://localhost/api/v1/decks/12/enroll', () => {
+                enrolled = true
+                return HttpResponse.json(
+                    { message: 'Already enrolled' },
+                    { status: 409 },
+                )
+            }),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        await user.click(await screen.findByRole('button', { name: 'Enroll' }))
+
+        await waitFor(() => {
+            expect(
+                screen.queryByRole('button', { name: 'Enroll' }),
+            ).not.toBeInTheDocument()
+        })
+        expect(
+            screen.getByRole('heading', {
+                name: 'Medical Spanish Terminology',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).not.toBeInTheDocument()
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('does not treat an unconfirmed 409 as successful enrollment', async () => {
         server.use(
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json(deck),
             ),
             http.post('http://localhost/api/v1/decks/12/enroll', () =>
                 HttpResponse.json(
-                    { message: 'Already enrolled' },
+                    { message: 'Enrollment conflict' },
                     { status: 409 },
                 ),
             ),
@@ -265,10 +331,75 @@ describe('PublicDeckDetailsPage', () => {
             await screen.findByRole('button', { name: 'Start Learning' }),
         )
 
-        const errorTitle = await screen.findByText('Already enrolled')
-        expect(errorTitle.closest('[role="alert"]')).toHaveTextContent(
-            'This deck is already in your Learning list.',
+        const errorTitle = await screen.findByText('Unable to start learning')
+        expect(errorTitle.closest('[role="alert"]')).toBeInTheDocument()
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('shows a refetch error when a 409 enrollment cannot be reconciled', async () => {
+        let detailRequests = 0
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () => {
+                detailRequests += 1
+
+                return detailRequests === 1
+                    ? HttpResponse.json(deck)
+                    : HttpResponse.json(
+                          { message: 'Unable to refresh enrollment' },
+                          { status: 500 },
+                      )
+            }),
+            http.post('http://localhost/api/v1/decks/12/enroll', () =>
+                HttpResponse.json(
+                    { message: 'Enrollment conflict' },
+                    { status: 409 },
+                ),
+            ),
         )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        await user.click(
+            await screen.findByRole('button', { name: 'Start Learning' }),
+        )
+
+        const errorTitle = await screen.findByText('Unable to start learning')
+        expect(errorTitle.closest('[role="alert"]')).toHaveTextContent(
+            'Something went wrong on our side. Try again later.',
+        )
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).not.toBeInTheDocument()
+    })
+
+    it('does not navigate after a non-conflict enrollment error', async () => {
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json(deck),
+            ),
+            http.post('http://localhost/api/v1/decks/12/enroll', () =>
+                HttpResponse.json(
+                    { message: 'Enrollment unavailable' },
+                    { status: 500 },
+                ),
+            ),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        await user.click(
+            await screen.findByRole('button', { name: 'Start Learning' }),
+        )
+
+        expect(
+            await screen.findByText('Unable to start learning'),
+        ).toBeInTheDocument()
         expect(
             screen.queryByRole('heading', {
                 name: 'Study session destination',
@@ -288,6 +419,13 @@ describe('PublicDeckDetailsPage', () => {
         expect(
             await screen.findByRole('heading', { name: 'No cards yet' }),
         ).toBeInTheDocument()
+        expect(
+            screen.getByText('This deck has no cards to study yet.'),
+        ).toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: 'Start Learning' }),
+        ).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Enroll' })).toBeEnabled()
     })
 
     it('does not offer enrollment for a private deck returned to its owner', async () => {

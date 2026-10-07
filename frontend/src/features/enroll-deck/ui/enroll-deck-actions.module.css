@@ -10,6 +10,13 @@
     text-transform: uppercase;
 }
 
+.emptyStudyMessage {
+    max-width: 320px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
 @media (min-width: 48rem) {
     .action {
         width: min(100%, 320px);

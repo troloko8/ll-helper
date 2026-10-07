@@ -1,10 +1,10 @@
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { HttpResponse, http } from 'msw'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { sessionAuthenticated } from '@/entities/session'
-import { logout } from '@/features/logout'
 import { baseApi, getToken, setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { appRoutes } from './router/router'
@@ -45,10 +45,12 @@ describe('Logout orchestration', () => {
                 <RouterProvider router={router} />
             </Provider>,
         )
+        const user = userEvent.setup()
 
-        act(() => {
-            logout(store.dispatch)
+        const logoutButtons = await screen.findAllByRole('button', {
+            name: 'Log out',
         })
+        await user.click(logoutButtons[0])
 
         await waitFor(() => {
             expect(router.state.location.pathname).toBe('/login')

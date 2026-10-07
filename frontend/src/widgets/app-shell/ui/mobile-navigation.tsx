@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { LogoutButton } from '@/features/logout'
 import styles from './app-shell.module.css'
 
 function Brand() {
@@ -95,6 +96,7 @@ export function MobileNavigation() {
         <>
             <header className={styles.mobileHeader}>
                 <Brand />
+                <LogoutButton className={styles.logoutButton} />
             </header>
             <nav
                 className={styles.mobileNavigation}

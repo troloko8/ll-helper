@@ -167,6 +167,11 @@ export function PublicDeckDetailsPage() {
                 <EnrollDeckActions
                     deckId={deck.id}
                     isEnrolled={deck.isEnrolled}
+                    hasStudyCards={deck.cards.length > 0}
+                    reconcileEnrollment={async () => {
+                        const refreshedDeck = await refetch().unwrap()
+                        return refreshedDeck.isEnrolled
+                    }}
                     onStartLearning={() => navigate(`/study/${deck.id}`)}
                 />
             </section>

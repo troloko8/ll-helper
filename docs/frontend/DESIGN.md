@@ -165,10 +165,12 @@ scoping note takes precedence during this implementation.
   Open → Owner Deck Details; Create New Deck works for empty/populated lists.
 - Discover cards: title, owner identity, language pair, backend card count,
   Public/Enrolled indication and a link to Public Deck Details. The first
-  response carries the full owner; replacing it with a compact owner shape is a follow-up. Public details
-  always offer Start Learning; before enrollment they additionally offer Enroll
-  so the deck can be added without starting Study. No learning-progress counters
-  appear on public cards.
+  response carries the full owner; replacing it with a compact owner shape is a
+  follow-up. Public details offer Start Learning when the deck has cards; before
+  enrollment they additionally offer Enroll so the deck can be added without
+  starting Study. An empty public deck explains that there are no cards to study
+  yet and does not imply that a study session is ready. No learning-progress
+  counters appear on public cards.
 - The inspected Discover desktop/mobile prototypes include search/load-more;
   mobile also includes filter/topic/level chips, covers and bookmarks. These
   controls/data are outside the accepted first list scope. Omit them rather

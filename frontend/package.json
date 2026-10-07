@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "../scripts/dev.sh",
     "build": "tsc -b && vite build && npm run bundle:check",
     "analyze": "tsc -b && vite build --mode analyze && npm run bundle:check",
     "bundle:check": "node scripts/check-bundle.mjs",

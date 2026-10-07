@@ -129,8 +129,8 @@ The user requested that the complete Level 1 path be executable through visible 
 **Accepted navigation and transitions:**
 - Persistent destinations: Learning, Created, Discover, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual; aggregate Progress and Settings are not added.
 - Created → Create Deck → Owner Deck Details → Add Card → Owner Deck Details; Created provides a way back to existing owned decks. Create Deck is available for empty and populated lists.
-- Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. Start Learning is always available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on Public Deck Details. Created never substitutes for the Learning collection.
-- Public Deck Details derives enrollment from the current-user `isEnrolled` field in DECK-02, including after refresh/direct entry; it does not fetch the full LEARN-05 collection or rely on state passed from Discover. Enroll is hidden after enrollment while Start Learning remains available. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates detail, Discover and Learning caches.
+- Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. For a nonempty deck, Start Learning is available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on Public Deck Details. An empty deck instead shows a clear no-cards state and does not offer Start Learning. Created never substitutes for the Learning collection.
+- Public Deck Details derives enrollment from the current-user `isEnrolled` field in DECK-02, including after refresh/direct entry; it does not fetch the full LEARN-05 collection or rely on state passed from Discover. Enroll is hidden after enrollment while Start Learning remains available for nonempty decks. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates detail, Discover and Learning caches.
 - Visible local Logout → Login → reopen Created/Learning and continue. A manual token clear does not meet the user-facing logout criterion.
 - No Owner → Public shortcut is required to pass the revised flow: Discover is the entry. A private deck remains owner-visible in Created and cannot be enrolled under the current backend, even by its owner. Smoke uses a public deck populated before enrollment.
 
@@ -400,24 +400,26 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 | Endpoint | Detail and current-user enrollment state `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
 | Request / response DTO | Detail `DeckDetailsResponse` with `isEnrolled`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
 | Errors | Detail 403 for another user's private deck / 404; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
-| Loading / error / empty | Combined detail/enrollment-state loading; retryable page API error; empty card inventory; enroll-button loading and inline 403/409/5xx feedback. No dedicated state variants. |
+| Loading / error / empty | Combined detail/enrollment-state loading; retryable page API error; empty card inventory with no Start Learning action; enroll-button loading and inline unconfirmed-409/403/5xx feedback. No dedicated state variants. |
 | Backend status | Enroll, detail visibility, DECK-02 detail enrollment state, Discover collection and LEARN-05 Learning list are implemented; G-04, G-05 and G-06 are resolved. |
 | Accepted frontend phase (Phase 0.4C/4D) | Included in Level 1 MVP; see §0.1/§0.3/§0.10. The accepted flow enters through Discover; direct links and refresh remain supported. |
-| Blocker / gap | 409 reconciliation remains in current-sprint group 4D. |
+| Blocker / gap | No Public Deck Details integration blocker remains; the broader full-product smoke remains tracked in current-sprint group 5. |
 
 **Runtime status:** Public Deck Details is reachable from Discover and directly
 at `/decks/:deckId`. The page consumes the current-user `isEnrolled` field from
 DECK-02 and does not load the full LEARN-05 collection.
-Start Learning is always available: it invokes `LEARN-01` first when needed and
-then opens `/study/:deckId`; an existing enrollment opens Study without another
-enroll request. Before enrollment, a separate Enroll action invokes `LEARN-01`,
-stays on Public Deck Details and disappears after the detail, Learning and
-Discover caches refresh. 409 reconciliation remains separate current-sprint work.
+Start Learning is available for a non-empty deck: it invokes `LEARN-01` first
+when needed and then opens `/study/:deckId`; an existing enrollment opens Study
+without another enroll request. An empty deck states that there are no cards to
+study and does not offer Start Learning. Before enrollment, a separate Enroll
+action invokes `LEARN-01`, stays on Public Deck Details and disappears after the
+detail, Learning and Discover caches refresh. A `409` triggers a fresh DECK-02
+read; only confirmed `isEnrolled=true` continues as success.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **implemented; server-state enrollment CTA verified with RTL/MSW** |
-| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **implemented responsive adaptation; shared CTA behavior verified with RTL/MSW** |
+| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **implemented; both enrollment branches, cache refresh, repeat entry, 409 reconciliation, and empty-deck CTA verified with RTL/MSW** |
+| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **implemented responsive adaptation; shared enrollment behavior verified with RTL/MSW** |
 
 ### 5.9 Learning Deck Details
 

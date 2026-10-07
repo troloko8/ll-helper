@@ -127,14 +127,16 @@ describe('StudyPage', () => {
 
     it('uses backend correctness, advances cards, and summarizes the session', async () => {
         let learningListRequests = 0
+        let studyRequests = 0
         server.use(
             http.get('http://localhost/api/v1/learning/decks', () => {
                 learningListRequests += 1
                 return HttpResponse.json([])
             }),
-            http.get('http://localhost/api/v1/decks/12/study', () =>
-                HttpResponse.json(studySession),
-            ),
+            http.get('http://localhost/api/v1/decks/12/study', () => {
+                studyRequests += 1
+                return HttpResponse.json(studySession)
+            }),
             http.post(
                 'http://localhost/api/v1/cards/:cardId/review',
                 async ({ params, request }) => {
@@ -211,6 +213,23 @@ describe('StudyPage', () => {
         expect(summary).toHaveTextContent('Incorrect1')
         expect(summary).toHaveTextContent('50% accuracy')
         expect(learningListRequests).toBe(0)
+
+        await user.click(
+            screen.getByRole('button', { name: 'Continue studying' }),
+        )
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'A detailed plan or outline used to guide a project.',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('progressbar', { name: 'Study session progress' }),
+        ).toHaveAttribute('aria-valuenow', '1')
+        expect(
+            screen.getByRole('textbox', { name: 'Your answer' }),
+        ).toHaveValue('')
+        expect(studyRequests).toBe(2)
     })
 
     it('shows a load error and retries the study queue', async () => {

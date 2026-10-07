@@ -113,12 +113,17 @@ The MVP response remains intentionally unpaginated. If deck size becomes unbound
 In the Level 1 frontend flow, Public Deck Details exposes two related actions.
 Its DECK-02 detail response supplies current-user ACTIVE `isEnrolled` directly,
 so the page does not load the full Learning collection to determine CTA state.
-Start Learning is always available: when the deck is not enrolled, the frontend
-first invokes this endpoint and then opens `/study/{deckId}`; when it is already
-enrolled, it opens Study directly. A separate Enroll action is visible only
-before enrollment and adds the deck without leaving Public Deck Details or
-starting a study session. `403`, `409`, and server failures remain visible
-inline so the public deck content is not replaced by a false success state.
+Start Learning is available when the deck contains cards: when the deck is not
+enrolled, the frontend first invokes this endpoint and then opens
+`/study/{deckId}`; when it is already enrolled, it opens Study directly. An
+empty deck has an explicit no-cards state and does not offer a ready-session
+action. A separate Enroll action is visible only before enrollment and adds the
+deck without leaving Public Deck Details or starting a study session. After a
+`409`, the frontend refreshes DECK-02 and continues only when current
+`isEnrolled=true`; an unconfirmed conflict, `403`, and server failures remain
+visible inline so the public deck content is not replaced by a false success
+state. Confirmed enrollment refreshes the detail, Learning list, and Discover
+enrollment state.
 
 > **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.
 
