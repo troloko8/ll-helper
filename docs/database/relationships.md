@@ -478,7 +478,7 @@ AuthUser (credentials)
 | User can only access own progress | Service | ✅ Enforced in `LearningService` |
 | User can only modify own decks | Service | ✅ Enforced (implicit via user context) |
 | Public deck readable by others | Service | ✅ Enforced via `isPublic` check |
-| Cannot enroll in private deck | Service | ✅ Enforced (403 if `!isPublic`) |
+| Private deck enrollment | Service | ✅ Owner allowed; non-owner rejected with 403 |
 
 ---
 

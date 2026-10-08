@@ -4,7 +4,7 @@
 > **Scope:** documentation and analysis only. Phase 0.4C does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code — it only records accepted product/routing decisions on top of the Phase 0.4B read-only snapshot below.
 > **Phase 0.4B date:** 2026-08-23 (repository baseline: `master` after commit `758a565`). **§2–§7 below are preserved as the historical Phase 0.4B result and are not rewritten**, except where a specific field is explicitly superseded by an accepted §0 decision (marked inline, e.g. the `/decks/:deckId` route replacing the `/discover/decks/:deckId` candidate).
 > **Phase 0.4C date:** 2026-08-24. §0 records the accepted Level 1 vertical MVP decisions; where §0 and §2–§7 disagree, §0 governs.
-> **User-requested scope revision (2026-09-20):** §0.10 supersedes the original Created/Discover deferral and direct-link-only product path. These are accepted implementation tasks, not a claim that the new UI or DTOs already exist. Runtime completion and verification belong to `docs/roadmap/current-sprint.md`.
+> **User-requested scope revision (2026-09-20):** §0.10 supersedes the original Created/Discover deferral and direct-link-only product path. The resulting Level 1 UI and DTOs are implemented; completion evidence belongs to `docs/roadmap/changelog.md`, while the active deployment work belongs to `docs/roadmap/current-sprint.md`.
 
 ## 0. Phase 0.4C accepted decisions
 
@@ -33,7 +33,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
 | `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
-| `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public Deck Details; a deck-less `/study` is not needed at Level 1 |
+| `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public/Owner Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks → Public Deck Details; bounded list adaptation, §0.10. Enrollment reconciliation remains a follow-up. |
 | `/progress` | deferred | — | |
@@ -71,15 +71,15 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
-This section owns only the stable accepted sequence and dependency boundaries. Dynamic completion status and the executable subtask checklists are owned solely by `docs/roadmap/current-sprint.md`; do not copy progress markers into this section.
+This section owns only the stable accepted sequence and dependency boundaries. Completed Level 1 evidence is owned by `docs/roadmap/changelog.md`; active executable checklists are owned by `docs/roadmap/current-sprint.md`. Do not copy progress markers into this section.
 
 1. Backend vertical prerequisites: G-01, G-03, G-06, and G-08; readiness semantics remain in §0.4.
 2. Backend security prerequisite: G-05 before public-facing exposure; release hardening later performs regression verification rather than redefining the rule.
 3. Documentation prerequisite: G-12 keeps the learning-flow contract aligned with executable behavior.
 4. Stitch prerequisite: Complete Profile desktop/mobile/base/error/submitting references registered through §0.5 and `MANIFEST.md`.
-5. Frontend minimal UI/application-boundary foundation before feature components: canonical tokens/typography, form primitives and semantics, loading/error surfaces, responsive Auth/Onboarding base, global error boundary, bootstrap state, and not-found routing. Exact checklist: current sprint Group 0A; canonical UI contract: `docs/frontend/DESIGN.md`.
-6. Frontend Auth + onboarding: contract-first RTK Query integration, four-state session lifecycle (§0.7), route layouts/guards, cache-safe logout/401, and Login/Register/Complete Profile/Logout orchestration. Exact checklist and tests: current sprint Group 1.
-7. Reduced authenticated `AppShell` before Learning screens: only the accepted Level 1 navigation subset, with no deferred destinations or dead links. Exact checklist: current sprint Group 1A; shell scope: `docs/frontend/DESIGN.md`.
+5. Frontend minimal UI/application-boundary foundation before feature components: canonical tokens/typography, form primitives and semantics, loading/error surfaces, responsive Auth/Onboarding base, global error boundary, bootstrap state, and not-found routing. Completed Sprint 1.0 evidence: `docs/roadmap/changelog.md`; canonical UI contract: `docs/frontend/DESIGN.md`.
+6. Frontend Auth + onboarding: contract-first RTK Query integration, four-state session lifecycle (§0.7), route layouts/guards, cache-safe logout/401, and Login/Register/Complete Profile/Logout orchestration. Completed checklist and tests: `docs/roadmap/changelog.md`.
+7. Reduced authenticated `AppShell` before Learning screens: only the accepted Level 1 navigation subset, with no deferred destinations or dead links. Completion evidence: `docs/roadmap/changelog.md`; shell scope: `docs/frontend/DESIGN.md`.
 8. Frontend Learning list + Learning Deck Details.
 9. Frontend Create Deck + Owner Deck Details.
 10. Frontend Manual Add Card.
@@ -101,7 +101,7 @@ Implemented `GET /api/v1/users/me` bootstrap semantics:
 - `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
 - `401 {message}` → missing/invalid/expired JWT → `anonymous`.
 
-The backend contract and frontend session lifecycle are implemented; execution and live verification status are owned by `docs/roadmap/current-sprint.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
+The backend contract and frontend session lifecycle are implemented; completed live verification is recorded in `docs/roadmap/changelog.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
 
 - Register stores the token, enters `needsProfile`, completes `POST /users`, then enters `authenticated` and navigates to `/learning`.
 - Login stores the token and resolves `GET /users/me`: `200` navigates to `/learning`, `404` enters `needsProfile` and navigates to `/onboarding/profile`, and `401` clears the session and returns to `/login`.
@@ -129,10 +129,10 @@ The user requested that the complete Level 1 path be executable through visible 
 **Accepted navigation and transitions:**
 - Persistent destinations: Learning, Created, Discover, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual; aggregate Progress and Settings are not added.
 - Created → Create Deck → Owner Deck Details → Add Card → Owner Deck Details; Created provides a way back to existing owned decks. Create Deck is available for empty and populated lists.
-- Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. For a nonempty deck, Start Learning is available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on Public Deck Details. An empty deck instead shows a clear no-cards state and does not offer Start Learning. Created never substitutes for the Learning collection.
+- Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. Created → Owner Deck Details offers the same learning actions, including owner enrollment for a private deck. For a nonempty deck, Start Learning is available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on its details page. An empty deck instead shows a clear no-cards state and does not offer Start Learning. Created never substitutes for the Learning collection.
 - Public Deck Details derives enrollment from the current-user `isEnrolled` field in DECK-02, including after refresh/direct entry; it does not fetch the full LEARN-05 collection or rely on state passed from Discover. Enroll is hidden after enrollment while Start Learning remains available for nonempty decks. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates detail, Discover and Learning caches.
 - Visible local Logout → Login → reopen Created/Learning and continue. A manual token clear does not meet the user-facing logout criterion.
-- No Owner → Public shortcut is required to pass the revised flow: Discover is the entry. A private deck remains owner-visible in Created and cannot be enrolled under the current backend, even by its owner. Smoke uses a public deck populated before enrollment.
+- No Owner → Public shortcut is required to pass the revised public flow: Discover is the entry. A private deck remains visible only to its owner in Created; Owner Deck Details can enroll it and open Study, while every non-owner enrollment attempt remains `403`.
 
 **Collection data contract (implemented):**
 - DECK-03 remains server-filtered to public decks; DECK-06 remains scoped to the current owner's public/private decks.
@@ -146,7 +146,7 @@ The user requested that the complete Level 1 path be executable through visible 
 - Discover desktop shows title/creator search, Public/Enrolled badges, language pair, creator, card count and Load Additional Decks. Mobile includes search, filter/topic/level chips, cover images, bookmark controls and Load more; these extra controls are not proof of backend support.
 - Accepted first implementation is the list/card/navigation subset: title, languages, owner identity, count, truthful enrollment indication and detail link. The response currently carries the full `UserResponse owner`; replacing it with a compact owner shape follows later. Search, filters, sorting, load-more/pagination, topic/level chips, cover imagery and bookmarks are omitted on both devices. Reuse canonical layout/tokens and state references; do not invent metadata or ship non-working prototype controls. This bounded adaptation is owned by `DESIGN.md` and does not require changing remote Stitch screens in this planning task.
 
-**Acceptance boundary:** groups in `current-sprint.md` distinguish existing implementation, missing integration and user-verified behavior. Study/review/per-card progress already exist; remaining work is integration verification and fixes. A successful AI card creation does not establish manual validation correctness. A live UI flow and re-entry with saved progress are required to close Level 1.
+**Acceptance boundary:** Sprint 1.0 completion evidence in `docs/roadmap/changelog.md` distinguishes automated checks and user-verified behavior. Study/review/per-card progress and live UI re-entry are complete. A successful AI card creation still does not substitute for the verified manual-card path.
 
 ## 1. Source precedence and boundaries
 
@@ -307,7 +307,7 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 | Loading / error / empty | Desktop has API-error and empty; mobile has loading, API-error, empty. Desktop loading uses the shared `Skeleton` pattern because no dedicated state reference exists. |
 | Backend status | Implemented: DECK-06 returns all public/private decks owned by the current user; DECK-03 remains safe and public-only. |
 | Accepted frontend phase | Level 1 Created flow; route and collection page implemented. |
-| Blocker / gap | None for collection freshness: successful deck creation invalidates `Deck/LIST`; manual and AI card creation invalidate `Deck/{deckId}`, refreshing both owner detail and the matching Created count. Live cross-account/mobile/keyboard smoke remains in current-sprint Group 4C. |
+| Blocker / gap | None for collection freshness: successful deck creation invalidates `Deck/LIST`; manual and AI card creation invalidate `Deck/{deckId}`, refreshing both owner detail and the matching Created count. Cross-account/mobile/keyboard smoke completed in Sprint 1.0; see changelog. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -370,17 +370,17 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 
 | Field | Mapping |
 |---|---|
-| Product surface | Owner Deck Details and card inventory; no learning progress |
+| Product surface | Owner Deck Details, card inventory and enrollment/Start Learning controls; no learning-progress display |
 | Candidate route | `/decks/:deckId/manage` |
 | Auth | JWT; intended for owner |
 | Domain owner | Deck/Card content ownership |
-| Endpoint | `DECK-02 GET /api/v1/decks/{id}` supplies deck plus `CardResponse[]`; mutations link to `DECK-04/05` and `CARD-05/06`. Do not use `CARD-04` or learning `LEARN-03` for owner inventory. |
-| Request / response DTO | `DeckResponse {…,owner,isPublic,cards: CardResponse[]}`; mutations use `DeckRequest`/`CardRequest`. |
-| Errors | Load 403 for another user's private deck / 404 plus shared JWT; mutations 400/403/404/429. |
+| Endpoint | `DECK-02 GET /api/v1/decks/{id}` supplies deck plus `CardResponse[]` and `isEnrolled`; `LEARN-01 POST /api/v1/decks/{deckId}/enroll` supports owner enrollment for private/public decks; mutations link to `DECK-04/05` and `CARD-05/06`. Do not use `CARD-04` or learning `LEARN-03` for owner inventory. |
+| Request / response DTO | `DeckDetailsResponse {…,owner,isPublic,cards: CardResponse[],isEnrolled}`; enroll returns `EnrollResponse {userDeckId}`; mutations use `DeckRequest`/`CardRequest`. |
+| Errors | Load 403 for another user's private deck / 404; enroll 404/409/429 (403 remains the server boundary for a non-owner direct request); mutations 400/403/404/429; shared JWT. |
 | Loading / error / empty | Canonical loading, API-error, and empty-card-inventory states exist on both platforms. |
-| Backend status | Detail read and owner mutations implemented; G-05 resolved. |
+| Backend status | Detail read, owner enrollment and owner mutations implemented; G-05 resolved. |
 | Candidate frontend phase | Content management after Auth; safe navigation depends on Created contract. |
-| Blocker / gap | Screen-local backend contract is sufficient; G-01 supplies owner identity for frontend routing. |
+| Blocker / gap | None. Owner private-deck enrollment and Start Learning are covered by RTL/MSW; G-01 supplies owner identity for frontend routing. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
@@ -399,11 +399,11 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 | Domain owner | Public Deck content + Learning enrollment boundary |
 | Endpoint | Detail and current-user enrollment state `DECK-02 GET /api/v1/decks/{id}`; enroll `LEARN-01 POST /api/v1/decks/{deckId}/enroll`. |
 | Request / response DTO | Detail `DeckDetailsResponse` with `isEnrolled`; enroll has no body and returns `EnrollResponse {userDeckId}`. |
-| Errors | Detail 403 for another user's private deck / 404; enroll 403 private, 404 deck, 409 already enrolled; shared JWT. **Private decks cannot be enrolled by any user under current `LEARN-01`** — `LearningServiceImpl.enrollDeck()` checks `isPublic` only and rejects with 403; there is no owner-bypass or auto-enroll path. |
+| Errors | Detail 403 for another user's private deck / 404; enroll 403 for another user's private deck, 404 deck, 409 already enrolled; shared JWT. Owner-private enrollment is handled from Owner Deck Details; Public Deck Details remains scoped to public decks. |
 | Loading / error / empty | Combined detail/enrollment-state loading; retryable page API error; empty card inventory with no Start Learning action; enroll-button loading and inline unconfirmed-409/403/5xx feedback. No dedicated state variants. |
 | Backend status | Enroll, detail visibility, DECK-02 detail enrollment state, Discover collection and LEARN-05 Learning list are implemented; G-04, G-05 and G-06 are resolved. |
 | Accepted frontend phase (Phase 0.4C/4D) | Included in Level 1 MVP; see §0.1/§0.3/§0.10. The accepted flow enters through Discover; direct links and refresh remain supported. |
-| Blocker / gap | No Public Deck Details integration blocker remains; the broader full-product smoke remains tracked in current-sprint group 5. |
+| Blocker / gap | None; Sprint 1.0 browser acceptance is recorded in `docs/roadmap/changelog.md`. |
 
 **Runtime status:** Public Deck Details is reachable from Discover and directly
 at `/decks/:deckId`. The page consumes the current-user `isEnrolled` field from
@@ -518,12 +518,12 @@ The canonical desktop reference stays `partial` at the reference level because i
 | Errors | Load/review 409 not enrolled; review 400/404; shared JWT. Answer correctness must come only from response. |
 | Loading / error / empty | Canonical loading, API-error, all-caught-up, and session-complete states on both platforms. With G-08 resolved, an empty study response truthfully means no `LEARNING`, `REVIEWING`, or `NEW` cards remain. |
 | Backend status | Review and study selection implemented; G-08 resolved. |
-| Candidate frontend phase | After enrollment through Public Deck Details Start Learning or from Learning Deck Details; before aggregate Progress UI. |
+| Candidate frontend phase | After enrollment through Public/Owner Deck Details Start Learning or from Learning Deck Details; before aggregate Progress UI. |
 | Blocker / gap | None specific to the Study selection contract for Level 1. Advanced due-date scheduling remains out of scope. |
 
 **Runtime status:** Study is implemented at the accepted contextual
 `/study/:deckId` route and is linked from Learning Deck Details when a
-non-`MASTERED` card exists and from Public Deck Details through Start Learning,
+non-`MASTERED` card exists and from Public/Owner Deck Details through Start Learning,
 which auto-enrolls first when needed. The page renders the backend-ordered `LEARN-02`
 batch and deck title from one response without subscribing to the Learning list, submits each answer through `LEARN-04`, derives correctness only from
 the backend response, and covers loading, API error, all-caught-up, per-answer
@@ -643,7 +643,7 @@ This queue was open as of Phase 0.4B. All seven items are now resolved by §0 �
 4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created uses the implemented DECK-06 `List<OwnedDeckListResponse>` contract, and Discover uses DECK-03 `List<PublicDeckListResponse>`. The creator-scoped public list remains deferred with Creator Profile (§0.2).
 5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).
 6. ~~Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.~~ Resolved — §0.1/§0.2/§0.6: manual Add Card is the Level 1 requirement; single-card AI is a separate optional task after manual smoke; bulk AI remains deferred pending the partial-failure contract.
-7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6, and reflected in `docs/roadmap/current-sprint.md`.
+7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6; completed execution is recorded in `docs/roadmap/changelog.md`.
 
 ## 7. Phase 0.4B conclusion (historical, superseded by §0)
 

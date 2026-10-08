@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -199,6 +200,16 @@ class LearningControllerTest {
         mockMvc.perform(post("/api/v1/decks/{deckId}/enroll", DECK_ID))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message", is("Deck not found: " + DECK_ID)));
+    }
+
+    @Test
+    void enroll_shouldReturn403_whenPrivateDeckOwnedByAnotherUser() throws Exception {
+        when(learningService.enrollDeck(DECK_ID))
+            .thenThrow(new AccessDeniedException("Access denied: Deck is not public"));
+
+        mockMvc.perform(post("/api/v1/decks/{deckId}/enroll", DECK_ID))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message", is("Access denied: Deck is not public")));
     }
 
     @Test

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
     getDeckLanguageLabel,
     type DeckCardResponseDto,
     useGetDeckByIdQuery,
 } from '@/entities/deck'
 import { useGetCurrentUserQuery } from '@/entities/user'
+import { EnrollDeckActions } from '@/features/enroll-deck'
 import { ApiErrorPresentation, Button, PageState, Skeleton } from '@/shared/ui'
 import styles from './owner-deck-details-page.module.css'
 
@@ -118,6 +119,7 @@ function CardInventory({ cards }: { cards: DeckCardResponseDto[] }) {
 }
 
 export function OwnerDeckDetailsPage() {
+    const navigate = useNavigate()
     const { deckId: deckIdParam } = useParams()
     const deckId = Number(deckIdParam)
     const validDeckId = Number.isSafeInteger(deckId) && deckId > 0
@@ -225,6 +227,17 @@ export function OwnerDeckDetailsPage() {
                         <dd>@{deck.owner.username}</dd>
                     </div>
                 </dl>
+
+                <EnrollDeckActions
+                    deckId={deck.id}
+                    isEnrolled={deck.isEnrolled}
+                    hasStudyCards={deck.cards.length > 0}
+                    reconcileEnrollment={async () => {
+                        const refreshedDeck = await refetchDeck().unwrap()
+                        return refreshedDeck.isEnrolled
+                    }}
+                    onStartLearning={() => navigate(`/study/${deck.id}`)}
+                />
             </section>
 
             <CardInventory cards={deck.cards} />

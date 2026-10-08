@@ -24,6 +24,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -66,7 +67,8 @@ public class LearningServiceImpl implements LearningService {
         Deck deck = deckRepository.findById(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
-        if (!Boolean.TRUE.equals(deck.getIsPublic())) {
+        if (!Boolean.TRUE.equals(deck.getIsPublic())
+                && !Objects.equals(deck.getOwner().getId(), userId)) {
             throw new AccessDeniedException("Access denied: Deck is not public");
         }
 

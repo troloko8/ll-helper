@@ -34,6 +34,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 - SM-2 spaced repetition algorithm
 - `nextReviewAt` calculation
 - `StudySession` / `StudySessionAnswer` entities
+- Resuming an exact in-progress Study queue/card position after refresh or re-login
 - Advanced analytics and teacher/student progress view
 - AI-based answer validation
 - Synonym / fuzzy answer checking
@@ -105,27 +106,33 @@ The MVP response remains intentionally unpaginated. If deck size becomes unbound
 2. Find deck by `deckId`.
    - If not found → `404 Not Found`.
 3. Check deck visibility.
-   - If deck is not public → `403 Forbidden` (`AccessDeniedException`). Private-deck enroll is not possible for any user other than through this rejection — there is no auto-enroll or owner-bypass path in current code.
+   - Public deck → allowed for any authenticated user.
+   - Private deck owned by the authenticated user → allowed.
+   - Private deck owned by another user → `403 Forbidden` (`AccessDeniedException`).
 4. Attempt to create `UserDeckProgress` (`ACTIVE` status) and `UserCardProgress` for each deck card (`NEW` status, counters at `0`).
 5. Duplicate enrollment is detected by the DB unique constraint `uk_user_deck_progress_user_deck` (V2 migration) — the resulting `DataIntegrityViolationException` is translated to `IllegalStateException` → `409 Conflict`. Other data integrity violations are also mapped to `409 Conflict` by `GlobalExceptionHandler`. There is no upfront service-level duplicate check.
 6. Return `201 Created`.
 
-In the Level 1 frontend flow, Public Deck Details exposes two related actions.
-Its DECK-02 detail response supplies current-user ACTIVE `isEnrolled` directly,
-so the page does not load the full Learning collection to determine CTA state.
+In the Level 1 frontend flow, Public Deck Details and Owner Deck Details expose
+the relevant learning actions. Their DECK-02 detail response supplies
+current-user ACTIVE `isEnrolled` directly, so the page does not load the full
+Learning collection to determine CTA state.
 Start Learning is available when the deck contains cards: when the deck is not
 enrolled, the frontend first invokes this endpoint and then opens
 `/study/{deckId}`; when it is already enrolled, it opens Study directly. An
 empty deck has an explicit no-cards state and does not offer a ready-session
 action. A separate Enroll action is visible only before enrollment and adds the
-deck without leaving Public Deck Details or starting a study session. After a
+deck without leaving its details page or starting a study session. After a
 `409`, the frontend refreshes DECK-02 and continues only when current
 `isEnrolled=true`; an unconfirmed conflict, `403`, and server failures remain
 visible inline so the public deck content is not replaced by a false success
 state. Confirmed enrollment refreshes the detail, Learning list, and Discover
 enrollment state.
 
-> **Note:** Because duplicate enrollment is detected at insert time (step 5, after the visibility check in step 3), an already-enrolled **private** deck returns `403`, not `409` — the opposite of what an upfront duplicate-check order would produce.
+> **Note:** An owner duplicate-enrolling their own private deck reaches the same
+> insert-time unique constraint as a public deck and returns `409`. A non-owner
+> is rejected by visibility first and receives `403` regardless of enrollment
+> state.
 
 ---
 
@@ -143,6 +150,13 @@ enrollment state.
 3. Query `UserCardProgress` with `status != MASTERED`, order in PostgreSQL by `LEARNING` → `REVIEWING` → `NEW` and `card_id ASC`, and apply `LIMIT 10` in the database.
 4. Batch-load only the selected `Card` entities.
 5. Return the selected cards in repository order. Empty deck, or a deck whose cards are all `MASTERED`, returns `200 OK` with `cards: []` in the session response.
+
+Study is intentionally stateless at Level 1: the UI-only card index and
+session score are not persisted. A refresh, leaving the screen, or a new login
+requests a new queue based on the already persisted per-card progress. This
+continues learning from the current card statuses, but does not resume an exact
+"card 3 of 10" position. Exact queue resumption requires the out-of-scope
+`StudySession` model.
 
 ---
 
@@ -215,7 +229,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - [x] User can list active learning decks with aggregate progress
 - [x] User can enroll in a public deck
 - [x] Duplicate enroll returns `409`
-- [x] Private deck enroll returns `403`
+- [x] Owner private-deck enroll returns `201`; non-owner private-deck enroll returns `403`
 - [x] Study endpoint returns up to 10 cards (`LEARNING` → `REVIEWING` → `NEW`; `MASTERED` excluded)
 - [x] Review endpoint updates progress counters
 - [x] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
@@ -230,7 +244,8 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 | No active learning decks | `200 OK` with empty array |
 | Enroll public deck | `201 Created` |
 | Duplicate enroll | `409 Conflict` |
-| Enroll private deck | `403 Forbidden` |
+| Enroll own private deck | `201 Created` (`409 Conflict` when already enrolled) |
+| Enroll another user's private deck | `403 Forbidden` |
 | Study empty deck | `200 OK` with `{deckId, deckTitle, cards: []}` |
 | Study cards without enrollment | `409 Conflict` (see §5.4, G-12) |
 | Review card without enrollment | `409 Conflict` (see §5.6, G-12) |
@@ -243,7 +258,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - User not authenticated → `401` (Spring Security filter)
 - No active learning decks → `200 []`
 - Deck not found → `404`
-- Private deck enroll attempt → `403`
+- Another user's private deck enroll attempt → `403`; owner-private enroll follows the normal `201`/`409` path
 - Duplicate enroll → `409`
 - Study/review without enrollment → `409` (see G-12)
 - Empty deck study request → `200` with `{deckId, deckTitle, cards: []}`

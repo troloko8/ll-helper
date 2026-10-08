@@ -67,6 +67,10 @@ function renderOwnerDeck(route = '/decks/12/manage') {
                 path="/decks/:deckId/manage"
                 element={<OwnerDeckDetailsPage />}
             />
+            <Route
+                path="/study/:deckId"
+                element={<h1>Study session destination</h1>}
+            />
         </Routes>,
         { route },
     )
@@ -122,6 +126,47 @@ describe('OwnerDeckDetailsPage', () => {
             'href',
             '/decks/12/cards/new',
         )
+        expect(
+            screen.getByRole('button', { name: 'Start Learning' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Enroll' }),
+        ).toBeInTheDocument()
+    })
+
+    it('enrolls an owner private deck before opening Study', async () => {
+        let enrollmentRequests = 0
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json(deck),
+            ),
+            http.post(
+                'http://localhost/api/v1/decks/12/enroll',
+                ({ request }) => {
+                    enrollmentRequests += 1
+                    expect(request.headers.get('Authorization')).toBe(
+                        'Bearer owner-token',
+                    )
+                    return HttpResponse.json(
+                        { userDeckId: 74 },
+                        { status: 201 },
+                    )
+                },
+            ),
+        )
+        const user = userEvent.setup()
+        renderOwnerDeck()
+
+        await user.click(
+            await screen.findByRole('button', { name: 'Start Learning' }),
+        )
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Study session destination',
+            }),
+        ).toBeInTheDocument()
+        expect(enrollmentRequests).toBe(1)
     })
 
     it('filters cards by source or target text', async () => {

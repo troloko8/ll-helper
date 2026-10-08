@@ -1,10 +1,10 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Current level:** Level 1 — Vertical Full-Stack Flow
+> **Current level:** Level 1.5 — First System Delivery
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
 > **Last updated:** 2026-10-08
-> **Status:** Level 1 backend and frontend vertical-flow implementation is present, including Auth/Profile, Created, Discover, Learning, Study and visible Logout. Full browser acceptance smoke remains open in `docs/roadmap/current-sprint.md`; first deployment has not started.
+> **Status:** Level 1 vertical flow is complete, including Auth/Profile, Created, Discover, Learning, Study, persisted progress and visible Logout. Sprint 1.1 prepares the first deployment; no production deployment has started.
 
 ---
 
@@ -18,7 +18,7 @@
 
 ## 2. Current Level / Scope
 
-**Level 1 — Vertical Full-Stack Flow**
+**Level 1.5 — First System Delivery**
 
 **Backend (Level 0 — complete):**
 - ✅ Spring Boot backend with JWT authentication
@@ -30,19 +30,23 @@
 - ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V12 defined; V11 adds G-06 enrollment ordering support, V12 indexes deck-card aggregation)
 - ⏸ Additional performance indexes deferred to Level 2
 
-**Frontend (Level 1 — in progress):**
+**Frontend (Level 1 — complete):**
 - ✅ React/TypeScript/Vite scaffold initialized
 - ✅ Frontend architecture decisions approved and documented
 - ✅ Technical Foundation scaffold/config normalization (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router)
 - ✅ Testing infrastructure (Vitest, jsdom, React Testing Library, MSW)
-- [ ] Auth flow screens
-- [ ] Deck & cards flow screens
-- [ ] Study flow screens
-- [ ] End-to-end vertical flow
+- ✅ Auth and Complete Profile flow
+- ✅ Created/Discover, public and owner deck details, create deck and manual card flow
+- ✅ Learning details, Study and persisted per-card progress flow
+- ✅ Browser-verified Level 1 vertical flow, logout/login, refresh, responsive and keyboard/error states
 
-**Out of scope for Level 1:**
+**Current Level 1.5 scope:**
+- Production Dockerfiles and Docker Compose runtime
+- Same-origin HTTPS reverse proxy and deployment hardening
+- CI, health checks, backup/restore and rollback verification
+
+**Still out of scope:**
 - OpenAPI/Swagger (Level 2)
-- Docker/CI (Level 2)
 - Refresh tokens (Level 3)
 
 ---
@@ -60,7 +64,7 @@
 | **API Docs** | Postman collection (`LLHelper.postman_collection.json`) |
 | **Frontend (installed)** | React 19, TypeScript 6, Vite 8, Redux Toolkit 2, React Router 7, React Hook Form 7, Zod 4, Vitest 4 |
 | **Frontend (configured)** | Path alias `@/*` → `src/*`, `strict: true`, Vite dev proxy `/api` → `http://localhost:8080`, `.env.example`, Vitest + jsdom + React Testing Library + MSW |
-| **Frontend (approved target, not yet configured)** | CSS Modules / design tokens, Playwright (E2E) |
+| **Frontend (future test infrastructure)** | Playwright (E2E) |
 
 ---
 
@@ -68,7 +72,7 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│          Client / Postman / Future Frontend             │
+│              Frontend / Postman / API clients           │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -323,7 +327,7 @@ CardService.save(cards)
 | `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
 | `/api/v1/learning/decks/{deckId}` | GET | JWT | Get one current user's active enrolled deck with metadata, aggregate progress, and cards | `LearningDeckDetailsResponse` |
-| `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll deck | `EnrollResponse { userDeckId }` |
+| `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll a public deck or the current owner's private deck; another user's private deck returns 403 | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study` | GET | JWT | Get deck metadata and up to 10 cards for study | `StudySessionResponse {deckId, deckTitle, cards}` |
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
 | `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
@@ -504,13 +508,14 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | No `equals`/`hashCode`/`toString` on entities | Avoids lazy-load issues and infinite recursion |
 | AI card generation requires deck ownership | Only the deck owner can create or AI-generate cards inside a deck. `CardServiceImpl.create()`, `generate()` and `createBulk()` check `Objects.equals(deck.getOwner().getId(), currentUserId)`; otherwise return `403 Forbidden`. |
 | Deck/Card reads inherit deck visibility | `DeckAccessPolicy` permits any authenticated user to read a public deck and its cards, permits the owner to read a private deck and its cards, and returns `403 Forbidden` for another user's private content. `DeckServiceImpl.getById()` and `CardServiceImpl.getById()` apply the shared policy before DTO mapping. |
+| Private deck enrollment is owner-only | `LearningServiceImpl.enrollDeck()` permits public decks and a private deck owned by the authenticated user. Another user's private deck returns `403 Forbidden`; first enrollment returns `201`, and the existing unique constraint preserves `409` for duplicates. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses partial-success strategy | Failed titles are logged with `logger.warn(...)`. Full partial response with `created[]` and `failed[]` is deferred to Level 1. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
 | SQL-first custom data access | New joins, aggregations, reporting, and non-trivial filtered reads use PostgreSQL SQL. Static feature-local queries stay in the existing Spring Data repository through `@Query(nativeQuery = true)` and return minimal scalar interface projections. `NamedParameterJdbcTemplate` is reserved for dynamic SQL, batch/reporting workloads, or bespoke result mapping. Do not add JPQL/HQL or `select new` constructor projections. Native SQL behavior is verified against PostgreSQL with Testcontainers. |
-| Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
+| Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/changelog.md` for the completed Sprint 1.0 evidence and `docs/roadmap/roadmap.md` for the stable Level 1 scope. |
 | Same-origin first deployment | Nginx serves the SPA and proxies `/api/**` to the internal Spring Boot upstream. The browser uses relative `/api/v1`, so no cross-origin CORS policy is required. Domain, TLS, firewall exposure and real-origin verification remain deployment-time checks. |
 
 ### Open Decisions
@@ -547,7 +552,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 ## 18. Rate Limiting
 
-> **Status:** ✅ All CRUD/auth/bulk-generate endpoints protected via `UserRateLimiter`. AI provider calls are also protected via a separate global `AiRateLimiter` (not per-user). Postman regression pending — see `docs/roadmap/current-sprint.md`.
+> **Status:** ✅ All CRUD/auth/bulk-generate endpoints protected via `UserRateLimiter`. AI provider calls are also protected via a separate global `AiRateLimiter` (not per-user). The Level 1 Postman regression passed and is recorded in `docs/roadmap/changelog.md`.
 > **Design note:** `docs/features/rate-limiting-design.md` (historical implementation plan)
 
 ### Level 0 Implementation
@@ -696,7 +701,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** The frontend vertical flow is implemented through Auth/Profile, Created, Discover, Owner/Public Deck Details, Learning, Study/progress and visible Logout, on top of the Vite/TypeScript/RTK Query foundation and session-aware routing. Full browser acceptance smoke remains tracked in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
+> **Status:** The frontend vertical flow is implemented through Auth/Profile, Created, Discover, Owner/Public Deck Details, Learning, Study/progress and visible Logout, on top of the Vite/TypeScript/RTK Query foundation and session-aware routing. Sprint 1.0 browser acceptance is complete and recorded in `docs/roadmap/changelog.md`; Playwright remains future infrastructure for the later automated E2E stage.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -769,7 +774,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure; session, user, deck, card and learning entities; feature-owned Auth/Profile, create/enroll/review/manual-card actions; shared API/UI foundations; public and authenticated responsive shells; and route-level Auth/Profile, Created, Discover, deck details, Learning and Study pages. Full browser acceptance remains tracked by the current sprint rather than represented as missing runtime architecture.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure; session, user, deck, card and learning entities; feature-owned Auth/Profile, create/enroll/review/manual-card actions; shared API/UI foundations; public and authenticated responsive shells; and route-level Auth/Profile, Created, Discover, deck details, Learning and Study pages. Sprint 1.0 browser acceptance is complete; the active sprint now tracks the first deployment rather than unfinished frontend runtime.
 
 ---
 

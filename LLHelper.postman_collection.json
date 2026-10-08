@@ -1913,6 +1913,261 @@
       ]
     },
     {
+      "name": "Private Owner Enrollment",
+      "item": [
+        {
+          "name": "Create Private Deck as Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var deck = pm.response.json();",
+                  "pm.test(\"Private deck id is returned\", function () {",
+                  "    pm.expect(deck.id).to.be.a(\"number\").and.to.be.above(0);",
+                  "    pm.expect(deck.isPublic).to.equal(false);",
+                  "});",
+                  "pm.environment.set(\"privateDeckId\", deck.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Owner Private Deck\",\n  \"description\": \"Private enrollment contract check\",\n  \"sourceLanguage\": \"EN\",\n  \"targetLanguage\": \"RU\",\n  \"isPublic\": false\n}"
+            },
+            "url": {
+              "raw": "{{url}}/decks",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "decks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enroll Own Private Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var enrollment = pm.response.json();",
+                  "pm.test(\"Response contains required userDeckId\", function () {",
+                  "    pm.expect(enrollment).to.have.property(\"userDeckId\");",
+                  "    pm.expect(enrollment.userDeckId).to.be.a(\"number\").and.to.be.above(0);",
+                  "});",
+                  "pm.environment.set(\"privateUserDeckId\", enrollment.userDeckId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/{{privateDeckId}}/enroll",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "decks",
+                "{{privateDeckId}}",
+                "enroll"
+              ]
+            },
+            "description": "Owner enrollment of a private deck must return 201 and a positive userDeckId."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Secondary User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var auth = pm.response.json();",
+                  "pm.test(\"Secondary access token is returned\", function () {",
+                  "    pm.expect(auth.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.environment.set(\"secondaryAuthToken\", auth.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{otherTestEmail}}\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/auth/register",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Secondary Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var user = pm.response.json();",
+                  "pm.test(\"Secondary user id is returned\", function () {",
+                  "    pm.expect(user.id).to.be.a(\"number\").and.to.be.above(0);",
+                  "});",
+                  "pm.environment.set(\"secondaryUserId\", user.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{secondaryAuthToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Other\",\n  \"lastName\": \"User\",\n  \"username\": \"{{otherTestUsername}}\",\n  \"nativeLanguage\": \"ru\",\n  \"targetLanguage\": \"en\",\n  \"avatarUrl\": null,\n  \"uiLanguage\": \"ru\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/users",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Secondary Enrollment of Private Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "var error = pm.response.json();",
+                  "pm.test(\"Response explains private deck denial\", function () {",
+                  "    pm.expect(error.message).to.include(\"Deck is not public\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{secondaryAuthToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/{{privateDeckId}}/enroll",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "decks",
+                "{{privateDeckId}}",
+                "enroll"
+              ]
+            },
+            "description": "A non-owner must still receive 403 for a private deck."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Cleanup",
       "item": [
         {
@@ -1974,6 +2229,62 @@
                 "v1",
                 "decks",
                 "{{deckId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Private Deck",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/{{privateDeckId}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "decks",
+                "{{privateDeckId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Secondary User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{secondaryAuthToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/users/{{secondaryUserId}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "users",
+                "{{secondaryUserId}}"
               ]
             }
           },

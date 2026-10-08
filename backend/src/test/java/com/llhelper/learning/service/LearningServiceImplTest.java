@@ -33,6 +33,7 @@ import com.llhelper.learning.mapper.LearningMapper;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository.LearningDeckSummaryProjection;
+import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Clock;
 import java.time.Instant;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class LearningServiceImplTest {
@@ -105,6 +107,15 @@ class LearningServiceImplTest {
         deck.setId(DECK_ID);
         deck.setIsPublic(true);
         deck.setCards(List.of(cards));
+        return deck;
+    }
+
+    private static Deck privateDeck(long ownerId, Card... cards) {
+        Deck deck = publicDeck(cards);
+        User owner = new User();
+        owner.setId(ownerId);
+        deck.setOwner(owner);
+        deck.setIsPublic(false);
         return deck;
     }
 
@@ -174,6 +185,40 @@ class LearningServiceImplTest {
         verify(learningMapper).toUserCardProgress(USER_ID, CARD_ID, USER_DECK_PROGRESS_ID);
         verify(userDeckProgressRepository).save(deckProgress);
         verify(userCardProgressRepository).saveAll(List.of(cardProgress));
+    }
+
+    @Test
+    void enroll_shouldCreateProgress_whenPrivateDeckOwnedByCurrentUser() {
+        Deck deck = privateDeck(USER_ID, card("hello"));
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        UserDeckProgress deckProgress = deckProgressWithId();
+        when(learningMapper.toUserDeckProgress(USER_ID, DECK_ID, clock.instant())).thenReturn(deckProgress);
+        when(userDeckProgressRepository.save(deckProgress)).thenReturn(deckProgress);
+
+        UserCardProgress cardProgress = defaultCardProgress();
+        when(learningMapper.toUserCardProgress(USER_ID, CARD_ID, USER_DECK_PROGRESS_ID)).thenReturn(cardProgress);
+
+        EnrollResponse response = learningService.enrollDeck(DECK_ID);
+
+        assertThat(response.userDeckId()).isEqualTo(USER_DECK_PROGRESS_ID);
+        verify(userDeckProgressRepository).save(deckProgress);
+        verify(userCardProgressRepository).saveAll(List.of(cardProgress));
+    }
+
+    @Test
+    void enroll_shouldThrowForbidden_whenPrivateDeckOwnedByAnotherUser() {
+        Deck deck = privateDeck(99L, card("hello"));
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+
+        assertThatThrownBy(() -> learningService.enrollDeck(DECK_ID))
+            .isInstanceOf(AccessDeniedException.class)
+            .hasMessageContaining("not public");
+
+        verify(userDeckProgressRepository, never()).save(any());
+        verify(userCardProgressRepository, never()).saveAll(any());
     }
 
     @Test

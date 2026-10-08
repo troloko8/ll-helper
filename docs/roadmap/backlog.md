@@ -9,7 +9,7 @@
 ### Sprint 1.0 — Vertical Flow
 
 > **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему.
-> Актуальный пользовательский flow и обязательные задачи закрытия перенесены в `current-sprint.md` (группы 4A–6); product decisions — integration map §0.10. В Level 1 включены базовые Created, Discover и видимый Logout, чтобы сценарий выполнялся через UI. Этот блок не является второй очередью задач спринта.
+> Пользовательский flow Level 1 закрыт; результаты находятся в `docs/roadmap/changelog.md`, product decisions — integration map §0.10. В Level 1 включены базовые Created, Discover и видимый Logout, чтобы сценарий выполнялся через UI. Этот блок не является второй очередью задач активного deployment-спринта.
 > UI может быть простым. Цель — не красивый Dashboard, а работающий full-stack flow.
 
 1. Создать React/TS app
@@ -25,7 +25,7 @@
 
 #### Gate перед началом deployment
 
-- [ ] Sprint 1.0 закрыт: обязательный UI/Postman flow пройден, блокирующие дефекты исправлены, frontend и backend checks зелёные.
+- [x] Sprint 1.0 закрыт 2026-10-08: обязательный UI/Postman flow пройден, блокирующие дефекты в smoke не обнаружены, frontend/backend checks и повторный Newman зафиксированы в `docs/roadmap/changelog.md`.
 - [ ] Выбраны hosting/platform, домен и схема runtime: где завершается TLS, где работает reverse proxy, где запускаются frontend, backend и PostgreSQL.
 
 > Базовая origin-схема уже принята: один публичный HTTPS origin, frontend использует `VITE_API_URL=/api/v1`, а reverse proxy направляет `/api/**` в backend. В Sprint 1.1 требуется реализовать и проверить это решение на выбранной платформе, а не принимать его повторно.
@@ -113,12 +113,13 @@
 - **Добавить `deckId` валидацию при удалении/обновлении карты** — эндпоинты `DELETE /cards/{id}` и `PUT /cards/{id}` не проверяют, что карта принадлежит конкретному деку из контекста запроса. Вариант: добавить `card.getDeckId() == deckId` проверку, возможно рефактор URL на `/decks/{deckId}/cards/{cardId}`
 - Pagination для `DeckCardResponse.cards` — при большом количестве карточек в деке
 - Создать `CardWithDeckResponse` DTO — для endpoint'ов где нужна полная информация о deck вместе с card
-- `cardCount` для Created/Discover и public-list `isEnrolled` реализованы в `current-sprint.md` → Группа 4B одним агрегирующим запросом на коллекцию.
+- `cardCount` для Created/Discover и public-list `isEnrolled` реализованы одним агрегирующим запросом на коллекцию; контракт зафиксирован в inventory, итог Sprint 1.0 — в changelog.
 - Заменить полный `UserResponse owner` в `PublicDeckListResponse` на compact owner (`id`, `username`, при необходимости `avatarUrl`); Created уже использует минимальный `OwnedDeckListResponse` без owner.
 
 ### Backend — Learning API, AI generation, User self-service
 
 **Learning API:**
+- [x] **Owner enrollment for private decks (implemented 2026-10-08):** a deck owner can create an ACTIVE enrollment for their own private deck and study it; every non-owner still receives `403`, and private decks remain absent from Discover and other users' Created lists. Backend authorization, owner CTA/navigation, service/controller/frontend coverage, `LEARN-01` inventory and Postman success/error cases were updated together. First enrollment remains `201`; duplicate enrollment remains `409`.
 - `GET /api/v1/user-decks/{userDeckId}/study-cards?limit=10`
 - `POST /api/v1/user-cards/{userCardId}/answer`
 - `GET /api/v1/user-decks/{userDeckId}/progress`

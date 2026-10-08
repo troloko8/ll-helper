@@ -120,7 +120,7 @@ this pair. No other active-state color combination is canonical.
 > below. The existing runtime currently exposes only Learning; add each new
 > navigation entry with its working route. Created restores access to owned
 > decks; Discover opens public decks for enrollment. **Study** remains
-> contextual from Learning Deck Details or Start Learning on Public Deck Details
+> contextual from Learning Deck Details or Start Learning on Public/Owner Deck Details
 > (`/study/:deckId`); **Progress** remains
 > hidden, since per-card progress is displayed on Learning Deck Details.
 > **Create Deck** must be available with both empty and populated collections.
@@ -128,8 +128,8 @@ this pair. No other active-state color combination is canonical.
 > **Log out** action in the desktop sidebar footer and mobile header, using
 > the existing local logout flow; it is not a Settings page or a bottom-nav
 > destination. No dead links or disabled future destinations. The remote
-> canonical references remain unchanged; implementation and live verification
-> status belong to `docs/roadmap/current-sprint.md`, and route/product decisions
+> canonical references remain unchanged; completed Level 1 implementation and
+> verification belong to `docs/roadmap/changelog.md`, and route/product decisions
 > to integration map §0.10.
 
 ### Desktop
@@ -163,6 +163,8 @@ scoping note takes precedence during this implementation.
 
 - Created cards: title, language pair, backend card count, Public/Private,
   Open → Owner Deck Details; Create New Deck works for empty/populated lists.
+  Owner Deck Details may show Enroll and Start Learning controls, including for
+  an owner-private deck, but it must not show learning-progress counters.
 - Discover cards: title, owner identity, language pair, backend card count,
   Public/Enrolled indication and a link to Public Deck Details. The first
   response carries the full owner; replacing it with a compact owner shape is a

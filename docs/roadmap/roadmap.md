@@ -270,11 +270,13 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 - [x]  Есть Liquibase (schema defined through V11)
 - [x]  Есть GlobalExceptionHandler
 - [x]  Есть validation
-- [x]  Есть Postman collection (`LLHelper.postman_collection.json`) — актуализация в процессе, см. `current-sprint.md`
-- [x]  Есть unit tests на learning/AI parsing/rate limiting/ownership/bulk validation (см. `current-sprint.md` Группа 1)
+- [x]  Есть Postman collection (`LLHelper.postman_collection.json`) — Level 1 regression завершён, см. `docs/roadmap/changelog.md`
+- [x]  Есть unit tests на learning/AI parsing/rate limiting/ownership/bulk validation; Level 1 итоговые проверки — `docs/roadmap/changelog.md`
 - [x]  Можешь объяснить backend без подсказки AI
 
 # Level 1 — Vertical Full-Stack Flow
+
+> **Статус:** ✅ завершён 2026-10-08; evidence и итоги — `docs/roadmap/changelog.md` → Sprint 1.0. Активный уровень — Level 1.5.
 
 > **Решение (2026-07):** Level 1 начинается с одного вертикального сценария, а не с полного набора frontend-экранов.
 > Цель не красивый product — а впервые пройти полный путь: frontend → backend → auth → DB → живая система.
@@ -282,11 +284,11 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 >
 > **Уточнение (Phase 0.4C):** внутри "Add/generate cards" в Level 1 входит только Manual Add Card; полноценный Card Editor/Edit Deck/Edit Card — после первого deployment. Single-card AI generation — optional отдельная задача после успешного manual smoke, не блокирует Level 1. Bulk AI generation — deferred. "See progress" в Level 1 реализуется как backend-provided per-card progress (per-deck отображение на экране Learning Deck Details), не полноценный aggregate Progress dashboard — тот остаётся расширением после первого деплоя. См. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 для точного MVP scope; Level 1 не расширяется до полного набора canonical screens.
 
-> **Уточнение пользовательской завершённости:** Level 1 включает базовые Created и Discover с необходимыми collection-данными и видимый local Logout, чтобы сценарий выполнялся через интерфейс без ручного URL/API/localStorage. Точный scope и ограниченная адаптация Stitch — integration map §0.10. Поиск/фильтры/пагинация Discover, полный editor и aggregate Progress остаются за пределами этого уровня. Статус выполнения критериев ведётся в `current-sprint.md`.
+> **Уточнение пользовательской завершённости:** Level 1 включает базовые Created и Discover с необходимыми collection-данными и видимый local Logout, чтобы сценарий выполнялся через интерфейс без ручного URL/API/localStorage. Точный scope и ограниченная адаптация Stitch — integration map §0.10. Поиск/фильтры/пагинация Discover, полный editor и aggregate Progress остаются за пределами этого уровня. Финальный статус и evidence закрытого Sprint 1.0 находятся в `docs/roadmap/changelog.md`.
 
 **Цель:** Один работающий full-stack flow через frontend, backend, auth и database. Первый самостоятельный deployment принадлежит следующему Level 1.5.
 
-Обязательные задачи закрытия Level 1 — `docs/roadmap/current-sprint.md`; остальные улучшения — `docs/roadmap/backlog.md`.
+Закрытие Level 1 и результаты Sprint 1.0 — `docs/roadmap/changelog.md`; стабильный scope остаётся в этом roadmap, остальные улучшения — `docs/roadmap/backlog.md`.
 
 ## Product flow
 
@@ -310,18 +312,18 @@ Login проверяется отдельно, как повторный вхо�
 
 ## ✅ Done Criteria
 
-- [ ]  Есть frontend
-- [ ]  Можно зарегистрироваться и завершить Complete Profile
-- [ ]  Можно создать deck
-- [ ]  Можно повторно найти собственные колоды через Created
-- [ ]  Можно создать card вручную (manual add card — обязательно для Level 1; AI generation не является обязательным Level 1 criterion)
-- [ ]  Можно найти public deck через Discover, открыть details и подписаться / enroll
-- [ ]  Можно пройти study flow
-- [ ]  Per-card progress сохраняется и отображается (отдельный aggregate Progress dashboard не требуется)
-- [ ]  Можно выйти через Logout и войти повторно, продолжив через Learning list
-- [ ]  Основные endpoint flows проходят через Postman
-- [ ]  Проверены project AI workflow skills
-- [ ]  Проектом можно пользоваться через UI без ручного URL/API/localStorage
+- [x]  Есть frontend
+- [x]  Можно зарегистрироваться и завершить Complete Profile
+- [x]  Можно создать deck
+- [x]  Можно повторно найти собственные колоды через Created
+- [x]  Можно создать card вручную (manual add card — обязательно для Level 1; AI generation не является обязательным Level 1 criterion)
+- [x]  Можно найти public deck через Discover, открыть details и подписаться / enroll
+- [x]  Можно пройти study flow
+- [x]  Per-card progress сохраняется и отображается (отдельный aggregate Progress dashboard не требуется)
+- [x]  Можно выйти через Logout и войти повторно, продолжив через Learning list
+- [x]  Основные endpoint flows проходят через Postman
+- [x]  Проверены project AI workflow skills
+- [x]  Проектом можно пользоваться через UI без ручного URL/API/localStorage
 
 # Level 1.5 — First System Delivery
 
