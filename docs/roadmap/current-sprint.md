@@ -24,18 +24,35 @@ checks, but do not start hosting or imply a public release.
 
 ### Product surfaces
 
-- [ ] Implement Card Details and the complete Card Editor: view, edit and
-  delete cards from Owner Deck Details, with truthful loading, validation,
-  error and destructive-confirmation states.
-- [ ] Implement Edit Deck, including prefill, validation, visibility mapping,
-  save and delete behavior.
+- [ ] Implement Card Details and the complete Card Editor: view at
+  `/decks/:deckId/cards/:cardId`, edit at
+  `/decks/:deckId/cards/:cardId/edit`, and delete from Owner Deck Details,
+  with truthful loading, validation, error and destructive-confirmation states.
+- [ ] Implement Edit Deck at `/decks/:deckId/edit`, including prefill,
+  validation, visibility mapping, save and delete behavior.
 - [ ] Complete Discover: search, filters, sorting and pagination/load-more;
   add only controls backed by an agreed API contract.
-- [ ] Implement Creator Profile and its public-deck collection.
-- [ ] Implement the aggregate Progress dashboard across a user's decks.
-- [ ] Complete the remaining product metadata and interactions that have an
-  approved design and contract: topic/level metadata, cover imagery and
-  bookmarks/social surfaces where they remain in the accepted frontend scope.
+- [ ] Implement Creator Profile and its public-deck collection at
+  `/creators/:username`.
+- [ ] Implement the aggregate Progress dashboard across a user's decks at
+  `/progress`.
+
+### Stitch fidelity and state coverage
+
+- [ ] Audit every canonical screen in
+  `docs/frontend/design-reference/MANIFEST.md` against the implementation and
+  repair material layout, navigation or responsive gaps. Desktop and mobile
+  references are one feature, not separate optional pages.
+- [ ] Implement or verify the explicit state matrix from the manifest:
+  loading, API error and empty/no-results states for Learning, Created,
+  Discover, Owner Deck Details and Progress; validation, conflict, submitting
+  and submission-error states for the relevant forms; and loading, API error,
+  all-caught-up and session-complete states for Study.
+- [ ] Use responsive adaptations where Stitch has no mobile reference (Card
+  Details and Edit Deck); do not treat the missing mobile Edit Deck asset as
+  permission to omit the mobile experience.
+- [ ] Do not promote prototype-only social controls, ratings, likes, follows or
+  bookmarks into product scope without a separate accepted API/product decision.
 
 ### Session, learning and content experience
 
@@ -64,8 +81,9 @@ checks, but do not start hosting or imply a public release.
 
 ## ✅ Done Criteria (Full Frontend)
 
-- [ ] The deferred product routes and interactions above are implemented or
-  explicitly re-scoped by an accepted product decision.
+- [ ] Every canonical Stitch page and state in the manifest is implemented,
+  verified as already complete, or explicitly re-scoped by an accepted product
+  decision.
 - [ ] Every shipped frontend surface has an honest API contract, responsive
   behavior and loading/empty/error states.
 - [ ] Authenticated session behavior, content editing, Discover, creator and

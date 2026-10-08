@@ -67,7 +67,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 ### 0.5 Accepted Stitch/design follow-up
 
 - [x] **Complete Profile** — canonical desktop base, mobile base, validation error, username conflict, and submitting references exist and are registered in `docs/frontend/DESIGN.md` and `docs/frontend/design-reference/MANIFEST.md`. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form).
-- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Desktop canonical reference `card_details_owner` is registered from Stitch screen `6e069c7228fd4bf3b7f6d3bf7f6a5b2d`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor in Sprint 1.1 — Full Frontend.
+- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Its exact Stitch resource is owned by `design-reference/MANIFEST.md`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor in Sprint 1.1 — Full Frontend.
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
@@ -236,7 +236,7 @@ Every subsection applies its contract fields to every canonical reference in its
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop + responsive mobile adaptation | `login_llhelper` | `a7a9bbf0f06b4ce4823a38fd35ac0849` | None; responsive mobile must reuse this visual language. | **ready** |
+| Desktop + responsive mobile adaptation | `login_llhelper` | See manifest | None; responsive mobile must reuse this visual language. | **ready** |
 
 ### 5.2 Register
 
@@ -256,7 +256,7 @@ Every subsection applies its contract fields to every canonical reference in its
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop + responsive mobile adaptation | `register_llhelper_refined` | `b8c691aab5f94c62854de10febfc4a1f` | None; responsive mobile must reuse this visual language. | **blocked** |
+| Desktop + responsive mobile adaptation | `register_llhelper_refined` | See manifest | None; responsive mobile must reuse this visual language. | **blocked** |
 
 ### 5.3 Learning dashboard
 
@@ -276,8 +276,8 @@ Every subsection applies its contract fields to every canonical reference in its
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `learning_llhelper_refined_navigation` | `0cb72b02b5db416ea2f8e5b6b33a03cb` | loading `1e7961cc60a04ae38b3caa66ffff0c36`; API error `0189efb46e3e43b8b507897f1ed95c04`; empty `7b1ecb8bc1644f8e727449c11e566e` | **ready** |
-| Mobile | `learning_mobile_dashboard` | `48477ef15ed64daeb0bf12cb3d8f8fcf` | loading `4e1f1dd85a7241f8b203043770210d24`; API error `bf694bc2ed3e41c599becdd220607d18`; empty `a887cc6f03dd4b6699e58ba76658270f` | **ready** |
+| Desktop | `learning_llhelper_refined_navigation` | See manifest | State inventory: manifest | **ready** |
+| Mobile | `learning_mobile_dashboard` | See manifest | State inventory: manifest | **ready** |
 
 **Implemented DTO mapping** (`learning_llhelper_refined_navigation` and `learning_mobile_dashboard` show a Continue/Start highlight plus a Learning Decks list):
 
@@ -311,8 +311,8 @@ Implemented response: `List<{deckId, title, sourceLanguage, targetLanguage, enro
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `created_decks_llhelper_refined_mvp` | `9ed6baf88f8748c68dee4082ec6a5c31` | API error `c12fdcbaff4e4a8bb5cab608841fdc5e`; empty `6ef12dc0e96d4ac4acc333c420481898`; no dedicated loading reference | **implemented; live smoke pending** |
-| Mobile | `created_decks_mobile_with_bottom_nav` | `2588b0e2fa8c4bdc9eb27bb0462d8856` | loading `c4fcfe553ca4466db388967a669ba494`; API error `b909ce2e83cc473d8e0565b18c194ece`; empty `4ac98a6a78fa442193a1da411859ade7` | **implemented; live smoke pending** |
+| Desktop | `created_decks_llhelper_refined_mvp` | See manifest | State inventory: manifest | **implemented; live smoke pending** |
+| Mobile | `created_decks_mobile_with_bottom_nav` | See manifest | State inventory: manifest | **implemented; live smoke pending** |
 
 **Implemented DTO shape** (canonical Created desktop/mobile show title, language pair, card count, visibility, Open and Create New Deck):
 
@@ -342,8 +342,8 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `create_deck_llhelper` | `316d55fea52c4c0c9dd310cd3d503d04` | validation `22e2d42dcc26455784ceb583e30aea30`; submission error `e6d5d6fdb3ed40cda47504e1621e95ff`; submitting uses button loading | **ready** |
-| Mobile | `create_deck_refined_mobile_state` | `5240c4fae5304c46ab191e32263c8bc8` | No dedicated variants; use canonical form semantics. | **ready** |
+| Desktop | `create_deck_llhelper` | See manifest | State inventory: manifest | **ready** |
+| Mobile | `create_deck_refined_mobile_state` | See manifest | State inventory: manifest | **ready** |
 
 ### 5.6 Edit Deck
 
@@ -363,8 +363,8 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `edit_deck_llhelper_refined_1` | `b4ba921c83ff451093153a41164070ab` | None; use shared skeleton/form/error/dialog patterns. | **partial** |
-| Mobile | `edit_deck_refined_mobile_state` | `09f1d4e790ea4296938b95b95372a884` | None; use shared skeleton/form/error/dialog patterns. | **partial** |
+| Desktop | `edit_deck_llhelper_refined_1` | See manifest | Shared skeleton/form/error/dialog patterns. | **partial** |
+| Mobile | responsive adaptation | See manifest | No live Stitch reference; use the desktop hierarchy and canonical mobile shell. | **partial** |
 
 ### 5.7 Deck Details — Owner
 
@@ -384,8 +384,8 @@ Implemented response: `DECK-06 GET /api/v1/decks/mine` returns minimal `List<Own
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `deck_details_owner_llhelper_refined` | `b713dd7ed4ae482ba0d1dddc4b91c31f` | loading `6824accdee2b4c318950af1d2ead2e52`; API error `7f45c3d2132046b39ecfff39a892d786`; empty `2a52cd2db39445bcb9d7662e75fa8226` | **partial** |
-| Mobile | `deck_details_owner_mobile_2` | `ccdfafe064aa4365ba041ed02607151b` | loading `3fd36bb548eb463c8c3d55aa9af7cedf`; API error `350c42b842964c4fa6748332714a62d6`; empty `3487d49d5ba7464484f4891eec8c1c8e` | **partial** |
+| Desktop | `deck_details_owner_llhelper_refined` | See manifest | State inventory: manifest | **partial** |
+| Mobile | `deck_details_owner_mobile_2` | See manifest | State inventory: manifest | **partial** |
 
 ### 5.8 Deck Details — Public
 
@@ -418,8 +418,8 @@ read; only confirmed `isEnrolled=true` continues as success.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `deck_details_public_llhelper_refined` | `90c46e8a1e2946ad84fa8cffd3ecc210` | None; use shared skeleton/page-state/inline-error patterns. | **implemented; both enrollment branches, cache refresh, repeat entry, 409 reconciliation, and empty-deck CTA verified with RTL/MSW** |
-| Mobile | `deck_details_public_mobile_refined` | `06388e7896124660b6830e9291cb9f74` | None; use shared skeleton/page-state/inline-error patterns. | **implemented responsive adaptation; shared enrollment behavior verified with RTL/MSW** |
+| Desktop | `deck_details_public_llhelper_refined` | See manifest | Shared skeleton/page-state/inline-error patterns. | **implemented; both enrollment branches, cache refresh, repeat entry, 409 reconciliation, and empty-deck CTA verified with RTL/MSW** |
+| Mobile | `deck_details_public_mobile_refined` | See manifest | Shared skeleton/page-state/inline-error patterns. | **implemented responsive adaptation; shared enrollment behavior verified with RTL/MSW** |
 
 ### 5.9 Learning Deck Details
 
@@ -439,8 +439,8 @@ read; only confirmed `isEnrolled=true` continues as success.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `learning_deck_details_llhelper_refined` | `3386e5e8e70b4cdbb18051e660b3da83` | None; use shared learning-aware skeleton/page states. | **ready** |
-| Mobile | `learning_deck_details_mobile_refined_2` | `cac865fc9ea94e2abcad0a2af3ac0922` | None; use shared learning-aware skeleton/page states. | **ready** |
+| Desktop | `learning_deck_details_llhelper_refined` | See manifest | Shared learning-aware skeleton/page states. | **ready** |
+| Mobile | `learning_deck_details_mobile_refined_2` | See manifest | Shared learning-aware skeleton/page states. | **ready** |
 
 ### 5.9A Card Details — Owner
 
@@ -459,7 +459,7 @@ read; only confirmed `isEnrolled=true` continues as success.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `card_details_owner` | `6e069c7228fd4bf3b7f6d3bf7f6a5b2d` | No dedicated variants; use shared skeleton and page-error patterns. | **design/route accepted; runtime deferred** |
+| Desktop | `card_details_owner` | See manifest | No dedicated variants; use shared skeleton and page-error patterns. | **design/route accepted; runtime deferred** |
 | Mobile | Responsive adaptation of `card_details_owner` under the canonical mobile shell | — | No separate Stitch resource; `DESIGN.md` tokens and mobile rules govern. | **design contract accepted; runtime deferred** |
 
 ### 5.10 Add / Edit Card
@@ -489,8 +489,8 @@ operation-level readiness below is unchanged.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop Add/Edit/AI | `add_edit_card_llhelper_refined` | `3166a46c0529467f972671db8357463c` | AI loading `2260370d74d94d279e5662f4fdccede6`; AI error `64cf5e689b9a4566b8f4376bc9102bfd`; submission error `e6d7a5851d2947ca96c41481becd0f0f`; validation `7f79f0550f2041ff815c9604dabb44f5` | **partial** |
-| Mobile Add only | `add_card_mobile` | `87e6c8d854a34b95829ea88d11997d2d` | None; use shared form patterns. Non-canonical `1f9f…` must not be used. | **ready** |
+| Desktop Add/Edit/AI | `add_edit_card_llhelper_refined` | See manifest | State inventory: manifest | **partial** |
+| Mobile Add only | `add_card_mobile` | See manifest | Shared form patterns; supplementary mobile variant is non-canonical. | **ready** |
 
 **Operation-level breakdown** (the desktop reference spans all of these; readiness differs per operation):
 
@@ -532,8 +532,8 @@ was added.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `study_english_b1_llhelper_refined` | `28d18c4a73b547fb92fc949a6bc5d4a8` | loading `b21ae87df0b646bc90ca84af7888d97e`; API error `a031c3ee82f1463f8aa29b77a7d3d96b`; caught up `82a546b4a81049b9b92d144a0e00ba1c`; complete `b1b0f012a4e142de90776804ae47f022` | **ready** |
-| Mobile | `study_english_b1_mobile` | `32b53362748742a19dfc7b4cc15b1a97` | loading `2894882fd954456a8ffc5eda7e95fe65`; API error `b5f6562b8ff3464b8d1bd25f0390f510`; caught up `6d42f1332a8b409cb376c7b81cc6f4e8`; complete `ae6e28fd937b4d2e8bf96fa1d7098745` | **ready** |
+| Desktop | `study_english_b1_llhelper_refined` | See manifest | State inventory: manifest | **ready** |
+| Mobile | `study_english_b1_mobile` | See manifest | State inventory: manifest | **ready** |
 
 ### 5.12 Discover
 
@@ -555,8 +555,8 @@ was added.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `discover_llhelper_refined` | `97b05b9f24f84410845beb00803e26df` | loading `5a3ee7028bcb4b7d9b8d3ecebfa41231`; API error `7d6fc47e2a4d487789efb22fe6ba0009`; empty/no results `c93b42eb746249e3b5f06cd7d2ec47e6` | **implemented; RTL/MSW verified** |
-| Mobile | `discover_mobile` | `9aaf765ffdfb4a0595da18e8c28d0bb6` | loading `6ab80ffecc5d40c6ac73f3684a6f764b`; API error `f87fd1a533a4495194720d6d3a3d065a`; empty/no results `6332e210465d47d58f011bc22a663d72` | **implemented responsive adaptation; RTL/MSW verified** |
+| Desktop | `discover_llhelper_refined` | See manifest | State inventory: manifest | **implemented; RTL/MSW verified** |
+| Mobile | `discover_mobile` | See manifest | State inventory: manifest | **implemented responsive adaptation; RTL/MSW verified** |
 
 **Implemented DTO shape** (the `discover_llhelper_refined` reference lists per-deck title, source/target language, card count, owner `@username`, a `Public` badge, and an `Enrolled` badge on at least one card):
 
@@ -588,8 +588,8 @@ Implemented required response: public-only DECK-03 returns `PublicDeckListRespon
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `creator_profile_llhelper_refined` | `8df316a65ffe4ed9b54799830d854dad` | None; use shared page/list states. | **deferred** |
-| Mobile | `creator_profile_mobile` | `87d2a4d2e36940c6b8fb7299259a23a4` | None; use shared page/list states. | **deferred** |
+| Desktop | `creator_profile_llhelper_refined` | See manifest | Shared page/list states. | **deferred** |
+| Mobile | `creator_profile_mobile` | See manifest | Shared page/list states. | **deferred** |
 
 **Missing DTO — minimal required shape, for Phase 0.4C reference only; does not change the `deferred` status** (read-only review of `creator_profile_llhelper_refined`, which shows the creator's `@username` and a "Public Decks" count plus per-deck language pair, card count, and a `Public` badge):
 
@@ -620,8 +620,8 @@ Minimal required response if this surface enters MVP: existing `UserResponse` + 
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `learning_progress_llhelper_mvp` | `e13aff5d17fc4a1e8fece209220f277f` | loading `497786dcf61d42fe81c04e706284646c`; API error `b31bc072d6d34cc8bf38b8669cf1c9dd`; empty `4c31e4fbed824d3e972ed3ef6ee6c792` | **blocked** |
-| Mobile | `learning_progress_mobile_2` | `786fef679a554769bdf277a497e261c9` | loading `0e6da83508d24bf9a569afe4b85bf2e5`; API error `61efdd5100f7452eab64285063da4702`; empty `0579e6f9cf6a4646b07247abe3b2dbc5` | **blocked** |
+| Desktop | `learning_progress_llhelper_mvp` | See manifest | State inventory: manifest | **blocked** |
+| Mobile | `learning_progress_mobile_2` | See manifest | State inventory: manifest | **blocked** |
 
 **Missing DTO — minimal required shape** (re-checked read-only review of `learning_progress_llhelper_mvp`; canonical page subtitle is "Overview of your current learning status and card distribution", with a "Progress by Deck" section below it):
 

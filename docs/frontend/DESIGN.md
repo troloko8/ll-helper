@@ -239,7 +239,9 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `learning_mobile_dashboard` — layout reference; page title must be
   **Learning**.
 - `create_deck_refined_mobile_state`
-- `edit_deck_refined_mobile_state`
+- Edit Deck uses a responsive adaptation of `edit_deck_llhelper_refined_1`.
+  The previously referenced separate mobile Stitch screen no longer exists in
+  the live project (verified 2026-10-08); do not invent a different theme.
 - `deck_details_owner_mobile_2`
 - `deck_details_public_mobile_refined`
 - `learning_deck_details_mobile_refined_2`
@@ -249,11 +251,11 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `creator_profile_mobile` — layout only; do not add Follow behavior.
 - `learning_progress_mobile_2`
 
-`card_details_owner` has no separate mobile Stitch resource. Its mobile design
-is the same read-only content hierarchy adapted to the canonical compact header,
-16px mobile gutters, single-column content, full-width actions where needed,
-and the canonical bottom navigation. Do not borrow a differently themed mobile
-screen to fill this gap.
+`card_details_owner` and Edit Deck have no separate live mobile Stitch resource.
+Their mobile design is the same content hierarchy adapted to the canonical
+compact header, 16px mobile gutters, single-column content, full-width actions
+where needed, and the canonical bottom navigation. Do not borrow a differently
+themed mobile screen to fill either gap.
 
 ### State naming families to preserve
 
