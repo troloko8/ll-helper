@@ -53,6 +53,10 @@ Check required coverage for service logic, learning transitions, parsers, valida
 
 Report affected tests, missing tests, and the minimum coverage required before commit.
 
+### Hard-to-reverse effects
+
+Apply the warning gate in root `AGENTS.md` to the diff. If it triggers, show the warning before the verdict and distinguish whether the risk occurs at commit, push, migration, deployment, or external execution.
+
 ## Verdict
 
 Return exactly one readiness level:

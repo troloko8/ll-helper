@@ -1,17 +1,17 @@
 # Cascade Agent Instructions — LLHelper
 
-Repository-wide hard gates and documentation routing table.
-Backend-specific gates: `backend/AGENTS.md`.
-Frontend-specific gates: `frontend/AGENTS.md`.
+Backend gates: `backend/AGENTS.md`.
+Frontend gates: `frontend/AGENTS.md`.
 
 ## Hard gates
 
-- The `## Sprint X.Y` header in `docs/roadmap/current-sprint.md` is the single runtime source of truth for the current sprint. Read it fresh; do not edit it to match `roadmap.md`, `changelog.md`, `backlog.md`, or prior conversation context.
+- Read `docs/roadmap/current-sprint.md` fresh; its `## Sprint X.Y` header alone defines the current sprint. Never change it based on other docs or memory.
 - Do not commit, push, delete branches, or modify remote resources unless explicitly requested.
-- Do not assume ideal architecture or ideal database design. Read `docs/architecture/current-architecture.md` only when actual architectural context is needed, and `docs/database/relationships.md` only when a relationship, constraint, index, or delete-policy fact is needed.
+- Warn early and before commit/push/deploy/execution about concrete hard-to-reverse effects with `## 🚨 Трудно или невозможно откатить`: name the trigger, affected data/users/systems, why code rollback fails, and recovery/compensation (or its absence). Examples: lossy migration/backfill, durable data/backup deletion, external payments/messages, secret publication, shared Git history rewrite. Do not flag ordinary reversible edits, local commits, additive migrations, or deployments with verified rollback by default. Keep commit and deployment risk distinct.
+- Do not assume ideal architecture or DB design. Read `docs/architecture/current-architecture.md` for architecture facts and `docs/database/relationships.md` for relationship, constraint, index, or delete-policy facts only when needed.
 - Do not expand beyond the currently documented level unless the user explicitly requests future planning.
-- When planning, prioritizing, evaluating scope, updating roadmap progress, or choosing the appropriate test level, read `docs/roadmap/current-sprint.md` fresh.
-- When a change affects architecture, API behavior, database schema, security rules, a documented business flow, or roadmap progress, update its normative documentation owner in the same task.
+- Read `docs/roadmap/current-sprint.md` fresh for planning, priority, scope, roadmap progress, or test level.
+- Sync the normative documentation owner in the same task when architecture, API behavior, DB schema, security, documented flow, or roadmap progress changes.
 - Update only the normative owner of each changed fact; do not duplicate the same information across documents.
 
 ## Documentation routing table
@@ -34,8 +34,8 @@ Frontend-specific gates: `frontend/AGENTS.md`.
 | Frontend FSD conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
 | Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
 | Frontend design system (tokens, shell, screen registry) | `docs/frontend/DESIGN.md` |
-| Frontend-consumed backend HTTP contract, DTOs, auth/error behavior and known integration gaps | `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` (repository-grounded snapshot, not the executable source of truth — executable backend code remains authoritative) |
-| Screen → route → backend contract → readiness mapping for every canonical Stitch reference | `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` (§0 holds accepted Phase 0.4C MVP/routes/phases; §2–§7 preserve the historical Phase 0.4B snapshot and may contain candidates superseded by §0; executable backend code remains authoritative for current HTTP behavior) |
+| Frontend HTTP contract, DTOs, auth/errors, integration gaps | `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` (snapshot; backend code is authoritative) |
+| Canonical Stitch screen → route → contract → readiness | `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` (§0 current, §2–§7 historical; backend code is authoritative) |
 | Documentation sync rule | `.windsurf/rules/documentation-sync.md` |
 
 ## Roadmap usage
