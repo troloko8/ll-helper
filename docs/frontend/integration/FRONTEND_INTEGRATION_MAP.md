@@ -84,7 +84,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 ### 0.5 Accepted Stitch/design follow-up
 
 - [x] **Complete Profile** — canonical desktop base, mobile base, validation error, username conflict, and submitting references exist and are registered in `docs/frontend/DESIGN.md` and `docs/frontend/design-reference/MANIFEST.md`. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form).
-- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Its exact Stitch resource is owned by `design-reference/MANIFEST.md`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor in Sprint 1.1 — Full Frontend.
+- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Its exact Stitch resource is owned by `docs/frontend/design-reference/MANIFEST.md`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor in Sprint 1.1 — Full Frontend.
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
