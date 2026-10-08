@@ -140,6 +140,112 @@ describe('AppShell', () => {
         expect(screen.getAllByRole('button', { name: 'Log out' })).toHaveLength(
             2,
         )
+        expect(
+            screen.getByRole('link', { name: 'Skip to main content' }),
+        ).toHaveAttribute('href', '#main-content')
+        expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
+    })
+
+    it('moves focus to main content after client-side navigation', async () => {
+        const user = userEvent.setup()
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={['/learning']}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route
+                                path="/learning"
+                                element={<h1>Learning content</h1>}
+                            />
+                            <Route
+                                path="/created"
+                                element={<h1>Created content</h1>}
+                            />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        const desktopNavigation = screen.getByRole('navigation', {
+            name: 'Primary navigation',
+        })
+        await user.click(
+            within(desktopNavigation).getByRole('link', { name: 'Created' }),
+        )
+
+        expect(
+            screen.getByRole('heading', { name: 'Created content' }),
+        ).toBeInTheDocument()
+        expect(screen.getByRole('main')).toHaveFocus()
+    })
+
+    it.each([
+        ['/learning/12', 'Learning'],
+        ['/learning/12/', 'Learning'],
+        ['/study/12', 'Learning'],
+        ['/study/12/', 'Learning'],
+        ['/decks/new', 'Created'],
+        ['/decks/new/', 'Created'],
+        ['/created/', 'Created'],
+        ['/decks/12/manage', 'Created'],
+        ['/decks/12/cards/new', 'Created'],
+        ['/decks/12', 'Discover'],
+        ['/discover/', 'Discover'],
+    ])('marks %s as part of the %s navigation section', (route, label) => {
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={[route]}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route path="*" element={<h1>Nested content</h1>} />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        for (const navigationName of [
+            'Primary navigation',
+            'Mobile navigation',
+        ]) {
+            expect(
+                within(
+                    screen.getByRole('navigation', { name: navigationName }),
+                ).getByRole('link', { name: label }),
+            ).toHaveAttribute('aria-current', 'page')
+        }
+    })
+
+    it.each([
+        '/learning/12/extra',
+        '/study/12/extra',
+        '/decks/12/manage/extra',
+        '/unknown',
+    ])('does not mark a section active for unknown route %s', (route) => {
+        render(
+            <Provider store={createApiTestStore()}>
+                <MemoryRouter initialEntries={[route]}>
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route path="*" element={<h1>Not found</h1>} />
+                        </Route>
+                    </Routes>
+                </MemoryRouter>
+            </Provider>,
+        )
+
+        for (const navigationName of [
+            'Primary navigation',
+            'Mobile navigation',
+        ]) {
+            const navigation = screen.getByRole('navigation', {
+                name: navigationName,
+            })
+            expect(
+                within(navigation).queryByRole('link', { current: 'page' }),
+            ).not.toBeInTheDocument()
+        }
     })
 
     it('marks Discover active in desktop and mobile navigation', () => {
@@ -200,7 +306,7 @@ describe('AppShell', () => {
         }
     })
 
-    it('collapses and expands the My Decks navigation group', async () => {
+    it('collapses My Decks and reopens it after mobile navigation changes the route', async () => {
         const user = userEvent.setup()
         render(
             <Provider store={createApiTestStore()}>
@@ -210,6 +316,10 @@ describe('AppShell', () => {
                             <Route
                                 path="/learning"
                                 element={<h1>Learning content</h1>}
+                            />
+                            <Route
+                                path="/created"
+                                element={<h1>Created content</h1>}
                             />
                         </Route>
                     </Routes>
@@ -238,11 +348,16 @@ describe('AppShell', () => {
             }),
         ).not.toBeInTheDocument()
 
-        await user.click(trigger)
+        const mobileNavigation = screen.getByRole('navigation', {
+            name: 'Mobile navigation',
+        })
+        await user.click(
+            within(mobileNavigation).getByRole('link', { name: 'Created' }),
+        )
 
         expect(trigger).toHaveAttribute('aria-expanded', 'true')
         expect(
             within(desktopNavigation).getByRole('link', { name: 'Created' }),
-        ).toBeInTheDocument()
+        ).toHaveAttribute('aria-current', 'page')
     })
 })

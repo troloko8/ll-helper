@@ -24,7 +24,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   `/created`, `/discover`, `/decks/new`, owner/public Deck Details, `/learning`,
   Learning Deck Details и `/study` с соответствующими desktop/mobile экранами
   и состояниями из Stitch; исправить существенные расхождения.
-- [ ] Проверить единый app shell, навигацию, адаптивность, клавиатурную
+- [x] Проверить единый app shell, навигацию, адаптивность, клавиатурную
   доступность и видимость всех реализованных маршрутов из интерфейса.
 - [ ] Для существующих страниц подтвердить loading, empty/no-results, API error,
   retry, validation, submitting и conflict states там, где они предусмотрены

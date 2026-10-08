@@ -5,6 +5,26 @@
     background-color: var(--background);
 }
 
+.skipLink {
+    position: fixed;
+    z-index: 100;
+    top: 8px;
+    left: var(--mobile-margin);
+    padding: 10px 14px;
+    border-radius: 6px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-weight: 650;
+    text-decoration: none;
+    transform: translateY(calc(-100% - 16px));
+}
+
+.skipLink:focus {
+    outline: 2px solid var(--on-surface);
+    outline-offset: 2px;
+    transform: translateY(0);
+}
+
 .sidebar {
     display: none;
 }
@@ -245,7 +265,9 @@
         width: var(--desktop-sidebar-width);
         flex-direction: column;
         gap: 48px;
+        overflow-y: auto;
         padding: 28px 20px;
+        overscroll-behavior: contain;
         border-right: 1px solid var(--outline-variant);
         background-color: var(--surface-container-low);
     }
@@ -266,6 +288,10 @@
     .navLink,
     .navGroupChevron,
     .logoutButton {
+        transition: none;
+    }
+
+    .skipLink {
         transition: none;
     }
 }

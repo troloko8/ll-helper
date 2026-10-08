@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { LogoutButton } from '@/features/logout'
+import { getActiveNavigationDestination } from './navigation-state'
 import styles from './app-shell.module.css'
 
 function Brand() {
@@ -19,18 +20,17 @@ function Brand() {
     )
 }
 
-function MobileLearningLink() {
+function MobileLearningLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [
-                    styles.navLink,
-                    styles.mobileNavLink,
-                    isActive && styles.active,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[
+                styles.navLink,
+                styles.mobileNavLink,
+                isCurrent && styles.active,
+            ]
+                .filter(Boolean)
+                .join(' ')}
             to="/learning"
         >
             <span className={styles.navIcon}>
@@ -39,22 +39,21 @@ function MobileLearningLink() {
                 </svg>
             </span>
             <span>Learning</span>
-        </NavLink>
+        </Link>
     )
 }
 
-function MobileCreatedLink() {
+function MobileCreatedLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [
-                    styles.navLink,
-                    styles.mobileNavLink,
-                    isActive && styles.active,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[
+                styles.navLink,
+                styles.mobileNavLink,
+                isCurrent && styles.active,
+            ]
+                .filter(Boolean)
+                .join(' ')}
             to="/created"
         >
             <span className={styles.navIcon}>
@@ -63,22 +62,21 @@ function MobileCreatedLink() {
                 </svg>
             </span>
             <span>Created</span>
-        </NavLink>
+        </Link>
     )
 }
 
-function MobileDiscoverLink() {
+function MobileDiscoverLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [
-                    styles.navLink,
-                    styles.mobileNavLink,
-                    isActive && styles.active,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[
+                styles.navLink,
+                styles.mobileNavLink,
+                isCurrent && styles.active,
+            ]
+                .filter(Boolean)
+                .join(' ')}
             to="/discover"
         >
             <span className={styles.navIcon}>
@@ -87,25 +85,28 @@ function MobileDiscoverLink() {
                 </svg>
             </span>
             <span>Discover</span>
-        </NavLink>
+        </Link>
     )
 }
 
-export function MobileNavigation() {
+export function MobileHeader() {
     return (
-        <>
-            <header className={styles.mobileHeader}>
-                <Brand />
-                <LogoutButton className={styles.logoutButton} />
-            </header>
-            <nav
-                className={styles.mobileNavigation}
-                aria-label="Mobile navigation"
-            >
-                <MobileLearningLink />
-                <MobileCreatedLink />
-                <MobileDiscoverLink />
-            </nav>
-        </>
+        <header className={styles.mobileHeader}>
+            <Brand />
+            <LogoutButton className={styles.logoutButton} />
+        </header>
+    )
+}
+
+export function MobileBottomNavigation() {
+    const { pathname } = useLocation()
+    const activeDestination = getActiveNavigationDestination(pathname)
+
+    return (
+        <nav className={styles.mobileNavigation} aria-label="Mobile navigation">
+            <MobileLearningLink isCurrent={activeDestination === 'learning'} />
+            <MobileCreatedLink isCurrent={activeDestination === 'created'} />
+            <MobileDiscoverLink isCurrent={activeDestination === 'discover'} />
+        </nav>
     )
 }

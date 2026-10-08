@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { LogoutButton } from '@/features/logout'
+import { getActiveNavigationDestination } from './navigation-state'
 import styles from './app-shell.module.css'
 
 function Brand() {
@@ -20,14 +21,13 @@ function Brand() {
     )
 }
 
-function LearningLink() {
+function LearningLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [styles.navLink, isActive && styles.active]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[styles.navLink, isCurrent && styles.active]
+                .filter(Boolean)
+                .join(' ')}
             to="/learning"
         >
             <span className={styles.navIcon}>
@@ -36,18 +36,17 @@ function LearningLink() {
                 </svg>
             </span>
             <span>Learning</span>
-        </NavLink>
+        </Link>
     )
 }
 
-function CreatedLink() {
+function CreatedLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [styles.navLink, isActive && styles.active]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[styles.navLink, isCurrent && styles.active]
+                .filter(Boolean)
+                .join(' ')}
             to="/created"
         >
             <span className={styles.navIcon}>
@@ -56,18 +55,17 @@ function CreatedLink() {
                 </svg>
             </span>
             <span>Created</span>
-        </NavLink>
+        </Link>
     )
 }
 
-function DiscoverLink() {
+function DiscoverLink({ isCurrent }: { isCurrent: boolean }) {
     return (
-        <NavLink
-            className={({ isActive }) =>
-                [styles.navLink, isActive && styles.active]
-                    .filter(Boolean)
-                    .join(' ')
-            }
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[styles.navLink, isCurrent && styles.active]
+                .filter(Boolean)
+                .join(' ')}
             to="/discover"
         >
             <span className={styles.navIcon}>
@@ -76,12 +74,19 @@ function DiscoverLink() {
                 </svg>
             </span>
             <span>Discover</span>
-        </NavLink>
+        </Link>
     )
 }
 
 export function DesktopSidebar() {
-    const [isMyDecksOpen, setIsMyDecksOpen] = useState(true)
+    const { pathname } = useLocation()
+    const activeDestination = getActiveNavigationDestination(pathname)
+    const [myDecksState, setMyDecksState] = useState({
+        pathname,
+        isOpen: true,
+    })
+    const isMyDecksOpen =
+        myDecksState.pathname === pathname ? myDecksState.isOpen : true
 
     return (
         <aside className={styles.sidebar} aria-label="Application sidebar">
@@ -95,7 +100,12 @@ export function DesktopSidebar() {
                     type="button"
                     aria-controls="my-decks-navigation"
                     aria-expanded={isMyDecksOpen}
-                    onClick={() => setIsMyDecksOpen((isOpen) => !isOpen)}
+                    onClick={() =>
+                        setMyDecksState({
+                            pathname,
+                            isOpen: !isMyDecksOpen,
+                        })
+                    }
                 >
                     <span>My Decks</span>
                     <svg
@@ -112,10 +122,12 @@ export function DesktopSidebar() {
                     className={styles.navGroupItems}
                     hidden={!isMyDecksOpen}
                 >
-                    <LearningLink />
-                    <CreatedLink />
+                    <LearningLink
+                        isCurrent={activeDestination === 'learning'}
+                    />
+                    <CreatedLink isCurrent={activeDestination === 'created'} />
                 </div>
-                <DiscoverLink />
+                <DiscoverLink isCurrent={activeDestination === 'discover'} />
             </nav>
             <footer className={styles.sidebarFooter}>
                 <LogoutButton className={styles.logoutButton} />

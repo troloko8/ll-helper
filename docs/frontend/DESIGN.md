@@ -115,6 +115,14 @@ this pair. No other active-state color combination is canonical.
 
 ## Application shell
 
+The shell starts with a keyboard-visible **Skip to main content** link. After a
+client-side route change, focus moves to the main landmark so keyboard and
+screen-reader users do not have to traverse persistent navigation again.
+Contextual routes keep their parent destination active: Learning Deck Details
+and Study map to Learning; create/owner/add-card routes map to Created; Public
+Deck Details maps to Discover. The desktop sidebar must remain vertically
+scrollable when viewport height or zoom leaves insufficient room for its footer.
+
 > **Level 1 reachable-flow scope (accepted revision):** implement the ordered
 > subset **Learning, Created, Discover** of the full five-destination shell
 > below. The existing runtime currently exposes only Learning; add each new

@@ -33,9 +33,11 @@ state remain app/domain responsibilities; the widget contains no auth logic.
 
 The implemented `widgets/app-shell/` slice owns the responsive authenticated
 layout: a fixed desktop sidebar, compact mobile header, fixed mobile bottom
-navigation, and the protected route outlet. The shell navigation exposes the
-working `/learning`, `/created`, and `/discover` destinations accepted for the
-current Level 1 subset. Further navigation expansion is specified in
+navigation, a skip link and route-change focus management for the protected
+route outlet. Contextual routes retain the active state of their parent shell
+destination. The shell navigation exposes the working `/learning`, `/created`,
+and `/discover` destinations accepted for the current Level 1 subset. Further
+navigation expansion is specified in
 `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.10 and
 `docs/frontend/DESIGN.md`.
 
