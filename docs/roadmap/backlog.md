@@ -21,17 +21,65 @@
 ### Sprint 1.1 — First Deployment (Level 1.5)
 
 > **Цель:** Сразу после работающего вертикального flow — собрать и запустить систему в интернете.
+> Этот раздел — нормативный список будущей deployment-работы. При старте Sprint 1.1 активный чеклист и фактические результаты проверок переносятся в `current-sprint.md`; реализованная runtime-схема после проверки синхронизируется с `docs/architecture/current-architecture.md`. Стабильные правила кеширования не дублируются здесь и остаются в `frontend/CONVENTIONS.md`.
 
-1. Dockerfile backend + frontend
-2. Docker Compose + PostgreSQL
-3. GitHub Actions (build + tests)
-4. Один server / облачная платформа (VPS, Railway, Render)
-5. HTTPS + health endpoint
-6. Environment variables + secrets
-7. Базовые структурированные logs
-8. DB backup
-9. README: как запустить и задеплоить
-10. Реализовать frontend HTTP cache contract из `frontend/CONVENTIONS.md` → Performance / Bundling на выбранном hosting/CDN. Проверить заголовки hashed assets и HTML (включая direct-route fallback), настоящий 404 для отсутствующего chunk и доступность старых assets при rollout. До появления hosting config контракт не считается внедрённым.
+#### Gate перед началом deployment
+
+- [ ] Sprint 1.0 закрыт: обязательный UI/Postman flow пройден, блокирующие дефекты исправлены, frontend и backend checks зелёные.
+- [ ] Выбраны hosting/platform, домен и схема runtime: где завершается TLS, где работает reverse proxy, где запускаются frontend, backend и PostgreSQL.
+
+> Базовая origin-схема уже принята: один публичный HTTPS origin, frontend использует `VITE_API_URL=/api/v1`, а reverse proxy направляет `/api/**` в backend. В Sprint 1.1 требуется реализовать и проверить это решение на выбранной платформе, а не принимать его повторно.
+
+- [ ] Подтверждено, что выбранная платформа поддерживает принятую same-origin схему. Если платформа вынуждает перейти на cross-origin API, решение обновлено, явный CORS-контракт настроен и проверен из браузера с production frontend origin; успешный dev-proxy запрос не считается доказательством CORS.
+
+#### Release blockers — build, runtime и network
+
+- [ ] Подготовлены production Dockerfile для backend и frontend; образы собираются воспроизводимо без секретов внутри image layers.
+- [ ] Docker Compose запускает frontend/reverse proxy, backend и PostgreSQL с health checks, persistent DB volume и явными сетями.
+- [ ] Публично доступны только HTTPS-порты reverse proxy/platform; Spring Boot `8080` и PostgreSQL не публикуются в интернет.
+- [ ] HTTPS включён, HTTP перенаправляется на HTTPS, сертификат обновляется автоматически.
+- [ ] Environment variables и secrets передаются средой deployment; production credentials не хранятся в Git, image, frontend bundle или CI logs.
+- [ ] Добавлен backend health/readiness endpoint, не раскрывающий чувствительные сведения; container/platform probe проверяет его, а не только открытый TCP port.
+- [ ] Настроен production profile: debug/SQL output отключён, startup не зависит от dev-only настроек, Liquibase применяет ожидаемую схему.
+- [ ] PostgreSQL находится в private network, использует отдельные production credentials и persistent storage.
+
+#### Release blockers — reverse proxy и HTTP contract
+
+- [ ] Reverse proxy передаёт `Host`, `X-Forwarded-Proto` и цепочку client IP (`X-Forwarded-For` либо platform equivalent); backend доверяет forwarded headers только от известного proxy/platform.
+- [ ] Установлены явные ограничения request body на proxy и backend; допустимый размер подтверждён для текущих JSON/API операций.
+- [ ] Установлены явные connect/read/write timeouts. Для AI endpoint выбран отдельный обоснованный read timeout, согласованный с backend outbound timeout.
+- [ ] Реализован frontend HTTP cache contract из `frontend/CONVENTIONS.md`: hashed assets получают долгий immutable cache, HTML/direct-route fallback — revalidation, authenticated `/api/**` не кешируется без отдельного решения.
+- [ ] Базовый Nginx config из `deploy/nginx/nginx.conf` адаптирован к выбранному hosting: для отдельного Nginx-контейнера loopback upstream заменён адресом backend-сервиса; API через proxy отвечает, а missing chunk возвращает настоящий `404`, а не SPA HTML.
+- [ ] Финальный Nginx config проверен через `nginx -t` в release image перед reload/restart; версия image синхронизирована с репозиторным CI check (`deploy/check-nginx-config.sh`). Базовый draft уже прошёл локальный check, но финальная конфигурация и CI run ещё не проверены.
+- [ ] Rollout атомарный либо предыдущие hashed assets сохраняются достаточно долго для уже открытых клиентов.
+
+#### Release blockers — delivery, observability и data safety
+
+- [ ] GitHub Actions выполняет frontend build/lint/format/tests и относящиеся к релизу backend checks; обязательные checks зелёные перед ручным или автоматизированным deployment. Если добавлен deployment job, он зависит от успешных required checks.
+- [ ] Включены базовые структурированные application/proxy logs; JWT, пароли, API keys, секреты и полные чувствительные payload не логируются.
+- [ ] Настроен автоматический DB backup с определёнными retention и местом хранения вне runtime volume.
+- [ ] Выполнен пробный restore backup в отдельную БД; наличие файла backup без успешного восстановления не закрывает критерий.
+- [ ] Довести черновой runbook `deploy/README.md` до проверенной инструкции для выбранной платформы: локальный production-like запуск, необходимые переменные без значений секретов, deployment, migrations, health check, backup/restore и rollback; добавить ссылку из корневого README.
+
+#### Проверка первого релиза
+
+- [ ] С чистого окружения образы собираются и система запускается документированной командой; health checks переходят в healthy.
+- [ ] Приложение и API доступны через публичный HTTPS URL; HTTP redirect, certificate chain и production origin соответствуют выбранной схеме.
+- [ ] Прямое внешнее подключение к backend `8080` и PostgreSQL невозможно; API остаётся доступным через разрешённый proxy route.
+- [ ] Через production origin повторён обязательный Sprint 1.0 flow, включая logout/login, refresh на защищённых страницах и сохранение learning progress.
+- [ ] Если применяется cross-origin, проверены успешный разрешённый preflight/request и отклонение постороннего origin; при same-origin подтверждено отсутствие ненужного wildcard CORS.
+- [ ] На реальном hosting origin проверены `Cache-Control` для HTML, hashed assets и authenticated API, direct-route fallback, missing-chunk `404` и доступность старого asset во время rollout.
+- [ ] Проверены body limit и timeout behavior: клиент получает контролируемую ошибку/retry path, а зависший upstream не удерживает соединение бесконечно.
+- [ ] В application, proxy и CI logs выполнен поиск утечек JWT/паролей/API keys; чувствительные значения отсутствуют.
+- [ ] Выполнены backup и restore verification; результат, дата и использованная процедура записаны в активном `current-sprint.md` без credentials.
+- [ ] Выполнен rollback/redeploy предыдущей рабочей версии либо документирован и проверен эквивалентный механизм hosting platform.
+
+#### После первого релиза — не блокирует Level 1.5
+
+- [ ] Добавить request correlation между reverse proxy и backend logs.
+- [ ] Добавить метрики, внешнюю availability-проверку и алерты по health/error rate.
+- [ ] Подключить централизованное хранение и поиск логов с retention/redaction policy.
+- [ ] Автоматизировать регулярную restore drill и документировать recovery objectives после появления реальных требований.
 
 ### Sprint 1.2 — Architecture Documentation
 
@@ -129,7 +177,7 @@ Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discove
 
 ### AI Workflow (Level 1)
 
-Минимальные reusable prompts для закрытия Level 1 ведутся в `current-sprint.md` → Группа 6; каталог `ai-workflows/` уже предусмотрен `roadmap.md` → Level 1 AI workflow. Прежнее предложение `.windsurf/prompts/` не является владельцем Codex workflow. Не создавать второй набор одинаковых инструкций; специализированная дальнейшая автоматизация остаётся в Sprint 1.3.
+Level 1 закрывается проверкой существующих project skills и routing на завершённом изменении; отдельные prompt-обёртки не создаются, потому что дублируют `pre-commit-review`, `testing`, `design-decision` и documentation-sync. Специализированная дальнейшая автоматизация остаётся в Sprint 1.3.
 
 ## Level 2 — Portfolio / Interview-ready (детали)
 

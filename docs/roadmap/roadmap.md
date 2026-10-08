@@ -103,9 +103,9 @@
 - Error handling for AI failure
 
 ### AI workflow
-- `/ai-workflows/*.prompt.md`, reusable prompts
-- Git diff manually passed to AI
-- AI suggests tests / design notes / Postman updates
+- Project skills for diff review, test strategy and scoped design decisions
+- Documentation-sync routing for Postman and normative owners
+- AI reports only checks supported by execution evidence
 
 ### Уровень владения
 
@@ -284,7 +284,7 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 
 > **Уточнение пользовательской завершённости:** Level 1 включает базовые Created и Discover с необходимыми collection-данными и видимый local Logout, чтобы сценарий выполнялся через интерфейс без ручного URL/API/localStorage. Точный scope и ограниченная адаптация Stitch — integration map §0.10. Поиск/фильтры/пагинация Discover, полный editor и aggregate Progress остаются за пределами этого уровня. Статус выполнения критериев ведётся в `current-sprint.md`.
 
-**Цель:** Один работающий full-stack flow + первый самостоятельный deployment системы.
+**Цель:** Один работающий full-stack flow через frontend, backend, auth и database. Первый самостоятельный deployment принадлежит следующему Level 1.5.
 
 Обязательные задачи закрытия Level 1 — `docs/roadmap/current-sprint.md`; остальные улучшения — `docs/roadmap/backlog.md`.
 
@@ -320,7 +320,7 @@ Login проверяется отдельно, как повторный вхо�
 - [ ]  Per-card progress сохраняется и отображается (отдельный aggregate Progress dashboard не требуется)
 - [ ]  Можно выйти через Logout и войти повторно, продолжив через Learning list
 - [ ]  Основные endpoint flows проходят через Postman
-- [ ]  Есть AI workflow prompts
+- [ ]  Проверены project AI workflow skills
 - [ ]  Проектом можно пользоваться через UI без ручного URL/API/localStorage
 
 # Level 1.5 — First System Delivery
@@ -408,7 +408,7 @@ Login проверяется отдельно, как повторный вхо�
 | **Уровень** | **Что делает AI** |
 | --- | --- |
 | Level 0 | Manual prompts, Postman, design notes, code review |
-| Level 1 | `/ai-workflows/*.prompt.md`, git diff вручную, AI suggests tests |
+| Level 1 | Project skills, repository-aware diff review, AI suggests tests |
 | Level 2 | Scripts для changed files, pre-commit checklist, semi-auto Postman |
 | Level 3 | CI runs tests, PR template, AI review в release workflow |
 | Level 4 | Custom internal AI dev assistant, automatic docs/changelog draft, automatic API collection sync |

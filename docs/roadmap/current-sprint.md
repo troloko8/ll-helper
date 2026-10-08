@@ -20,8 +20,8 @@
 | Single-card AI | Код есть; пользователь подтвердил успешное создание через AI | Не заменяет Manual Add Card |
 | Created / Discover | Created реализован. Для Discover готовы DECK-03 query, `/discover`, responsive список, состояния страницы, desktop/mobile navigation и переход в Public Deck Details; DECK-02 возвращает точечный `isEnrolled` для Public Deck Details; 4D RTL/MSW и ручной smoke завершены | Для Created завершить UI smoke и сквозную приёмку в группе 5 |
 | Enroll / Learning / Study / progress | Код экранов, API и поведенческие тесты есть; непустая Public Deck Details предлагает Start Learning, а до enrollment дополнительно предлагает отдельный Enroll без запуска study; пустая колода не обещает готовую сессию | В группе 5 подтвердить сохранение progress в полном пользовательском пути |
-| Logout | Локальная очистка и видимые desktop/mobile действия реализованы | Проверить живым кликом и повторный вход (4F) |
-| Postman / AI workflow prompts | Коллекция синхронизирована, включая DTO группы 4B; полный прогон не зафиксирован. Каталог ai-workflows с reusable prompts не найден | Пройти Postman flow и подготовить prompts (5–6) |
+| Logout | Локальная очистка, видимые desktop/mobile действия, живой клик и повторный вход подтверждены 2026-10-07 | Повторить только в составе полного сквозного smoke группы 5 |
+| Postman / AI workflow skills | Collection flow для DTO группы 4B повторно пройден Newman 2026-10-08 (38 requests, 32 assertions, 0 failures); reusable workflow уже покрывают проектные skills | Завершить только оставшийся ручной smoke группы 5 и не закрывать Sprint до его результатов |
 
 **Группа 0: Frontend scaffold & technical foundation**
 
@@ -177,21 +177,21 @@
 
 Выполняется после 4A–4F с живыми frontend/backend/PostgreSQL. В каждом пункте при закрытии записать дату, окружение/ревизию и краткий результат без credentials/tokens.
 
-- [ ] Проверить API base URL и подключение браузера к backend. При dev proxy отдельно проверить нужную deployment-схему origin/CORS перед релизом; успешный proxy-запрос сам по себе не доказывает cross-origin CORS.
+- [x] Проверить API base URL и локальное подключение браузера к backend. 2026-10-08: браузерный flow работает через относительный `VITE_API_URL=/api/v1` и Vite proxy `/api` → `http://localhost:8080`. Для первого deployment принята same-origin схема, а domain-independent Nginx-конфигурация добавлена в `deploy/nginx/nginx.conf`; Spring CORS для этой схемы намеренно не включается. Проверки реального домена/HTTPS, закрытого внешнего доступа к `:8080`, production proxy и response/cache headers принадлежат Sprint 1.1 в `docs/roadmap/backlog.md` и не блокируют закрытие Sprint 1.0.
 - [ ] Основной flow без ручного URL: Register → Complete Profile → Created → Create **public** Deck → Manual Add Card → Created → повторное открытие Owner Deck Details → Discover → Public Deck Details → Enroll (остаться на странице) → Learning list → Learning Details → Study → per-card progress → Learning list → повторное открытие. Отдельно проверить Start Learning → auto-enroll при необходимости → Study.
 - [ ] Через видимый Logout выйти, войти тем же пользователем и продолжить Study. Refresh на Created/Learning Details сохраняет доступ к колодам и backend-прогресс.
 - [ ] Проверка вторым аккаунтом: публичная колода первого находится через Discover и enroll-ится; его private-колода отсутствует в Discover и Created второго. Private deck остаётся доступной владельцу в Created; её enrollment сейчас запрещён даже владельцу.
 - [ ] Проверить desktop/mobile/keyboard, пустые состояния, ошибки и retry на изменённых переходах. Исправить блокирующие дефекты и повторить затронутый сценарий.
 - [x] Postman collection/environment ранее синхронизированы с существующим API. Это не отметка о прохождении сценариев.
-- [ ] Postman для новых DTO группы 4B уже обновлён; пройти Auth/Profile → Deck/Create/List/Mine → Manual Card → Public Detail → Enroll → Learning/List/Details → Study/Review → повторное чтение progress, проверить ключевые success/error assertions и записать результат.
+- [x] Postman для новых DTO группы 4B обновлён и повторно прогнан 2026-10-08 на локальном Spring/PostgreSQL: Auth/Profile → Deck/Create/List/Mine → Manual Card → Public Detail → Enroll → повторный Learning/List → Details → Study/Review → повторное чтение progress. Newman: 38 requests, 32 assertions, 0 failures; изолированные тестовые данные удалены Cleanup-запросами. Enroll прямо проверяет `201` и обязательный положительный `userDeckId`, а post-enroll Learning list — наличие новой enrollment и структуры progress; после Review повторно читаются и проверяются persisted counters. Session bootstrap до Complete Profile корректно ожидает 404, JWT больше не выводится в Newman logs.
 
-### Группа 6 — AI workflow prompts, документация и закрытие
+### Группа 6 — AI workflow skills, документация и закрытие
 
 - [x] `docs/architecture/current-architecture.md` содержит frontend architecture section.
-- [ ] Подготовить минимальные reusable prompts в предусмотренном roadmap каталоге `ai-workflows/`: review diff, suggest tests, update Postman и scoped design decision. Сначала сверить существующие skills и ссылаться на их правила, не копировать архитектурные инструкции. Это developer workflow, не prompt генерации учебной карточки.
-- [ ] Проверить применение prompts на одном завершённом изменении: они запрашивают нужный контекст, дают проверяемый результат и не объявляют непрогнанные тесты успешными.
-- [ ] Синхронизировать изменившиеся факты по владельцам: DTO — inventory/Postman; маршруты/scope — map; runtime architecture — CONVENTIONS; UI — DESIGN; learning semantics — learning-flow. В этой ревизии runtime не меняется; обновления реализации выполняются с соответствующей задачей.
-- [ ] Провести финальные frontend build/lint/format/tests и backend checks, относящиеся к изменениям. Сопоставить каждый Done Criterion с ручным результатом группы 5 либо проверкой prompts выше.
+- [x] Проверить существующие reusable workflow skills вместо отдельного каталога prompt-обёрток. 2026-10-08: `pre-commit-review`, `testing` и `design-decision` уже владеют review, test strategy и scoped decisions; Postman/documentation routing задаёт `.agents/guidance/documentation-sync.md`. По решению пользователя дублирующий `ai-workflows/` удалён.
+- [x] Проверить skills на завершённом изменении: `pre-commit-review` применён к Postman/review diff и выдал проверяемые findings, включая порядок Learning list после Enroll и утечку JWT в Newman logs; непрогнанные проверки не объявлялись успешными.
+- [x] Синхронизировать изменившиеся факты по владельцам: в ревизии Postman/skills collection flow и результаты принадлежат `LLHelper.postman_collection.json` и `current-sprint.md`; DTO, маршруты, UI и learning semantics не менялись, поэтому inventory/map/DESIGN/learning-flow не обновлялись. Отдельное решение 2026-10-08 о first-deployment routing синхронизировано в `docs/architecture/current-architecture.md`, `docs/roadmap/backlog.md` и `deploy/README.md`; production deployment ещё не выполнялся.
+- [x] Провести финальные frontend build/lint/format/tests и backend checks, относящиеся к изменениям. 2026-10-07: frontend lint, format check, 222 Vitest tests, production build и bundle budget прошли; backend `./mvnw test`: 135 tests, 0 failures/errors, 1 skipped. После усиления collection 2026-10-08 Newman повторно прошёл: 38 requests, 32 assertions, 0 failures. Done Criteria сопоставлены с их evidence: endpoint criterion — Newman, skill workflow criterion — эта группа, незакрытые UI criteria — ручной smoke группы 5.
 - [ ] Закрыть Sprint 1.0 только после всех обязательных критериев; затем перенести итоги в changelog и начать Sprint 1.1 по roadmap. Неблокирующие дальнейшие улучшения оставить в backlog.
 
 ## ✅ Done Criteria (Level 1)
@@ -205,17 +205,16 @@
 - [ ] Можно пройти Study из Learning через UI — 4E/5.
 - [ ] Per-card progress сохраняется и отображается на Learning Deck Details после refresh/повторного входа — 4E/5; отдельный aggregate Progress dashboard не требуется.
 - [ ] Можно нажать Logout, войти повторно через Login и продолжить через Learning list — 4F/5; clear session вручную не заменяет кнопку.
-- [ ] Основные endpoint flows проходят через Postman — группа 5.
-- [ ] Есть проверенные AI workflow prompts — группа 6.
+- [x] Основные endpoint flows проходят через Postman — группа 5, Newman 2026-10-08: 38 requests, 32 assertions, 0 failures.
+- [x] Проверены AI workflow skills — группа 6, `pre-commit-review` применён к завершённому Postman изменению.
 - [ ] Проектом можно пользоваться самостоятельно без ручного URL/API/localStorage — полный flow группы 5.
 
 **Приоритет выполнения:**
 
-4A–4E отмечены выполненными в checklist реализации; сквозная приёмка остаётся в группе 5. Актуальный порядок оставшихся работ:
+4A–4F и группа 6 отмечены выполненными в checklist реализации; сквозная приёмка остаётся в группе 5. Актуальный порядок оставшихся работ:
 
-1. **4F:** видимый Logout → Login → продолжение.
-2. **5:** полный пользовательский smoke и Postman с фиксацией результатов.
-3. **6:** prompts, документация, итоговые checks и закрытие. Группы 0–4 описывают уже созданный фундамент.
+1. **5:** полный пользовательский browser smoke с фиксацией результатов; Postman-часть группы уже выполнена.
+2. Сопоставить оставшиеся Done Criteria с результатами smoke, перенести итоги в changelog, закрыть Sprint 1.0 и начать Sprint 1.1. Группы 0–4 и 6 описывают уже созданный и проверенный фундамент.
 
 ## Phase 0.4 — Global Frontend Integration Audit
 

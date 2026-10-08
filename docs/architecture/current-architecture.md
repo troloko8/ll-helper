@@ -3,8 +3,8 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 1 — Vertical Full-Stack Flow
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-09-21
-> **Status:** Backend foundation complete (Level 0). Frontend Technical Foundation complete (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router, testing infrastructure). Auth/product flow screens next.
+> **Last updated:** 2026-10-08
+> **Status:** Level 1 backend and frontend vertical-flow implementation is present, including Auth/Profile, Created, Discover, Learning, Study and visible Logout. Full browser acceptance smoke remains open in `docs/roadmap/current-sprint.md`; first deployment has not started.
 
 ---
 
@@ -86,6 +86,26 @@
 │              PostgreSQL (Local / Dev)                   │
 └─────────────────────────────────────────────────────────┘
 ```
+
+### Production request routing
+
+The accepted first-deployment topology is same-origin:
+
+```text
+Browser ── https://<domain>/ ─────────▶ Nginx ──▶ Vite SPA files
+        └─ https://<domain>/api/v1/** ─▶ Nginx ──▶ Spring Boot :8080
+```
+
+- The frontend uses the relative API base URL `/api/v1`; no production domain
+  is compiled into the bundle.
+- `deploy/nginx/nginx.conf` provides the domain-independent HTTP routing and SPA
+  fallback. A real domain and TLS termination are added at deployment time.
+- Browser requests remain on one origin, so Spring CORS is intentionally not
+  enabled for this topology. If the API is later published on another origin,
+  that is a new security/deployment decision and requires an explicit origin
+  allowlist plus preflight verification.
+- Port `8080` is an internal upstream and must not be exposed publicly; only the
+  reverse proxy should accept public traffic.
 
 ---
 
@@ -491,6 +511,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
 | SQL-first custom data access | New joins, aggregations, reporting, and non-trivial filtered reads use PostgreSQL SQL. Static feature-local queries stay in the existing Spring Data repository through `@Query(nativeQuery = true)` and return minimal scalar interface projections. `NamedParameterJdbcTemplate` is reserved for dynamic SQL, batch/reporting workloads, or bespoke result mapping. Do not add JPQL/HQL or `select new` constructor projections. Native SQL behavior is verified against PostgreSQL with Testcontainers. |
 | Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/current-sprint.md` for the accepted Level 1 MVP and ordered backend/Stitch/frontend tasks. |
+| Same-origin first deployment | Nginx serves the SPA and proxies `/api/**` to the internal Spring Boot upstream. The browser uses relative `/api/v1`, so no cross-origin CORS policy is required. Domain, TLS, firewall exposure and real-origin verification remain deployment-time checks. |
 
 ### Open Decisions
 
@@ -675,7 +696,7 @@ When adding/changing an entity field:
 
 ## 20. Frontend Architecture
 
-> **Status:** The frontend foundation and Auth/Onboarding base are implemented: path aliases, strict TypeScript, Vite proxy, RTK Query, the four-state session bootstrap, session-aware route boundaries, shared UI primitives, canonical styling, Login/Register/Complete Profile screens, and Register → Complete Profile orchestration. Login orchestration and the authenticated product UI remain pending in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
+> **Status:** The frontend vertical flow is implemented through Auth/Profile, Created, Discover, Owner/Public Deck Details, Learning, Study/progress and visible Logout, on top of the Vite/TypeScript/RTK Query foundation and session-aware routing. Full browser acceptance smoke remains tracked in `docs/roadmap/current-sprint.md`; Playwright remains future infrastructure for the later E2E stage.
 > **Detailed conventions:** `frontend/CONVENTIONS.md`
 > **Hard gates:** `frontend/AGENTS.md`
 
@@ -708,7 +729,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 - RTK Query with `fetchBaseQuery` — single `createApi` base in `shared/api/`.
 - Domain endpoints injected from relevant entity/feature slices.
-- Implemented injections: `AUTH-01` in `features/login`, `AUTH-02` in `features/register`, `USER-01` in `features/complete-profile`, and `USER-07` in `entities/user`. User profile responses remain RTK Query server state rather than session-slice data.
+- Implemented endpoint slices cover Auth/Profile, owned/public decks, card creation, enrollment, Learning details/list, Study and card review. User profile and product responses remain RTK Query server state rather than session-slice data.
 - Centralized auth headers via `prepareHeaders` using a token-storage adapter in `shared/api/` (no Redux import in shared).
 - Base URL: `VITE_API_URL` → backend `/api/v1`.
 
@@ -728,17 +749,17 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 - React Router 7 with centralized configuration in `app/router/`.
 - The centralized router implements separate `AuthRoute`, `OnboardingRoute`, and `AuthenticatedRoute` layout guards driven by the four-state `entities/session` runtime model. Every route shows a blocking `PageState` during initialization; anonymous users are limited to Login/Register, `needsProfile` users to Complete Profile, and authenticated users to the product area.
 - `ApplicationErrorBoundary` wraps the full provider tree, while the root router `errorElement` renders a safe `PageState` for route loader/render failures without exposing technical details.
-- `/` and authenticated Auth/Onboarding routes redirect to the temporary `/learning` product placeholder; the remaining accepted product routes are pending.
+- `/` and authenticated Auth/Onboarding routes redirect to `/learning`; accepted product routes include `/created`, `/discover`, `/learning/:deckId`, `/decks/new`, public and owner deck details, manual card creation, and `/study/:deckId`.
 
 ### UI / Design
 
 - CSS Modules for component styles + semantic CSS variables for tokens.
 - Shared UI primitives `Button`, `Input`, `Textarea`, `Select`, `FormField`, `Skeleton`, `PageState`, `InlineError`, and `ApiErrorPresentation` are implemented and exported from `shared/ui/`.
 - `widgets/public-form-layout/` provides the responsive Auth/Onboarding layout base: a centered 420px Auth column and a mobile-first 448px Onboarding column with an optional sticky header. Session-aware route layouts and guards are implemented in `app/router/`.
-- Canonical Login and Register pages are implemented in `pages/login/` and `pages/register/` and mounted at `/login` and `/register`; their feature-owned RHF + Zod forms call `AUTH-01`/`AUTH-02` and map backend field and form errors. Register success persists the JWT, enters `needsProfile`, and navigates to `/onboarding/profile`; Login success orchestration remains pending.
+- Canonical Login and Register pages are implemented in `pages/login/` and `pages/register/` and mounted at `/login` and `/register`; their feature-owned RHF + Zod forms call `AUTH-01`/`AUTH-02` and map backend field and form errors. Register success persists the JWT, enters `needsProfile`, and navigates to `/onboarding/profile`; Login success restores the authenticated session and navigates to `/learning`.
 - Canonical Complete Profile is implemented in `pages/complete-profile/` at `/onboarding/profile`; its feature-owned form calls `USER-01`, submits the six required profile fields with `avatarUrl: null`, and renders validation/username-conflict/submitting states. Success enters `authenticated` and navigates to `/learning` while errors preserve the existing token and `needsProfile` state.
 - No external UI framework without explicit decision.
-- Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/styles/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, and application foreground/background styles are loaded at startup; responsive shell rules and screen runtime implementation remain pending.
+- Canonical color, spacing/layout, and font-family tokens from `docs/frontend/DESIGN.md` are implemented in `shared/ui/styles/tokens.css`. Bundled Geist and JetBrains Mono variable fonts, the global reset, application foreground/background styles, and responsive desktop/mobile application shell are loaded at startup.
 
 ### Testing
 
@@ -748,7 +769,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure, `entities/session`, the `entities/user` current-profile query, Login/Register/Complete Profile endpoint slices with backend-aligned Zod form schemas, shared API/UI foundations, the public-form layout widget, a not-found page, and the Register → Complete Profile route orchestration. Login orchestration and the authenticated product UI remain pending.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure; session, user, deck, card and learning entities; feature-owned Auth/Profile, create/enroll/review/manual-card actions; shared API/UI foundations; public and authenticated responsive shells; and route-level Auth/Profile, Created, Discover, deck details, Learning and Study pages. Full browser acceptance remains tracked by the current sprint rather than represented as missing runtime architecture.
 
 ---
 

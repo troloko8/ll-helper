@@ -41,7 +41,6 @@
                   "var jsonData = pm.response.json();",
                   "if (jsonData.accessToken) {",
                   "    pm.environment.set(\"authToken\", jsonData.accessToken);",
-                  "    console.log(\"authToken saved:\", jsonData.accessToken);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -109,7 +108,6 @@
                   "var jsonData = pm.response.json();",
                   "if (jsonData.accessToken) {",
                   "    pm.environment.set(\"authToken\", jsonData.accessToken);",
-                  "    console.log(\"authToken saved:\", jsonData.accessToken);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -202,7 +200,7 @@
       "name": "Users",
       "item": [
         {
-          "name": "Get Current User",
+          "name": "Get Current User (Before Profile)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -234,13 +232,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200 OK\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 404 before profile completion\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
                   "var jsonData = pm.response.json();",
-                  "if (jsonData.id) {",
-                  "    pm.environment.set(\"userId\", jsonData.id);",
-                  "}"
+                  "pm.test(\"Response explains that the profile is absent\", function () {",
+                  "    pm.expect(jsonData.message).to.be.a(\"string\");",
+                  "});"
                 ],
                 "type": "text/javascript"
               }
@@ -392,17 +390,6 @@
         {
           "name": "Get User by ID",
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "console.log(\"Auth header will be:\", \"Bearer \" + pm.environment.get(\"authToken\"));"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            },
             {
               "listen": "test",
               "script": {
@@ -1590,6 +1577,116 @@
           "response": []
         },
         {
+          "name": "Enroll Deck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response contains userDeckId\", function () {",
+                  "    pm.expect(jsonData.userDeckId).to.be.a(\"number\").and.to.be.above(0);",
+                  "});",
+                  "if (jsonData.userDeckId) {",
+                  "    pm.environment.set(\"userDeckId\", jsonData.userDeckId);",
+                  "    console.log(\"UserDeckId saved:\", jsonData.userDeckId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/{{deckId}}/enroll",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "{{deckId}}",
+                "enroll"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Learning Decks After Enroll",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var decks = pm.response.json();",
+                  "var enrolledDeck = decks.find(function (deck) {",
+                  "    return String(deck.deckId) === String(pm.environment.get(\"deckId\"));",
+                  "});",
+                  "pm.test(\"Newly enrolled deck appears in Learning list\", function () {",
+                  "    pm.expect(enrolledDeck).to.exist;",
+                  "    pm.expect(enrolledDeck.progress).to.have.all.keys(\"masteredCount\", \"totalCount\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/learning/decks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "learning",
+                "decks"
+              ]
+            },
+            "description": "Verifies that the deck created by this collection appears in the authenticated user's ACTIVE Learning list after enrollment."
+          },
+          "response": []
+        },
+        {
           "name": "Get Learning Deck Details",
           "event": [
             {
@@ -1642,54 +1739,6 @@
                 "learning",
                 "decks",
                 "{{deckId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Enroll Deck",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.userDeckId) {",
-                  "    pm.environment.set(\"userDeckId\", jsonData.userDeckId);",
-                  "    console.log(\"UserDeckId saved:\", jsonData.userDeckId);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{url}}/decks/{{deckId}}/enroll",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "api",
-                "v1",
-                "decks",
-                "{{deckId}}",
-                "enroll"
               ]
             }
           },
@@ -1799,6 +1848,63 @@
                 "cards",
                 "{{cardId}}",
                 "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Re-read Learning Deck Progress",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var deck = pm.response.json();",
+                  "var reviewedCard = deck.cards.find(function (card) {",
+                  "    return String(card.id) === String(pm.environment.get(\"cardId\"));",
+                  "});",
+                  "pm.test(\"Reviewed card progress was persisted\", function () {",
+                  "    pm.expect(reviewedCard).to.exist;",
+                  "    pm.expect(reviewedCard.progress.timesSeen).to.be.at.least(1);",
+                  "    pm.expect(reviewedCard.progress.timesCorrect + reviewedCard.progress.timesWrong).to.equal(reviewedCard.progress.timesSeen);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "description": "Re-reads the enrolled deck after review and verifies the reviewed card's persisted counters.",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/learning/decks/{{deckId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "learning",
+                "decks",
+                "{{deckId}}"
               ]
             }
           },

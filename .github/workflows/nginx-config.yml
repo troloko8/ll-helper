@@ -1,0 +1,17 @@
+name: Nginx config
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nginx-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Nginx configuration
+        run: bash deploy/check-nginx-config.sh

@@ -86,7 +86,7 @@ This section owns only the stable accepted sequence and dependency boundaries. D
 11. Frontend Public Deck Details + Enroll.
 12. Frontend Study + per-card progress display (§0.8).
 13. Close the UI reachability gaps under §0.10: validate manual creation → collection contracts → Created → Discover/Enroll → verify Study/progress → visible Logout/re-entry.
-14. Manual end-to-end UI smoke, Postman verification, reusable AI workflow prompts and sprint closure. Single-card AI is optional and does not replace manual-card verification.
+14. Manual end-to-end UI smoke, Postman verification, project AI workflow skill verification and sprint closure. Single-card AI is optional and does not replace manual-card verification.
 15. Release hardening: G-04, `CARD-04`, G-05 regression verification, and safe catch-all 500 body.
 16. First deployment.
 
