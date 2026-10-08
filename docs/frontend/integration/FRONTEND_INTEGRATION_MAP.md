@@ -4,7 +4,7 @@
 > **Scope:** documentation and analysis only. Phase 0.4C does not change backend behavior, DTOs, Stitch screens, routes, or frontend runtime code — it only records accepted product/routing decisions on top of the Phase 0.4B read-only snapshot below.
 > **Phase 0.4B date:** 2026-08-23 (repository baseline: `master` after commit `758a565`). **§2–§7 below are preserved as the historical Phase 0.4B result and are not rewritten**, except where a specific field is explicitly superseded by an accepted §0 decision (marked inline, e.g. the `/decks/:deckId` route replacing the `/discover/decks/:deckId` candidate).
 > **Phase 0.4C date:** 2026-08-24. §0 records the accepted Level 1 vertical MVP decisions; where §0 and §2–§7 disagree, §0 governs.
-> **User-requested scope revision (2026-09-20):** §0.10 supersedes the original Created/Discover deferral and direct-link-only product path. The resulting Level 1 UI and DTOs are implemented; completion evidence belongs to `docs/roadmap/changelog.md`, while the active deployment work belongs to `docs/roadmap/current-sprint.md`.
+> **User-requested scope revision (2026-09-20; ordering revised 2026-10-08):** §0.10 supersedes the original Created/Discover deferral and direct-link-only product path. The resulting Level 1 UI and DTOs are implemented; completion evidence belongs to `docs/roadmap/changelog.md`. The active Full Frontend scope belongs to `docs/roadmap/current-sprint.md`; public deployment remains a later optional release gate.
 
 ## 0. Phase 0.4C accepted decisions
 
@@ -16,7 +16,7 @@ Login, Register, Complete Profile, Learning list, Created Decks list, Create Dec
 
 ### 0.2 Accepted deferred surfaces/functions
 
-Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashboard; Edit Deck; read-only Card Details and Edit Card (implemented together with the full Card Editor after first deployment); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks. Single-card AI remains optional and cannot substitute for manual-card acceptance; runtime status belongs to the current sprint. Basic Created and Discover lists are now in scope (§0.10).
+Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashboard; Edit Deck; read-only Card Details and Edit Card (implemented together with the full Card Editor in Sprint 1.1 — Full Frontend); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks. Single-card AI remains optional and cannot substitute for manual-card acceptance; runtime status belongs to the current sprint. Basic Created and Discover lists are now in scope (§0.10).
 
 ### 0.3 Accepted route map
 
@@ -32,7 +32,7 @@ Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashb
 | `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | JWT-protected Public Deck Details; Discover now provides the implemented collection entry, while direct links remain valid. |
 | `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
 | `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
-| `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor after first deployment. |
+| `/decks/:deckId/cards/:cardId` | accepted, implementation deferred | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit; runtime ships with the full Card Editor in Sprint 1.1 — Full Frontend. |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public/Owner Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks → Public Deck Details; bounded list adaptation, §0.10. Enrollment reconciliation remains a follow-up. |
@@ -67,7 +67,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 ### 0.5 Accepted Stitch/design follow-up
 
 - [x] **Complete Profile** — canonical desktop base, mobile base, validation error, username conflict, and submitting references exist and are registered in `docs/frontend/DESIGN.md` and `docs/frontend/design-reference/MANIFEST.md`. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form).
-- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Desktop canonical reference `card_details_owner` is registered from Stitch screen `6e069c7228fd4bf3b7f6d3bf7f6a5b2d`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor until after first deployment.
+- [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; accepted read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to `/decks/:deckId/cards/:cardId/edit`. Desktop canonical reference `card_details_owner` is registered from Stitch screen `6e069c7228fd4bf3b7f6d3bf7f6a5b2d`; mobile is the documented responsive adaptation under the canonical `DESIGN.md` theme. Runtime remains deferred with the full Card Editor in Sprint 1.1 — Full Frontend.
 
 ### 0.6 Accepted backend → Stitch → frontend order
 
@@ -87,8 +87,8 @@ This section owns only the stable accepted sequence and dependency boundaries. C
 12. Frontend Study + per-card progress display (§0.8).
 13. Close the UI reachability gaps under §0.10: validate manual creation → collection contracts → Created → Discover/Enroll → verify Study/progress → visible Logout/re-entry.
 14. Manual end-to-end UI smoke, Postman verification, project AI workflow skill verification and sprint closure. Single-card AI is optional and does not replace manual-card verification.
-15. Release hardening: G-04, `CARD-04`, G-05 regression verification, and safe catch-all 500 body.
-16. First deployment.
+15. Full Frontend: complete the deferred product routes and the contracts they require.
+16. Optional release hardening and first public deployment only after Full Frontend and an explicit product decision.
 
 ### 0.7 Session state (accepted)
 
@@ -455,7 +455,7 @@ read; only confirmed `isEnrolled=true` continues as success.
 | Response DTO | `CardResponse` fields displayed as available: title, definition, translation, synonyms, and usage examples. |
 | Errors and states | Shared skeleton while loading; page-level 403/404/5xx presentation. Missing optional sections are omitted without placeholder data. |
 | Backend status | Read contract implemented; parent-deck visibility enforced by `DeckAccessPolicy`. |
-| Runtime status | **Deferred until after first deployment**, to ship with the full Card Editor rather than add a temporary navigation slice. |
+| Runtime status | **Deferred to Sprint 1.1 — Full Frontend**, to ship with the full Card Editor rather than add a temporary navigation slice. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|

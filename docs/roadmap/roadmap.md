@@ -21,8 +21,8 @@
 | --- | --- | --- |
 | Level 0 | Spring / JPA / DB / API cleanup / tests / docs | Уже можешь делать, но нужно систематизировать |
 | Level 1 | Один вертикальный full-stack flow (React + backend + auth + DB) | Начинать после backend stabilization |
-| Level 1.5 | Docker, CI, первый деплой, HTTPS, env config, health checks | Сразу после работающего вертикального flow |
-| Level 2 | Testcontainers, Swagger, security depth, полный frontend, architecture review | После первого deployment |
+| Level 2 | Полный frontend, Testcontainers, Swagger, security depth, architecture review | После вертикального flow |
+| Optional release gate | Docker, CI, первый публичный деплой, HTTPS, env config, health checks | После завершения frontend и отдельного решения о публичном релизе |
 | Level 3 | Monitoring, staging, refresh tokens, e2e, real users, AI архитектура | Логичный следующий уровень |
 | Level 4 | SaaS, payments, roles, marketplace, AI cost optimization | Далёкий advanced/product level |
 
@@ -276,17 +276,17 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 
 # Level 1 — Vertical Full-Stack Flow
 
-> **Статус:** ✅ завершён 2026-10-08; evidence и итоги — `docs/roadmap/changelog.md` → Sprint 1.0. Активный уровень — Level 1.5.
+> **Статус:** ✅ завершён 2026-10-08; evidence и итоги — `docs/roadmap/changelog.md` → Sprint 1.0. Активный уровень — Level 2 Product Completion.
 
 > **Решение (2026-07):** Level 1 начинается с одного вертикального сценария, а не с полного набора frontend-экранов.
 > Цель не красивый product — а впервые пройти полный путь: frontend → backend → auth → DB → живая система.
-> Остальные экраны (Dashboard, AI generation, Card Editor, Progress) — расширение после первого деплоя.
+> Остальные экраны (Dashboard, AI generation, Card Editor, Progress) — расширение после вертикального flow и до решения о публичном релизе.
 >
-> **Уточнение (Phase 0.4C):** внутри "Add/generate cards" в Level 1 входит только Manual Add Card; полноценный Card Editor/Edit Deck/Edit Card — после первого deployment. Single-card AI generation — optional отдельная задача после успешного manual smoke, не блокирует Level 1. Bulk AI generation — deferred. "See progress" в Level 1 реализуется как backend-provided per-card progress (per-deck отображение на экране Learning Deck Details), не полноценный aggregate Progress dashboard — тот остаётся расширением после первого деплоя. См. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 для точного MVP scope; Level 1 не расширяется до полного набора canonical screens.
+> **Уточнение (Phase 0.4C):** внутри "Add/generate cards" в Level 1 входит только Manual Add Card; полноценный Card Editor/Edit Deck/Edit Card, bulk AI generation и aggregate Progress dashboard намеренно не блокируют вертикальный flow. Они входят в последующий Full Frontend до решения о публичном релизе. Single-card AI generation — optional отдельная задача после успешного manual smoke. См. `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0 для точного MVP scope; Level 1 не расширяется до полного набора canonical screens.
 
 > **Уточнение пользовательской завершённости:** Level 1 включает базовые Created и Discover с необходимыми collection-данными и видимый local Logout, чтобы сценарий выполнялся через интерфейс без ручного URL/API/localStorage. Точный scope и ограниченная адаптация Stitch — integration map §0.10. Поиск/фильтры/пагинация Discover, полный editor и aggregate Progress остаются за пределами этого уровня. Финальный статус и evidence закрытого Sprint 1.0 находятся в `docs/roadmap/changelog.md`.
 
-**Цель:** Один работающий full-stack flow через frontend, backend, auth и database. Первый самостоятельный deployment принадлежит следующему Level 1.5.
+**Цель:** Один работающий full-stack flow через frontend, backend, auth и database. Публичный deployment не является автоматическим следующим шагом: сначала завершается Full Frontend, затем необходимость релиза принимается отдельно.
 
 Закрытие Level 1 и результаты Sprint 1.0 — `docs/roadmap/changelog.md`; стабильный scope остаётся в этом roadmap, остальные улучшения — `docs/roadmap/backlog.md`.
 
@@ -305,7 +305,7 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 9. Study a batch of up to 10 cards
 10. Submit answers
 11. See correct/wrong
-12. See progress (backend-provided per-card progress via Learning Deck Details — Level 1; aggregate Progress dashboard — after first deployment)
+12. See progress (backend-provided per-card progress via Learning Deck Details — Level 1; aggregate Progress dashboard — Full Frontend)
 13. Return later and continue (повторное открытие Learning list)
 
 Login проверяется отдельно, как повторный вход существующего пользователя (не обязателен сразу после регистрации): видимый Logout → Login → Learning list → continue. Ручная очистка сессии не заменяет пользовательское действие.
@@ -325,37 +325,16 @@ Login проверяется отдельно, как повторный вхо�
 - [x]  Проверены project AI workflow skills
 - [x]  Проектом можно пользоваться через UI без ручного URL/API/localStorage
 
-# Level 1.5 — First System Delivery
-
-> **Решение (2026-07):** Level 1.5 — новый уровень, перенесённый из Level 2.
-> Deployment должен произойти сразу после работающего вертикального flow, а не после полного frontend.
-> Первый деплой — не награда в конце обучения. Это часть обучения.
-
-**Цель:** Самостоятельно собрать, запустить и задеплоить full-stack систему. После этого уровня ты можешь сказать: *«Я спроектировал, реализовал, собрал и запустил систему»*.
-
-## ✅ Done Criteria
-
-- [ ]  Приложение доступно через интернет по HTTPS
-- [ ]  Запускается через `docker-compose up`
-- [ ]  GitHub Actions: build + tests зелёные
-- [ ]  Environment variables вынесены из кода
-- [ ]  Есть health endpoint
-- [ ]  Есть DB backup
-- [ ]  Есть README уровня «другой dev может запустить и задеплоить»
-- [ ]  Можешь объяснить pipeline без подсказки AI
-
----
-
 # Level 2 — Portfolio / Interview-ready
 
-**Цель:** Проект, который можно показывать как доказательство уровня Middle/Strong Middle.
+**Цель:** завершить продуктовый frontend и довести проект до состояния, которое можно показывать как доказательство уровня Middle/Strong Middle. После этого отдельным решением можно открыть optional release gate и выполнить первый публичный deployment.
 
 Детальные задачи Level 2 (Architecture cleanup, Database quality, Security Standards, Rate Limiting Advanced, Testing, CI, API Docs, DevOps, Frontend, AI Workflow) — см. `docs/roadmap/backlog.md`.
 
 ## ✅ Done Criteria
 
-- [ ]  Проект запускается через Docker Compose
-- [ ]  Есть README уровня "другой dev может запустить"
+- [ ]  Полный frontend завершён по активному Sprint 1.1
+- [ ]  Проект запускается локально документированным способом
 - [ ]  Есть Swagger / OpenAPI документация
 - [ ]  Есть Liquibase migrations
 - [ ]  Есть integration tests

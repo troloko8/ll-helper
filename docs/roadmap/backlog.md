@@ -18,17 +18,24 @@
 4. Created → Create deck + Manual Add Card
 5. Discover → Public Deck Details → Enroll → Study → See progress → Logout/Login
 
-### Sprint 1.1 — First Deployment (Level 1.5)
+### Future release gate — First Public Deployment (optional, after Full Frontend)
 
-> **Цель:** Сразу после работающего вертикального flow — собрать и запустить систему в интернете.
-> Этот раздел — нормативный список будущей deployment-работы. При старте Sprint 1.1 активный чеклист и фактические результаты проверок переносятся в `current-sprint.md`; реализованная runtime-схема после проверки синхронизируется с `docs/architecture/current-architecture.md`. Стабильные правила кеширования не дублируются здесь и остаются в `frontend/CONVENTIONS.md`.
+> **Цель:** после завершения полного frontend и явного решения о публичном
+> релизе собрать и запустить систему в интернете. Это не следующий спринт по
+> умолчанию и не критерий закрытия Sprint 1.0. При старте выбранного release
+> sprint активный чеклист и фактические результаты проверок переносятся в
+> `current-sprint.md`; реализованная runtime-схема после проверки
+> синхронизируется с `docs/architecture/current-architecture.md`. Стабильные
+> правила кеширования не дублируются здесь и остаются в
+> `frontend/CONVENTIONS.md`.
 
 #### Gate перед началом deployment
 
 - [x] Sprint 1.0 закрыт 2026-10-08: обязательный UI/Postman flow пройден, блокирующие дефекты в smoke не обнаружены, frontend/backend checks и повторный Newman зафиксированы в `docs/roadmap/changelog.md`.
+- [ ] Full Frontend завершён, а необходимость публичного URL подтверждена отдельным продуктовым решением.
 - [ ] Выбраны hosting/platform, домен и схема runtime: где завершается TLS, где работает reverse proxy, где запускаются frontend, backend и PostgreSQL.
 
-> Базовая origin-схема уже принята: один публичный HTTPS origin, frontend использует `VITE_API_URL=/api/v1`, а reverse proxy направляет `/api/**` в backend. В Sprint 1.1 требуется реализовать и проверить это решение на выбранной платформе, а не принимать его повторно.
+> Базовая origin-схема уже принята: один публичный HTTPS origin, frontend использует `VITE_API_URL=/api/v1`, а reverse proxy направляет `/api/**` в backend. При входе в этот future release gate требуется реализовать и проверить это решение на выбранной платформе, а не принимать его повторно.
 
 - [ ] Подтверждено, что выбранная платформа поддерживает принятую same-origin схему. Если платформа вынуждает перейти на cross-origin API, решение обновлено, явный CORS-контракт настроен и проверен из браузера с production frontend origin; успешный dev-proxy запрос не считается доказательством CORS.
 
@@ -74,20 +81,20 @@
 - [ ] Выполнены backup и restore verification; результат, дата и использованная процедура записаны в активном `current-sprint.md` без credentials.
 - [ ] Выполнен rollback/redeploy предыдущей рабочей версии либо документирован и проверен эквивалентный механизм hosting platform.
 
-#### После первого релиза — не блокирует Level 1.5
+#### После первого публичного релиза — не блокирует release gate
 
 - [ ] Добавить request correlation между reverse proxy и backend logs.
 - [ ] Добавить метрики, внешнюю availability-проверку и алерты по health/error rate.
 - [ ] Подключить централизованное хранение и поиск логов с retention/redaction policy.
 - [ ] Автоматизировать регулярную restore drill и документировать recovery objectives после появления реальных требований.
 
-### Sprint 1.2 — Architecture Documentation
+### Future — Architecture Documentation
 
 1. Создать ER-диаграмму текущей схемы БД (Mermaid, в `docs/database/relationships.md`), показать Content Layer + Learning Layer, включая реальные `CASCADE` и `NO ACTION` правила (см. `relationships.md` §6.3)
 2. Обновить `docs/architecture/current-architecture.md` с ссылкой на ER-диаграмму
 3. Подготовить архитектурную схему для портфолио/собеседований
 
-### Sprint 1.3 — AI Workflow & Agent Infrastructure
+### Future — AI Workflow & Agent Infrastructure
 
 > ✅ **Существенно выполнено 2026-07-30**, вне исходного порядка (см. `changelog.md` → "AI Infrastructure Reorganization"). Ниже — то, что осталось после реорганизации.
 
@@ -157,7 +164,7 @@
 
 Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3/§0.10. Базовые Created/Discover, cardCount для коллекций, isEnrolled для Discover и видимый local Logout включены в текущий спринт; здесь повторно не планируются.
 
-Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2): Discover search/filter/sort/load-more · Creator Profile · aggregate Progress dashboard · Edit Deck/Edit Card (Card Editor, после первого deployment) · bulk AI · pagination · refresh token · backend logout · social/bookmarks/cover/topic metadata. Single-card AI — optional, статус реализации в current sprint; его успешная проверка не заменяет manual smoke.
+Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2) перенесены в активный Sprint 1.1 — Full Frontend. Single-card AI остаётся optional и его успешная проверка не заменяет manual smoke.
 
 Архитектура: FSD (`app/pages/widgets/features/entities/shared`), см. `frontend/CONVENTIONS.md`.
 

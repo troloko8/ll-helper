@@ -4,7 +4,7 @@
 
 ## Sprint 1.0 — Vertical Flow ✅ COMPLETE
 
-**Done:** 2026-10-08. **Next sprint:** Sprint 1.1 — First Deployment (Level 1.5).
+**Done:** 2026-10-08. **Next sprint:** Sprint 1.1 — Full Frontend. The originally planned immediate deployment was later moved to an optional release gate after product completion.
 
 - Через UI подтверждён полный flow: Register → Complete Profile → Created → public Deck → Manual Add Card → Owner Deck Details → Discover → Public Deck Details → Enroll → Learning → Study → persisted progress → Logout/Login.
 - Проверены refresh защищённых Created/Learning Details, повторный вход и второй аккаунт: private deck скрыта от другого пользователя, public deck находится и enrol-ится. Текущая private-owner enrollment политика (`403`) сохранена как отдельная deferred-задача, без ослабления privacy границ.

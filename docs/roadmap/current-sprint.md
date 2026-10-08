@@ -1,70 +1,78 @@
 # Current Sprint
 
-> Level 1.5 — First System Delivery. Full roadmap: `docs/roadmap/roadmap.md`.
-> Completed Sprint 1.0 evidence: `docs/roadmap/changelog.md`. Deferred work:
-> `docs/roadmap/backlog.md`.
+> Level 2 — Product Completion. Full roadmap: `docs/roadmap/roadmap.md`.
+> Completed Sprint 1.0 evidence: `docs/roadmap/changelog.md`. Future release
+> work and deferred tasks: `docs/roadmap/backlog.md`.
 
-## Sprint 1.1 — First Deployment
+## Sprint 1.1 — Full Frontend
 
-**Goal:** reproducibly build, run, and deploy LLHelper behind one public HTTPS
-origin, without exposing Spring Boot or PostgreSQL directly to the internet.
+**Goal:** complete the agreed product frontend before deciding whether LLHelper
+needs a public deployment. Sprint 1.0 proved the end-to-end flow; this sprint
+turns that vertical slice into a complete, coherent application rather than
+starting hosting, HTTPS, Docker, or release operations prematurely.
 
-**Starting point (2026-10-08):** Sprint 1.0 is complete. The frontend already
-uses relative `VITE_API_URL=/api/v1`; a domain-independent Nginx draft and a
-local/CI `nginx -t` check exist. No production Dockerfiles, Compose runtime,
-domain, TLS configuration, hosting platform, or public deployment has been
-verified yet.
+**Starting point (2026-10-08):** Sprint 1.0 is complete: Register → Complete
+Profile → Created → Discover → Enroll → Learning → Study → persisted progress
+→ Logout/Login works locally through the UI. Its evidence is recorded in
+`docs/roadmap/changelog.md`.
 
-**Completed product follow-up (2026-10-08):** owner enrollment for a private
-deck is implemented without expanding the deployment Done Criteria. Owners can
-enroll and study their own private decks; non-owners still receive `403` and
-private decks remain excluded from Discover and other users' Created lists.
-Backend, owner UI, automated tests, API inventory and Postman cases are synced.
-The full local Newman regression passed on 2026-10-08: 45 requests and 42
-assertions, including owner-private `201` with required `userDeckId`, non-owner
-`403`, persisted progress reread and cleanup, with 0 failures.
+**Scope boundary:** public deployment is explicitly out of scope. The existing
+deployment checklist stays in `docs/roadmap/backlog.md` as a future, optional
+release gate after the frontend is complete and its purpose is agreed. Local
+production builds and the existing Nginx syntax check remain useful developer
+checks, but do not start hosting or imply a public release.
 
-**Accepted topology:** Browser → HTTPS reverse proxy → SPA and `/api/v1/**` →
-internal Spring Boot `:8080`. This same-origin topology does not need Spring
-CORS. A switch to a separate API origin requires an explicit allowlist and
-browser preflight verification before release.
+### Product surfaces
 
-### Gate before deployment work
+- [ ] Implement Card Details and the complete Card Editor: view, edit and
+  delete cards from Owner Deck Details, with truthful loading, validation,
+  error and destructive-confirmation states.
+- [ ] Implement Edit Deck, including prefill, validation, visibility mapping,
+  save and delete behavior.
+- [ ] Complete Discover: search, filters, sorting and pagination/load-more;
+  add only controls backed by an agreed API contract.
+- [ ] Implement Creator Profile and its public-deck collection.
+- [ ] Implement the aggregate Progress dashboard across a user's decks.
+- [ ] Complete the remaining product metadata and interactions that have an
+  approved design and contract: topic/level metadata, cover imagery and
+  bookmarks/social surfaces where they remain in the accepted frontend scope.
 
-- [x] Sprint 1.0 closed: UI/Postman flow passed and final checks are recorded in `docs/roadmap/changelog.md`.
-- [ ] Choose hosting/platform, public domain, TLS termination, and runtime placement for reverse proxy, frontend, backend, and PostgreSQL.
-- [ ] Confirm that the chosen platform supports the accepted same-origin topology; if it does not, document and implement a separate-origin CORS contract before release.
+### Session, learning and content experience
 
-### Build, runtime, and network
+- [ ] Define and implement a `currentUser` freshness/invalidation policy.
+- [ ] Add refresh-token and backend-logout behavior with a documented browser
+  session contract.
+- [ ] Complete learning scheduling (`nextReviewAt`) and expose any required UI
+  state without changing learning semantics implicitly.
+- [ ] Implement bulk AI generation and an actionable partial-failure UX.
+- [ ] Resolve remaining content/learning list pagination contracts before a UI
+  depends on them.
 
-- [ ] Add reproducible production Dockerfiles for backend and frontend without secrets in image layers.
-- [ ] Add Docker Compose for reverse proxy, backend, and PostgreSQL with health checks, persistent DB storage, and explicit internal networks.
-- [ ] Publish only the HTTPS reverse-proxy/platform ports; keep Spring Boot `:8080` and PostgreSQL private.
-- [ ] Configure production profile, environment variables, secrets handling, Liquibase startup, and a non-sensitive health/readiness endpoint.
+### Supporting product work
 
-### Reverse proxy and HTTP contract
+- [ ] Implement only the backend endpoints, DTOs, validation and tests needed
+  by the selected frontend surface; update their normative API and feature
+  documentation in the same change.
+- [ ] Keep all implemented routes reachable through the application shell,
+  responsive and keyboard-accessible, with loading, empty, error and retry
+  states.
+- [ ] Add proportionate frontend and backend regression coverage as each
+  surface is completed.
+- [ ] Reconcile this checklist against `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`
+  before starting each surface; record newly accepted scope there rather than
+  inventing uncontracted UI.
 
-- [ ] Adapt `deploy/nginx/nginx.conf` to the selected hosting and final upstream; run `nginx -t` in the release image before reload/restart.
-- [ ] Configure HTTPS, HTTP-to-HTTPS redirect, certificate renewal, trusted forwarded headers, explicit body limits, and bounded proxy timeouts.
-- [ ] Verify the frontend cache contract on the real origin: immutable hashed assets, revalidated HTML/SPA fallback, non-cacheable authenticated API, actual `404` for missing chunks, and availability of previous hashed assets during rollout.
+## ✅ Done Criteria (Full Frontend)
 
-### Delivery, safety, and release verification
+- [ ] The deferred product routes and interactions above are implemented or
+  explicitly re-scoped by an accepted product decision.
+- [ ] Every shipped frontend surface has an honest API contract, responsive
+  behavior and loading/empty/error states.
+- [ ] Authenticated session behavior, content editing, Discover, creator and
+  aggregate-progress paths are usable through visible UI navigation.
+- [ ] Relevant automated checks and manual UI regressions pass.
+- [ ] The product is reviewed as a complete local application before any
+  decision to enter the optional public-release gate.
 
-- [ ] Add GitHub Actions checks for frontend build/lint/format/tests and release-relevant backend checks; require green checks before deployment.
-- [ ] Configure structured logs without JWTs, passwords, API keys, or full sensitive payloads; verify no sensitive values in application, proxy, or CI logs.
-- [ ] Configure database backup outside runtime storage, perform a restore drill, and verify rollback/redeploy of the previous version.
-- [ ] From a clean environment, build and run the system with the documented command; health checks become healthy.
-- [ ] Verify public HTTPS, closed backend/PostgreSQL ports, `/api/**` proxy, cache headers, direct-route fallback, and timeout/body-limit behavior.
-- [ ] Repeat the completed Sprint 1.0 UI flow through the production origin, including logout/login, refresh, and persisted learning progress.
-
-## ✅ Done Criteria (Level 1.5)
-
-- [ ] Application is accessible on the internet through HTTPS.
-- [ ] The system starts through Docker Compose.
-- [ ] GitHub Actions build and test checks are green.
-- [ ] Environment variables and secrets are external to code, image layers, and frontend bundles.
-- [ ] A non-sensitive health endpoint is used by the deployment platform.
-- [ ] Backup, restore, and rollback are verified.
-- [ ] Deployment runbook lets another developer build, run, and deploy the system.
-
-Detailed future and non-blocking work remains in `docs/roadmap/backlog.md`.
+Detailed future release work and non-current technical debt remain in
+`docs/roadmap/backlog.md`.
