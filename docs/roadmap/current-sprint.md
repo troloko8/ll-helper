@@ -1,96 +1,86 @@
-# Current Sprint
+# Текущий спринт
 
-> Level 2 — Product Completion. Full roadmap: `docs/roadmap/roadmap.md`.
-> Completed Sprint 1.0 evidence: `docs/roadmap/changelog.md`. Future release
-> work and deferred tasks: `docs/roadmap/backlog.md`.
+> Общий план: `docs/roadmap/roadmap.md`.
+> Завершённые спринты: `docs/roadmap/changelog.md`.
+> Будущие уровни, отложенные задачи и необязательный публичный релиз:
+> `docs/roadmap/backlog.md`.
 
-## Sprint 1.1 — Full Frontend
+## Sprint 1.1 — Полный фронтенд
 
-**Goal:** complete the agreed product frontend before deciding whether LLHelper
-needs a public deployment. Sprint 1.0 proved the end-to-end flow; this sprint
-turns that vertical slice into a complete, coherent application rather than
-starting hosting, HTTPS, Docker, or release operations prematurely.
+**Цель:** завершить основные продуктовые страницы и пользовательские состояния
+по принятому Stitch-дизайну, чтобы LLHelper был цельным локальным приложением.
+Публичный deployment не входит в этот спринт и рассматривается отдельно только
+после завершения frontend.
 
-**Starting point (2026-10-08):** Sprint 1.0 is complete: Register → Complete
-Profile → Created → Discover → Enroll → Learning → Study → persisted progress
-→ Logout/Login works locally through the UI. Its evidence is recorded in
-`docs/roadmap/changelog.md`.
+**Источник дизайна:** `docs/frontend/DESIGN.md` описывает общий визуальный
+контракт, `docs/frontend/design-reference/MANIFEST.md` — актуальные ресурсы
+Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — принятые
+маршруты и границы backend-контрактов. Prototype-only элементы не становятся
+фичами автоматически.
 
-**Scope boundary:** public deployment is explicitly out of scope. The existing
-deployment checklist stays in `docs/roadmap/backlog.md` as a future, optional
-release gate after the frontend is complete and its purpose is agreed. Local
-production builds and the existing Nginx syntax check remain useful developer
-checks, but do not start hosting or imply a public release.
+### 1. Проверка уже реализованного frontend
 
-### Product surfaces
+- [ ] Сверить реализованные `/login`, `/register`, `/onboarding/profile`,
+  `/created`, `/discover`, `/decks/new`, owner/public Deck Details, `/learning`,
+  Learning Deck Details и `/study` с соответствующими desktop/mobile экранами
+  и состояниями из Stitch; исправить существенные расхождения.
+- [ ] Проверить единый app shell, навигацию, адаптивность, клавиатурную
+  доступность и видимость всех реализованных маршрутов из интерфейса.
+- [ ] Для существующих страниц подтвердить loading, empty/no-results, API error,
+  retry, validation, submitting и conflict states там, где они предусмотрены
+  manifest и реальным API-контрактом.
 
-- [ ] Implement Card Details and the complete Card Editor: view at
-  `/decks/:deckId/cards/:cardId`, edit at
-  `/decks/:deckId/cards/:cardId/edit`, and delete from Owner Deck Details,
-  with truthful loading, validation, error and destructive-confirmation states.
-- [ ] Implement Edit Deck at `/decks/:deckId/edit`, including prefill,
-  validation, visibility mapping, save and delete behavior.
-- [ ] Complete Discover: search, filters, sorting and pagination/load-more;
-  add only controls backed by an agreed API contract.
-- [ ] Implement Creator Profile and its public-deck collection at
+### 2. Основные недостающие страницы и функции
+
+- [ ] Реализовать Card Details по маршруту
+  `/decks/:deckId/cards/:cardId` и полный Card Editor по маршруту
+  `/decks/:deckId/cards/:cardId/edit`, включая редактирование, удаление,
+  подтверждение destructive action и честные loading/validation/error states.
+- [ ] Реализовать Edit Deck по маршруту `/decks/:deckId/edit`: загрузка текущих
+  данных, validation, visibility mapping, сохранение и удаление.
+- [ ] Завершить Discover: поиск, фильтры, сортировка и pagination/load-more.
+  Показывать только те controls, которые поддержаны согласованным API.
+- [ ] Реализовать Creator Profile и список публичных колод автора по маршруту
   `/creators/:username`.
-- [ ] Implement the aggregate Progress dashboard across a user's decks at
-  `/progress`.
+- [ ] Реализовать общий Progress dashboard по маршруту `/progress`.
+- [ ] Завершить bulk AI generation в Card Editor и показать частичный результат
+  без silent skip: созданные карточки отдельно от неуспешных с причиной ошибки.
 
-### Stitch fidelity and state coverage
+### 3. Покрытие состояний Stitch
 
-- [ ] Audit every canonical screen in
-  `docs/frontend/design-reference/MANIFEST.md` against the implementation and
-  repair material layout, navigation or responsive gaps. Desktop and mobile
-  references are one feature, not separate optional pages.
-- [ ] Implement or verify the explicit state matrix from the manifest:
-  loading, API error and empty/no-results states for Learning, Created,
-  Discover, Owner Deck Details and Progress; validation, conflict, submitting
-  and submission-error states for the relevant forms; and loading, API error,
-  all-caught-up and session-complete states for Study.
-- [ ] Use responsive adaptations where Stitch has no mobile reference (Card
-  Details and Edit Deck); do not treat the missing mobile Edit Deck asset as
-  permission to omit the mobile experience.
-- [ ] Do not promote prototype-only social controls, ratings, likes, follows or
-  bookmarks into product scope without a separate accepted API/product decision.
+- [ ] Для Learning, Created, Discover, Owner Deck Details и Progress реализовать
+  или подтвердить canonical loading, API error и empty/no-results states.
+- [ ] Для Create/Edit Deck и Add/Edit Card реализовать canonical validation,
+  conflict, submitting и submission-error states.
+- [ ] Для Study подтвердить loading, API error, all-caught-up и
+  session-complete states без изменения принятой learning-семантики.
+- [ ] Где отдельного mobile-экрана в Stitch нет, сделать адаптивную версию из
+  desktop reference по общему design system; отсутствие mobile Edit Deck или
+  Card Details не означает, что mobile experience можно пропустить.
+- [ ] Не реализовывать prototype-only social controls, ratings, likes, follows
+  и bookmarks без отдельного продуктового решения и API-контракта.
 
-### Session, learning and content experience
+### 4. Контракты и качество
 
-- [ ] Define and implement a `currentUser` freshness/invalidation policy.
-- [ ] Add refresh-token and backend-logout behavior with a documented browser
-  session contract.
-- [ ] Complete learning scheduling (`nextReviewAt`) and expose any required UI
-  state without changing learning semantics implicitly.
-- [ ] Implement bulk AI generation and an actionable partial-failure UX.
-- [ ] Resolve remaining content/learning list pagination contracts before a UI
-  depends on them.
+- [ ] Определить и реализовать политику актуальности/инвалидации `currentUser`.
+- [ ] Добавить только те backend endpoints, DTO, validation и тесты, которые
+  необходимы выбранным frontend-страницам: Card Details/Edit, Creator Profile,
+  aggregate Progress, Discover query contract и честный bulk AI result.
+- [ ] После mutations корректно инвалидировать связанные списки, details и
+  progress; не маскировать отсутствие backend-возможности локальным mock state.
+- [ ] Добавить соразмерные frontend/backend regression tests для новых
+  пользовательских сценариев и выполнить ручную desktop/mobile проверку.
+- [ ] При изменении API или feature flow синхронно обновить нормативные docs,
+  Postman и integration map.
 
-### Supporting product work
+## ✅ Критерии завершения Sprint 1.1
 
-- [ ] Implement only the backend endpoints, DTOs, validation and tests needed
-  by the selected frontend surface; update their normative API and feature
-  documentation in the same change.
-- [ ] Keep all implemented routes reachable through the application shell,
-  responsive and keyboard-accessible, with loading, empty, error and retry
-  states.
-- [ ] Add proportionate frontend and backend regression coverage as each
-  surface is completed.
-- [ ] Reconcile this checklist against `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`
-  before starting each surface; record newly accepted scope there rather than
-  inventing uncontracted UI.
-
-## ✅ Done Criteria (Full Frontend)
-
-- [ ] Every canonical Stitch page and state in the manifest is implemented,
-  verified as already complete, or explicitly re-scoped by an accepted product
-  decision.
-- [ ] Every shipped frontend surface has an honest API contract, responsive
-  behavior and loading/empty/error states.
-- [ ] Authenticated session behavior, content editing, Discover, creator and
-  aggregate-progress paths are usable through visible UI navigation.
-- [ ] Relevant automated checks and manual UI regressions pass.
-- [ ] The product is reviewed as a complete local application before any
-  decision to enter the optional public-release gate.
-
-Detailed future release work and non-current technical debt remain in
-`docs/roadmap/backlog.md`.
+- [ ] Каждая принятая canonical страница и состояние Stitch либо реализованы и
+  проверены, либо явно исключены отдельным продуктовым решением.
+- [ ] Все основные frontend-маршруты доступны через видимую навигацию и имеют
+  адаптивное поведение, loading/empty/error states и честный API-контракт.
+- [ ] Создание и редактирование колод/карточек, Discover, Creator Profile,
+  aggregate Progress и Study работают как цельный пользовательский продукт.
+- [ ] Автоматические проверки и ручная desktop/mobile регрессия проходят.
+- [ ] После закрытия спринта отдельно решено, нужен ли публичный release gate;
+  незавершённый deployment не мешает закрытию Sprint 1.1.

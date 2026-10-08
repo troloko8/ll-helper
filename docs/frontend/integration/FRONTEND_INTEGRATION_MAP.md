@@ -14,9 +14,18 @@ This section supersedes the "candidate, not accepted" status stated in §1 item 
 
 Login, Register, Complete Profile, Learning list, Created Decks list, Create Deck, Owner Deck Details, Manual Add Card, Discover public list, Public Deck Details + Enroll, Learning Deck Details, Study, and a visible local Logout action. Created/Discover/Logout UI completion is governed by §0.10.
 
-### 0.2 Accepted deferred surfaces/functions
+### 0.2 Post-Level-1 surfaces/functions
 
-Discover search/filter/sort/load-more; Creator Profile; aggregate Progress dashboard; Edit Deck; read-only Card Details and Edit Card (implemented together with the full Card Editor in Sprint 1.1 — Full Frontend); bulk AI generation; advanced AI partial-failure UX; pagination; refresh token; backend logout; social/ratings/likes/bookmarks. Single-card AI remains optional and cannot substitute for manual-card acceptance; runtime status belongs to the current sprint. Basic Created and Discover lists are now in scope (§0.10).
+Sprint 1.1 — Full Frontend includes Discover search/filter/sort/load-more;
+Creator Profile; aggregate Progress dashboard; Edit Deck; read-only Card Details
+and Edit Card; bulk AI generation with an actionable partial-failure UX; and
+the pagination contracts required by those screens. Basic Created and Discover
+lists were completed in Level 1 (§0.10).
+
+Refresh token, backend logout, social/ratings/likes/bookmarks and pagination not
+required by a Sprint 1.1 screen remain deferred. Single-card AI remains optional
+and cannot substitute for manual-card acceptance. Runtime status belongs only to
+`docs/roadmap/current-sprint.md`.
 
 ### 0.3 Accepted route map
 
@@ -61,8 +70,16 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] G-05 private visibility protection for `GET /decks/{id}` and `GET /cards/{id}`
 - [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
-**Deferred backend capabilities** (no accepted MVP flow depends on them):
-- Discover search; aggregate Progress endpoint; creator-public-decks endpoint; bulk AI failed-titles response; pagination; refresh token; backend logout. Collection `cardCount`, public-list owner and `isEnrolled` are implemented. Replacing the full public-list `UserResponse owner` with a compact representation is a follow-up. DECK-06 supplies the owner-scoped base collection with `cardCount`.
+**Post-Level-1 backend capabilities:**
+- Sprint 1.1 requires Discover search/query support, aggregate Progress,
+  creator-public-decks, bulk AI failed-titles response, and pagination needed by
+  its selected screens.
+- Refresh token, backend logout and unrelated pagination remain deferred beyond
+  Sprint 1.1.
+- Collection `cardCount`, public-list owner and `isEnrolled` are implemented.
+  Replacing the full public-list `UserResponse owner` with a compact
+  representation is a follow-up. DECK-06 supplies the owner-scoped base
+  collection with `cardCount`.
 
 ### 0.5 Accepted Stitch/design follow-up
 

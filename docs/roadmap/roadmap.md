@@ -242,7 +242,8 @@ Level 4 — это уже не учебный pet project. Это почти Saa
 
 ## Тесты: бизнес-ядро
 
-Core test coverage на Level 0 (актуальный список — `docs/roadmap/current-sprint.md`):
+Core test coverage Level 0, завершённый состав которого зафиксирован в
+`docs/roadmap/changelog.md`:
 - `LearningServiceImplTest` (enroll, review, status transitions)
 - `AiResponseParserTest`
 - `UserRateLimiterTest`, ownership forbidden-сценарии, bulk validation
@@ -276,7 +277,7 @@ Core test coverage на Level 0 (актуальный список — `docs/roa
 
 # Level 1 — Vertical Full-Stack Flow
 
-> **Статус:** ✅ завершён 2026-10-08; evidence и итоги — `docs/roadmap/changelog.md` → Sprint 1.0. Активный уровень — Level 2 Product Completion.
+> **Статус:** ✅ завершён 2026-10-08; evidence и итоги — `docs/roadmap/changelog.md` → Sprint 1.0.
 
 > **Решение (2026-07):** Level 1 начинается с одного вертикального сценария, а не с полного набора frontend-экранов.
 > Цель не красивый product — а впервые пройти полный путь: frontend → backend → auth → DB → живая система.
@@ -329,11 +330,15 @@ Login проверяется отдельно, как повторный вхо�
 
 **Цель:** завершить продуктовый frontend и довести проект до состояния, которое можно показывать как доказательство уровня Middle/Strong Middle. После этого отдельным решением можно открыть optional release gate и выполнить первый публичный deployment.
 
+Level — это milestone готовности продукта, а sprint — ограниченный набор текущих
+работ. Sprint 1.1 закрывает frontend-часть этого milestone, но сам по себе не
+означает, что весь Level 2 уже активирован или завершён.
+
 Детальные задачи Level 2 (Architecture cleanup, Database quality, Security Standards, Rate Limiting Advanced, Testing, CI, API Docs, DevOps, Frontend, AI Workflow) — см. `docs/roadmap/backlog.md`.
 
 ## ✅ Done Criteria
 
-- [ ]  Полный frontend завершён по активному Sprint 1.1
+- [ ]  Полный frontend завершён
 - [ ]  Проект запускается локально документированным способом
 - [ ]  Есть Swagger / OpenAPI документация
 - [ ]  Есть Liquibase migrations

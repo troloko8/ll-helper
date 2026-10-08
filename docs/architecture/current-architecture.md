@@ -1,10 +1,7 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Current level:** Level 1.5 — First System Delivery
-> **Current sprint:** see `docs/roadmap/current-sprint.md`
 > **Last updated:** 2026-10-08
-> **Status:** Level 1 vertical flow is complete, including Auth/Profile, Created, Discover, Learning, Study, persisted progress and visible Logout. Sprint 1.1 prepares the first deployment; no production deployment has started.
 
 ---
 
@@ -16,9 +13,7 @@
 
 ---
 
-## 2. Current Level / Scope
-
-**Level 1.5 — First System Delivery**
+## 2. Implemented Scope
 
 **Backend (Level 0 — complete):**
 - ✅ Spring Boot backend with JWT authentication
@@ -30,7 +25,7 @@
 - ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V12 defined; V11 adds G-06 enrollment ordering support, V12 indexes deck-card aggregation)
 - ⏸ Additional performance indexes deferred to Level 2
 
-**Frontend (Level 1 — complete):**
+**Frontend (implemented vertical flow and foundations):**
 - ✅ React/TypeScript/Vite scaffold initialized
 - ✅ Frontend architecture decisions approved and documented
 - ✅ Technical Foundation scaffold/config normalization (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router)
@@ -40,12 +35,9 @@
 - ✅ Learning details, Study and persisted per-card progress flow
 - ✅ Browser-verified Level 1 vertical flow, logout/login, refresh, responsive and keyboard/error states
 
-**Current Level 1.5 scope:**
-- Production Dockerfiles and Docker Compose runtime
-- Same-origin HTTPS reverse proxy and deployment hardening
-- CI, health checks, backup/restore and rollback verification
-
-**Still out of scope:**
+**Not implemented in the current architecture:**
+- Complete product frontend from the canonical Stitch references
+- Public production deployment and verified production runtime
 - OpenAPI/Swagger (Level 2)
 - Refresh tokens (Level 3)
 
@@ -91,9 +83,9 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Production request routing
+### Accepted release topology (not yet deployed)
 
-The accepted first-deployment topology is same-origin:
+The accepted topology for a possible first deployment is same-origin:
 
 ```text
 Browser ── https://<domain>/ ─────────▶ Nginx ──▶ Vite SPA files
@@ -774,7 +766,7 @@ Dependency direction: `app` → `pages` → `widgets` → `features` → `entiti
 
 ### Current Scaffold State
 
-The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure; session, user, deck, card and learning entities; feature-owned Auth/Profile, create/enroll/review/manual-card actions; shared API/UI foundations; public and authenticated responsive shells; and route-level Auth/Profile, Created, Discover, deck details, Learning and Study pages. Sprint 1.0 browser acceptance is complete; the active sprint now tracks the first deployment rather than unfinished frontend runtime.
+The legacy Vite/template structure and non-standard frontend directories have been removed. The current FSD runtime contains app/store/router/error infrastructure; session, user, deck, card and learning entities; feature-owned Auth/Profile, create/enroll/review/manual-card actions; shared API/UI foundations; public and authenticated responsive shells; and route-level Auth/Profile, Created, Discover, deck details, Learning and Study pages. Sprint 1.0 browser acceptance is recorded in `docs/roadmap/changelog.md`; active work is owned exclusively by `docs/roadmap/current-sprint.md`.
 
 ---
 

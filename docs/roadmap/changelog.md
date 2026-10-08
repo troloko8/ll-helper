@@ -2,15 +2,17 @@
 
 История завершённых спринтов. Текущие задачи: `docs/roadmap/current-sprint.md`. Общий план: `docs/roadmap/roadmap.md`.
 
-## Sprint 1.0 — Vertical Flow ✅ COMPLETE
+## Sprint 1.0 — Vertical Flow ✅ ЗАВЕРШЁН
 
-**Done:** 2026-10-08. **Next sprint:** Sprint 1.1 — Full Frontend. The originally planned immediate deployment was later moved to an optional release gate after product completion.
+**Завершён:** 2026-10-08. **Следующий спринт:** Sprint 1.1 — Полный
+фронтенд. Ранее запланированный немедленный deployment перенесён в отдельный
+необязательный release gate после завершения frontend.
 
 - Через UI подтверждён полный flow: Register → Complete Profile → Created → public Deck → Manual Add Card → Owner Deck Details → Discover → Public Deck Details → Enroll → Learning → Study → persisted progress → Logout/Login.
 - Проверены refresh защищённых Created/Learning Details, повторный вход и второй аккаунт: private deck скрыта от другого пользователя, public deck находится и enrol-ится. Текущая private-owner enrollment политика (`403`) сохранена как отдельная deferred-задача, без ослабления privacy границ.
 - Desktop/mobile/keyboard, empty/error/retry states проверены пользователем; блокирующих дефектов в изменённых переходах не найдено.
 - Newman для DTO группы 4B: 38 requests, 32 assertions, 0 failures. Collection больше не логирует JWT; Enroll прямо проверяет `201` и `userDeckId`, а Learning list/progress перечитываются после enrollment/review.
-- Frontend lint, format check, 222 Vitest tests, production build и bundle budget прошли; backend `./mvnw test`: 135 tests, 0 failures/errors, 1 skipped. Nginx draft прошёл локальный `nginx -t`; production proxy/HTTPS не проверялись и принадлежат Sprint 1.1.
+- Frontend lint, format check, 222 Vitest tests, production build и bundle budget прошли; backend `./mvnw test`: 135 tests, 0 failures/errors, 1 skipped. Nginx draft прошёл локальный `nginx -t`; production proxy/HTTPS не проверялись и относятся к будущему необязательному release gate.
 - Level 1 Study сохраняет per-card progress, но намеренно не восстанавливает точную позицию незавершённой queue после refresh/re-login; это требует отложенной модели `StudySession`.
 
 ## Sprint 0.1 — Architecture Freeze ✅ COMPLETE

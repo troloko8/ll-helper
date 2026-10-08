@@ -2,12 +2,12 @@
 
 Статус: **черновик до выбора сервера, домена и TLS-способа**. Этот файл
 фиксирует порядок первого deployment, но не является свидетельством успешного
-релиза. Непроверенные на реальном сервере шаги нельзя отмечать выполненными в
-`docs/roadmap/current-sprint.md`.
+релиза.
 
 План работ и release criteria принадлежат
-`docs/roadmap/backlog.md` → Sprint 1.1. Проверенные результаты активного спринта
-записываются в `docs/roadmap/current-sprint.md`, а фактическая runtime-схема — в
+`docs/roadmap/backlog.md` → Future release gate. Если публичный релиз будет
+отдельно одобрен, его checklist переносится в `docs/roadmap/current-sprint.md`;
+после реальной проверки фактическая runtime-схема синхронизируется с
 `docs/architecture/current-architecture.md`.
 
 ## Принятая базовая схема
@@ -33,7 +33,7 @@ production frontend origin.
 
 ## Выбрать способ доставки
 
-Выбор фиксируется в активном Sprint 1.1 до выполнения следующих разделов.
+Выбор фиксируется в активном release sprint до выполнения следующих разделов.
 
 ### Docker Compose — целевой вариант roadmap
 
@@ -104,7 +104,7 @@ npm run build
 - [ ] HTTPS включён; HTTP перенаправляется на HTTPS; certificate renewal
       настроен.
 - [ ] Настроены body-size limits, forwarded-header trust и production health
-      endpoint согласно Sprint 1.1 checklist.
+      endpoint согласно активному release checklist.
 
 Перед reload/restart на сервере обязательно выполнить:
 
@@ -150,7 +150,8 @@ progress.
 
 ## Evidence и закрытие checklist
 
-В активном `docs/roadmap/current-sprint.md` записать без credentials и tokens:
+После активации release gate в `docs/roadmap/current-sprint.md` записать без
+credentials и tokens:
 
 - дату, revision/image tag и environment;
 - публичный origin;
@@ -161,5 +162,5 @@ progress.
 - backup/restore и rollback verification.
 
 Этот runbook считается проверенным только после выполнения на выбранной
-production-like платформе. До этого соответствующие пункты Sprint 1.1 остаются
-открытыми.
+production-like платформе. До этого соответствующие пункты остаются в future
+release gate backlog и не относятся к Sprint 1.1.

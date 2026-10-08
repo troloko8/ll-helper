@@ -4,19 +4,7 @@
 
 > Объединяет детальные задачи Level 1–4 из `LL_Helper_Project_Roadmap.md` и старый `NEXT_TODO.md` (2026-07-30). Пункты не переоценивались на актуальность построчно — часть из них может уже быть частично сделана или устареть, см. пометки.
 
-## Planned Sprints (после Sprint 0.4)
-
-### Sprint 1.0 — Vertical Flow
-
-> **Цель:** Впервые связать frontend, backend, auth и database в одну живую систему.
-> Пользовательский flow Level 1 закрыт; результаты находятся в `docs/roadmap/changelog.md`, product decisions — integration map §0.10. В Level 1 включены базовые Created, Discover и видимый Logout, чтобы сценарий выполнялся через UI. Этот блок не является второй очередью задач активного deployment-спринта.
-> UI может быть простым. Цель — не красивый Dashboard, а работающий full-stack flow.
-
-1. Создать React/TS app
-2. Настроить routes и API client
-3. Login / Register
-4. Created → Create deck + Manual Add Card
-5. Discover → Public Deck Details → Enroll → Study → See progress → Logout/Login
+## Будущие этапы и отложенные задачи
 
 ### Future release gate — First Public Deployment (optional, after Full Frontend)
 
@@ -162,9 +150,13 @@
 
 Стек: React + TypeScript + React Router 7 + RTK Query + Redux Toolkit (session state) — Axios удалён, см. `frontend/CONVENTIONS.md`.
 
-Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3/§0.10. Базовые Created/Discover, cardCount для коллекций, isEnrolled для Discover и видимый local Logout включены в текущий спринт; здесь повторно не планируются.
+Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3/§0.10. Базовые Created/Discover, cardCount для коллекций, isEnrolled для Discover и видимый local Logout завершены в Sprint 1.0; результаты находятся в changelog и здесь повторно не планируются.
 
-Deferred surfaces/contracts (см. `FRONTEND_INTEGRATION_MAP.md` §0.2) перенесены в активный Sprint 1.1 — Full Frontend. Single-card AI остаётся optional и его успешная проверка не заменяет manual smoke.
+В Sprint 1.1 перенесена только frontend-часть deferred scope, перечисленная в
+`current-sprint.md`: основные страницы, их состояния и необходимые им API-
+контракты. Refresh token, backend logout, social-функции и прочие Level 3
+возможности остаются в backlog. Single-card AI остаётся optional и его успешная
+проверка не заменяет manual smoke.
 
 Архитектура: FSD (`app/pages/widgets/features/entities/shared`), см. `frontend/CONVENTIONS.md`.
 
@@ -317,7 +309,7 @@ Level 1 закрывается проверкой существующих proje
 
 > Часть пунктов ниже может быть уже устаревшей или частично сделанной — не проверялось построчно против кода при слиянии.
 
-- [ ] Проверить все 500 ошибки и заменить на соответствующие HTTP коды — **дублирует Sprint 0.4 Группа 4**, см. `current-sprint.md`
+- [x] Проверить все 500 ошибки и заменить на соответствующие HTTP коды — закрыто в Sprint 0.4, см. `changelog.md`.
 - [ ] ~~Создать систему миграции для проекта (Liquibase)~~ — **вероятно устарело**: Liquibase уже внедрён и используется (schema defined through V11; см. `changelog.md` Sprint 0.3)
 - [ ] Проверить структуру базы данных: constraints, FK, cascade, индексы, типы данных, связи — частично покрыто Sprint 0.3, но периодический ревью остаётся полезным
 - [~] Постепенно переписать существующие сложные Hibernate/JPQL-запросы на PostgreSQL SQL; простые CRUD и derived lookups пока могут оставаться на Spring Data JPA. Статические feature-local запросы размещать в существующем Spring Data repository через `@Query(nativeQuery = true)` с минимальной scalar interface projection; динамические, batch/reporting и требующие ручного маппинга запросы — через `NamedParameterJdbcTemplate`. Deck list queries уже переведены; остальные запросы мигрировать в scope затрагиваемой функции с PostgreSQL Testcontainers regression-покрытием.
