@@ -5,6 +5,7 @@ import com.llhelper.deck.dto.request.PublicDeckQuery;
 import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckPageResponse;
 import java.util.List;
 
@@ -12,6 +13,7 @@ public interface DeckService {
     DeckResponse create(DeckRequest request);
     DeckDetailsResponse getById(Long id);
     PublicDeckPageResponse getPublicDecks(PublicDeckQuery query);
+    List<PublicDeckListResponse> getCreatorPublicDecks(String username);
     List<OwnedDeckListResponse> getCurrentUserDecks();
     DeckResponse update(Long id, DeckRequest request);
     void delete(Long id);

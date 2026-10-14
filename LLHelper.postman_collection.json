@@ -896,6 +896,73 @@
           ]
         },
         {
+          "name": "Get Creator Public Decks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var decks = pm.response.json();",
+                  "pm.test(\"Response contains only public deck summaries\", function () {",
+                  "    pm.expect(decks).to.be.an(\"array\");",
+                  "    decks.forEach(function (deck) {",
+                  "        pm.expect(deck).to.have.all.keys(\"id\", \"title\", \"sourceLanguage\", \"targetLanguage\", \"owner\", \"cardCount\", \"isEnrolled\");",
+                  "        pm.expect(deck).to.have.nested.property(\"owner.username\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/decks/creator/{{testUsername}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "decks",
+                "creator",
+                "{{testUsername}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Creator Public Decks - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{url}}/decks/creator/{{testUsername}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"owner\": {\n      \"id\": 7,\n      \"username\": \"deck-owner\",\n      \"firstName\": \"Deck\",\n      \"lastName\": \"Owner\",\n      \"nativeLanguage\": \"EN\",\n      \"targetLanguage\": \"RU\",\n      \"avatarUrl\": null,\n      \"uiLanguage\": \"EN\",\n      \"createdAt\": \"2026-09-20T10:00:00Z\",\n      \"updatedAt\": \"2026-09-21T10:00:00Z\"\n    },\n    \"cardCount\": 842,\n    \"isEnrolled\": true\n  }\n]"
+            }
+          ]
+        },
+        {
           "name": "Get My Decks",
           "event": [
             {

@@ -239,6 +239,33 @@ class DeckServiceImplTest {
     }
 
     @Test
+    void getCreatorPublicDecks_shouldReturnOnlyRepositoryFilteredPublicDecks() {
+        PublicDeckListProjection row = mock(PublicDeckListProjection.class);
+        PublicDeckListResponse response = new PublicDeckListResponse(
+            DECK_ID,
+            "Creator public deck",
+            Language.EN,
+            Language.RU,
+            new UserResponse(
+                OWNER_ID, "deck-owner", "Deck", "Owner", "EN", "RU", null, "EN", null, null
+            ),
+            3,
+            true
+        );
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(deckRepository.findPublicDecksByOwnerUsername(OTHER_USER_ID, "deck-owner"))
+            .thenReturn(List.of(row));
+        when(deckMapper.toPublicListResponse(row)).thenReturn(response);
+
+        List<PublicDeckListResponse> result = deckService.getCreatorPublicDecks("deck-owner");
+
+        assertThat(result).containsExactly(response);
+        verify(deckRepository).findPublicDecksByOwnerUsername(OTHER_USER_ID, "deck-owner");
+        verify(deckMapper).toPublicListResponse(row);
+        verify(deckRepository, never()).findAll();
+    }
+
+    @Test
     void getCurrentUserDecks_shouldReturnPublicAndPrivateDecksOwnedByCurrentUser() {
         Deck publicDeck = deckOwnedBy(OWNER_ID);
         publicDeck.setIsPublic(true);

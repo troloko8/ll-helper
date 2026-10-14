@@ -46,7 +46,7 @@ and cannot substitute for manual-card acceptance. Runtime status belongs only to
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks with URL-backed search, language/enrollment filters, sorting and infinite load-more → Public Deck Details, §0.10. Enrollment reconciliation remains a follow-up. |
 | `/progress` | deferred | — | |
-| `/creators/:username` | deferred | — | |
+| `/creators/:username` | implemented | `creator_profile_llhelper_refined` / `creator_profile_mobile` | JWT-protected Creator Profile: `USER-03` supplies the profile and DECK-07 supplies only that creator's public decks. Loading, profile/list error and empty-list states are implemented; follows and all other social controls remain excluded. |
 | `/decks/:deckId/edit` | implemented | `edit_deck_llhelper_refined_1` / responsive mobile adaptation | Owner-only Edit Deck with prefill, validation, visibility mapping, update and destructive deletion. |
 | `/decks/:deckId/cards/:cardId/edit` | implemented | `add_edit_card_llhelper_refined` / responsive mobile adaptation | Owner-only Card Editor with prefill, shared validation, update and destructive deletion; AI creation controls are intentionally absent in edit mode. |
 
@@ -71,8 +71,8 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
 **Post-Level-1 backend capabilities:**
-- Sprint 1.1 still requires aggregate Progress, creator-public-decks and the bulk
-  AI failed-titles response. Discover search/filter/sort/pagination is implemented.
+- Sprint 1.1 still requires aggregate Progress and the bulk AI failed-titles
+  response. Discover search/filter/sort/pagination and creator-public-decks are implemented.
 - Refresh token, backend logout and unrelated pagination remain deferred beyond
   Sprint 1.1.
 - Collection `cardCount`, public-list owner and `isEnrolled` are implemented.
@@ -161,6 +161,7 @@ The user requested that the complete Level 1 path be executable through visible 
 - Created desktop/mobile show language pair, title, card count, Public/Private, Open and Create New Deck. This confirms cardCount is needed for Created too, superseding the earlier uncertainty in §5.4.
 - Discover desktop shows title/creator search, Public/Enrolled badges, language pair, creator, card count and Load Additional Decks. Mobile includes search, filter/topic/level chips, cover images, bookmark controls and Load more; these extra controls are not proof of backend support.
 - The implemented Discover surface includes title/owner search, source/target language filters, ACTIVE-enrollment filtering, sorting and infinite load-more over the paginated DECK-03 contract. It shows title, languages, owner identity, count, truthful enrollment indication and the detail link. The response currently carries the full `UserResponse owner`; replacing it with a compact owner shape follows later. Unsupported topic/level chips, cover imagery and bookmarks remain omitted on both devices. Reuse canonical layout/tokens and state references; do not invent metadata or ship non-working prototype controls. This supported adaptation is owned by `DESIGN.md` and does not require changing remote Stitch screens.
+- Creator Profile uses the existing `USER-03` profile lookup with DECK-07 (`GET /api/v1/decks/creator/{username}`) for a non-paginated, repository-filtered list of only that creator's public decks. The page links each deck to Public Deck Details, has loading/profile-error/list-error/empty states, and is reachable from the Creator link in Public Deck Details. Follow, follower, rating, like and bookmark UI/data remain excluded.
 
 **Acceptance boundary:** Sprint 1.0 completion evidence in `docs/roadmap/changelog.md` distinguishes automated checks and user-verified behavior. Study/review/per-card progress and live UI re-entry are complete. A successful AI card creation still does not substitute for the verified manual-card path.
 

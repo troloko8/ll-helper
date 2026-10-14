@@ -81,6 +81,14 @@ export const appRoutes: RouteObject[] = [
                                 },
                             },
                             {
+                                path: '/creators/:username',
+                                lazy: async () => {
+                                    const { CreatorProfilePage } =
+                                        await import('@/pages/creator-profile')
+                                    return { Component: CreatorProfilePage }
+                                },
+                            },
+                            {
                                 path: '/learning/:deckId',
                                 lazy: async () => {
                                     const { LearningDeckDetailsPage } =

@@ -40,7 +40,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   данных, validation, visibility mapping, сохранение и удаление.
 - [x] Завершить Discover: поиск, фильтры, сортировка и pagination/load-more.
   Показывать только те controls, которые поддержаны согласованным API.
-- [ ] Реализовать Creator Profile и список публичных колод автора по маршруту
+- [x] Реализовать Creator Profile и список публичных колод автора по маршруту
   `/creators/:username`.
 - [ ] Реализовать общий Progress dashboard по маршруту `/progress`.
 - [ ] Завершить bulk AI generation в Card Editor и показать частичный результат
@@ -62,7 +62,18 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 ### 4. Контракты и качество
 
+- [ ] Определить и внедрить единый URL-safe slug-контракт для `username`:
+  допустимые символы, нормализацию и регистр, уникальность, backend validation,
+  совместимость существующих данных, frontend routing, прохождение допустимых
+  encoded-значений через реальные Spring endpoints, Postman и нормативные
+  API-документы.
 - [ ] Определить и реализовать политику актуальности/инвалидации `currentUser`.
+- [ ] Устранить дублирование карточки публичной колоды между Discover и Creator
+  Profile: вынести общую `PublicDeckCard` в `entities/deck/ui` с булевым
+  `showOwner`, едиными Public/Enrolled badges, языками, card count, detail-link,
+  стилями и тестами; page-specific grid и request states оставить в страницах.
+  Это нужно, потому что две реализации уже расходятся по отображению
+  `isEnrolled` и будут требовать синхронных исправлений.
 - [ ] Добавить только те backend endpoints, DTO, validation и тесты, которые
   необходимы выбранным frontend-страницам: Card Details/Edit, Creator Profile,
   aggregate Progress, Discover query contract и честный bulk AI result.

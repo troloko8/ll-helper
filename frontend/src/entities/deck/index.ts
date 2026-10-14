@@ -1,6 +1,7 @@
 export {
     deckApi,
     useGetDeckByIdQuery,
+    useGetCreatorPublicDecksQuery,
     useGetOwnedDecksQuery,
     useGetPublicDecksInfiniteQuery,
 } from './api/deck-api'

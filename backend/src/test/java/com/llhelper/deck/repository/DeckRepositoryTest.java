@@ -159,6 +159,34 @@ class DeckRepositoryTest {
     }
 
     @Test
+    void findPublicDecksByOwnerUsername_shouldReturnOnlyExactCreatorsPublicDecksWithCountsAndEnrollment() {
+        User currentUser = persistUser("current@example.com", "current-user");
+        User creator = persistUser("creator@example.com", "Alice");
+        User caseCollidingCreator = persistUser("case-colliding@example.com", "alice");
+        User otherOwner = persistUser("other@example.com", "other-owner");
+        Deck publicDeck = persistDeck(creator, "Creator public", true);
+        persistDeck(creator, "Creator private", false);
+        persistDeck(caseCollidingCreator, "Case-colliding creator public", true);
+        persistDeck(otherOwner, "Other public", true);
+        persistCard(publicDeck, "one");
+        persistCard(publicDeck, "two");
+        persistEnrollment(currentUser, publicDeck, UserDeckStatus.ACTIVE);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<PublicDeckListProjection> rows = deckRepository.findPublicDecksByOwnerUsername(
+            currentUser.getId(), "Alice"
+        );
+
+        assertThat(rows).singleElement().satisfies(row -> {
+            assertThat(row.getTitle()).isEqualTo("Creator public");
+            assertThat(row.getOwnerUsername()).isEqualTo("Alice");
+            assertThat(row.getCardCount()).isEqualTo(2);
+            assertThat(row.getIsEnrolled()).isTrue();
+        });
+    }
+
+    @Test
     void findPublicDecks_shouldTreatPercentAndUnderscoreLiterally_whenQueryIsEscaped() {
         User currentUser = persistUser("current@example.com", "current-user");
         User owner = persistUser("owner@example.com", "owner");

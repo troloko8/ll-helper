@@ -159,7 +159,14 @@ export function PublicDeckDetailsPage() {
                         </div>
                         <div>
                             <dt>Creator</dt>
-                            <dd>@{deck.owner.username}</dd>
+                            <dd>
+                                <Link
+                                    className={styles.creatorLink}
+                                    to={`/creators/${encodeURIComponent(deck.owner.username)}`}
+                                >
+                                    @{deck.owner.username}
+                                </Link>
+                            </dd>
                         </div>
                     </dl>
                 </div>

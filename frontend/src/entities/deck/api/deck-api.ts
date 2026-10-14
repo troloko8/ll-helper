@@ -2,6 +2,7 @@ import { baseApi } from '@/shared/api'
 import type {
     DeckDetailsResponseDto,
     OwnedDeckListResponseDto,
+    PublicDeckListResponseDto,
     PublicDeckPageResponseDto,
     PublicDeckQuery,
 } from '../model/types'
@@ -47,11 +48,24 @@ export const deckApi = baseApi.injectEndpoints({
                 ) ?? []),
             ],
         }),
+        getCreatorPublicDecks: builder.query<
+            PublicDeckListResponseDto[],
+            string
+        >({
+            query: (username) =>
+                `/decks/creator/${encodeURIComponent(username)}`,
+            providesTags: (result) => [
+                { type: 'Deck', id: 'LIST' },
+                ...(result?.map(({ id }) => ({ type: 'Deck' as const, id })) ??
+                    []),
+            ],
+        }),
     }),
 })
 
 export const {
     useGetDeckByIdQuery,
+    useGetCreatorPublicDecksQuery,
     useGetOwnedDecksQuery,
     useGetPublicDecksInfiniteQuery,
 } = deckApi

@@ -123,6 +123,13 @@ detail, Learning and Discover caches. A `409` from enrollment is followed by a
 fresh DECK-02 read; only confirmed `isEnrolled=true` continues the requested
 action. Owner Deck Details does not link to this public surface.
 
+The implemented `pages/creator-profile/` slice owns `/creators/:username` and
+is reachable from the creator link on Public Deck Details. It combines the
+`USER-03` profile query from `entities/user/` with the public-only `DECK-07`
+collection from `entities/deck/`, keeps both responses as RTK Query server
+state, and links each returned deck back to Public Deck Details. Social
+controls remain outside the implemented contract.
+
 Discover is now the public-detail entry route in both desktop and mobile shell
 navigation. The authenticated shell exposes the existing local Logout action in
 the desktop sidebar footer and mobile header; it clears token, session state and
@@ -327,7 +334,7 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, and `DECK-06`; `entities/user` owns `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, `DECK-06`, and `DECK-07`; `entities/user` owns `USER-03` and `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

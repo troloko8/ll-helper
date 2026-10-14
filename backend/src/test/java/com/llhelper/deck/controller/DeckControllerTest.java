@@ -276,6 +276,34 @@ class DeckControllerTest {
             .andExpect(status().isOk());
     }
 
+    @Test
+    void getCreatorPublicDecks_shouldReturnPublicDeckList() throws Exception {
+        UserResponse owner = new UserResponse(
+            7L,
+            "deck-owner",
+            "Deck",
+            "Owner",
+            "EN",
+            "RU",
+            null,
+            "EN",
+            Instant.parse("2026-09-20T10:00:00Z"),
+            Instant.parse("2026-09-21T10:00:00Z")
+        );
+        PublicDeckListResponse response = new PublicDeckListResponse(
+            DECK_ID, "Creator deck", Language.EN, Language.RU, owner, 3, true
+        );
+        when(deckService.getCreatorPublicDecks("deck-owner")).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/decks/creator/{username}", "deck-owner"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].owner.username", is("deck-owner")))
+            .andExpect(jsonPath("$[0].cardCount", is(3)))
+            .andExpect(jsonPath("$[0].isEnrolled", is(true)))
+            .andExpect(jsonPath("$[0].isPublic").doesNotExist());
+    }
+
     // --- getCurrentUserDecks ---
 
     @Test

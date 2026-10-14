@@ -89,6 +89,41 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             d.title as "title",
             d.source_language as "sourceLanguage",
             d.target_language as "targetLanguage",
+            u.id as "ownerId",
+            u.username as "ownerUsername",
+            u.first_name as "ownerFirstName",
+            u.last_name as "ownerLastName",
+            u.native_language as "ownerNativeLanguage",
+            u.target_language as "ownerTargetLanguage",
+            u.avatar_url as "ownerAvatarUrl",
+            u.ui_language as "ownerUiLanguage",
+            u.created_at as "ownerCreatedAt",
+            u.updated_at as "ownerUpdatedAt",
+            count(c.id) as "cardCount",
+            (udp.id is not null) as "isEnrolled"
+        from decks d
+        join users u on u.id = d.owner_id
+        left join cards c on c.deck_id = d.id
+        left join user_deck_progress udp
+            on udp.deck_id = d.id
+            and udp.user_id = :userId
+            and udp.status = 'ACTIVE'
+        where d.is_public = true
+            and u.username = :username
+        group by d.id, u.id, udp.id
+        order by d.created_at desc, d.id desc
+        """, nativeQuery = true)
+    List<PublicDeckListProjection> findPublicDecksByOwnerUsername(
+        @Param("userId") Long userId,
+        @Param("username") String username
+    );
+
+    @Query(value = """
+        select
+            d.id as "id",
+            d.title as "title",
+            d.source_language as "sourceLanguage",
+            d.target_language as "targetLanguage",
             d.is_public as "isPublic",
             count(c.id) as "cardCount"
         from decks d

@@ -5,6 +5,7 @@ import com.llhelper.deck.dto.request.PublicDeckQuery;
 import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckPageResponse;
 import com.llhelper.deck.enums.PublicDeckSort;
 import com.llhelper.common.model.Language;
@@ -45,6 +46,13 @@ public class DeckController {
     @GetMapping("/mine")
     public ResponseEntity<List<OwnedDeckListResponse>> getCurrentUserDecks() {
         return ResponseEntity.ok(deckService.getCurrentUserDecks());
+    }
+
+    @GetMapping("/creator/{username}")
+    public ResponseEntity<List<PublicDeckListResponse>> getCreatorPublicDecks(
+        @PathVariable String username
+    ) {
+        return ResponseEntity.ok(deckService.getCreatorPublicDecks(username));
     }
 
     @GetMapping("/{id}")

@@ -69,6 +69,10 @@ function renderPublicDeck(route = '/decks/12') {
                 path="/study/:deckId"
                 element={<h1>Study session destination</h1>}
             />
+            <Route
+                path="/creators/:username"
+                element={<h1>Creator profile destination</h1>}
+            />
         </Routes>,
         { route },
     )
@@ -122,6 +126,36 @@ describe('PublicDeckDetailsPage', () => {
         expect(
             screen.queryByRole('button', { name: /follow/i }),
         ).not.toBeInTheDocument()
+    })
+
+    it('opens the creator profile with an encoded username path segment', async () => {
+        const username = 'language/coach ?#'
+        server.use(
+            http.get('http://localhost/api/v1/decks/12', () =>
+                HttpResponse.json({
+                    ...deck,
+                    owner: { ...deck.owner, username },
+                }),
+            ),
+        )
+        const user = userEvent.setup()
+        renderPublicDeck()
+
+        const creatorLink = await screen.findByRole('link', {
+            name: `@${username}`,
+        })
+        expect(creatorLink).toHaveAttribute(
+            'href',
+            `/creators/${encodeURIComponent(username)}`,
+        )
+
+        await user.click(creatorLink)
+
+        expect(
+            await screen.findByRole('heading', {
+                name: 'Creator profile destination',
+            }),
+        ).toBeInTheDocument()
     })
 
     it('enrolls without a request body and starts studying', async () => {

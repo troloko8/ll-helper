@@ -6,7 +6,15 @@ export const userApi = baseApi.injectEndpoints({
         getCurrentUser: builder.query<UserResponseDto, void>({
             query: () => '/users/me',
         }),
+        getUserByUsername: builder.query<UserResponseDto, string>({
+            query: (username) =>
+                `/users/username/${encodeURIComponent(username)}`,
+        }),
     }),
 })
 
-export const { useGetCurrentUserQuery, useLazyGetCurrentUserQuery } = userApi
+export const {
+    useGetCurrentUserQuery,
+    useGetUserByUsernameQuery,
+    useLazyGetCurrentUserQuery,
+} = userApi

@@ -1,7 +1,7 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Last updated:** 2026-10-08
+> **Last updated:** 2026-10-14
 
 ---
 
@@ -31,7 +31,7 @@
 - ✅ Technical Foundation scaffold/config normalization (path aliases, strict TS, Vite proxy, `.env.example`, RTK Query, Redux/session, React Router)
 - ✅ Testing infrastructure (Vitest, jsdom, React Testing Library, MSW)
 - ✅ Auth and Complete Profile flow
-- ✅ Created/Discover, public and owner deck details, create deck and manual card flow
+- ✅ Created/Discover, Creator Profile with public creator decks, public and owner deck details, create deck and manual card flow
 - ✅ Learning details, Study and persisted per-card progress flow
 - ✅ Browser-verified Level 1 vertical flow, logout/login, refresh, responsive and keyboard/error states
 
@@ -310,6 +310,7 @@ CardService.save(cards)
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
 | `/api/v1/decks` | GET | JWT | Search/filter/sort public decks by `q`, language pair, ACTIVE `enrolled`, `sort`, `page` and `size`; private decks are always excluded | `PublicDeckPageResponse { items, page, size, totalElements, totalPages, hasNext }`; each item contains owner, language pair, `cardCount` and current-user `isEnrolled` |
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
+| `/api/v1/decks/creator/{username}` | GET | JWT | List only the specified creator's public decks, ordered newest first, with aggregate content-card count and current-user enrollment state | `List<PublicDeckListResponse>`; each item contains owner, language pair, `cardCount` and `isEnrolled` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |

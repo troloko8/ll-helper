@@ -121,6 +121,16 @@ public class DeckServiceImpl implements DeckService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PublicDeckListResponse> getCreatorPublicDecks(String username) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        
+        return deckRepository.findPublicDecksByOwnerUsername(currentUserId, username).stream()
+            .map(deckMapper::toPublicListResponse)
+            .toList();
+    }
+
     private String normalizeSearchQuery(String query) {
         if (query == null || query.isBlank()) {
             return null;
