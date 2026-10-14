@@ -21,6 +21,17 @@ const sessionActions = {
     authenticated: sessionAuthenticated,
 } as const
 
+function publicDeckPage(items: unknown[]) {
+    return {
+        items,
+        page: 0,
+        size: 12,
+        totalElements: items.length,
+        totalPages: items.length > 0 ? 1 : 0,
+        hasNext: false,
+    }
+}
+
 function renderRoute(path: string, status?: ResolvedSessionStatus) {
     const store = createAppStore()
 
@@ -48,7 +59,7 @@ describe('router session boundaries', () => {
                 HttpResponse.json([]),
             ),
             http.get('http://localhost/api/v1/decks', () =>
-                HttpResponse.json([]),
+                HttpResponse.json(publicDeckPage([])),
             ),
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
@@ -117,6 +128,20 @@ describe('router session boundaries', () => {
                             updatedAt: '2026-09-01T10:00:00Z',
                         },
                     ],
+                }),
+            ),
+            http.get('http://localhost/api/v1/cards/:cardId', ({ params }) =>
+                HttpResponse.json({
+                    id: Number(params.cardId),
+                    deckId: 12,
+                    deckOwnerId: 42,
+                    title: 'hola',
+                    definition: null,
+                    synonyms: null,
+                    examples: null,
+                    translation: 'hello',
+                    createdAt: '2026-09-01T10:00:00Z',
+                    updatedAt: '2026-09-01T10:00:00Z',
                 }),
             ),
         )
@@ -260,28 +285,30 @@ describe('router session boundaries', () => {
     it('opens Public Deck Details from a Discover card', async () => {
         server.use(
             http.get('http://localhost/api/v1/decks', () =>
-                HttpResponse.json([
-                    {
-                        id: 12,
-                        title: 'Spanish Core 1000',
-                        sourceLanguage: 'ES',
-                        targetLanguage: 'EN',
-                        owner: {
-                            id: 42,
-                            username: 'learner',
-                            firstName: 'Test',
-                            lastName: 'Learner',
-                            nativeLanguage: 'en',
-                            targetLanguage: 'es',
-                            avatarUrl: null,
-                            uiLanguage: 'en',
-                            createdAt: '2026-09-01T10:00:00Z',
-                            updatedAt: '2026-09-01T10:00:00Z',
+                HttpResponse.json(
+                    publicDeckPage([
+                        {
+                            id: 12,
+                            title: 'Spanish Core 1000',
+                            sourceLanguage: 'ES',
+                            targetLanguage: 'EN',
+                            owner: {
+                                id: 42,
+                                username: 'learner',
+                                firstName: 'Test',
+                                lastName: 'Learner',
+                                nativeLanguage: 'en',
+                                targetLanguage: 'es',
+                                avatarUrl: null,
+                                uiLanguage: 'en',
+                                createdAt: '2026-09-01T10:00:00Z',
+                                updatedAt: '2026-09-01T10:00:00Z',
+                            },
+                            cardCount: 10,
+                            isEnrolled: false,
                         },
-                        cardCount: 10,
-                        isEnrolled: false,
-                    },
-                ]),
+                    ]),
+                ),
             ),
         )
         const user = userEvent.setup()
@@ -339,7 +366,9 @@ describe('router session boundaries', () => {
         }
         server.use(
             http.get('http://localhost/api/v1/decks', () =>
-                HttpResponse.json([{ ...publicDeck, isEnrolled: enrolled }]),
+                HttpResponse.json(
+                    publicDeckPage([{ ...publicDeck, isEnrolled: enrolled }]),
+                ),
             ),
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json({
@@ -404,10 +433,10 @@ describe('router session boundaries', () => {
         await user.click(
             within(navigation).getByRole('link', { name: 'Discover' }),
         )
-        expect(await screen.findByText('Enrolled')).toBeInTheDocument()
-
         await user.click(
-            screen.getByRole('link', { name: 'Open Spanish Core 1000' }),
+            await screen.findByRole('link', {
+                name: 'Open Spanish Core 1000',
+            }),
         )
         expect(
             await screen.findByRole('button', { name: 'Start Learning' }),
@@ -464,17 +493,19 @@ describe('router session boundaries', () => {
         }
         server.use(
             http.get('http://localhost/api/v1/decks', () =>
-                HttpResponse.json([
-                    {
-                        id: 12,
-                        title: learningDeck.title,
-                        sourceLanguage: 'ES',
-                        targetLanguage: 'EN',
-                        owner,
-                        cardCount: 1,
-                        isEnrolled: enrolled,
-                    },
-                ]),
+                HttpResponse.json(
+                    publicDeckPage([
+                        {
+                            id: 12,
+                            title: learningDeck.title,
+                            sourceLanguage: 'ES',
+                            targetLanguage: 'EN',
+                            owner,
+                            cardCount: 1,
+                            isEnrolled: enrolled,
+                        },
+                    ]),
+                ),
             ),
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json({
@@ -544,7 +575,8 @@ describe('router session boundaries', () => {
         await user.click(
             within(navigation).getByRole('link', { name: 'Discover' }),
         )
-        expect(await screen.findByText('Enrolled')).toBeInTheDocument()
+        await screen.findByRole('link', { name: 'Open Spanish Core 1000' })
+        expect(screen.getAllByText('Enrolled')).toHaveLength(2)
         await user.click(
             within(navigation).getByRole('link', { name: 'Learning' }),
         )
@@ -828,6 +860,46 @@ describe('router session boundaries', () => {
         expect(router.state.location.pathname).toBe('/decks/12/manage')
         expect(
             await screen.findByRole('heading', { name: 'Spanish Core 1000' }),
+        ).toBeInTheDocument()
+    })
+
+    it('allows an authenticated owner to reach Edit Deck', async () => {
+        const { router } = renderRoute('/decks/12/edit', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/decks/12/edit')
+        expect(
+            await screen.findByRole('heading', { name: 'Edit Deck' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Save changes' }),
+        ).toBeInTheDocument()
+    })
+
+    it('allows an authenticated owner to reach Card Details', async () => {
+        const { router } = renderRoute('/decks/12/cards/701', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/decks/12/cards/701')
+        expect(
+            await screen.findByRole('heading', { name: 'hola' }),
+        ).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Edit card' })).toHaveAttribute(
+            'href',
+            '/decks/12/cards/701/edit',
+        )
+    })
+
+    it('allows an authenticated owner to reach Edit Card', async () => {
+        const { router } = renderRoute(
+            '/decks/12/cards/701/edit',
+            'authenticated',
+        )
+
+        expect(router.state.location.pathname).toBe('/decks/12/cards/701/edit')
+        expect(
+            await screen.findByRole('heading', { name: 'Edit Card' }),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByRole('button', { name: 'Save changes' }),
         ).toBeInTheDocument()
     })
 

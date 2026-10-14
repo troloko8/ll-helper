@@ -61,6 +61,12 @@ A slice may contain these segments (use only what's needed):
 
 Do not invent non-standard segments. If a concept doesn't fit, reconsider slice boundaries.
 
+## Component naming
+
+- A component whose primary role is one repeated element of a list or grid must end in `Item`; its kebab-case file name must end in `-item.tsx`.
+- Use `Row` only when the component has actual row semantics. Use `Card` for a standalone presentation component whose role is not defined by collection membership.
+- This rule applies to extracted collection-item components, not to every element rendered by `.map()` such as options, form fields, badges, or skeleton placeholders.
+
 ## Public APIs
 
 - Every slice imported by another slice **must** export through `index.ts`.

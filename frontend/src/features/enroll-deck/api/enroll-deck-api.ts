@@ -8,11 +8,14 @@ export const enrollDeckApi = baseApi.injectEndpoints({
                 url: `/decks/${deckId}/enroll`,
                 method: 'POST',
             }),
-            invalidatesTags: (_result, _error, deckId) => [
-                { type: 'LearningDeck', id: 'LIST' },
-                { type: 'Deck', id: 'LIST' },
-                { type: 'Deck', id: deckId },
-            ],
+            invalidatesTags: (_result, error, deckId) =>
+                error
+                    ? []
+                    : [
+                          { type: 'LearningDeck', id: 'LIST' },
+                          { type: 'Deck', id: 'LIST' },
+                          { type: 'Deck', id: deckId },
+                      ],
         }),
     }),
 })

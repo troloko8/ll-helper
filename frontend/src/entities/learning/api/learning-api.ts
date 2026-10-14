@@ -20,6 +20,9 @@ export const learningApi = baseApi.injectEndpoints({
         }),
         getStudySession: builder.query<StudySessionResponseDto, number>({
             query: (deckId) => `/decks/${deckId}/study`,
+            providesTags: (_result, _error, deckId) => [
+                { type: 'StudySession', id: deckId },
+            ],
         }),
     }),
 })

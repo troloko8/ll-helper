@@ -70,11 +70,19 @@ Owner Deck Details route. Its Create New Deck action remains available for
 both empty and populated collections.
 
 The implemented `pages/discover/` slice owns the `/discover` route composition.
-It consumes the public-only `DECK-03` query from `entities/deck/`, renders the
-backend-provided owner, language pair, content-card count, and ACTIVE enrollment
-badge, and links each complete card to `/decks/:deckId`. Search, filtering,
-pagination, bookmarks, decorative covers, and topic/level metadata are outside
-this bounded collection.
+It consumes the public-only infinite `DECK-03` query from `entities/deck/`, keeps
+search/language/enrollment/sort controls in URL search parameters, debounces only
+text search, and appends server pages through an IntersectionObserver sentinel.
+It renders the backend-provided owner, language pair, content-card count, and
+ACTIVE enrollment badge. Unsupported topics, levels, ratings, popularity,
+bookmarks, and decorative covers are not exposed.
+
+The implemented `pages/card-details/`, `pages/edit-card/`, and `pages/edit-deck/`
+slices own the owner-only content-management routes. Card and deck form schemas,
+limits, prefill, optional-field normalization, and `isPrivate` ↔ `isPublic`
+mapping live in their respective entities so create/add and edit flows share one
+contract. Destructive mutations use the shared native-dialog confirmation and
+keep server failures inline.
 
 The implemented `pages/create-deck/` slice owns `/decks/new` and composes the
 `features/create-deck/` form inside the authenticated `AppShell`. The feature
@@ -157,7 +165,8 @@ slice-name/
 ## Naming
 
 - **Files:** `kebab-case` for all files and directories (e.g. `create-deck/`, `auth-slice.ts`).
-- **Components:** `PascalCase` export name, `kebab-case` file (e.g. `deck-card.tsx` exports `DeckCard`).
+- **Components:** `PascalCase` export name, `kebab-case` file (e.g. `deck-summary.tsx` exports `DeckSummary`).
+- **Collection items:** Follow the active platform's FSD conventions for collection-item naming.
 - **Types/interfaces:** `PascalCase`. Suffix response DTOs with `Dto` only if disambiguation is needed.
 - **Hooks:** `camelCase` with `use` prefix.
 - **Constants:** `UPPER_SNAKE_CASE`.
@@ -318,13 +327,31 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** `features/login` owns `AUTH-01`, `features/register` owns `AUTH-02`, `features/complete-profile` owns `USER-01`, `features/create-deck` owns `DECK-01`, `features/add-card` owns the manual and single-card AI modes of the `CARD-01` mutation, `features/enroll-deck` owns `LEARN-01`, `features/review-card` owns `LEARN-04`, `entities/deck` owns the cacheable detail query `DECK-02`, public collection query `DECK-03`, and owner collection query `DECK-06`, `entities/user` owns the cacheable current-profile query `USER-07`, and `entities/learning` owns the cacheable Learning queries `LEARN-02`, `LEARN-05`, and `LEARN-06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, and `DECK-06`; `entities/user` owns `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
   - `shared/api/` only normalizes transport errors into a consistent `ApiError` shape.
   - `shared/api/` does not perform logout, redirect, dispatch Redux actions, or any user-facing application side effects.
   - Application-level handling belongs to `app/` or relevant `features/`, as documented in the Authentication and Error Handling sections.
+
+### Paginated collections
+
+- Mirror the backend collection contract exactly in the owning entity or
+  feature: Page responses include `items`, `page`, `size`, `totalElements`,
+  `totalPages`, and `hasNext`; Slice responses omit totals; cursor responses use
+  `nextCursor` instead of a page number.
+- Use a regular RTK Query endpoint when the UI selects explicit pages. Use an
+  RTK Query infinite endpoint only for append/load-more behavior.
+- Derive the next request from the server response (`hasNext` plus `page`, or
+  `nextCursor`); do not infer completion from `items.length`.
+- Search, filters, and sorting belong to the query argument so changing them
+  creates a fresh cache key and restarts pagination. Keep them in URL search
+  parameters when they are part of the route's accepted navigable state.
+- Render totals only from server-provided metadata. Do not compute collection
+  totals from the currently loaded pages.
+- Keep domain page DTOs in their owning slice. Move only a genuinely reused,
+  business-agnostic pagination type to `shared/api/types/`.
 
 ### shared/api boundary
 
@@ -461,6 +488,8 @@ app/router (protected routing)
 - **Target stack:** Vitest + React Testing Library + MSW + Playwright.
 - **Pure logic / reusable primitives** → unit tests.
 - **Features and page behavior** → user-centric integration tests (RTL + MSW).
+- MSW is started and reset from the Vitest setup file; each worker receives an
+  isolated server lifecycle, so test files may execute in parallel.
 - **Critical full product flows** → Playwright E2E.
 - No mandatory test for trivial presentational components.
 - Test naming: `*.test.ts(x)` co-located with source or in `__tests__/` within the slice.

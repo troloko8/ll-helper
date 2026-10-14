@@ -25,6 +25,7 @@ import com.llhelper.card.dto.request.CardRequest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
+import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
 import com.llhelper.common.security.JwtService;
@@ -198,6 +199,30 @@ class CardControllerTest {
                 .content(objectMapper.writeValueAsString(defaultRequest())))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message", is("Access denied: not deck owner")));
+    }
+
+    @Test
+    void getById_shouldReturnCardDetailsWithDeckOwnerId() throws Exception {
+        CardResponse card = defaultResponse(CARD_ID);
+        CardDetailsResponse response = new CardDetailsResponse(
+            card.id(),
+            card.deckId(),
+            42L,
+            card.title(),
+            card.definition(),
+            card.synonyms(),
+            card.examples(),
+            card.translation(),
+            card.createdAt(),
+            card.updatedAt()
+        );
+        when(cardService.getById(CARD_ID)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/cards/{id}", CARD_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id", is(CARD_ID), Long.class))
+            .andExpect(jsonPath("$.deckId", is(card.deckId()), Long.class))
+            .andExpect(jsonPath("$.deckOwnerId", is(42L), Long.class));
     }
 
     @Test

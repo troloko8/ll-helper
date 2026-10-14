@@ -7,6 +7,7 @@ import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.request.GenerateCardRequest;
+import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
@@ -181,7 +182,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional(readOnly = true)
-    public CardResponse getById(Long id) {
+    public CardDetailsResponse getById(Long id) {
         Card card = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
@@ -189,7 +190,7 @@ public class CardServiceImpl implements CardService {
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getDeckId()));
         deckAccessPolicy.validateReadAccess(deck);
 
-        return cardMapper.toResponse(card);
+        return cardMapper.toDetailsResponse(card, deck.getOwner().getId());
     }
 
     @Override
@@ -215,6 +216,7 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_DELETE);
 

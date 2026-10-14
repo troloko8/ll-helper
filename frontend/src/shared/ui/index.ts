@@ -1,4 +1,5 @@
 export { ApiErrorPresentation } from './api-error-presentation'
+export { ConfirmationDialog } from './confirmation-dialog'
 export type { ApiErrorPresentationProps } from './api-error-presentation'
 export { Button } from './button'
 export type { ButtonProps, ButtonVariant } from './button'

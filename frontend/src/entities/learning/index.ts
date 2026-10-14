@@ -6,8 +6,8 @@ export {
 } from './api/learning-api'
 export { getDeckProgressCounts } from './lib/progress-counts'
 export { getLanguageLabel } from './lib/language-labels'
-export { LearningDeckCard } from './ui/learning-deck-card'
-export type { LearningDeckCardProps } from './ui/learning-deck-card'
+export { LearningDeckItem } from './ui/learning-deck-item'
+export type { LearningDeckItemProps } from './ui/learning-deck-item'
 export type {
     LanguageCode,
     CardLearningStatus,

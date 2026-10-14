@@ -79,7 +79,8 @@
     font-size: 0.9375rem;
 }
 
-.addCardLink {
+.addCardLink,
+.editDeckLink {
     display: inline-flex;
     min-height: 44px;
     flex: 0 0 auto;
@@ -91,6 +92,12 @@
     background-color: var(--primary-container);
     font-weight: 650;
     text-decoration: none;
+}
+
+.editDeckLink {
+    border: 1px solid var(--outline);
+    color: var(--on-surface);
+    background: transparent;
 }
 
 .addCardLink:hover {
@@ -200,6 +207,7 @@
 }
 
 .cardRow {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
@@ -208,6 +216,21 @@
     border: 1px solid var(--outline-variant);
     border-radius: 6px;
     background-color: var(--surface-container);
+}
+
+.cardRow:hover {
+    border-color: var(--primary-container);
+}
+
+.cardLink {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.cardLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
 }
 
 .cardNumber {

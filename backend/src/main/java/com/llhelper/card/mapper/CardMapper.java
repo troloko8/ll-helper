@@ -2,6 +2,7 @@ package com.llhelper.card.mapper;
 
 import com.llhelper.ai.dto.AiCardData;
 import com.llhelper.card.dto.request.CardRequest;
+import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.deck.entity.Deck;
@@ -21,6 +22,10 @@ public interface CardMapper {
 
     @Mapping(target = "deckId", source = "deck.id")
     CardResponse toResponse(Card card);
+
+    @Mapping(target = "deckId", source = "card.deckId")
+    @Mapping(target = "deckOwnerId", source = "deckOwnerId")
+    CardDetailsResponse toDetailsResponse(Card card, Long deckOwnerId);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "deck", ignore = true)

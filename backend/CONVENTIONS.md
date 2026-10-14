@@ -30,6 +30,67 @@
 - Classes: `PascalCase` (e.g. `Deck`, `DeckResponse`)
 - REST endpoints: `kebab-case` (e.g. `/api/v1/decks`)
 
+## Method Layout and Logical Blocks
+
+Use a single empty line to separate method statements that belong to different
+semantic phases. Keep statements together when each one directly supplies the
+identity or value required by the next statement.
+
+Typical phases include:
+- input normalization and guard clauses;
+- current-user or ownership identity resolution;
+- loading one related aggregate through identifiers resolved immediately above;
+- authorization or business-rule checks;
+- mapping, persistence, and response construction.
+
+For example, loading a card, taking its `deckId`, loading that deck, and resolving
+its owner form one dependent lookup block. A subsequent validation branch,
+unrelated repository operation, mutation, or response mapping starts a new block.
+
+Do not add blank lines mechanically between every variable, `if`, or method call.
+Group by data dependency and purpose so a reader can understand each block as one
+step. Use at most one empty line between adjacent blocks, and never leave spaces
+or tabs on an otherwise empty line. Do not split fluent calls, argument lists, or
+one expression merely to create visual spacing.
+
+## Collection Pagination
+
+Do not add pagination mechanically to every `List`. For each new or materially
+changed collection-read endpoint, explicitly choose the smallest contract that
+supports its expected size and product flow:
+
+| Use case | Repository/result contract | Stable API response |
+|---|---|---|
+| Small, domain-bounded or explicitly accepted bounded collection | `List<T>` | JSON array |
+| UI needs totals or page navigation | `Page<T>` plus count query | `items`, `page`, `size`, `totalElements`, `totalPages`, `hasNext` |
+| UI needs only load-more | `Slice<T>` or an equivalent `size + 1` query | `items`, `page`, `size`, `hasNext` |
+| Large or frequently changing collection where deep offsets matter | Cursor/keyset query | `items`, `nextCursor`, `hasNext` |
+
+**Rules:**
+- These rules apply to collection reads. A bounded batch mutation may return a
+  list of operation results without becoming a pageable collection endpoint.
+- A potentially unbounded collection may remain unpaginated only when its
+  current scope explicitly accepts that limitation; keep the limitation in the
+  owning contract or backlog instead of hiding it in implementation.
+- Page numbers are zero-based. Each endpoint documents its default `size` and
+  enforces a positive, bounded maximum.
+- Every paginated query has a deterministic order with a unique final
+  tie-breaker, normally `id`.
+- Filters and visibility rules apply identically to the data query and, when a
+  `Page` is used, its count query. An out-of-range page returns `200` with empty
+  `items`.
+- Use `Page` only when the client needs totals; otherwise prefer `Slice` to avoid
+  an unnecessary count query. Use cursor/keyset pagination only when scale or
+  result churn justifies its additional contract and index complexity.
+- Never expose Spring Data `Page`, `PageImpl`, `Slice`, or persistence
+  projections as the wire contract. Map them to a feature-owned response
+  `record` so JSON remains stable and domain-specific.
+- Do not introduce a shared generic page wrapper for a single endpoint. Extract
+  one only after multiple domains need the same semantics; item DTOs remain
+  feature-owned.
+- Native pageable queries with a count query require PostgreSQL Testcontainers
+  coverage for filters, visibility, stable sorting, totals, and page boundaries.
+
 ## Database
 - **DBMS:** PostgreSQL
 - **ddl-auto:** `validate`

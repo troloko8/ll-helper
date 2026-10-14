@@ -1,6 +1,7 @@
 package com.llhelper.card.controller;
 
 import com.llhelper.card.dto.request.CardRequest;
+import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
 import jakarta.validation.Valid;
@@ -36,7 +37,7 @@ public class CardController {
     }
 
     @GetMapping("/cards/{id}")
-    public ResponseEntity<CardResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<CardDetailsResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(cardService.getById(id));
     }
 

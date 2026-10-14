@@ -41,7 +41,7 @@ function EmptyCreatedState() {
     )
 }
 
-function CreatedDeckCard({ deck }: { deck: OwnedDeckListResponseDto }) {
+function CreatedDeckItem({ deck }: { deck: OwnedDeckListResponseDto }) {
     const languagePair = `${getDeckLanguageLabel(deck.sourceLanguage)} to ${getDeckLanguageLabel(deck.targetLanguage)}`
     const cardCountLabel = `${deck.cardCount} ${deck.cardCount === 1 ? 'card' : 'cards'}`
 
@@ -119,7 +119,7 @@ export function CreatedPage() {
                     <h2 id="created-decks-title">Your decks</h2>
                     <div className={styles.deckGrid}>
                         {data.map((deck) => (
-                            <CreatedDeckCard deck={deck} key={deck.id} />
+                            <CreatedDeckItem deck={deck} key={deck.id} />
                         ))}
                     </div>
                 </section>

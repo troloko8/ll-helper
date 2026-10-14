@@ -126,6 +126,14 @@ describe('OwnerDeckDetailsPage', () => {
             'href',
             '/decks/12/cards/new',
         )
+        expect(screen.getByRole('link', { name: 'Edit deck' })).toHaveAttribute(
+            'href',
+            '/decks/12/edit',
+        )
+        expect(screen.getByRole('link', { name: 'Open Hola' })).toHaveAttribute(
+            'href',
+            '/decks/12/cards/1',
+        )
         expect(
             screen.getByRole('button', { name: 'Start Learning' }),
         ).toBeInTheDocument()

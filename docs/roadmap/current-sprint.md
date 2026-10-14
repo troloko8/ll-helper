@@ -32,13 +32,13 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 ### 2. Основные недостающие страницы и функции
 
-- [ ] Реализовать Card Details по маршруту
+- [x] Реализовать Card Details по маршруту
   `/decks/:deckId/cards/:cardId` и полный Card Editor по маршруту
   `/decks/:deckId/cards/:cardId/edit`, включая редактирование, удаление,
   подтверждение destructive action и честные loading/validation/error states.
-- [ ] Реализовать Edit Deck по маршруту `/decks/:deckId/edit`: загрузка текущих
+- [x] Реализовать Edit Deck по маршруту `/decks/:deckId/edit`: загрузка текущих
   данных, validation, visibility mapping, сохранение и удаление.
-- [ ] Завершить Discover: поиск, фильтры, сортировка и pagination/load-more.
+- [x] Завершить Discover: поиск, фильтры, сортировка и pagination/load-more.
   Показывать только те controls, которые поддержаны согласованным API.
 - [ ] Реализовать Creator Profile и список публичных колод автора по маршруту
   `/creators/:username`.

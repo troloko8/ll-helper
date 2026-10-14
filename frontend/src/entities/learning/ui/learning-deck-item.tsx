@@ -1,16 +1,16 @@
 import type { LearningDeckResponseDto } from '../model/types'
 import { getLanguageLabel } from '../lib/language-labels'
-import styles from './learning-deck-card.module.css'
+import styles from './learning-deck-item.module.css'
 
-export interface LearningDeckCardProps {
+export interface LearningDeckItemProps {
     deck: LearningDeckResponseDto
     featured?: boolean
 }
 
-export function LearningDeckCard({
+export function LearningDeckItem({
     deck,
     featured = false,
-}: LearningDeckCardProps) {
+}: LearningDeckItemProps) {
     const { masteredCount, totalCount } = deck.progress
     const progressPercent =
         totalCount === 0 ? 0 : Math.round((masteredCount / totalCount) * 100)

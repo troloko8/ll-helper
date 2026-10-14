@@ -1,10 +1,12 @@
 package com.llhelper.deck.service;
 
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.request.PublicDeckQuery;
 import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckPageResponse;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.mapper.DeckMapper;
 import com.llhelper.deck.repository.DeckRepository;
@@ -18,7 +20,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,11 +96,45 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PublicDeckListResponse> getPublicDecks() {
+    public PublicDeckPageResponse getPublicDecks(PublicDeckQuery query) {
         Long currentUserId = securityUtils.getCurrentUserId();
-        return deckRepository.findPublicDecks(currentUserId).stream()
+        String normalizedQuery = normalizeSearchQuery(query.q());
+        Page<DeckRepository.PublicDeckListProjection> page = deckRepository.findPublicDecks(
+            currentUserId,
+            normalizedQuery,
+            query.sourceLanguage() == null ? null : query.sourceLanguage().name(),
+            query.targetLanguage() == null ? null : query.targetLanguage().name(),
+            query.enrolled(),
+            query.sort().name(),
+            PageRequest.of(query.page(), query.size())
+        );
+        List<PublicDeckListResponse> items = page.stream()
             .map(deckMapper::toPublicListResponse)
             .toList();
+        return new PublicDeckPageResponse(
+            items,
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.hasNext()
+        );
+    }
+
+    private String normalizeSearchQuery(String query) {
+        if (query == null || query.isBlank()) {
+            return null;
+        }
+        String trimmed = query.trim();
+        if (trimmed.length() > PublicDeckQuery.MAX_QUERY_LENGTH) {
+            throw new IllegalArgumentException(
+                "q must not exceed " + PublicDeckQuery.MAX_QUERY_LENGTH + " characters after trimming"
+            );
+        }
+        return trimmed.toLowerCase(Locale.ROOT)
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 
     @Override
@@ -124,6 +163,7 @@ public class DeckServiceImpl implements DeckService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_DELETE);
 

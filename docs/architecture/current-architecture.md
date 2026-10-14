@@ -308,13 +308,14 @@ CardService.save(cards)
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
 | `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
-| `/api/v1/decks` | GET | JWT | List public decks with owner, aggregate content-card count and current-user ACTIVE enrollment state | `List<PublicDeckListResponse>`: id, title, language pair, full `UserResponse owner`, `cardCount`, `isEnrolled`; no cards/detail-only deck fields |
+| `/api/v1/decks` | GET | JWT | Search/filter/sort public decks by `q`, language pair, ACTIVE `enrolled`, `sort`, `page` and `size`; private decks are always excluded | `PublicDeckPageResponse { items, page, size, totalElements, totalPages, hasNext }`; each item contains owner, language pair, `cardCount` and current-user `isEnrolled` |
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
 | `/api/v1/decks/{deckId}/cards` | POST | JWT | Manually create card in an owned deck; translation required, definition optional | `CardResponse` (includes `deckId`) |
-| `/api/v1/cards/{id}` | GET/PUT/DELETE | JWT | Card CRUD; GET inherits public/private visibility from the parent deck | `CardResponse` (includes `deckId`) |
+| `/api/v1/cards/{id}` | GET | JWT | Card details; inherits public/private visibility from the parent deck and includes owner identity for frontend ownership guards | `CardDetailsResponse` (card fields plus `deckId`, `deckOwnerId`) |
+| `/api/v1/cards/{id}` | PUT/DELETE | JWT | Update or delete an owned card | PUT: `CardResponse`; DELETE: 204 |
 | `/api/v1/card-generations` | POST | JWT | AI generate one card (`GenerateCardRequest`: title, deckId) | `CardResponse` |
 | `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
@@ -446,7 +447,7 @@ backend/src/main/java/com/llhelper/
 
 | Issue | Priority | Target |
 |-------|----------|--------|
-| No pagination for list endpoints | 🟡 Medium | Level 2 |
+| Remaining list endpoints are unpaginated; Discover/DECK-03 is pageable | 🟡 Medium | Level 2 |
 | No index on `next_review_at` | 🟡 Medium | Backlog |
 | JWT subject is `email`, not `userId` — extra DB lookup per request | 🟢 Low | Post Level 0 |
 | Lombok not consistently applied across all classes | 🟢 Low | Backlog |
@@ -463,7 +464,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 - Mappers are injected into services via constructor injection
 
 **Current mappers:**
-- `CardMapper` — `Card` ↔ `CardResponse` / `CardRequest`
+- `CardMapper` — `Card` ↔ `CardResponse` / `CardDetailsResponse` / `CardRequest`
 - `DeckMapper` — `Deck` ↔ `DeckResponse` / `DeckDetailsResponse`; maps scalar query projections to `PublicDeckListResponse` and `OwnedDeckListResponse`, with `DeckServiceImpl` delegating the conversion
 - `UserMapper` — `User` ↔ `UserResponse`, `updateEntity(UpdateUserRequest, User)`
 

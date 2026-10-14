@@ -123,6 +123,30 @@ export const appRoutes: RouteObject[] = [
                                 },
                             },
                             {
+                                path: '/decks/:deckId/edit',
+                                lazy: async () => {
+                                    const { EditDeckPage } =
+                                        await import('@/pages/edit-deck')
+                                    return { Component: EditDeckPage }
+                                },
+                            },
+                            {
+                                path: '/decks/:deckId/cards/:cardId',
+                                lazy: async () => {
+                                    const { CardDetailsPage } =
+                                        await import('@/pages/card-details')
+                                    return { Component: CardDetailsPage }
+                                },
+                            },
+                            {
+                                path: '/decks/:deckId/cards/:cardId/edit',
+                                lazy: async () => {
+                                    const { EditCardPage } =
+                                        await import('@/pages/edit-card')
+                                    return { Component: EditCardPage }
+                                },
+                            },
+                            {
                                 path: '/study/:deckId',
                                 lazy: async () => {
                                     const { StudyPage } =

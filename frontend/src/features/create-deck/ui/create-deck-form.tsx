@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import type { UseFormSetError } from 'react-hook-form'
-import { DECK_LANGUAGE_OPTIONS, type DeckResponseDto } from '@/entities/deck'
+import {
+    DECK_LANGUAGE_OPTIONS,
+    deckFormSchema,
+    deckFormValuesToRequest,
+    type DeckFormValues,
+    type DeckResponseDto,
+} from '@/entities/deck'
 import { getApiFieldErrors } from '@/shared/api'
 import {
     ApiErrorPresentation,
@@ -13,10 +19,6 @@ import {
     Textarea,
 } from '@/shared/ui'
 import { useCreateDeckMutation } from '../api/create-deck-api'
-import {
-    createDeckFormSchema,
-    type CreateDeckFormValues,
-} from '../model/create-deck-form-schema'
 import styles from './create-deck-form.module.css'
 
 const DECK_FIELDS = [
@@ -33,7 +35,7 @@ export interface CreateDeckFormProps {
 
 function applyFieldErrors(
     error: unknown,
-    setError: UseFormSetError<CreateDeckFormValues>,
+    setError: UseFormSetError<DeckFormValues>,
 ): boolean {
     const fieldErrors = getApiFieldErrors(error)
     let applied = false
@@ -58,8 +60,8 @@ export function CreateDeckForm({ onSuccess, onCancel }: CreateDeckFormProps) {
         clearErrors,
         setError,
         formState: { errors, isSubmitting },
-    } = useForm<CreateDeckFormValues>({
-        resolver: zodResolver(createDeckFormSchema),
+    } = useForm<DeckFormValues>({
+        resolver: zodResolver(deckFormSchema),
         defaultValues: {
             title: '',
             description: '',
@@ -76,13 +78,9 @@ export function CreateDeckForm({ onSuccess, onCancel }: CreateDeckFormProps) {
         setSubmitError(undefined)
 
         try {
-            const response = await createDeck({
-                title: values.title,
-                description: values.description,
-                sourceLanguage: values.sourceLanguage,
-                targetLanguage: values.targetLanguage,
-                isPublic: !values.isPrivate,
-            }).unwrap()
+            const response = await createDeck(
+                deckFormValuesToRequest(values),
+            ).unwrap()
             await onSuccess?.(response)
         } catch (error) {
             if (!applyFieldErrors(error, setError)) {

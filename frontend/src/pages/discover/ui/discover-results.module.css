@@ -1,0 +1,108 @@
+.resultsHeading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.resultsHeading h2 {
+    margin: 0;
+}
+
+.resultsHeading span {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.75rem;
+}
+
+.deckGrid {
+    display: grid;
+    gap: 16px;
+}
+
+.skeletonCard {
+    display: grid;
+    min-width: 0;
+    min-height: 220px;
+    align-content: space-between;
+    gap: 18px;
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+}
+
+.sentinel {
+    height: 1px;
+}
+
+.nextState {
+    display: grid;
+    min-height: 72px;
+    place-items: center;
+    color: var(--on-surface-variant);
+}
+
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 320px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: var(--surface-container-low);
+    text-align: center;
+}
+
+.emptyIcon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    place-items: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    color: var(--primary-container);
+    background-color: var(--surface-container);
+}
+
+.emptyIcon svg {
+    width: 28px;
+    height: 28px;
+    fill: currentcolor;
+}
+
+.emptyState h2 {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    max-width: 420px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+@media (min-width: 48rem) {
+    .deckGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 75rem) {
+    .deckGrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}

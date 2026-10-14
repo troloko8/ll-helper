@@ -89,6 +89,11 @@ function CardInventory({ cards }: { cards: DeckCardResponseDto[] }) {
                     <ol className={styles.cardList}>
                         {visibleCards.map((card, index) => (
                             <li className={styles.cardRow} key={card.id}>
+                                <Link
+                                    className={styles.cardLink}
+                                    to={`/decks/${card.deckId}/cards/${card.id}`}
+                                    aria-label={`Open ${card.title}`}
+                                />
                                 <span className={styles.cardNumber}>
                                     {String(index + 1).padStart(3, '0')}
                                 </span>
@@ -210,6 +215,12 @@ export function OwnerDeckDetailsPage() {
                         to={`/decks/${deck.id}/cards/new`}
                     >
                         Add card
+                    </Link>
+                    <Link
+                        className={styles.editDeckLink}
+                        to={`/decks/${deck.id}/edit`}
+                    >
+                        Edit deck
                     </Link>
                 </div>
 

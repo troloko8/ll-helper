@@ -9,3 +9,7 @@ export interface CardResponseDto {
     createdAt: string
     updatedAt: string
 }
+
+export interface CardDetailsResponseDto extends CardResponseDto {
+    deckOwnerId: number
+}

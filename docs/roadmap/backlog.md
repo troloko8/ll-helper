@@ -195,6 +195,21 @@ Level 1 закрывается проверкой существующих proje
 - Дополнительные кандидаты, требующие проверки через реальные запросы и `EXPLAIN ANALYZE`:
   - `idx_decks_owner(owner_id)` — для выборки Deck по владельцу.
   - `idx_ucp_due_cards(user_deck_progress_id, status, next_review_at)` — составной индекс для spaced-repetition выборки due cards.
+- [ ] **Масштабирование Discover/DECK-03 при большом каталоге:** вернуться к
+  оптимизации, когда репрезентативные данные приблизятся к порядку 100 тыс.
+  публичных колод / 1 млн карточек либо `EXPLAIN (ANALYZE, BUFFERS)` и production
+  p95 покажут, что default-запрос без controls агрегирует или сортирует большую
+  часть каталога. Сохранить один HTTP/page-контракт, но рассмотреть отдельный
+  repository fast path для `q/language/enrolled = null` + `sort=NEWEST`: сначала
+  выбрать страницу deck IDs с ранним `LIMIT/OFFSET`, затем загрузить owner,
+  `cardCount` и ACTIVE enrollment только для выбранных колод. Универсальный
+  запрос оставить для поиска, фильтров и `CARD_COUNT_DESC`. Проверить кандидаты
+  индексов: partial B-tree по публичным колодам `(created_at DESC, id DESC)`,
+  partial B-tree `(lower(title), id)` для title-sort и `pg_trgm` GIN по
+  `lower(decks.title)` / `lower(users.username)` для literal substring search.
+  При глубоких страницах отдельно оценить cursor/keyset pagination. Решение
+  принимать только после сравнения планов всех sort modes на реалистичных данных;
+  закрепить результат PostgreSQL repository tests.
 - Добавлять дополнительные индексы только после подтверждения query pattern и отсутствия подходящего существующего индекса.
 
 **Security:** authentication vs authorization, JWT structure, password hashing, Spring Security filter chain, SecurityContext, protected endpoints, ownership checks, CORS

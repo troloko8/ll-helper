@@ -83,3 +83,28 @@ export interface PublicDeckListResponseDto {
     cardCount: number
     isEnrolled: boolean
 }
+
+export const PUBLIC_DECK_SORTS = [
+    'NEWEST',
+    'TITLE_ASC',
+    'CARD_COUNT_DESC',
+] as const
+
+export type PublicDeckSort = (typeof PUBLIC_DECK_SORTS)[number]
+
+export interface PublicDeckQuery {
+    q?: string
+    sourceLanguage?: DeckLanguageCode
+    targetLanguage?: DeckLanguageCode
+    enrolled?: boolean
+    sort: PublicDeckSort
+}
+
+export interface PublicDeckPageResponseDto {
+    items: PublicDeckListResponseDto[]
+    page: number
+    size: number
+    totalElements: number
+    totalPages: number
+    hasNext: boolean
+}

@@ -824,10 +824,11 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "var decks = pm.response.json();",
-                  "pm.test(\"Response is a public deck collection\", function () {",
-                  "    pm.expect(decks).to.be.an(\"array\");",
-                  "    decks.forEach(function (deck) {",
+                  "var page = pm.response.json();",
+                  "pm.test(\"Response is a public deck page\", function () {",
+                  "    pm.expect(page.items).to.be.an(\"array\");",
+                  "    pm.expect(page).to.include.all.keys(\"page\", \"size\", \"totalElements\", \"totalPages\", \"hasNext\");",
+                  "    page.items.forEach(function (deck) {",
                   "        pm.expect(deck).to.have.property(\"id\");",
                   "        pm.expect(deck).to.have.property(\"title\");",
                   "        pm.expect(deck).to.have.property(\"sourceLanguage\");",
@@ -858,7 +859,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/decks",
+              "raw": "{{url}}/decks?q=english&sourceLanguage=EN&targetLanguage=RU&enrolled=true&sort=CARD_COUNT_DESC&page=0&size=12",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -868,6 +869,15 @@
                 "api",
                 "v1",
                 "decks"
+              ],
+              "query": [
+                { "key": "q", "value": "english" },
+                { "key": "sourceLanguage", "value": "EN" },
+                { "key": "targetLanguage", "value": "RU" },
+                { "key": "enrolled", "value": "true" },
+                { "key": "sort", "value": "CARD_COUNT_DESC" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "12" }
               ]
             }
           },
@@ -881,7 +891,7 @@
               },
               "status": "OK",
               "code": 200,
-              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"English Vocabulary\",\n    \"sourceLanguage\": \"EN\",\n    \"targetLanguage\": \"RU\",\n    \"owner\": {\n      \"id\": 7,\n      \"username\": \"deck-owner\",\n      \"firstName\": \"Deck\",\n      \"lastName\": \"Owner\",\n      \"nativeLanguage\": \"EN\",\n      \"targetLanguage\": \"RU\",\n      \"avatarUrl\": null,\n      \"uiLanguage\": \"EN\",\n      \"createdAt\": \"2026-09-20T10:00:00Z\",\n      \"updatedAt\": \"2026-09-21T10:00:00Z\"\n    },\n    \"cardCount\": 842,\n    \"isEnrolled\": true\n  }\n]"
+              "body": "{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"title\": \"English Vocabulary\",\n      \"sourceLanguage\": \"EN\",\n      \"targetLanguage\": \"RU\",\n      \"owner\": {\n        \"id\": 7,\n        \"username\": \"deck-owner\",\n        \"firstName\": \"Deck\",\n        \"lastName\": \"Owner\",\n        \"nativeLanguage\": \"EN\",\n        \"targetLanguage\": \"RU\",\n        \"avatarUrl\": null,\n        \"uiLanguage\": \"EN\",\n        \"createdAt\": \"2026-09-20T10:00:00Z\",\n        \"updatedAt\": \"2026-09-21T10:00:00Z\"\n      },\n      \"cardCount\": 842,\n      \"isEnrolled\": true\n    }\n  ],\n  \"page\": 0,\n  \"size\": 12,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"hasNext\": false\n}"
             }
           ]
         },
@@ -1245,6 +1255,17 @@
             }
           },
           "response": [
+            {
+              "name": "Get Card By Id - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{url}}/cards/1"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"deckId\": 1,\n  \"deckOwnerId\": 1,\n  \"title\": \"serendipity\",\n  \"definition\": \"a fortunate accident\",\n  \"synonyms\": [\"chance\", \"luck\"],\n  \"examples\": [\"Finding this restaurant was pure serendipity.\"],\n  \"translation\": \"счастливая случайность\",\n  \"createdAt\": \"2024-01-15T07:35:00Z\",\n  \"updatedAt\": \"2024-01-15T07:35:00Z\"\n}"
+            },
             {
               "name": "Get Card By Id - Private Parent Deck Forbidden",
               "originalRequest": {

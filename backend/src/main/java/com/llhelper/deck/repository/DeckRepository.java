@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
@@ -40,9 +42,46 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             and udp.user_id = :userId
             and udp.status = 'ACTIVE'
         where d.is_public = true
+            and (:query is null or lower(d.title) like concat('%', :query, '%') escape '\\'
+                or lower(u.username) like concat('%', :query, '%') escape '\\')
+            and (:sourceLanguage is null or d.source_language = :sourceLanguage)
+            and (:targetLanguage is null or d.target_language = :targetLanguage)
+            and (:enrolled is null
+                or (:enrolled = true and udp.id is not null)
+                or (:enrolled = false and udp.id is null))
         group by d.id, u.id, udp.id
+        order by
+            case when :sort = 'NEWEST' then d.created_at end desc,
+            case when :sort = 'TITLE_ASC' then lower(d.title) end asc,
+            case when :sort = 'CARD_COUNT_DESC' then count(c.id) end desc,
+            case when :sort = 'TITLE_ASC' then d.id end asc,
+            d.id desc
+        """, countQuery = """
+        select count(*)
+        from decks d
+        join users u on u.id = d.owner_id
+        left join user_deck_progress udp
+            on udp.deck_id = d.id
+            and udp.user_id = :userId
+            and udp.status = 'ACTIVE'
+        where d.is_public = true
+            and (:query is null or lower(d.title) like concat('%', :query, '%') escape '\\'
+                or lower(u.username) like concat('%', :query, '%') escape '\\')
+            and (:sourceLanguage is null or d.source_language = :sourceLanguage)
+            and (:targetLanguage is null or d.target_language = :targetLanguage)
+            and (:enrolled is null
+                or (:enrolled = true and udp.id is not null)
+                or (:enrolled = false and udp.id is null))
         """, nativeQuery = true)
-    List<PublicDeckListProjection> findPublicDecks(@Param("userId") Long userId);
+    Page<PublicDeckListProjection> findPublicDecks(
+        @Param("userId") Long userId,
+        @Param("query") String query,
+        @Param("sourceLanguage") String sourceLanguage,
+        @Param("targetLanguage") String targetLanguage,
+        @Param("enrolled") Boolean enrolled,
+        @Param("sort") String sort,
+        Pageable pageable
+    );
 
     @Query(value = """
         select

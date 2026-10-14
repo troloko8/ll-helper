@@ -17,6 +17,20 @@ describe('Logout orchestration', () => {
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
+            http.get('http://localhost/api/v1/users/me', () =>
+                HttpResponse.json({
+                    id: 42,
+                    username: 'learner',
+                    firstName: 'Test',
+                    lastName: 'Learner',
+                    nativeLanguage: 'EN',
+                    targetLanguage: 'ES',
+                    avatarUrl: null,
+                    uiLanguage: 'EN',
+                    createdAt: '2026-09-01T10:00:00Z',
+                    updatedAt: '2026-09-01T10:00:00Z',
+                }),
+            ),
         )
         const store = createAppStore()
         setToken('current-user-token')

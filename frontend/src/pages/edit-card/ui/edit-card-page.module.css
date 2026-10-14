@@ -1,0 +1,30 @@
+.page {
+    display: grid;
+    gap: 1rem;
+    max-width: 68rem;
+    margin: 0 auto;
+}
+.backLink {
+    color: var(--on-surface-variant);
+    text-decoration: none;
+}
+.panel {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--outline-variant);
+    border-radius: 0.75rem;
+    background: var(--surface-container-low);
+}
+.panel header span {
+    color: var(--primary-container);
+    font-family: var(--font-family-metadata);
+    text-transform: uppercase;
+}
+.panel header h1,
+.panel header p {
+    margin: 0.35rem 0 0;
+}
+.panel header p {
+    color: var(--on-surface-variant);
+}

@@ -1,10 +1,9 @@
-import type { DeckResponseDto } from '@/entities/deck'
+import type { DeckRequestDto, DeckResponseDto } from '@/entities/deck'
 import { baseApi } from '@/shared/api'
-import type { CreateDeckRequestDto } from '../model/types'
 
 export const createDeckApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-        createDeck: builder.mutation<DeckResponseDto, CreateDeckRequestDto>({
+        createDeck: builder.mutation<DeckResponseDto, DeckRequestDto>({
             query: (body) => ({
                 url: '/decks',
                 method: 'POST',

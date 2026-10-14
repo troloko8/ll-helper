@@ -15,6 +15,7 @@ import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.request.GenerateCardRequest;
+import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
@@ -32,8 +33,8 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mapstruct.factory.Mappers;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -113,6 +114,11 @@ class CardServiceImplTest {
         return new CardResponse(CARD_ID, DECK_ID, "title", "def", List.of(), List.of(), "translation", null, null);
     }
 
+    private static CardDetailsResponse cardDetailsResponse() {
+        return new CardDetailsResponse(
+            CARD_ID, DECK_ID, OWNER_ID, "title", "def", List.of(), List.of(), "translation", null, null);
+    }
+
 
     @Test
     void generate_shouldSaveGeneratedContent_whenUserIsOwner() {
@@ -187,18 +193,43 @@ class CardServiceImplTest {
     }
 
     @Test
+    void delete_shouldDeleteCard_whenUserIsDeckOwner() {
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
+        when(deckRepository.findWithOwnerById(DECK_ID))
+            .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+
+        cardService.delete(CARD_ID);
+
+        verify(cardRepository).deleteById(CARD_ID);
+    }
+
+    @Test
+    void delete_shouldRejectNonOwner_withoutDeleting() {
+        when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
+        when(deckRepository.findWithOwnerById(DECK_ID))
+            .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+
+        assertThatThrownBy(() -> cardService.delete(CARD_ID))
+            .isInstanceOf(AccessDeniedException.class);
+
+        verify(cardRepository, never()).deleteById(any());
+    }
+
+    @Test
     void getById_shouldSucceed_whenParentDeckIsPublic() {
         Card card = card();
         Deck deck = deckOwnedBy(OWNER_ID);
-        CardResponse response = cardResponse();
+        CardDetailsResponse response = cardDetailsResponse();
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
-        when(cardMapper.toResponse(card)).thenReturn(response);
+        when(cardMapper.toDetailsResponse(card, OWNER_ID)).thenReturn(response);
 
-        CardResponse result = cardService.getById(CARD_ID);
+        CardDetailsResponse result = cardService.getById(CARD_ID);
 
         assertThat(result).isEqualTo(response);
-        verify(cardMapper).toResponse(card);
+        verify(cardMapper).toDetailsResponse(card, OWNER_ID);
     }
 
     @Test
@@ -206,16 +237,16 @@ class CardServiceImplTest {
         Card card = card();
         Deck deck = deckOwnedBy(OWNER_ID);
         deck.setIsPublic(false);
-        CardResponse response = cardResponse();
+        CardDetailsResponse response = cardDetailsResponse();
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
-        when(cardMapper.toResponse(card)).thenReturn(response);
+        when(cardMapper.toDetailsResponse(card, OWNER_ID)).thenReturn(response);
 
-        CardResponse result = cardService.getById(CARD_ID);
+        CardDetailsResponse result = cardService.getById(CARD_ID);
 
         assertThat(result).isEqualTo(response);
-        verify(cardMapper).toResponse(card);
+        verify(cardMapper).toDetailsResponse(card, OWNER_ID);
     }
 
     @Test
@@ -231,7 +262,7 @@ class CardServiceImplTest {
             .isInstanceOf(AccessDeniedException.class)
             .hasMessage("Access denied: private deck");
 
-        verify(cardMapper, never()).toResponse(any());
+        verify(cardMapper, never()).toDetailsResponse(any(), any());
     }
 
     @Test

@@ -14,10 +14,13 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.request.PublicDeckQuery;
 import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckPageResponse;
+import com.llhelper.deck.enums.PublicDeckSort;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.mapper.DeckMapper;
 import com.llhelper.deck.repository.DeckRepository;
@@ -38,6 +41,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -196,15 +201,41 @@ class DeckServiceImplTest {
             DECK_ID, "Public deck", Language.EN, Language.RU, owner, 3, true
         );
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(deckRepository.findPublicDecks(OWNER_ID)).thenReturn(List.of(row));
+        PublicDeckQuery query = new PublicDeckQuery(
+            "  Public%_  ", Language.EN, null, true, PublicDeckSort.CARD_COUNT_DESC, 1, 12
+        );
+        when(deckRepository.findPublicDecks(
+            OWNER_ID, "public\\%\\_", "EN", null, true, "CARD_COUNT_DESC", PageRequest.of(1, 12)
+        )).thenReturn(new PageImpl<>(List.of(row), PageRequest.of(1, 12), 13));
         when(deckMapper.toPublicListResponse(row)).thenReturn(response);
 
-        List<PublicDeckListResponse> result = deckService.getPublicDecks();
+        PublicDeckPageResponse result = deckService.getPublicDecks(query);
 
-        assertThat(result).containsExactly(response);
-        verify(deckRepository).findPublicDecks(OWNER_ID);
+        assertThat(result.items()).containsExactly(response);
+        assertThat(result.page()).isEqualTo(1);
+        assertThat(result.totalElements()).isEqualTo(13);
+        assertThat(result.hasNext()).isFalse();
+        verify(deckRepository).findPublicDecks(
+            OWNER_ID, "public\\%\\_", "EN", null, true, "CARD_COUNT_DESC", PageRequest.of(1, 12)
+        );
         verify(deckMapper).toPublicListResponse(row);
         verify(deckRepository, never()).findAll();
+    }
+
+    @Test
+    void getPublicDecks_shouldRejectTrimmedQueryLongerThanLimit() {
+        PublicDeckQuery query = new PublicDeckQuery(
+            "  " + "x".repeat(PublicDeckQuery.MAX_QUERY_LENGTH + 1) + "  ", null, null, null,
+            PublicDeckSort.NEWEST, 0, 12
+        );
+
+        assertThatThrownBy(() -> deckService.getPublicDecks(query))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("after trimming");
+
+        verify(deckRepository, never()).findPublicDecks(
+            any(), any(), any(), any(), any(), any(), any()
+        );
     }
 
     @Test

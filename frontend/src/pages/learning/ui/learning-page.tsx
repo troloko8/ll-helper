@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button, ApiErrorPresentation, Skeleton } from '@/shared/ui'
-import { LearningDeckCard, useGetLearningDecksQuery } from '@/entities/learning'
+import { LearningDeckItem, useGetLearningDecksQuery } from '@/entities/learning'
 import styles from './learning-page.module.css'
 
 function LearningDecksSkeleton() {
@@ -90,7 +90,7 @@ export function LearningPage() {
                                 to={`/learning/${deck.deckId}`}
                                 key={deck.deckId}
                             >
-                                <LearningDeckCard
+                                <LearningDeckItem
                                     deck={deck}
                                     featured={index === 0}
                                 />

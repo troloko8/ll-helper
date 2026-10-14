@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useFieldArray, useForm } from 'react-hook-form'
 import type { FieldPath, UseFormSetError } from 'react-hook-form'
-import type { CardResponseDto } from '@/entities/card'
+import {
+    CARD_LIMITS,
+    cardFormSchema,
+    cardFormValuesToRequest,
+    cardTitleSchema,
+    type CardFormValues,
+    type CardResponseDto,
+} from '@/entities/card'
 import { getApiFieldErrors } from '@/shared/api'
 import {
     ApiErrorPresentation,
@@ -16,14 +23,6 @@ import {
     useAddCardMutation,
     useGenerateCardMutation,
 } from '../api/add-card-api'
-import {
-    ADD_CARD_LIMITS,
-    addCardFormSchema,
-    cardTitleSchema,
-    parseExamples,
-    parseSynonyms,
-    type AddCardFormValues,
-} from '../model/add-card-form-schema'
 import styles from './add-card-form.module.css'
 
 const CARD_FIELDS = ['title', 'definition', 'translation', 'synonyms'] as const
@@ -51,7 +50,7 @@ export interface AddCardFormProps {
 
 function applyFieldErrors(
     error: unknown,
-    setError: UseFormSetError<AddCardFormValues>,
+    setError: UseFormSetError<CardFormValues>,
 ): boolean {
     const fieldErrors = getApiFieldErrors(error)
     let applied = false
@@ -59,7 +58,7 @@ function applyFieldErrors(
     for (const field of CARD_FIELDS) {
         const message = fieldErrors[field]
         if (message) {
-            setError(field as FieldPath<AddCardFormValues>, {
+            setError(field as FieldPath<CardFormValues>, {
                 type: 'server',
                 message,
             })
@@ -94,8 +93,8 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
         getValues,
         setError,
         formState: { errors, isSubmitting },
-    } = useForm<AddCardFormValues>({
-        resolver: zodResolver(addCardFormSchema),
+    } = useForm<CardFormValues>({
+        resolver: zodResolver(cardFormSchema),
         defaultValues: {
             title: '',
             definition: '',
@@ -145,13 +144,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
         await submitCard(ADD_CARD_ACTION.MANUAL, () =>
             addCard({
                 deckId,
-                body: {
-                    title: values.title,
-                    definition: values.definition || null,
-                    translation: values.translation,
-                    synonyms: parseSynonyms(values.synonyms),
-                    examples: parseExamples(values.examples),
-                },
+                body: cardFormValuesToRequest(values),
             }).unwrap(),
         )
     })
@@ -190,7 +183,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                             <Input
                                 {...register('title')}
                                 autoComplete="off"
-                                maxLength={ADD_CARD_LIMITS.TITLE_MAX_LENGTH}
+                                maxLength={CARD_LIMITS.TITLE_MAX_LENGTH}
                                 placeholder="e.g., Ephemeral"
                             />
                         </FormField>
@@ -221,7 +214,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     >
                         <Textarea
                             {...register('definition')}
-                            maxLength={ADD_CARD_LIMITS.DEFINITION_MAX_LENGTH}
+                            maxLength={CARD_LIMITS.DEFINITION_MAX_LENGTH}
                             placeholder="Meaning in target language..."
                         />
                     </FormField>
@@ -234,7 +227,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                     >
                         <Textarea
                             {...register('translation')}
-                            maxLength={ADD_CARD_LIMITS.TRANSLATION_MAX_LENGTH}
+                            maxLength={CARD_LIMITS.TRANSLATION_MAX_LENGTH}
                             placeholder="Meaning in native language..."
                         />
                     </FormField>
@@ -270,8 +263,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                             type="button"
                             variant="secondary"
                             disabled={
-                                fields.length >=
-                                ADD_CARD_LIMITS.EXAMPLES_MAX_COUNT
+                                fields.length >= CARD_LIMITS.EXAMPLES_MAX_COUNT
                             }
                             onClick={() => append({ value: '' })}
                         >
@@ -302,7 +294,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                                     <Textarea
                                         {...register(`examples.${index}.value`)}
                                         maxLength={
-                                            ADD_CARD_LIMITS.EXAMPLE_MAX_LENGTH
+                                            CARD_LIMITS.EXAMPLE_MAX_LENGTH
                                         }
                                         rows={2}
                                         placeholder="Sentence demonstrating usage..."

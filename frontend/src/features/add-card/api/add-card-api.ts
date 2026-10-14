@@ -1,6 +1,6 @@
-import type { CardResponseDto } from '@/entities/card'
+import type { CardRequestDto, CardResponseDto } from '@/entities/card'
 import { baseApi } from '@/shared/api'
-import type { CardRequestDto, GenerateCardRequestDto } from '../model/types'
+import type { GenerateCardRequestDto } from '../model/types'
 
 interface AddCardMutationArgs {
     deckId: number
@@ -15,8 +15,14 @@ export const addCardApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: (_result, _error, { deckId }) => [
+            // TODO: Patch the cached owner deck and visible collection card counts
+            // from the returned card; keep Learning/Study invalidation server-authoritative.
+            invalidatesTags: (result, _error, { deckId }) => [
                 { type: 'Deck', id: deckId },
+                { type: 'Card', id: result?.id ?? 'LIST' },
+                { type: 'LearningDeck', id: deckId },
+                { type: 'LearningCards', id: deckId },
+                { type: 'StudySession', id: deckId },
             ],
         }),
         generateCard: builder.mutation<CardResponseDto, GenerateCardRequestDto>(
@@ -26,8 +32,13 @@ export const addCardApi = baseApi.injectEndpoints({
                     method: 'POST',
                     body,
                 }),
-                invalidatesTags: (_result, _error, { deckId }) => [
+                // TODO: Apply the same targeted content-cache patch as addCard.
+                invalidatesTags: (result, _error, { deckId }) => [
                     { type: 'Deck', id: deckId },
+                    { type: 'Card', id: result?.id ?? 'LIST' },
+                    { type: 'LearningDeck', id: deckId },
+                    { type: 'LearningCards', id: deckId },
+                    { type: 'StudySession', id: deckId },
                 ],
             },
         ),

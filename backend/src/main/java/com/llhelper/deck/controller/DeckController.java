@@ -1,12 +1,17 @@
 package com.llhelper.deck.controller;
 
 import com.llhelper.deck.dto.request.DeckRequest;
+import com.llhelper.deck.dto.request.PublicDeckQuery;
 import com.llhelper.deck.dto.response.DeckDetailsResponse;
 import com.llhelper.deck.dto.response.DeckResponse;
 import com.llhelper.deck.dto.response.OwnedDeckListResponse;
-import com.llhelper.deck.dto.response.PublicDeckListResponse;
+import com.llhelper.deck.dto.response.PublicDeckPageResponse;
+import com.llhelper.deck.enums.PublicDeckSort;
+import com.llhelper.common.model.Language;
 import com.llhelper.deck.service.DeckService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/decks")
 public class DeckController {
@@ -45,8 +53,24 @@ public class DeckController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PublicDeckListResponse>> getPublicDecks() {
-        return ResponseEntity.ok(deckService.getPublicDecks());
+    public ResponseEntity<PublicDeckPageResponse> getPublicDecks(
+        @RequestParam(required = false) String q,
+        @RequestParam(required = false) Language sourceLanguage,
+        @RequestParam(required = false) Language targetLanguage,
+        @RequestParam(required = false) Boolean enrolled,
+        @RequestParam(defaultValue = "NEWEST") PublicDeckSort sort,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(50) int size
+    ) {
+        if (q != null && q.trim().length() > PublicDeckQuery.MAX_QUERY_LENGTH) {
+            throw new IllegalArgumentException(
+                "q must not exceed " + PublicDeckQuery.MAX_QUERY_LENGTH + " characters after trimming"
+            );
+        }
+
+        return ResponseEntity.ok(deckService.getPublicDecks(
+            new PublicDeckQuery(q, sourceLanguage, targetLanguage, enrolled, sort, page, size)
+        ));
     }
 
     @PutMapping("/{id}")

@@ -2,7 +2,8 @@ import { baseApi } from '@/shared/api'
 import type {
     DeckDetailsResponseDto,
     OwnedDeckListResponseDto,
-    PublicDeckListResponseDto,
+    PublicDeckPageResponseDto,
+    PublicDeckQuery,
 } from '../model/types'
 
 export const deckApi = baseApi.injectEndpoints({
@@ -21,12 +22,29 @@ export const deckApi = baseApi.injectEndpoints({
                     []),
             ],
         }),
-        getPublicDecks: builder.query<PublicDeckListResponseDto[], void>({
-            query: () => '/decks',
+        getPublicDecks: builder.infiniteQuery<
+            PublicDeckPageResponseDto,
+            PublicDeckQuery,
+            number
+        >({
+            infiniteQueryOptions: {
+                initialPageParam: 0,
+                getNextPageParam: (lastPage) =>
+                    lastPage.hasNext ? lastPage.page + 1 : undefined,
+            },
+            query: ({ queryArg, pageParam }) => ({
+                url: '/decks',
+                params: {
+                    ...queryArg,
+                    page: pageParam,
+                    size: 12,
+                },
+            }),
             providesTags: (result) => [
                 { type: 'Deck', id: 'LIST' },
-                ...(result?.map(({ id }) => ({ type: 'Deck' as const, id })) ??
-                    []),
+                ...(result?.pages.flatMap(({ items }) =>
+                    items.map(({ id }) => ({ type: 'Deck' as const, id })),
+                ) ?? []),
             ],
         }),
     }),
@@ -35,5 +53,5 @@ export const deckApi = baseApi.injectEndpoints({
 export const {
     useGetDeckByIdQuery,
     useGetOwnedDecksQuery,
-    useGetPublicDecksQuery,
+    useGetPublicDecksInfiniteQuery,
 } = deckApi

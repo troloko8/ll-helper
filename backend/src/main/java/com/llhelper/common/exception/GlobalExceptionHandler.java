@@ -20,6 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -71,6 +72,14 @@ public class GlobalExceptionHandler {
             ));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(Map.of("errors", fieldErrors));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleMethodArgumentTypeMismatch(
+        MethodArgumentTypeMismatchException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("message", "Invalid value for parameter: " + exception.getName()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
