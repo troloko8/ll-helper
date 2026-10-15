@@ -89,7 +89,7 @@ describe('AppShell', () => {
         expect(requests).toBe(1)
         view.unmount()
     })
-    it('renders the working Learning, Created, and Discover navigation entries', () => {
+    it('renders the working Learning, Created, Discover, and Progress navigation entries', () => {
         render(
             <Provider store={createApiTestStore()}>
                 <MemoryRouter initialEntries={['/learning']}>
@@ -132,11 +132,13 @@ describe('AppShell', () => {
             expect(
                 within(navigation).getByRole('link', { name: 'Discover' }),
             ).not.toHaveAttribute('aria-current')
-            expect(within(navigation).getAllByRole('link')).toHaveLength(3)
+            expect(
+                within(navigation).getByRole('link', { name: 'Progress' }),
+            ).toHaveAttribute('href', '/progress')
+            expect(within(navigation).getAllByRole('link')).toHaveLength(4)
         }
 
         expect(screen.queryByText('Study')).not.toBeInTheDocument()
-        expect(screen.queryByText('Progress')).not.toBeInTheDocument()
         expect(screen.getAllByRole('button', { name: 'Log out' })).toHaveLength(
             2,
         )
@@ -192,6 +194,8 @@ describe('AppShell', () => {
         ['/decks/12/cards/new', 'Created'],
         ['/decks/12', 'Discover'],
         ['/discover/', 'Discover'],
+        ['/progress', 'Progress'],
+        ['/progress/', 'Progress'],
     ])('marks %s as part of the %s navigation section', (route, label) => {
         render(
             <Provider store={createApiTestStore()}>

@@ -13,6 +13,7 @@ import {
 import {
     useGetLearningDeckQuery,
     useGetLearningDecksQuery,
+    useGetLearningProgressQuery,
     useGetStudySessionQuery,
 } from '@/entities/learning'
 import type { UserResponseDto } from '@/entities/user'
@@ -51,6 +52,12 @@ function DeckCacheProbe() {
     return null
 }
 
+function DeckUpdateCacheProbe() {
+    useGetDeckByIdQuery(12)
+    useGetLearningProgressQuery()
+    return null
+}
+
 function DeckDeletionCacheProbe() {
     useGetDeckByIdQuery(12)
     useGetOwnedDecksQuery()
@@ -65,12 +72,14 @@ function renderPage(
     route = '/decks/12/edit',
     options: {
         keepDeckSubscribed?: boolean
+        keepUpdateCachesSubscribed?: boolean
         keepDeletionCachesSubscribed?: boolean
     } = {},
 ) {
     return renderWithProviders(
         <>
             {options.keepDeckSubscribed && <DeckCacheProbe />}
+            {options.keepUpdateCachesSubscribed && <DeckUpdateCacheProbe />}
             {options.keepDeletionCachesSubscribed && <DeckDeletionCacheProbe />}
             <Routes>
                 <Route path="/decks/:deckId/edit" element={<EditDeckPage />} />
@@ -443,6 +452,7 @@ describe('EditDeckPage', () => {
 
     it('invalidates and refreshes an active deck cache after saving', async () => {
         let deckRequests = 0
+        let progressRequests = 0
         server.use(
             http.get('http://localhost/api/v1/decks/12', () => {
                 deckRequests += 1
@@ -451,9 +461,13 @@ describe('EditDeckPage', () => {
             http.put('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json({ ...deck, title: 'Updated deck' }),
             ),
+            http.get('http://localhost/api/v1/learning/progress', () => {
+                progressRequests += 1
+                return HttpResponse.json([])
+            }),
         )
         const user = userEvent.setup()
-        renderPage('/decks/12/edit', { keepDeckSubscribed: true })
+        renderPage('/decks/12/edit', { keepUpdateCachesSubscribed: true })
         await screen.findByRole('heading', { name: 'Edit Deck' })
 
         await user.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -462,5 +476,6 @@ describe('EditDeckPage', () => {
             name: 'Manage deck destination',
         })
         await waitFor(() => expect(deckRequests).toBeGreaterThanOrEqual(2))
+        await waitFor(() => expect(progressRequests).toBeGreaterThanOrEqual(2))
     })
 })

@@ -11,6 +11,7 @@ import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.CardLearningStatus;
 import com.llhelper.learning.enums.UserDeckStatus;
 import com.llhelper.learning.repository.UserDeckProgressRepository.LearningDeckSummaryProjection;
+import com.llhelper.learning.repository.UserDeckProgressRepository.LearningProgressSummaryProjection;
 import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
@@ -135,6 +136,53 @@ class LearningRepositoryTest {
         assertThat(queue.subList(0, 4)).extracting(UserCardProgress::getCardId).isSorted();
         assertThat(queue.subList(4, 8)).extracting(UserCardProgress::getCardId).isSorted();
         assertThat(queue.subList(8, 10)).extracting(UserCardProgress::getCardId).isSorted();
+    }
+
+    @Test
+    void findLearningProgressSummaries_shouldCountStatusesAndOrderByNewestEnrollment() {
+        User user = persistUser("progress@example.com", "progress");
+        User otherUser = persistUser("other-progress@example.com", "other-progress");
+        Deck activeDeck = persistDeck(user, "Active deck");
+        Deck emptyDeck = persistDeck(user, "Empty deck");
+        Deck pausedDeck = persistDeck(user, "Paused deck");
+        Deck otherDeck = persistDeck(otherUser, "Other deck");
+        UserDeckProgress activeEnrollment = persistEnrollment(
+            user, activeDeck, UserDeckStatus.ACTIVE,
+            Instant.parse("2024-01-01T00:00:00Z"), null
+        );
+        persistEnrollment(
+            user, emptyDeck, UserDeckStatus.ACTIVE,
+            Instant.parse("2024-01-02T00:00:00Z"), null
+        );
+        UserDeckProgress pausedEnrollment = persistEnrollment(
+            user, pausedDeck, UserDeckStatus.PAUSED, Instant.EPOCH, null
+        );
+        UserDeckProgress otherEnrollment = persistEnrollment(
+            otherUser, otherDeck, UserDeckStatus.ACTIVE, Instant.EPOCH, null
+        );
+
+        persistCardProgress(user, activeEnrollment, persistCard(activeDeck, "new"), CardLearningStatus.NEW);
+        persistCardProgress(user, activeEnrollment, persistCard(activeDeck, "learning"), CardLearningStatus.LEARNING);
+        persistCardProgress(user, activeEnrollment, persistCard(activeDeck, "reviewing"), CardLearningStatus.REVIEWING);
+        persistCardProgress(user, activeEnrollment, persistCard(activeDeck, "mastered"), CardLearningStatus.MASTERED);
+        persistCardProgress(user, pausedEnrollment, persistCard(pausedDeck, "paused"), CardLearningStatus.MASTERED);
+        persistCardProgress(otherUser, otherEnrollment, persistCard(otherDeck, "other"), CardLearningStatus.MASTERED);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<LearningProgressSummaryProjection> rows = userDeckProgressRepository
+            .findLearningProgressSummaries(user.getId());
+
+        assertThat(rows).extracting(LearningProgressSummaryProjection::getDeckId)
+            .containsExactly(emptyDeck.getId(), activeDeck.getId());
+        LearningProgressSummaryProjection active = rows.get(1);
+        assertThat(active.getNewCount()).isOne();
+        assertThat(active.getLearningCount()).isOne();
+        assertThat(active.getReviewingCount()).isOne();
+        assertThat(active.getMasteredCount()).isOne();
+        assertThat(active.getTotalCards()).isEqualTo(4);
+        assertThat(rows.get(0).getTotalCards()).isZero();
     }
 
     private void persistProgressRange(

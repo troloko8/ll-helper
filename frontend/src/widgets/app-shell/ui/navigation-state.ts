@@ -1,4 +1,8 @@
-export type NavigationDestination = 'learning' | 'created' | 'discover'
+export type NavigationDestination =
+    | 'learning'
+    | 'created'
+    | 'discover'
+    | 'progress'
 
 export function getActiveNavigationDestination(
     pathname: string,
@@ -26,6 +30,10 @@ export function getActiveNavigationDestination(
         /^\/decks\/[^/]+$/.test(normalizedPathname)
     ) {
         return 'discover'
+    }
+
+    if (normalizedPathname === '/progress') {
+        return 'progress'
     }
 
     return undefined

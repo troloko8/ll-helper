@@ -6,12 +6,15 @@ import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.LearningProgressResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import java.util.List;
 
 public interface LearningService {
 
     List<LearningDeckResponse> getMyDecks();
+
+    List<LearningProgressResponse> getMyProgress();
 
     LearningDeckDetailsResponse getLearningDeck(Long deckId);
 

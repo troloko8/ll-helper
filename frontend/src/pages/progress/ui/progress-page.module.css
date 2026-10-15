@@ -1,0 +1,648 @@
+.page {
+    display: grid;
+    gap: 24px;
+}
+
+.pageHeader {
+    display: grid;
+    gap: 12px;
+    max-width: 720px;
+}
+
+.pageHeader h1 {
+    color: var(--on-background);
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 720;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.pageHeader p {
+    color: var(--on-surface-variant);
+}
+
+.summary,
+.metricCard,
+.summarySkeleton,
+.metricSkeleton,
+.rowSkeleton,
+.emptyState {
+    border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+    border-radius: 8px;
+    background: var(--surface-container-low);
+}
+
+.summary {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    overflow: hidden;
+    padding: 16px;
+}
+
+.summary::before {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--surface-tint) 7%, transparent),
+        transparent 55%
+    );
+    content: '';
+    pointer-events: none;
+}
+
+.summaryValue,
+.masteryRing,
+.overallProgressTrack {
+    position: relative;
+    z-index: 1;
+}
+
+.sectionLabel,
+.metricHeading,
+.desktopTableHeader,
+.deckRow small {
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sectionLabel {
+    color: var(--surface-tint);
+}
+
+.summary h2 {
+    margin-top: 4px;
+    color: var(--surface-tint);
+    font-family: var(--font-family-metadata);
+    font-size: clamp(2rem, 8vw, 3rem);
+    line-height: 1;
+}
+
+.masteryRing {
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-items: center;
+}
+
+.masteryRing svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.masteryRing path {
+    fill: none;
+    stroke-width: 2.5;
+}
+
+.masteryRingTrack {
+    stroke: var(--surface-container-highest);
+}
+
+.masteryRingValue {
+    stroke: var(--primary-container);
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--surface-tint) 50%, transparent));
+}
+
+.masteryRing span {
+    color: var(--primary-container);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.overallProgressTrack {
+    display: none;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--surface-container-highest);
+}
+
+.overallProgressTrack span,
+.mobileProgressTrack span {
+    display: block;
+    height: 100%;
+    background: var(--primary-container);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--surface-tint) 55%, transparent);
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.metricCard {
+    position: relative;
+    display: flex;
+    min-height: 82px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    overflow: hidden;
+    padding: 14px;
+    border-color: transparent;
+    background: var(--surface-container);
+}
+
+.metricCard::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 3px;
+    background: currentcolor;
+    content: '';
+    opacity: 0.5;
+}
+
+.metricHeading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--on-surface-variant);
+}
+
+.metricIcon {
+    display: none;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    place-items: center;
+}
+
+.metricIcon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: currentcolor;
+}
+
+.metricValue {
+    display: grid;
+    gap: 2px;
+}
+
+.metricValue strong {
+    color: var(--on-surface);
+    font-family: var(--font-family-metadata);
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+.metricValue span {
+    display: none;
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+}
+
+.metricProgressTrack {
+    display: none;
+    width: 100%;
+    height: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+    border-radius: 999px;
+    background: var(--surface-container-highest);
+}
+
+.metricProgressTrack span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: currentcolor;
+}
+
+.totalMetric,
+.newMetric {
+    color: var(--outline);
+}
+
+.learningMetric {
+    color: var(--secondary-container);
+}
+
+.learningMetric .metricHeading,
+.learningMetric .metricValue strong {
+    color: var(--secondary-container);
+}
+
+.reviewMetric {
+    color: var(--error);
+}
+
+.reviewMetric .metricHeading,
+.reviewMetric .metricValue strong {
+    color: var(--error);
+}
+
+.masteredMetric {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+}
+
+.masteredMetric,
+.masteredMetric .metricHeading,
+.masteredMetric .metricValue strong {
+    color: var(--surface-tint);
+}
+
+.masteredMetric .metricHeading {
+    flex-direction: row;
+}
+
+.masteredMetric .metricIcon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--surface-tint) 10%, transparent);
+}
+
+.masteredMetric .metricIcon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.deckSection {
+    display: grid;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+.deckSection > h2 {
+    font-size: 1.25rem;
+    font-weight: 650;
+}
+
+.desktopTableHeader {
+    display: none;
+}
+
+.deckList {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.deckItem {
+    min-width: 0;
+}
+
+.deckRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 8px;
+    padding: 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--on-surface);
+    background: var(--surface-container);
+    text-decoration: none;
+    transition:
+        border-color 120ms ease,
+        background-color 120ms ease,
+        transform 120ms ease;
+}
+
+.deckRow:hover {
+    border-color: color-mix(in srgb, var(--primary-container) 40%, transparent);
+    background: var(--surface-container-high);
+}
+
+.deckRow:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+.deckNameCell {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.deckNameCell h3 {
+    min-width: 0;
+    font-size: 1rem;
+    font-weight: 620;
+    line-height: 1.3;
+}
+
+.mobilePercentage {
+    flex: 0 0 auto;
+    padding: 3px 7px;
+    border-radius: 3px;
+    color: var(--primary-container);
+    background: color-mix(in srgb, var(--primary-container) 10%, transparent);
+    font-family: var(--font-family-metadata);
+    font-size: 0.625rem;
+}
+
+.mobileProgressTrack {
+    height: 4px;
+    grid-column: 1 / -1;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--surface-container-highest);
+}
+
+.deckRow > span:not(.mobilePercentage) {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.deckRow small {
+    color: var(--on-surface-variant);
+}
+
+.deckRow strong {
+    font-family: var(--font-family-metadata);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.totalCell {
+    display: none !important;
+}
+
+.newCell strong {
+    color: var(--on-surface);
+}
+
+.learningCell strong {
+    color: var(--secondary-container);
+}
+
+.reviewCell strong {
+    color: var(--error);
+}
+
+.masteredCell strong {
+    color: var(--surface-tint);
+}
+
+.desktopPercentage {
+    display: none;
+}
+
+.discoverLink {
+    width: fit-content;
+    color: var(--primary-container);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.discoverLink:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.discoverLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+.skeletons {
+    display: grid;
+    gap: 16px;
+}
+
+.summarySkeleton,
+.metricSkeleton,
+.rowSkeleton {
+    display: grid;
+    gap: 16px;
+    padding: 20px;
+}
+
+.metricsSkeleton {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.emptyState {
+    display: grid;
+    min-height: 320px;
+    place-items: center;
+    align-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.emptyState h2 {
+    font-size: 1.25rem;
+}
+
+.emptyState p {
+    max-width: 400px;
+    color: var(--on-surface-variant);
+}
+
+.emptyIcon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    place-items: center;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    color: var(--primary-container);
+    font-size: 2rem;
+}
+
+@media (min-width: 48rem) {
+    .page {
+        gap: 32px;
+    }
+
+    .summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 24px;
+    }
+
+    .summary h2 {
+        font-size: 3rem;
+    }
+
+    .overallProgressTrack {
+        display: block;
+        grid-column: 1 / -1;
+        margin-top: 4px;
+    }
+
+    .metricsGrid,
+    .metricsSkeleton {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .metricCard {
+        min-height: 116px;
+        padding: 18px;
+        border-color: color-mix(
+            in srgb,
+            var(--outline-variant) 55%,
+            transparent
+        );
+    }
+
+    .metricCard::before {
+        display: none;
+    }
+
+    .metricIcon {
+        display: grid;
+    }
+
+    .metricValue span {
+        display: block;
+    }
+
+    .metricProgressTrack {
+        display: block;
+    }
+
+    .masteredMetric {
+        grid-column: auto;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .masteredMetric .metricIcon {
+        width: 18px;
+        height: 18px;
+        background: transparent;
+    }
+
+    .desktopTableHeader,
+    .deckRow {
+        display: grid;
+        grid-template-columns: minmax(220px, 2.5fr) repeat(
+                6,
+                minmax(70px, 1fr)
+            );
+        align-items: center;
+        gap: 12px;
+    }
+
+    .desktopTableHeader {
+        padding: 14px 16px;
+        border: 1px solid color-mix(
+            in srgb,
+            var(--outline-variant) 55%,
+            transparent
+        );
+        border-bottom: 0;
+        border-radius: 8px 8px 0 0;
+        color: var(--on-surface-variant);
+        background: var(--surface-container-lowest);
+    }
+
+    .deckList {
+        gap: 0;
+        margin-top: -16px;
+        border: 1px solid color-mix(
+            in srgb,
+            var(--outline-variant) 55%,
+            transparent
+        );
+        border-top: 0;
+        border-radius: 0 0 8px 8px;
+        background: var(--surface-container-lowest);
+    }
+
+    .deckItem + .deckItem {
+        border-top: 1px solid color-mix(
+            in srgb,
+            var(--outline-variant) 35%,
+            transparent
+        );
+    }
+
+    .deckRow {
+        min-height: 58px;
+        padding: 14px 16px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .deckRow:hover {
+        background: var(--surface-container-low);
+        transform: none;
+    }
+
+    .deckRow:focus-visible {
+        outline-offset: -2px;
+    }
+
+    .deckNameCell {
+        display: block;
+        grid-column: auto;
+    }
+
+    .deckNameCell h3 {
+        font-size: 0.875rem;
+    }
+
+    .mobilePercentage,
+    .mobileProgressTrack {
+        display: none;
+    }
+
+    .deckRow small {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        margin: -1px;
+        padding: 0;
+        border: 0;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .deckRow > span:not(.mobilePercentage) {
+        display: block;
+    }
+
+    .totalCell {
+        display: block !important;
+    }
+
+    .deckRow strong {
+        color: var(--on-surface);
+        font-size: 0.8125rem;
+    }
+
+    .desktopPercentage {
+        display: block;
+        color: var(--primary-container) !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .deckRow {
+        transition: none;
+    }
+}

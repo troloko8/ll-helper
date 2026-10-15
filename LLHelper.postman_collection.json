@@ -1665,6 +1665,54 @@
           "response": []
         },
         {
+          "name": "Get My Learning Progress",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var progress = pm.response.json();",
+                  "pm.test(\"Response contains per-deck learning status counts\", function () {",
+                  "    pm.expect(progress).to.be.an(\"array\");",
+                  "    progress.forEach(function (deck) {",
+                  "        pm.expect(deck).to.have.all.keys(\"deckId\", \"title\", \"sourceLanguage\", \"targetLanguage\", \"cardsByStatus\", \"totalCards\");",
+                  "        pm.expect(deck.cardsByStatus).to.have.all.keys(\"newCount\", \"learningCount\", \"reviewingCount\", \"masteredCount\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/learning/progress",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "learning", "progress"]
+            },
+            "description": "Returns the authenticated learner's active deck progress with server-aggregated card statuses."
+          },
+          "response": []
+        },
+        {
           "name": "Enroll Deck",
           "event": [
             {

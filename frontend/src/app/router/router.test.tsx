@@ -64,6 +64,9 @@ describe('router session boundaries', () => {
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
+            http.get('http://localhost/api/v1/learning/progress', () =>
+                HttpResponse.json([]),
+            ),
             http.get(
                 'http://localhost/api/v1/learning/decks/:deckId',
                 ({ params }) =>
@@ -186,7 +189,13 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
-    it.each(['/onboarding/profile', '/', '/missing-page', '/discover'])(
+    it.each([
+        '/onboarding/profile',
+        '/',
+        '/missing-page',
+        '/discover',
+        '/progress',
+    ])(
         'redirects an anonymous user from %s to login',
         async (path) => {
             const { router } = renderRoute(path, 'anonymous')
@@ -210,7 +219,14 @@ describe('router session boundaries', () => {
         ).toBeInTheDocument()
     })
 
-    it.each(['/login', '/register', '/', '/missing-page', '/discover'])(
+    it.each([
+        '/login',
+        '/register',
+        '/',
+        '/missing-page',
+        '/discover',
+        '/progress',
+    ])(
         'redirects a user who needs a profile from %s to onboarding',
         async (path) => {
             const { router } = renderRoute(path, 'needsProfile')
@@ -278,6 +294,20 @@ describe('router session boundaries', () => {
         expect(
             await screen.findByRole('heading', {
                 name: 'No public decks yet',
+            }),
+        ).toBeInTheDocument()
+    })
+
+    it('allows an authenticated user to open Progress directly', async () => {
+        const { router } = renderRoute('/progress', 'authenticated')
+
+        expect(router.state.location.pathname).toBe('/progress')
+        expect(
+            await screen.findByRole('heading', { name: 'Learning Progress' }),
+        ).toBeInTheDocument()
+        expect(
+            await screen.findByRole('heading', {
+                name: 'No learning progress yet',
             }),
         ).toBeInTheDocument()
     })

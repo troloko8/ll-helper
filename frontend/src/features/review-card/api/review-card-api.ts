@@ -13,6 +13,7 @@ export const reviewCardApi = baseApi.injectEndpoints({
             invalidatesTags: (_result, _error, { deckId }) => [
                 { type: 'LearningCards', id: deckId },
                 { type: 'LearningDeck', id: 'LIST' },
+                { type: 'LearningProgress', id: 'LIST' },
             ],
         }),
     }),

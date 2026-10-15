@@ -42,7 +42,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   Показывать только те controls, которые поддержаны согласованным API.
 - [x] Реализовать Creator Profile и список публичных колод автора по маршруту
   `/creators/:username`.
-- [ ] Реализовать общий Progress dashboard по маршруту `/progress`.
+- [x] Реализовать общий Progress dashboard по маршруту `/progress`.
 - [ ] Завершить bulk AI generation в Card Editor и показать частичный результат
   без silent skip: созданные карточки отдельно от неуспешных с причиной ошибки.
 
@@ -79,6 +79,10 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   aggregate Progress, Discover query contract и честный bulk AI result.
 - [ ] После mutations корректно инвалидировать связанные списки, details и
   progress; не маскировать отсутствие backend-возможности локальным mock state.
+- [ ] При добавлении карточки создать `NEW` `UserCardProgress` для каждого
+  существующего `ACTIVE` enrollment этой колоды, чтобы новые карточки сразу
+  попадали в Study и Progress. Покрыть manual, single-AI и bulk-AI creation,
+  не создавая дубликаты при update карточки.
 - [ ] Добавить соразмерные frontend/backend regression tests для новых
   пользовательских сценариев и выполнить ручную desktop/mobile проверку.
 - [ ] При изменении API или feature flow синхронно обновить нормативные docs,

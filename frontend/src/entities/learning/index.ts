@@ -1,6 +1,7 @@
 export {
     learningApi,
     useGetLearningDecksQuery,
+    useGetLearningProgressQuery,
     useGetLearningDeckQuery,
     useGetStudySessionQuery,
 } from './api/learning-api'
@@ -20,4 +21,6 @@ export type {
     LearningDeckDetailsResponseDto,
     StudySessionResponseDto,
     LearningProgressSummaryDto,
+    LearningProgressDto,
+    LearningProgressStatusCountsDto,
 } from './model/types'

@@ -15,6 +15,7 @@ interface DeleteCardArgs {
 const relatedTags = (deckId: number) => [
     { type: 'Deck' as const, id: deckId },
     { type: 'LearningDeck' as const, id: deckId },
+    { type: 'LearningProgress' as const, id: 'LIST' },
     { type: 'LearningCards' as const, id: deckId },
     { type: 'StudySession' as const, id: deckId },
 ]

@@ -127,6 +127,10 @@ public class CardServiceImpl implements CardService {
         return saveCard(cardMapper.fromAiData(request.title(), aiData, deck));
     }
 
+    // TODO: For card-creation paths, create NEW UserCardProgress rows for every
+    // ACTIVE enrollment after the card is saved. Updates must not duplicate
+    // progress. Until this lifecycle is synchronized, Progress and Study omit
+    // cards added after enrollment.
     private CardResponse saveCard(Card card) {
         String definition = card.getDefinition();
         String translation = card.getTranslation();

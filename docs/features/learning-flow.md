@@ -66,6 +66,7 @@ This document does not define advanced spaced repetition, StudySession history, 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/v1/learning/decks` | List current user's active learning decks |
+| `GET` | `/api/v1/learning/progress` | List active learning decks with card counts by learning status |
 | `GET` | `/api/v1/learning/decks/{deckId}` | Get one active learning deck with metadata, aggregate progress, and cards |
 | `POST` | `/api/v1/decks/{deckId}/enroll` | Enroll in a public deck |
 | `GET` | `/api/v1/decks/{deckId}/study` | Get deck metadata and up to 10 cards for study |
@@ -87,6 +88,18 @@ This document does not define advanced spaced repetition, StudySession history, 
 5. The same query orders studied decks first by `lastStudiedAt DESC`; then never-studied decks by `enrolledAt DESC`; progress-row `id ASC` is the final deterministic tie-breaker.
 
 The first returned deck is the highlight candidate. If its `lastStudiedAt` is non-null, the UI presents **Continue Learning**; otherwise it presents **Start Learning**. No enrollments returns `200 OK` with `[]`.
+
+### 5.1.1 Learning Progress Dashboard
+
+`GET /api/v1/learning/progress`
+
+1. Resolve the authenticated user ID.
+2. Run one aggregate repository query across the user's `ACTIVE` `UserDeckProgress`, `Deck`, and `UserCardProgress` rows.
+3. Let PostgreSQL calculate `newCount`, `learningCount`, `reviewingCount`, `masteredCount`, and `totalCards` with conditional `COUNT` expressions, returning one row per enrolled deck.
+4. Return each deck's ID, title, source and target languages, and `cardsByStatus { newCount, learningCount, reviewingCount, masteredCount }` alongside `totalCards`.
+5. Order the result by `enrolledAt DESC`, then enrollment-progress ID descending as a deterministic tie-breaker, so the most recently enrolled decks appear first.
+
+The dashboard is a read-only snapshot of the current status distribution; it does not change review rules or card statuses. No active enrollments returns `200 OK` with `[]`.
 
 ### 5.2 Get One Learning Deck
 
@@ -233,7 +246,8 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - [x] Study endpoint returns up to 10 cards (`LEARNING` → `REVIEWING` → `NEW`; `MASTERED` excluded)
 - [x] Review endpoint updates progress counters
 - [x] Status transitions are correct (NEW → LEARNING → REVIEWING → MASTERED)
-- [x] Postman collection includes all 5 learning endpoints
+- [x] Learning progress endpoint returns active-deck status distribution
+- [x] Postman collection includes all 6 learning endpoints
 
 ---
 
@@ -268,6 +282,7 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
 - Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
 - Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
+- Adding a card after users have already enrolled does not yet create a `NEW` `UserCardProgress` row for those existing `ACTIVE` enrollments. Until the card-creation lifecycle is synchronized, the card is absent from Study queues and from Learning/Progress aggregates for those users. This is tracked in the current Sprint 1.1 quality scope and must cover manual, single-AI, and bulk-AI creation paths without duplicating progress during card updates.
 
 ---
 

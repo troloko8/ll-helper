@@ -21,6 +21,7 @@ import com.llhelper.learning.dto.request.CardReviewRequest;
 import com.llhelper.learning.dto.response.CardReviewResponse;
 import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.LearningProgressResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.enums.CardLearningStatus;
@@ -90,6 +91,29 @@ class LearningControllerTest {
             .andExpect(jsonPath("$[0].lastStudiedAt", is("2024-01-02T10:00:00Z")))
             .andExpect(jsonPath("$[0].progress.masteredCount", is(3)))
             .andExpect(jsonPath("$[0].progress.totalCount", is(10)));
+    }
+
+    @Test
+    void getMyProgress_shouldReturn200WithPerDeckStatusCounts() throws Exception {
+        LearningProgressResponse response = new LearningProgressResponse(
+            DECK_ID,
+            "English Basics",
+            Language.EN,
+            Language.RU,
+            new LearningProgressResponse.StatusCounts(3, 2, 1, 4),
+            10
+        );
+        when(learningService.getMyProgress()).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/learning/progress"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()", is(1)))
+            .andExpect(jsonPath("$[0].deckId", is(DECK_ID), Long.class))
+            .andExpect(jsonPath("$[0].cardsByStatus.newCount", is(3)))
+            .andExpect(jsonPath("$[0].cardsByStatus.learningCount", is(2)))
+            .andExpect(jsonPath("$[0].cardsByStatus.reviewingCount", is(1)))
+            .andExpect(jsonPath("$[0].cardsByStatus.masteredCount", is(4)))
+            .andExpect(jsonPath("$[0].totalCards", is(10)));
     }
 
     @Test

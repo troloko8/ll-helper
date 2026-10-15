@@ -320,6 +320,7 @@ CardService.save(cards)
 | `/api/v1/card-generations` | POST | JWT | AI generate one card (`GenerateCardRequest`: title, deckId) | `CardResponse` |
 | `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards | `List<CardResponse>` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
+| `/api/v1/learning/progress` | GET | JWT | List current user's active enrolled decks with a per-status card-progress breakdown, newest enrollment first | `List<LearningProgressResponse>` |
 | `/api/v1/learning/decks/{deckId}` | GET | JWT | Get one current user's active enrolled deck with metadata, aggregate progress, and cards | `LearningDeckDetailsResponse` |
 | `/api/v1/decks/{id}/enroll` | POST | JWT | Enroll a public deck or the current owner's private deck; another user's private deck returns 403 | `EnrollResponse { userDeckId }` |
 | `/api/v1/decks/{id}/study` | GET | JWT | Get deck metadata and up to 10 cards for study | `StudySessionResponse {deckId, deckTitle, cards}` |
@@ -327,6 +328,8 @@ CardService.save(cards)
 | `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
 
 `CardGenerationController` owns both generation routes; `CardController` owns manual create and CRUD. Manual POST gets `deckId` from `/decks/{deckId}/cards`; POST and PUT share `CardRequest`, where title/translation are required and optional content is replaced on PUT. The parent deck is unchanged by PUT. `CardServiceImpl` provides separate create/generate/update methods and shared normalization/persistence. Single AI generation shares the existing `CARD_CREATE` per-user quota with manual creation.
+
+`LearningProgressResponse` contains `deckId`, `title`, `sourceLanguage`, `targetLanguage`, `cardsByStatus { newCount, learningCount, reviewingCount, masteredCount }`, and `totalCards`. It is a read-only aggregate for active enrollments of the authenticated user.
 
 **Base URL:** `/api/v1`  
 **Auth:** `Authorization: Bearer <JWT>` on all secured endpoints

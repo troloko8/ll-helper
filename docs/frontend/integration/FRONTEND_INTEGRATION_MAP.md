@@ -45,7 +45,7 @@ and cannot substitute for manual-card acceptance. Runtime status belongs only to
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public/Owner Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks with URL-backed search, language/enrollment filters, sorting and infinite load-more → Public Deck Details, §0.10. Enrollment reconciliation remains a follow-up. |
-| `/progress` | deferred | — | |
+| `/progress` | implemented | `learning_progress_llhelper_mvp` / `learning_progress_mobile_2` | JWT-protected aggregate Progress dashboard backed by LEARN-07. |
 | `/creators/:username` | implemented | `creator_profile_llhelper_refined` / `creator_profile_mobile` | JWT-protected Creator Profile: `USER-03` supplies the profile and DECK-07 supplies only that creator's public decks. Loading, profile/list error and empty-list states are implemented; follows and all other social controls remain excluded. |
 | `/decks/:deckId/edit` | implemented | `edit_deck_llhelper_refined_1` / responsive mobile adaptation | Owner-only Edit Deck with prefill, validation, visibility mapping, update and destructive deletion. |
 | `/decks/:deckId/cards/:cardId/edit` | implemented | `add_edit_card_llhelper_refined` / responsive mobile adaptation | Owner-only Card Editor with prefill, shared validation, update and destructive deletion; AI creation controls are intentionally absent in edit mode. |
@@ -60,6 +60,7 @@ Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which ow
 - G-02 Register → Complete Profile orchestration (product decision accepted here; no backend code change required beyond already-implemented `USER-01`)
 - [x] G-06 Learning Decks list endpoint — implemented as `GET /api/v1/learning/decks` (LEARN-05)
 - [x] G-08 Study selection includes `REVIEWING` — implemented as `LEARNING` → `REVIEWING` → `NEW`, max 10, with `MASTERED` excluded.
+- [x] G-07 aggregate Progress — implemented as `GET /api/v1/learning/progress` (LEARN-07), with database-side status counts for the authenticated user's ACTIVE enrollments.
 - G-12 `docs/features/learning-flow.md` must reflect the actual 409 (done — see that file)
 
 G-05 was **not** a vertical-implementation necessity for the local single-user smoke, but is now resolved: `GET /decks/{id}` and `GET /cards/{id}` share `DeckAccessPolicy`; public content and owner-private content return 200, while another user's private content returns controlled 403. Service and `@WebMvcTest` coverage protect the rule.
@@ -130,7 +131,7 @@ The backend contract and frontend session lifecycle are implemented; completed l
 - Backend source of truth: `LEARN-06` (`GET /learning/decks/{deckId}`), including server `progress {masteredCount,totalCount}` and per-card `CardLearningStatus` in `cards[].progress`.
 - Frontend may compute **display-only** counts `{new, learning, reviewing, mastered}` from the full card array already returned for the currently open deck. These derived status-bucket counts are not persisted and do not replace the server aggregate.
 - This is permitted only while LEARN-06 returns the full, unpaginated card list. If pagination is introduced (currently deferred, Level 2), the server aggregate remains authoritative and per-status totals need a backend contract.
-- The separate cross-deck aggregate `/progress` dashboard remains deferred (G-07); it requires data across all of a user's decks, which no accepted Level 1 endpoint provides.
+- LEARN-07 (`GET /learning/progress`) is the source of truth for the cross-deck dashboard. It returns each active enrolled deck with server-side `NEW`, `LEARNING`, `REVIEWING`, and `MASTERED` counts; the frontend may derive the display-only overall mastery percentage from those returned counts.
 
 ### 0.9 Audit document lifecycle
 
@@ -143,7 +144,7 @@ The backend contract and frontend session lifecycle are implemented; completed l
 The user requested that the complete Level 1 path be executable through visible UI. This replaces the original Created/Discover deferral and the assumption that manually constructing a public-deck URL is sufficient for product acceptance. It does not require the full future product or change runtime code by itself.
 
 **Accepted navigation and transitions:**
-- Persistent destinations: Learning, Created, Discover, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual; aggregate Progress and Settings are not added.
+- Persistent destinations: Learning, Created, Discover, Progress, using the shell contract in `DESIGN.md`. Add each entry with its working route. Study remains contextual and Settings is not added.
 - Created → Create Deck → Owner Deck Details → Add Card → Owner Deck Details; Created provides a way back to existing owned decks. Create Deck is available for empty and populated lists.
 - Discover → Public Deck Details → Start Learning or Enroll → Study/Learning. Created → Owner Deck Details offers the same learning actions, including owner enrollment for a private deck. For a nonempty deck, Start Learning is available and auto-enrolls before opening Study when needed; the separate Enroll action only adds the deck and remains on its details page. An empty deck instead shows a clear no-cards state and does not offer Start Learning. Created never substitutes for the Learning collection.
 - Public Deck Details derives enrollment from the current-user `isEnrolled` field in DECK-02, including after refresh/direct entry; it does not fetch the full LEARN-05 collection or rely on state passed from Discover. Enroll is hidden after enrollment while Start Learning remains available for nonempty decks. Reconcile 409 conflicts before treating them as existing enrollment. New enrollment invalidates detail, Discover and Learning caches.
@@ -626,18 +627,18 @@ Minimal required response if this surface enters MVP: existing `UserResponse` + 
 | Candidate route | `/progress` |
 | Auth | JWT |
 | Domain owner | Learning aggregate |
-| Endpoint | Missing aggregate Progress contract. `LEARN-03` is one enrolled deck at a time and is not a safe substitute for a user-wide aggregate. |
-| Request / response DTO | Missing aggregate response DTO. Required dimensions must be confirmed from the canonical UI during backend contract design; frontend must not compute unsupported totals from inaccessible lists. |
-| Errors | Cannot finalize until endpoint exists; must cover shared JWT and page-level 5xx. |
+| Endpoint | `LEARN-07 GET /api/v1/learning/progress`. |
+| Request / response DTO | `List<LearningProgressResponse {deckId,title,sourceLanguage,targetLanguage,cardsByStatus {newCount,learningCount,reviewingCount,masteredCount},totalCards}>`. |
+| Errors | Shared JWT and page-level 5xx. |
 | Loading / error / empty | Canonical loading, API-error, and empty states on both platforms. Empty means no learning progress/enrollments. |
-| Backend status | Missing (G-07). |
-| Candidate frontend phase | After Study persistence and aggregate backend contract. |
-| Blocker / gap | No endpoint can populate the surface; client-side aggregate is unavailable and would create multiple-source consistency problems. |
+| Backend status | Implemented (G-07). |
+| Runtime status | Implemented with RTK Query, loading/API-error/empty states, aggregate Total/New/Learning/Review/Mastered metrics with proportional distribution bars and mastery-only teal emphasis, desktop comparison rows, mobile progress cards, whole-row navigation, and cache invalidation after enrollment, review, and card/deck mutations. |
+| Blocker / gap | None for the accepted aggregate dimensions. |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `learning_progress_llhelper_mvp` | See manifest | State inventory: manifest | **blocked** |
-| Mobile | `learning_progress_mobile_2` | See manifest | State inventory: manifest | **blocked** |
+| Desktop | `learning_progress_llhelper_mvp` | See manifest | State inventory: manifest | **implemented; canonical layout and RTL/MSW behavior verified** |
+| Mobile | `learning_progress_mobile_2` | See manifest | State inventory: manifest | **implemented as the canonical card adaptation; RTL/MSW behavior verified** |
 
 **Missing DTO — minimal required shape** (re-checked read-only review of `learning_progress_llhelper_mvp`; canonical page subtitle is "Overview of your current learning status and card distribution", with a "Progress by Deck" section below it):
 

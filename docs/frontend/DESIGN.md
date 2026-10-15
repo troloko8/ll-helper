@@ -123,14 +123,13 @@ and Study map to Learning; create/owner/add-card routes map to Created; Public
 Deck Details maps to Discover. The desktop sidebar must remain vertically
 scrollable when viewport height or zoom leaves insufficient room for its footer.
 
-> **Level 1 reachable-flow scope (accepted revision):** implement the ordered
-> subset **Learning, Created, Discover** of the full five-destination shell
-> below. The existing runtime currently exposes only Learning; add each new
-> navigation entry with its working route. Created restores access to owned
-> decks; Discover opens public decks for enrollment. **Study** remains
-> contextual from Learning Deck Details or Start Learning on Public/Owner Deck Details
-> (`/study/:deckId`); **Progress** remains
-> hidden, since per-card progress is displayed on Learning Deck Details.
+> **Accepted reachable-flow navigation:** the persistent shell exposes
+> **Learning, Created, Discover, Progress**. Each entry has a working route.
+> Created restores access to owned decks; Discover opens public decks for
+> enrollment. **Study** remains contextual from Learning Deck Details or Start
+> Learning on Public/Owner Deck Details (`/study/:deckId`), because a deck is
+> required to start a session. Progress presents the cross-deck aggregate;
+> per-card progress remains available on Learning Deck Details.
 > **Create Deck** must be available with both empty and populated collections.
 > Empty Learning offers Browse public decks and Create Deck. Provide a labelled
 > **Log out** action in the desktop sidebar footer and mobile header, using
@@ -145,7 +144,6 @@ scrollable when viewport height or zoom leaves insufficient room for its footer.
 - One persistent, fixed 260px left sidebar containing:
   - **My Decks** accordion with **Learning** and **Created** children;
   - **Discover**;
-  - **Study**;
   - **Progress**.
 - The canonical active state always uses `secondary-container` (`#4a8eff`) /
   `on-secondary-container` (`#00285b`).
@@ -155,8 +153,10 @@ scrollable when viewport height or zoom leaves insufficient room for its footer.
 ### Mobile
 
 - Compact top header.
-- Fixed bottom navigation with exactly these five destinations, in this
-  order: **Learning, Created, Discover, Study, Progress**.
+- Fixed bottom navigation with exactly these four destinations, in this
+  order: **Learning, Created, Discover, Progress**.
+- **Study** has no persistent navigation item; it is entered through a deck
+  action and always uses `/study/:deckId`.
 - No horizontal scrolling anywhere in the mobile shell.
 - The desktop sidebar must never be squeezed into the mobile layout.
 - **Settings is not a destination** in the current canonical navigation
@@ -166,8 +166,8 @@ scrollable when viewport height or zoom leaves insufficient room for its footer.
 
 Use the existing Created/Discover desktop/mobile references in the registry;
 exact IDs and loading/error/empty references remain in `design-reference/MANIFEST.md`.
-The five-destination shell above is the full target; the Level 1 subset in the
-scoping note takes precedence during this implementation.
+The four-destination shell above is the current target. Study remains a
+contextual route rather than a shell destination.
 
 - Created cards: title, language pair, backend card count, Public/Private,
   Open → Owner Deck Details; Create New Deck works for empty/populated lists.

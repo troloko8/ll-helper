@@ -78,6 +78,22 @@ export interface DeckProgressCounts {
     mastered: number
 }
 
+export interface LearningProgressStatusCountsDto {
+    newCount: number
+    learningCount: number
+    reviewingCount: number
+    masteredCount: number
+}
+
+export interface LearningProgressDto {
+    deckId: number
+    title: string
+    sourceLanguage: LanguageCode
+    targetLanguage: LanguageCode
+    cardsByStatus: LearningProgressStatusCountsDto
+    totalCards: number
+}
+
 export interface StudySessionResponseDto {
     deckId: number
     deckTitle: string

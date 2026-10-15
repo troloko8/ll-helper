@@ -89,6 +89,29 @@ function MobileDiscoverLink({ isCurrent }: { isCurrent: boolean }) {
     )
 }
 
+function MobileProgressLink({ isCurrent }: { isCurrent: boolean }) {
+    return (
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[
+                styles.navLink,
+                styles.mobileNavLink,
+                isCurrent && styles.active,
+            ]
+                .filter(Boolean)
+                .join(' ')}
+            to="/progress"
+        >
+            <span className={styles.navIcon}>
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M4 20h16v2H2V2h2v18Zm3-2H5v-6h2v6Zm5 0h-2V6h2v12Zm5 0h-2V9h2v9Zm5 0h-2V4h2v14Z" />
+                </svg>
+            </span>
+            <span>Progress</span>
+        </Link>
+    )
+}
+
 export function MobileHeader() {
     return (
         <header className={styles.mobileHeader}>
@@ -107,6 +130,7 @@ export function MobileBottomNavigation() {
             <MobileLearningLink isCurrent={activeDestination === 'learning'} />
             <MobileCreatedLink isCurrent={activeDestination === 'created'} />
             <MobileDiscoverLink isCurrent={activeDestination === 'discover'} />
+            <MobileProgressLink isCurrent={activeDestination === 'progress'} />
         </nav>
     )
 }

@@ -24,6 +24,7 @@ import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.LearningProgressResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
@@ -33,6 +34,7 @@ import com.llhelper.learning.mapper.LearningMapper;
 import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository.LearningDeckSummaryProjection;
+import com.llhelper.learning.repository.UserDeckProgressRepository.LearningProgressSummaryProjection;
 import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Clock;
@@ -287,6 +289,36 @@ class LearningServiceImplTest {
 
         assertThat(result).isEmpty();
         verifyNoInteractions(deckRepository, userCardProgressRepository);
+    }
+
+    @Test
+    void getMyProgress_shouldMapAllStatusCounts_forCurrentUser() {
+        LearningProgressSummaryProjection summary = mock(LearningProgressSummaryProjection.class);
+        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(userDeckProgressRepository.findLearningProgressSummaries(USER_ID))
+            .thenReturn(List.of(summary));
+        when(summary.getDeckId()).thenReturn(DECK_ID);
+        when(summary.getTitle()).thenReturn("English Basics");
+        when(summary.getSourceLanguage()).thenReturn("EN");
+        when(summary.getTargetLanguage()).thenReturn("RU");
+        when(summary.getNewCount()).thenReturn(3L);
+        when(summary.getLearningCount()).thenReturn(2L);
+        when(summary.getReviewingCount()).thenReturn(1L);
+        when(summary.getMasteredCount()).thenReturn(4L);
+        when(summary.getTotalCards()).thenReturn(10L);
+
+        List<LearningProgressResponse> result = learningService.getMyProgress();
+
+        assertThat(result).containsExactly(new LearningProgressResponse(
+            DECK_ID,
+            "English Basics",
+            Language.EN,
+            Language.RU,
+            new LearningProgressResponse.StatusCounts(3, 2, 1, 4),
+            10
+        ));
+        verify(userDeckProgressRepository).findLearningProgressSummaries(USER_ID);
+        verifyNoInteractions(deckRepository, cardRepository, userCardProgressRepository, learningMapper);
     }
 
     // --- getLearningDeck ---

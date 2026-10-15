@@ -27,6 +27,18 @@ public interface UserDeckProgressRepository extends JpaRepository<UserDeckProgre
         Long getTotalCount();
     }
 
+    interface LearningProgressSummaryProjection {
+        Long getDeckId();
+        String getTitle();
+        String getSourceLanguage();
+        String getTargetLanguage();
+        Long getNewCount();
+        Long getLearningCount();
+        Long getReviewingCount();
+        Long getMasteredCount();
+        Long getTotalCards();
+    }
+
     Optional<UserDeckProgress> findByUserIdAndDeckId(Long userId, Long deckId);
 
     Optional<UserDeckProgress> findByUserIdAndDeckIdAndStatus(
@@ -64,4 +76,26 @@ public interface UserDeckProgressRepository extends JpaRepository<UserDeckProgre
             udp.id ASC
         """, nativeQuery = true)
     List<LearningDeckSummaryProjection> findLearningDeckSummaries(@Param("userId") Long userId);
+
+    @Query(value = """
+        SELECT
+            udp.deck_id AS "deckId",
+            d.title AS "title",
+            d.source_language AS "sourceLanguage",
+            d.target_language AS "targetLanguage",
+            COUNT(ucp.id) FILTER (WHERE ucp.status = 'NEW') AS "newCount",
+            COUNT(ucp.id) FILTER (WHERE ucp.status = 'LEARNING') AS "learningCount",
+            COUNT(ucp.id) FILTER (WHERE ucp.status = 'REVIEWING') AS "reviewingCount",
+            COUNT(ucp.id) FILTER (WHERE ucp.status = 'MASTERED') AS "masteredCount",
+            COUNT(ucp.id) AS "totalCards"
+        FROM user_deck_progress udp
+        JOIN decks d ON d.id = udp.deck_id
+        LEFT JOIN user_card_progress ucp ON ucp.user_deck_progress_id = udp.id
+        WHERE udp.user_id = :userId AND udp.status = 'ACTIVE'
+        GROUP BY udp.id, d.id
+        ORDER BY udp.enrolled_at DESC, udp.id DESC
+        """, nativeQuery = true)
+    List<LearningProgressSummaryProjection> findLearningProgressSummaries(
+        @Param("userId") Long userId
+    );
 }

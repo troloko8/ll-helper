@@ -2,6 +2,7 @@ package com.llhelper.learning.service;
 
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.repository.CardRepository;
+import com.llhelper.common.model.Language;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
@@ -11,6 +12,7 @@ import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.LearningProgressResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.entity.UserCardProgress;
 import com.llhelper.learning.entity.UserDeckProgress;
@@ -55,6 +57,28 @@ public class LearningServiceImpl implements LearningService {
                     summary.getMasteredCount(),
                     summary.getTotalCount()
                 )
+            ))
+            .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LearningProgressResponse> getMyProgress() {
+        Long userId = securityUtils.getCurrentUserId();
+        
+        return userDeckProgressRepository.findLearningProgressSummaries(userId).stream()
+            .map(summary -> new LearningProgressResponse(
+                summary.getDeckId(),
+                summary.getTitle(),
+                Language.valueOf(summary.getSourceLanguage()),
+                Language.valueOf(summary.getTargetLanguage()),
+                new LearningProgressResponse.StatusCounts(
+                    summary.getNewCount(),
+                    summary.getLearningCount(),
+                    summary.getReviewingCount(),
+                    summary.getMasteredCount()
+                ),
+                summary.getTotalCards()
             ))
             .toList();
     }

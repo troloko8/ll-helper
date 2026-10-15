@@ -6,6 +6,7 @@ import com.llhelper.learning.dto.response.DeckCardResponse;
 import com.llhelper.learning.dto.response.EnrollResponse;
 import com.llhelper.learning.dto.response.LearningDeckDetailsResponse;
 import com.llhelper.learning.dto.response.LearningDeckResponse;
+import com.llhelper.learning.dto.response.LearningProgressResponse;
 import com.llhelper.learning.dto.response.StudySessionResponse;
 import com.llhelper.learning.service.LearningService;
 import jakarta.validation.Valid;
@@ -30,6 +31,11 @@ public class LearningController {
     @GetMapping("/learning/decks")
     public ResponseEntity<List<LearningDeckResponse>> getMyDecks() {
         return ResponseEntity.ok(learningService.getMyDecks());
+    }
+
+    @GetMapping("/learning/progress")
+    public ResponseEntity<List<LearningProgressResponse>> getMyProgress() {
+        return ResponseEntity.ok(learningService.getMyProgress());
     }
 
     @GetMapping("/learning/decks/{deckId}")

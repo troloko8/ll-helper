@@ -78,6 +78,25 @@ function DiscoverLink({ isCurrent }: { isCurrent: boolean }) {
     )
 }
 
+function ProgressLink({ isCurrent }: { isCurrent: boolean }) {
+    return (
+        <Link
+            aria-current={isCurrent ? 'page' : undefined}
+            className={[styles.navLink, isCurrent && styles.active]
+                .filter(Boolean)
+                .join(' ')}
+            to="/progress"
+        >
+            <span className={styles.navIcon}>
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M4 20h16v2H2V2h2v18Zm3-2H5v-6h2v6Zm5 0h-2V6h2v12Zm5 0h-2V9h2v9Zm5 0h-2V4h2v14Z" />
+                </svg>
+            </span>
+            <span>Progress</span>
+        </Link>
+    )
+}
+
 export function DesktopSidebar() {
     const { pathname } = useLocation()
     const activeDestination = getActiveNavigationDestination(pathname)
@@ -128,6 +147,7 @@ export function DesktopSidebar() {
                     <CreatedLink isCurrent={activeDestination === 'created'} />
                 </div>
                 <DiscoverLink isCurrent={activeDestination === 'discover'} />
+                <ProgressLink isCurrent={activeDestination === 'progress'} />
             </nav>
             <footer className={styles.sidebarFooter}>
                 <LogoutButton className={styles.logoutButton} />

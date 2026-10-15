@@ -81,6 +81,14 @@ export const appRoutes: RouteObject[] = [
                                 },
                             },
                             {
+                                path: '/progress',
+                                lazy: async () => {
+                                    const { ProgressPage } =
+                                        await import('@/pages/progress')
+                                    return { Component: ProgressPage }
+                                },
+                            },
+                            {
                                 path: '/creators/:username',
                                 lazy: async () => {
                                     const { CreatorProfilePage } =

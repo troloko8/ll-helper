@@ -12,10 +12,11 @@ export const enrollDeckApi = baseApi.injectEndpoints({
                 error
                     ? []
                     : [
-                          { type: 'LearningDeck', id: 'LIST' },
-                          { type: 'Deck', id: 'LIST' },
-                          { type: 'Deck', id: deckId },
-                      ],
+                        { type: 'LearningDeck', id: 'LIST' },
+                        { type: 'LearningProgress', id: 'LIST' },
+                        { type: 'Deck', id: 'LIST' },
+                        { type: 'Deck', id: deckId },
+                    ],
         }),
     }),
 })
