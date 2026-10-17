@@ -7,8 +7,7 @@ Applies to `frontend/**`; inherit root `AGENTS.md`.
 - FSD imports only downward: app > pages > widgets > features > entities > shared. Shared has no domain code; no empty slices.
 - HTTP contracts define DTOs. All backend calls/server state use RTK Query `fetchBaseQuery`.
 - Auth: Bearer JWT/localStorage; runtime session in `entities/session/`.
-- Read `frontend/CONVENTIONS.md`: State Ownership, React APIs, UI / Styling, Testing; auth/API: RTK Query / API, Authentication, Error Handling; routing/deps/assets/build: Performance / Bundling.
-- Read `frontend/NAMING.md` before introducing or refactoring frontend identifiers; prefer domain role and processing state over generic container names.
+- Read relevant `frontend/CONVENTIONS.md` sections: Naming, State Ownership, React APIs, UI / Styling, Testing, RTK Query / API, Authentication, Error Handling, and Performance / Bundling.
 - 401: shared normalizes; app listener clears token/session/cache; routing redirects. No refresh tokens.
 - No external UI framework without explicit decision.
 - Critical logic/flows need behavioral tests; trivial presentation has no mandatory tests.

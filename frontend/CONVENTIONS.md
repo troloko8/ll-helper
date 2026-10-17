@@ -191,16 +191,128 @@ slice-name/
 
 ## Naming
 
-Variable, function, parameter, and domain-term naming is defined in
-`frontend/NAMING.md`. The structural rules below remain authoritative for files,
-directories, exports, hooks, and constants.
+These rules apply to all new and refactored identifiers, including tests. Name
+an identifier by its domain role and, when useful, its real processing state. A
+reader must understand what the value represents without reconstructing that
+meaning from its type or distant call sites.
 
-- **Files:** `kebab-case` for all files and directories (e.g. `create-deck/`, `auth-slice.ts`).
-- **Components:** `PascalCase` export name, `kebab-case` file (e.g. `deck-summary.tsx` exports `DeckSummary`).
-- **Collection items:** Follow the active platform's FSD conventions for collection-item naming.
-- **Types/interfaces:** `PascalCase`. Suffix response DTOs with `Dto` only if disambiguation is needed.
-- **Hooks:** `camelCase` with `use` prefix.
-- **Constants:** `UPPER_SNAKE_CASE`.
+### Variables and domain vocabulary
+
+- Use `camelCase` and prefer the smallest precise domain term:
+  `duplicateCount`, `sourceLineIndex`, `generationFailure`.
+- Use plural nouns for collections and the matching singular domain term for an
+  element: `titleEntries` / `titleEntry`, not `items` / `item`.
+- Qualify identifiers when ownership or lifecycle matters: `deckOwnerId`,
+  `submittedTitles`, `requestError`. Bare `id`, `error`, or `index` is acceptable
+  only in a genuinely narrow scope where no other interpretation exists.
+- Use processing qualifiers such as `raw`, `parsed`, `normalized`, `validated`,
+  `submitted`, or `persisted` only when they distinguish real stages. Do not add
+  `current`, `final`, or `processed` without a competing state in the same flow.
+- State what a number counts and include units when they are not inherent:
+  `duplicateCount`, `visibleEntryCount`, `timeoutMs`, `fileSizeBytes`.
+- Reuse one domain vocabulary across types, state, props, tests, API adapters,
+  and user-facing concepts. Do not use multiple synonyms for the same role.
+
+### Boolean names and predicates
+
+Every application-owned boolean variable, field, prop, selector, or predicate
+must read as a yes/no question and use the prefix that expresses its semantics:
+
+| Prefix | Meaning | Examples |
+|---|---|---|
+| `is` | current state or classification | `isLoading`, `isValid`, `isLimitExceeded` |
+| `has` | possession or presence | `hasErrors`, `hasDuplicates`, `hasNextPage` |
+| `can` | capability or permission | `canSubmit`, `canEdit` |
+| `should` | decision or expected behavior | `shouldRefetch`, `shouldShowPreview` |
+| `needs` | required follow-up action | `needsProfile`, `needsConfirmation` |
+
+- Do not force every boolean under `is`: use `hasErrors`, not `isHasErrors`, and
+  `canSubmit`, not `isSubmissionAllowed` when capability is the real meaning.
+- Do not introduce naked boolean names such as `loading`, `filtered`, `applied`,
+  `featured`, `success`, `flag`, or `enabled` in application-owned code.
+- Predicate functions and selectors follow the same prefixes: `isApiError`,
+  `hasActiveFilters`, `canAccessDeck`, `selectIsAuthenticated`.
+- Preserve external wire fields and platform-native props such as `correct`,
+  `retryable`, `open`, `required`, or `disabled`. Alias them to semantic local
+  names when they leave that boundary and the distinction improves clarity.
+
+### No opaque or “ninja” names
+
+Do not use these as bare domain identifiers in state, props, public APIs, or
+non-trivial functions:
+
+`data`, `draft`, `text`, `value`, `item`, `result`, `response`, `payload`,
+`info`, `object`, `temp`, `state`, `list`, `map`, `flag`, `handler`.
+
+Replace them with the represented concept and state, for example:
+
+| Avoid | Prefer |
+|---|---|
+| `draft` | `rawTitlesText`, `editableCard` |
+| `text` | `searchText`, `errorMessage` |
+| `item` | `titleEntry`, `deck` |
+| `result` | `preparedTitles`, `generationResult` |
+| `response` | `createdCard`, `reviewOutcome` |
+| `value` | `sourceLanguage`, `normalizedTitle` |
+
+Framework-owned signatures, external contracts, reducers, and small generic
+utilities may retain conventional names when changing them would obscure the
+boundary. Alias generic framework fields immediately when domain code consumes
+them, for example `const { data: deck, error: deckError } = query`.
+
+### Functions, events, and hooks
+
+- Functions use `camelCase` verb phrases that describe the observable action:
+  `prepareBulkTitles`, `removeTitleEntry`, `deckToFormValues`.
+- Use conventional verbs consistently: `create`/`update`/`delete` for commands,
+  `parse` for syntax, `normalize` for canonicalization, `validate` for checking,
+  `to`/`from` for mappings, and `select` for Redux selectors.
+- Do not use vague verbs such as `process`, `handle`, `manage`, `do`, or `run`
+  without the domain action. `handle<Action>` is reserved for component-local
+  event handlers; callback props use `on<Action>`.
+- Hooks use the `use` prefix and name the owned behavior or resource:
+  `useBulkGeneration`, not `useData`.
+- Redux actions use completed domain events when that matches the transition:
+  `bulkGenerationRequested`, `sessionCleared`.
+- Do not add an `Async` suffix merely because a function returns a Promise; the
+  domain action remains the primary name.
+
+### Components, classes, and types
+
+- Files and directories use `kebab-case`. Components and classes use
+  `PascalCase` noun phrases; a component name describes its product or UI role,
+  not its technical container.
+- Types and interfaces use `PascalCase` noun phrases. Use precise role suffixes
+  where applicable: `Props`, `State`, `Options`, `Args`, `Dto`, `Error`,
+  `Service`, or `Repository`.
+- Avoid vague type/class suffixes such as `Manager`, `Helper`, `Utils`,
+  `Processor`, `Handler`, `Data`, `Info`, or `Model` unless that word describes
+  a specific established architectural role.
+- Component prop types end in `Props`. Error classes end in `Error`. Transport
+  DTOs end in `Dto` when they model the HTTP boundary; internal domain types do
+  not inherit the suffix.
+- Prefer string unions or `as const` collections over TypeScript enums. If an
+  enum is required by an external contract, its type uses `PascalCase` and its
+  serialized values follow that contract.
+- Acronyms use normal word casing inside identifiers: `Api`, `Dto`, `Url`, and
+  `Id`, as in `ApiError`, `CardResponseDto`, and `deckId`.
+- Extracted collection components follow the active platform's FSD collection-
+  item naming rule.
+
+### Constants, boundaries, and enforcement
+
+- `UPPER_SNAKE_CASE` is for true module-level constants, fixed option sets, and
+  immutable configuration keys. An ordinary local declared with `const` remains
+  `camelCase`.
+- Never rename backend DTO fields, DOM properties, or framework contracts merely
+  to satisfy local style. Translate or alias them at the boundary instead.
+- Naming-only refactors preserve behavior and update affected tests, selectors,
+  actions, and public exports atomically. Repository-wide renames require a
+  scoped task and verification.
+- Keep this section as the single normative owner. Add ESLint naming rules only
+  after auditing and migrating existing violations; do not introduce a noisy
+  denylist or type-aware lint cost without a measured, separately reviewed
+  change.
 
 ## Formatting
 
