@@ -52,17 +52,6 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   без silent skip: отдельный маршрут и feature, canonical Input/Generating/Results,
   созданные карточки отдельно от неуспешных со стабильным кодом и безопасным
   сообщением ошибки.
-- [ ] Сохранять контекст bulk Results при переходе к созданной карточке через
-  View или Edit: возврат должен вести к результатам генерации текущей колоды,
-  включая переходы после Save/Cancel, а прямое открытие Card Details/Edit должно
-  безопасно возвращать к deck. Добавить regression tests для обоих сценариев.
-- [ ] Добавить Retry для одного failed title и Retry all failed в bulk results;
-  CARD-02 уже возвращает `inputIndex`, `code`, `message` и `retryable`, но UI
-  retry намеренно не входит в текущую реализацию.
-- [ ] Добавить Cancel для bulk generation только вместе с backend-контрактом,
-  который реально останавливает серверную работу. Не подменять cancellation
-  frontend-abort, потому что он прекращает ожидание ответа, но не AI generation.
-
 ### 3. Покрытие состояний Stitch
 
 - [ ] Для Learning, Created, Discover, Owner Deck Details и Progress реализовать
