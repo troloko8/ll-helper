@@ -40,7 +40,8 @@ and cannot substitute for manual-card acceptance. Runtime status belongs only to
 | `/decks/new` | accepted | `create_deck_llhelper` | |
 | `/decks/:deckId` | accepted (**replaces `/discover/decks/:deckId` candidate in §5.8**) | `deck_details_public_llhelper_refined` | JWT-protected Public Deck Details; Discover now provides the implemented collection entry, while direct links remain valid. |
 | `/decks/:deckId/manage` | accepted | `deck_details_owner_llhelper_refined` | Owner Deck Details |
-| `/decks/:deckId/cards/new` | accepted | `add_edit_card_llhelper_refined` (manual portion) / `add_card_mobile` | Manual Add Card only; single-card AI is a separate optional task (§0.2) |
+| `/decks/:deckId/cards/new` | implemented | `add_edit_card_llhelper_refined` / `add_card_mobile` | Manual and single-card AI creation. The mode switch links to the separate bulk route. |
+| `/decks/:deckId/cards/bulk` | implemented | `Bulk Card Generation — Input` / `Generating` / `Results`; responsive mobile adaptation | Owner-only save-first batch flow. Input, indeterminate pending and created/failed result are implemented; retry and backend cancellation are deferred and tracked in `docs/roadmap/current-sprint.md`. |
 | `/decks/:deckId/cards/:cardId` | implemented | `card_details_owner` / responsive mobile adaptation | Owner Deck Details card → read-only Card Details → Edit, with owner and route-consistency guards. |
 | `/study/:deckId` | accepted | `study_english_b1_llhelper_refined` / mobile | reached contextually from Learning Deck Details or Start Learning on Public/Owner Deck Details; a deck-less `/study` is not needed at Level 1 |
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
@@ -51,6 +52,27 @@ and cannot substitute for manual-card acceptance. Runtime status belongs only to
 | `/decks/:deckId/cards/:cardId/edit` | implemented | `add_edit_card_llhelper_refined` / responsive mobile adaptation | Owner-only Card Editor with prefill, shared validation, update and destructive deletion; AI creation controls are intentionally absent in edit mode. |
 
 Product routes are owned by this map, not by `frontend/CONVENTIONS.md` (which owns routing mechanics only).
+
+### 0.3A Bulk Card Generation runtime integration
+
+| Field | Mapping |
+|---|---|
+| Product surface | Owner-only save-first bulk AI card generation |
+| Accepted route | `/decks/:deckId/cards/bulk` |
+| Entry and exit | `Multiple cards` from Add Card; Generate more resets the local flow; Back to deck returns to Owner Deck Details; created rows open existing View/Edit routes. |
+| Endpoint | `CARD-02 POST /api/v1/card-generations/bulk` |
+| Request / response DTO | `BulkCardGenerateRequest` accepts 1–100 non-blank titles of at most 100 characters. `BulkCardGenerationResponse` returns `created[]` and `failed[] {inputIndex, title, code, message, retryable}`; `inputIndex` is zero-based in submitted `titles[]`. |
+| States | Parsed input; one indeterminate whole-batch pending state without per-title streaming; mixed/all-created/all-failed result; request-level error returns to input and preserves the draft. |
+| Persistence | Cards in a successful response's `created[]` are already persisted. Persistence/unexpected failures remain request-level and roll back the transaction. |
+| Deferred controls | Retry-one/retry-all and backend cancellation are deferred and tracked in `docs/roadmap/current-sprint.md`. Cancel is omitted until a backend cancellation contract can stop server work. |
+| Mobile | No dedicated Stitch resource; responsive single-column adaptation under the canonical shell. |
+
+| Platform | Canonical reference | Stitch ID | State references | Integration status |
+|---|---|---|---|---|
+| Desktop | `Bulk Card Generation — Input` | See manifest | Input/parsed entries | **implemented** |
+| Desktop | `Bulk Card Generation — Generating` | See manifest | Indeterminate synchronous batch | **implemented** |
+| Desktop | `Bulk Card Generation — Results` | See manifest | Created and failed groups; retry controls deferred | **implemented with documented adaptation** |
+| Mobile | Responsive adaptation of the desktop bulk flow | — | Single-column panels and full-width actions | **implemented responsive adaptation** |
 
 ### 0.4 Blocker categorization (supersedes the flat gap list in §3 for sequencing purposes)
 
@@ -72,8 +94,8 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - [x] Catch-all `500` raw exception message leak resolved; safe response contract documented in inventory §7, verified by `CardControllerTest`.
 
 **Post-Level-1 backend capabilities:**
-- Sprint 1.1 still requires aggregate Progress and the bulk AI failed-titles
-  response. Discover search/filter/sort/pagination and creator-public-decks are implemented.
+- Aggregate Progress and the bulk AI failed-titles response are implemented.
+  Discover search/filter/sort/pagination and creator-public-decks are also implemented.
 - Refresh token, backend logout and unrelated pagination remain deferred beyond
   Sprint 1.1.
 - Collection `cardCount`, public-list owner and `isEnrolled` are implemented.
@@ -85,6 +107,11 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 
 - [x] **Complete Profile** — canonical desktop base, mobile base, validation error, username conflict, and submitting references exist and are registered in `docs/frontend/DESIGN.md` and `docs/frontend/design-reference/MANIFEST.md`. Fields: `username, firstName, lastName, nativeLanguage, targetLanguage, uiLanguage` (matches existing `USER-01 CreateUserRequest`; `avatarUrl` excluded from the MVP form).
 - [x] **Card Details — Owner** — accepted entry point is a card in Owner Deck Details; the implemented read-only route is `/decks/:deckId/cards/:cardId`, and Edit continues to the implemented full Card Editor at `/decks/:deckId/cards/:cardId/edit`. Their exact Stitch resources are owned by `docs/frontend/design-reference/MANIFEST.md`; mobile uses the documented responsive adaptations under the canonical `DESIGN.md` theme.
+- [x] **Bulk Card Generation** — the three desktop Input/Generating/Results
+  references are canonical for `/decks/:deckId/cards/bulk`. Mobile uses the
+  documented responsive adaptation. Retry controls and real cancellation are
+  deferred and tracked in `docs/roadmap/current-sprint.md` rather than exposing
+  non-working prototype actions.
 
 ### 0.6 Accepted backend → Stitch → frontend order
 

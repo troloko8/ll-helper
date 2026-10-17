@@ -95,23 +95,46 @@ CardGenerationController.generate(GenerateCardRequest)
 #### Frontend single-card entry
 
 The authenticated Add Card screen at `/decks/:deckId/cards/new` exposes AI
-generation as an optional action next to the target-word field. The frontend:
+generation as an optional action next to the source-language word-or-phrase
+field. The frontend names both languages from the loaded deck and states that
+AI generates a `targetLanguage` translation. It:
 
-1. validates and trims the required target word;
+1. validates and trims the required source-language word or phrase;
 2. sends `POST /api/v1/card-generations` with only `title` and `deckId`;
 3. disables all form controls and shows the AI generation loading state while
    the request is pending;
 4. on `201`, invalidates the deck-detail cache and returns to Owner Deck
    Details because the backend has already saved the generated card;
-5. on `429` or `503`, preserves the target word, shows the AI-specific inline
+5. on `429` or `503`, preserves the word or phrase, shows the AI-specific inline
    error state, and allows retry.
 
-The frontend does not build prompts, call an AI provider directly, preview or
-compare generated fields, or implement bulk generation in this screen.
+The frontend does not build prompts, call an AI provider directly, or preview
+or compare generated fields. Bulk generation is a separate owner-only surface
+at `/decks/:deckId/cards/bulk`, linked from the Add Card mode switch.
 
 ### 5.2 Bulk Generation
 
 `POST /api/v1/card-generations/bulk`
+
+While this synchronous request is pending, the frontend shows one indeterminate
+batch state with the submitted count and a collapsed list of submitted entries.
+It does not simulate per-card progress, percentages, or ETA. The request and its
+latest result are tracked in a Redux workflow snapshot keyed by `deckId`, so
+internal route navigation does not cancel generation or discard the result.
+The user can visit card View/Edit or other application routes and return to the
+bulk route. A browser reload or tab close still clears this runtime-only state;
+recovery after that boundary requires a future backend job/history contract.
+
+When the response arrives, the result heading distinguishes all-created, mixed,
+and all-failed outcomes and receives focus for assistive technology. Created and
+failed entries remain separate, filters appear only for mixed outcomes, and the
+UI states that created cards are already persisted in the deck.
+
+The frontend retains one latest batch per deck. `Generate more` resets that
+deck to a blank input, and a new submission replaces its previous snapshot.
+Logout/session invalidation clears every retained batch; a confirmed missing or
+non-owned deck clears only that deck. Ordinary route navigation does not clear
+anything, and the snapshot is not persisted to `sessionStorage`.
 
 ```text
 CardGenerationController.generateBulk(BulkCardGenerateRequest)
@@ -129,13 +152,20 @@ CardGenerationController.generateBulk(BulkCardGenerateRequest)
               ├── AiCardGenerationService.generateCardData(title, srcLang, tgtLang)
               ├── Create Card entity with AI-generated fields
               ├── Save Card to DB
-              ├── Add to results list
-              └── [on exception] → log.debug per failure, skip, continue with next title
+              ├── Add saved card to `created[]`
+              ├── [on AI/rate-limit exception] → add `{inputIndex, title, code, message, retryable}` to `failed[]`, log, continue
+              └── [on persistence/unexpected exception] → propagate and roll back the request
 ```
 
-> **⚠️ Known issue:** Entire batch is in one `@Transactional`. Failed titles are logged server-side (`log.debug` per title + `log.warn` summary) but not reported to the client — the response only contains successful cards.
-
-> **TODO in code:** `"probably i want that it was like partial transaction"`
+The endpoint returns `201` with `BulkCardGenerationResponse { created, failed }`
+when every title either succeeds or fails with a recoverable `AiServiceException`
+or `RateLimitExceededException`. Each failure exposes its zero-based index in
+the submitted `titles[]`, stable code, safe message, and retryability; raw
+provider exception text is not returned. Persistence and unexpected exceptions
+are not converted into `failed[]`:
+they propagate, abort the request, and roll back all writes in the transaction.
+Request-level validation, deck lookup, ownership, and endpoint rate-limit failures
+also return their normal `400`/`404`/`403`/`429` responses instead of a partial body.
 
 ---
 
@@ -219,7 +249,7 @@ All settings via `@ConfigurationProperties(prefix = "ai")` in `AiProperties`:
 | `ai.openai.model` | `"gpt-4o-mini"` | Model name |
 | `ai.openai.base-url` | `"https://api.openai.com/v1"` | API base URL |
 
-> **Note:** Two checks exist: `@Size(max=100)` on `BulkCardGenerateRequest.titles` (hardcoded upper bound, Jakarta Validation → `400`) and `CardServiceImpl.validateBulkSize()` (reads the actual configured `ai.max-bulk-size` via `AiProperties`, throws `IllegalArgumentException` → `400`). If `ai.max-bulk-size` is configured below 100, only `validateBulkSize()` enforces it — the DTO annotation would not catch it.
+> **Note:** `BulkCardGenerateRequest.titles` accepts 1–100 entries and applies `@Size(max=100)` to every title (Jakarta Validation → `400`). `CardServiceImpl.validateBulkSize()` separately reads the configured `ai.max-bulk-size` via `AiProperties` and throws `IllegalArgumentException` → `400`. If that property is below 100, only the service check enforces the lower list-size limit.
 
 ---
 
@@ -272,9 +302,10 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 | Bulk size > max | `IllegalArgumentException("Bulk size exceeds limit: ...")` | 400 |
 | OpenAI HTTP error (4xx/5xx) | `AiServiceException("OpenAI API error: ...")` | 503 |
 | JSON parse failure | `AiServiceException("Failed to parse AI response")` | 503 |
-| Bulk: single title failure | Caught, logged (`log.debug`/`log.warn`) | Skipped, no error to client |
+| Bulk: per-title AI/rate-limit failure | Caught and logged (`log.debug`/`log.warn`) | Included in `failed[]`; remaining titles continue |
+| Bulk: persistence/unexpected failure | Propagated from `CardServiceImpl.createBulk` | Request fails; the transaction rolls back |
 
-> **Note:** `GlobalExceptionHandler` maps `AiServiceException` → `503 Service Unavailable` and `RateLimitExceededException` → `429 Too Many Requests`. Already fixed — the remaining gap is reporting bulk per-title failures back to the client (see Section 11).
+> **Note:** `GlobalExceptionHandler` maps request-level `AiServiceException` → `503 Service Unavailable` and `RateLimitExceededException` → `429 Too Many Requests`. Those two exception types raised while processing an individual bulk title are represented inside the successful bulk response instead. Persistence and unexpected exceptions remain request-level failures.
 
 ---
 
@@ -285,16 +316,22 @@ Rough heuristic: ~4 characters per token + 500 overhead for prompt/response.
 - Token estimation too large → `RateLimitExceededException`
 - OpenAI returns HTTP error → caught and wrapped
 - OpenAI returns invalid JSON → caught and wrapped
-- Bulk: individual title fails → silently skipped, other titles continue
+- Bulk: individual AI/rate-limit generation fails → returned with stable failure metadata; other titles continue
+- Bulk: persistence/unexpected failure → propagated; the transaction rolls back
 
 ## 11. Known Open Risks
 
 - **Prompt quality:** Placeholder-level prompt with typos and vague instructions.
 - **No preview:** AI output is saved directly to DB — bad AI output persists without user review.
 - **Bulk total timeout:** `requestTimeoutSeconds=120` applies per OpenAI call. For 100 titles: up to 100×120s = ~3.3 hours per single client request. No global bulk timeout exists. Fix planned for Level 1 — see `IMPROVEMENTS.md`.
-- **Bulk silent failures (client-facing):** Failed titles are logged server-side (`log.debug`/`log.warn`) but the client only receives successful cards — no way to tell which titles failed or why.
-- **Bulk transaction:** All titles in one `@Transactional` — if DB save fails mid-batch, partial rollback behaviour depends on exception type.
-- **No retry logic:** Failed OpenAI calls not retried.
+- **Bulk transaction:** All titles share one `@Transactional`. Recoverable AI/rate-limit failures can produce a partial `201` result; any persistence or unexpected failure aborts and rolls back the whole request.
+- **No retry logic:** Failed OpenAI calls are not retried yet. CARD-02 already
+  marks recoverable entries `retryable=true`; retry-one/retry-all UI is deferred
+  and tracked in `docs/roadmap/current-sprint.md`.
+- **No cancellation:** CARD-02 is a synchronous batch without a cancellation
+  contract. The frontend intentionally omits Cancel because aborting its HTTP
+  wait would not stop server-side generation. Backend-supported cancellation is
+  deferred and tracked in `docs/roadmap/current-sprint.md`.
 - **Rate limiter scope (`AiRateLimiter`):** Per JVM, not per user — one heavy user can exhaust permits for all. `UserRateLimiter` already protects the bulk endpoint per user.
 - ~~**Rate limiter reset bug:** `resetIfNeeded()` releases `10 - availablePermits()` — hardcoded to 10, ignores actual `maxRequestsPerSecond` config if changed.~~ ✅ Fixed — `resetIfNeeded()` now uses the injected `maxRequestsPerSecond` field.
 - **Availability double-check:** `isAvailable()` is checked in both `AiCardGenerationService` and `OpenAiProvider` — redundant.
@@ -340,10 +377,10 @@ ai/
 - [x] API key absence is checked before each call
 - [x] Postman collection includes AI endpoints
 - [x] AI errors are handled by GlobalExceptionHandler (`AiServiceException` → 503, `RateLimitExceededException` → 429)
-- [ ] Bulk failures are reported to client (server-side logging exists; full partial response to client deferred)
+- [x] Bulk failures are reported to client as `failed[]` entries alongside `created[]`
 - [x] Ownership check exists for AI card generation
 - [x] RateLimiter reset bug fixed
-- [x] Bulk size validated via `@Size(max=100)` on `BulkCardGenerateRequest.titles` and `CardServiceImpl.validateBulkSize()`
+- [x] Bulk size validated via `@Size(max=100)` on the titles list and `CardServiceImpl.validateBulkSize()`; every title is also limited to 100 characters
 - [x] Per-user rate limit on bulk generation (`UserRateLimiter` / `CARD_BULK_GENERATE`: 3 req/min)
 
 ---

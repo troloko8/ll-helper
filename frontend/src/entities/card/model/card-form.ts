@@ -29,10 +29,10 @@ const synonymListSchema = z
 export const cardTitleSchema = z
     .string()
     .trim()
-    .min(1, 'Target word is required')
+    .min(1, 'Word or phrase is required')
     .max(
         CARD_LIMITS.TITLE_MAX_LENGTH,
-        `Target word must be at most ${CARD_LIMITS.TITLE_MAX_LENGTH} characters`,
+        `Word or phrase must be at most ${CARD_LIMITS.TITLE_MAX_LENGTH} characters`,
     )
 
 export const cardFormSchema = z.object({

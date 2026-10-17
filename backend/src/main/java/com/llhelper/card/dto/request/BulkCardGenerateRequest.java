@@ -9,7 +9,7 @@ import java.util.List;
 public record BulkCardGenerateRequest(
     @NotNull
     @Size(min = 1, max = 100, message = "Must contain between 1 and 100 titles")
-    List<@NotBlank String> titles,
+    List<@NotBlank @Size(max = 100, message = "Title must be at most 100 characters") String> titles,
 
     @NotNull
     @Positive

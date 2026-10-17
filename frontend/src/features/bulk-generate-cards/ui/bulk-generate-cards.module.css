@@ -1,0 +1,419 @@
+.inputLayout,
+.inputPanel,
+.pending,
+.result,
+.resultGroup {
+    display: grid;
+    gap: 20px;
+}
+
+.inputPanel,
+.pending,
+.result {
+    min-width: 0;
+}
+
+.panelHeading,
+.entriesHeading,
+.resultGroupHeading,
+.resultHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.panelHeading span,
+.resultGroupHeading span,
+.summaryGrid span {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.panelHeading h2,
+.resultHeader h2,
+.resultGroupHeading h3,
+.entriesHeading h3 {
+    color: var(--on-surface);
+}
+
+.panelHeading h2 {
+    margin-top: 5px;
+    font-size: 1rem;
+}
+
+.inputPanel textarea {
+    min-height: 190px;
+    font-family: var(--font-family-metadata);
+    line-height: 1.7;
+}
+
+.parseStats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+}
+
+.parseStats strong {
+    color: var(--primary-container);
+}
+
+.parseStats .limitExceeded {
+    color: var(--error);
+}
+
+.stickyActions {
+    position: sticky;
+    z-index: 5;
+    bottom: 12px;
+    display: flex;
+    padding: 10px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    background-color: color-mix(
+        in srgb,
+        var(--surface-container-lowest) 94%,
+        transparent
+    );
+    box-shadow: 0 8px 24px color-mix(in srgb, black 14%, transparent);
+    backdrop-filter: blur(12px);
+}
+
+.stickyActions > * {
+    width: 100%;
+}
+
+.entriesHeading {
+    align-items: center;
+}
+
+.entriesHeading h3,
+.resultGroupHeading h3 {
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.entriesHeading button,
+.entryList button,
+.previewToggle,
+.filters button,
+.resultList button {
+    border: 0;
+    color: var(--primary-container);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+
+.entriesHeading button:focus-visible,
+.entryList button:focus-visible,
+.previewToggle:focus-visible,
+.filters button:focus-visible,
+.resultList button:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+}
+
+.entryList,
+.resultList {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.entryList li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 44px;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container-lowest);
+}
+
+.entryList li > span:first-child {
+    color: var(--on-surface-variant);
+    font-family: var(--font-family-metadata);
+    font-size: 0.6875rem;
+}
+
+.entryList strong {
+    overflow-wrap: anywhere;
+    color: var(--on-surface);
+}
+
+.removeEntryButton {
+    display: grid;
+    width: 44px;
+    min-height: 44px;
+    place-items: center;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.removeEntryButton:hover {
+    background-color: var(--surface-container-high);
+}
+
+.previewToggle {
+    min-height: 44px;
+    justify-self: center;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 650;
+}
+
+.previewToggle:hover {
+    background-color: var(--surface-container-high);
+}
+
+.emptyEntries,
+.pending > p,
+.resultHeader p,
+.savedNotice {
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.pendingBar {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: linear-gradient(
+        90deg,
+        var(--outline-variant) 0%,
+        var(--primary-container) 50%,
+        var(--outline-variant) 100%
+    );
+    background-size: 200% 100%;
+    animation: batch-progress 1.4s linear infinite;
+}
+
+.submittedEntries {
+    padding-top: 4px;
+    border-top: 1px solid var(--outline-variant);
+}
+
+.submittedEntries summary {
+    display: flex;
+    width: fit-content;
+    min-height: 44px;
+    align-items: center;
+    color: var(--primary-container);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.submittedEntries summary:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+}
+
+.submittedEntries[open] summary {
+    margin-bottom: 12px;
+}
+
+.submittedEntryList li {
+    grid-template-columns: 30px minmax(0, 1fr);
+}
+
+.resultHeader {
+    justify-content: flex-start;
+}
+
+.resultHeaderIcon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    font-weight: 750;
+}
+
+.resultHeaderIconSuccess {
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+}
+
+.resultHeaderIconWarning {
+    color: var(--secondary-container);
+    background-color: color-mix(
+        in srgb,
+        var(--secondary-container) 16%,
+        transparent
+    );
+}
+
+.resultHeaderIconError {
+    color: var(--error);
+    background-color: color-mix(in srgb, var(--error) 16%, transparent);
+}
+
+.resultHeader h2 {
+    font-size: 1.5rem;
+}
+
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.summaryGrid > div {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container-low);
+}
+
+.summaryGrid strong {
+    color: var(--on-surface);
+    font-size: 1.25rem;
+}
+
+.summaryGrid > div:nth-child(2) strong {
+    color: var(--primary-container);
+}
+
+.summaryGrid > div:nth-child(3) strong {
+    color: var(--error);
+}
+
+.savedNotice {
+    padding: 12px 14px;
+    border: 1px solid
+        color-mix(in srgb, var(--primary-container) 45%, transparent);
+    border-radius: 6px;
+    background-color: color-mix(
+        in srgb,
+        var(--primary-container) 7%,
+        transparent
+    );
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.filters button {
+    padding: 10px 12px;
+    color: var(--on-surface-variant);
+    font-weight: 650;
+}
+
+.filters button[aria-pressed='true'] {
+    border-bottom: 2px solid var(--primary-container);
+    color: var(--on-surface);
+}
+
+.resultGroup {
+    gap: 10px;
+}
+
+.resultList li {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 6px;
+    background-color: var(--surface-container-lowest);
+}
+
+.resultList li > span:not(:first-child) {
+    color: var(--on-surface-variant);
+    font-size: 0.8125rem;
+}
+
+.resultList li > div {
+    display: flex;
+    gap: 8px;
+}
+
+.resultList button {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: 650;
+}
+
+.resultList button:hover {
+    background-color: var(--surface-container-high);
+}
+
+.failureList li {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    border-color: color-mix(in srgb, var(--error) 45%, var(--outline-variant));
+}
+
+.resultActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline-variant);
+}
+
+@keyframes batch-progress {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (max-width: 47.99rem) {
+    .panelHeading,
+    .resultGroupHeading {
+        display: grid;
+    }
+
+    .entryList li {
+        grid-template-columns: 24px minmax(0, 1fr) auto;
+    }
+
+    .stickyActions {
+        bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+
+    .entryList li > button {
+        grid-column: 3;
+    }
+
+    .summaryGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .resultList li,
+    .failureList li {
+        grid-template-columns: 1fr;
+    }
+
+    .resultActions > * {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pendingBar {
+        animation: none;
+    }
+}

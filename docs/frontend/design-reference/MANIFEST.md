@@ -7,8 +7,8 @@ API readiness. Do not duplicate these IDs elsewhere.
 **Canonical project:** `LL Helper Design System` —
 `projects/8241473581937023308`.
 
-**Verified:** 2026-10-08 via Stitch MCP project metadata, `list_screens`, and
-direct retrieval of the main product screens. The project currently has 77
+**Verified:** 2026-10-15 via Stitch MCP project metadata, `list_screens`, and
+direct retrieval of the main product screens. The project currently has 80
 screens. Earlier resource IDs were stale after Stitch regeneration: 50 of 78
 IDs previously recorded here no longer existed. The tables below replace those
 IDs with the live inventory.
@@ -48,8 +48,11 @@ IDs with the live inventory.
 | Learning detail | `learning_deck_details_llhelper_refined` | Desktop | `dbf47f4360f74f439b00e28229f32df4` | shared learning-aware loading/error patterns |
 | Learning detail | `learning_deck_details_mobile_refined_2` | Mobile | `cac865fc9ea94e2abcad0a2af3ac0922` | shared learning-aware loading/error patterns |
 | Card detail | `card_details_owner` | Desktop + responsive mobile adaptation | `6e069c7228fd4bf3b7f6d3bf7f6a5b2d` | shared loading/error patterns |
-| Card form | `add_edit_card_llhelper_refined` | Desktop | `a0178048f8bc49159c4f0f610e932e39` | AI loading `358200a5055a4fe2bacf2259adc4762c`; AI error `454166b45867470391952fa11bc020e3`; submission error `5022ce12195e487b995cf2ef675e1048`; validation `31297dc4a8e34d6082c94539926a8cd0` |
+| Card form | `add_edit_card_llhelper_refined` | Desktop | `a0178048f8bc49159c4f0f610e932e39` | `Single card` active / `Multiple cards` inactive mode switch; AI loading `358200a5055a4fe2bacf2259adc4762c`; AI error `454166b45867470391952fa11bc020e3`; submission error `5022ce12195e487b995cf2ef675e1048`; validation `31297dc4a8e34d6082c94539926a8cd0` |
 | Card form | `add_card_mobile` | Mobile | `b8bbf6c21e9d46aa8edd11cdd374bb62` | shared form patterns |
+| Bulk card generation | `Bulk Card Generation — Input` | Desktop | `fa5f099dbcd0490a90dfa4f16451aad1` | 1–100 titles; blank lines ignored; parsed-entry preview; successful cards save directly to the deck |
+| Bulk card generation | `Bulk Card Generation — Generating` | Desktop | `85a68e94fdb246eaa261174ee72c3d52` | Indeterminate batch status only; no per-title streaming progress; no cancel control until backend cancellation exists |
+| Bulk card generation | `Bulk Card Generation — Results` | Desktop | `e6e456dd49674860bcaa6851bacf161d` | `created[]` is already persisted; `failed[]` is shown separately; retry actions are deferred and tracked in `docs/roadmap/current-sprint.md` |
 | Study | `study_english_b1_llhelper_refined` | Desktop | `d3ec2055a0724909b706649756c41913` | loading `67d7abcb9b6b4e0783a5c08a3010df0f`; API error `06eb438243504da9a13afb23037d8107`; caught up `94fda5b37748433e97db4b970b189eff`; complete `ebf6b6cb271e446b9bdfff5d4e11a441` |
 | Study | `study_english_b1_mobile` | Mobile | `32b53362748742a19dfc7b4cc15b1a97` | loading `2894882fd954456a8ffc5eda7e95fe65`; API error `b5f6562b8ff3464b8d1bd25f0390f510`; caught up `6d42f1332a8b409cb376c7b81cc6f4e8`; complete `ae6e28fd937b4d2e8bf96fa1d7098745` |
 | Discover | `discover_llhelper_refined` | Desktop | `17ceff56c3db4a808566c16ed212db7d` | loading `e8150da0386147cf873afdd57286b95f`; API error `8b29aac4d7e74fb59838fd5af2fbd820`; empty `1d837f19ba2e4c66aac4b070fae16d5c` |
@@ -64,6 +67,9 @@ IDs with the live inventory.
 - The project has no live mobile Edit Deck screen. That is a design-asset gap,
   not permission to invent a different page; use the documented responsive
   adaptation until Stitch supplies and the project accepts a replacement.
+- Bulk Card Generation has no separate mobile Stitch screen. Use the desktop
+  content hierarchy with the canonical compact header, 16px gutters,
+  single-column panels and full-width mobile actions.
 - `952df1252a6847c29daad282a6970113` ("My Decks — Loading State") and
   `58719fc4cbc54eafa68277e1af62e185` ("Vocabulary Flashcard App") are
   non-canonical screens.

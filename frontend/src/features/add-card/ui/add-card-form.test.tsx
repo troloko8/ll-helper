@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { HttpResponse, delay, http } from 'msw'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -6,7 +7,22 @@ import { renderWithProviders } from '@/app/test'
 import type { CardResponseDto } from '@/entities/card'
 import { setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
-import { AddCardForm } from './add-card-form'
+import { AddCardForm as AddCardFormComponent } from './add-card-form'
+
+type TestAddCardFormProps = Omit<
+    ComponentProps<typeof AddCardFormComponent>,
+    'sourceLanguageLabel' | 'targetLanguageLabel'
+>
+
+function AddCardForm(props: TestAddCardFormProps) {
+    return (
+        <AddCardFormComponent
+            {...props}
+            sourceLanguageLabel="English"
+            targetLanguageLabel="Russian"
+        />
+    )
+}
 
 const createdCard: CardResponseDto = {
     id: 91,
@@ -24,7 +40,7 @@ async function fillCardForm() {
     const user = userEvent.setup()
 
     await user.type(
-        screen.getByRole('textbox', { name: 'Target word' }),
+        screen.getByRole('textbox', { name: 'Word or phrase in English' }),
         '  Ephemeral  ',
     )
     await user.type(
@@ -52,14 +68,14 @@ describe('AddCardForm', () => {
         setToken('card-token')
     })
 
-    it('shows client validation before submitting an empty target word', async () => {
+    it('shows client validation before submitting an empty word or phrase', async () => {
         const user = userEvent.setup()
         renderWithProviders(<AddCardForm deckId={12} />)
 
         await user.click(screen.getByRole('button', { name: 'Save card' }))
 
         expect(
-            await screen.findByText('Target word is required'),
+            await screen.findByText('Word or phrase is required'),
         ).toBeInTheDocument()
     })
 
@@ -68,7 +84,9 @@ describe('AddCardForm', () => {
         renderWithProviders(<AddCardForm deckId={12} />)
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
             'Ephemeral',
         )
         await user.click(screen.getByRole('button', { name: 'Save card' }))
@@ -108,7 +126,7 @@ describe('AddCardForm', () => {
         })
     })
 
-    it('creates and saves a card with AI from the target word only', async () => {
+    it('creates and saves a card with AI from the source-language entry only', async () => {
         const onSuccess = vi.fn()
         server.use(
             http.post(
@@ -126,7 +144,9 @@ describe('AddCardForm', () => {
         const user = userEvent.setup()
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
             '  Ephemeral  ',
         )
         await user.click(
@@ -138,7 +158,7 @@ describe('AddCardForm', () => {
         })
     })
 
-    it('requires a target word before starting AI generation', async () => {
+    it('requires a word or phrase before starting AI generation', async () => {
         const user = userEvent.setup()
         renderWithProviders(<AddCardForm deckId={12} />)
 
@@ -147,7 +167,7 @@ describe('AddCardForm', () => {
         )
 
         expect(
-            await screen.findByText('Target word is required'),
+            await screen.findByText('Word or phrase is required'),
         ).toBeInTheDocument()
     })
 
@@ -162,7 +182,9 @@ describe('AddCardForm', () => {
         const user = userEvent.setup()
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
             'Ephemeral',
         )
         await user.click(
@@ -195,7 +217,9 @@ describe('AddCardForm', () => {
         const user = userEvent.setup()
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
             'Ephemeral',
         )
         await user.click(
@@ -230,7 +254,9 @@ describe('AddCardForm', () => {
         const user = userEvent.setup()
 
         await user.type(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
             'Ephemeral',
         )
         await user.click(
@@ -273,7 +299,7 @@ describe('AddCardForm', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('maps backend validation errors to the target word field', async () => {
+    it('maps backend validation errors to the word-or-phrase field', async () => {
         server.use(
             http.post('http://localhost/api/v1/decks/12/cards', () =>
                 HttpResponse.json(
@@ -295,7 +321,9 @@ describe('AddCardForm', () => {
             await screen.findByText('Title must be less than 100 characters'),
         ).toBeInTheDocument()
         expect(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
         ).toHaveAttribute('aria-invalid', 'true')
     })
 
@@ -349,7 +377,9 @@ describe('AddCardForm', () => {
             await screen.findByRole('button', { name: 'Saving card' }),
         ).toBeDisabled()
         expect(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in English',
+            }),
         ).toBeDisabled()
     })
 

@@ -20,7 +20,7 @@ export function getActiveNavigationDestination(
     if (
         normalizedPathname === '/created' ||
         normalizedPathname === '/decks/new' ||
-        /^\/decks\/[^/]+\/(manage|cards\/new)$/.test(normalizedPathname)
+        /^\/decks\/[^/]+\/(manage|cards\/(new|bulk))$/.test(normalizedPathname)
     ) {
         return 'created'
     }

@@ -44,6 +44,8 @@ interface SubmitFailure {
 
 export interface AddCardFormProps {
     deckId: number
+    sourceLanguageLabel: string
+    targetLanguageLabel: string
     onSuccess?: (response: CardResponseDto) => void | Promise<void>
     onCancel?: () => void
 }
@@ -80,7 +82,13 @@ function applyFieldErrors(
     return applied
 }
 
-export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
+export function AddCardForm({
+    deckId,
+    sourceLanguageLabel,
+    targetLanguageLabel,
+    onSuccess,
+    onCancel,
+}: AddCardFormProps) {
     const [submitFailure, setSubmitFailure] = useState<SubmitFailure>()
     const [activeAction, setActiveAction] = useState<AddCardAction>()
     const [addCard] = useAddCardMutation()
@@ -175,7 +183,7 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                 <div className={styles.wordSection}>
                     <div className={styles.wordRow}>
                         <FormField
-                            label="Target word"
+                            label={`Word or phrase in ${sourceLanguageLabel}`}
                             error={errors.title?.message}
                             required
                             className={styles.wordField}
@@ -201,34 +209,35 @@ export function AddCardForm({ deckId, onSuccess, onCancel }: AddCardFormProps) {
                         </Button>
                     </div>
                     <p className={styles.aiHint}>
-                        AI fills the card details and saves the card
-                        immediately.
+                        AI writes definitions and examples in{' '}
+                        {sourceLanguageLabel}, generates {targetLanguageLabel}{' '}
+                        translations, and saves the card immediately.
                     </p>
                 </div>
 
                 <div className={styles.meanings}>
                     <FormField
                         label="Definition"
-                        description="Meaning in the target language."
+                        description={`Meaning in ${sourceLanguageLabel}.`}
                         error={errors.definition?.message}
                     >
                         <Textarea
                             {...register('definition')}
                             maxLength={CARD_LIMITS.DEFINITION_MAX_LENGTH}
-                            placeholder="Meaning in target language..."
+                            placeholder={`Meaning in ${sourceLanguageLabel}...`}
                         />
                     </FormField>
 
                     <FormField
                         label="Translation"
                         required
-                        description="Meaning in your native language."
+                        description={`Translation in ${targetLanguageLabel}.`}
                         error={errors.translation?.message}
                     >
                         <Textarea
                             {...register('translation')}
                             maxLength={CARD_LIMITS.TRANSLATION_MAX_LENGTH}
-                            placeholder="Meaning in native language..."
+                            placeholder={`Translation in ${targetLanguageLabel}...`}
                         />
                     </FormField>
                 </div>

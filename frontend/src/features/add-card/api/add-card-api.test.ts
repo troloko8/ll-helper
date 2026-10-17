@@ -6,7 +6,7 @@ import { createApiTestStore, server } from '@/shared/lib/test'
 import { addCardApi } from './add-card-api'
 
 describe('addCardApi cache invalidation', () => {
-    it('refreshes Created cardCount after manual and AI card creation', async () => {
+    it('refreshes Created cardCount after manual and single AI card creation', async () => {
         let cardCount = 0
         let ownedDeckRequests = 0
         server.use(
@@ -109,6 +109,7 @@ describe('addCardApi cache invalidation', () => {
                     .data?.[0]?.cardCount,
             ).toBe(2)
         })
+
         expect(ownedDeckRequests).toBe(3)
 
         ownedDecksSubscription.unsubscribe()

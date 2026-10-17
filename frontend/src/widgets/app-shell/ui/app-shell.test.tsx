@@ -192,6 +192,7 @@ describe('AppShell', () => {
         ['/created/', 'Created'],
         ['/decks/12/manage', 'Created'],
         ['/decks/12/cards/new', 'Created'],
+        ['/decks/12/cards/bulk', 'Created'],
         ['/decks/12', 'Discover'],
         ['/discover/', 'Discover'],
         ['/progress', 'Progress'],

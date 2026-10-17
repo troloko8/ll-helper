@@ -76,10 +76,23 @@ describe('AddCardPage', () => {
             screen.getByRole('button', { name: /generate with ai/i }),
         ).toBeInTheDocument()
         expect(
+            screen.getByText(/Enter a word or phrase in Spanish/),
+        ).toHaveTextContent(
+            'Enter a word or phrase in Spanish. AI will generate English translations.',
+        )
+        expect(
+            screen.getByRole('textbox', {
+                name: 'Word or phrase in Spanish',
+            }),
+        ).toBeInTheDocument()
+        expect(
             screen.getByText(
-                'AI fills the card details and saves the card immediately.',
+                'AI writes definitions and examples in Spanish, generates English translations, and saves the card immediately.',
             ),
         ).toBeInTheDocument()
+        expect(
+            screen.getByRole('link', { name: 'Multiple cards' }),
+        ).toHaveAttribute('href', '/decks/12/cards/bulk')
     })
 
     it("does not expose the form for another user's deck", async () => {
@@ -98,7 +111,9 @@ describe('AddCardPage', () => {
             await screen.findByRole('heading', { name: 'Owner access only' }),
         ).toBeInTheDocument()
         expect(
-            screen.queryByRole('textbox', { name: 'Target word' }),
+            screen.queryByRole('textbox', {
+                name: 'Word or phrase in Spanish',
+            }),
         ).not.toBeInTheDocument()
     })
 

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useGetDeckByIdQuery } from '@/entities/deck'
+import { getDeckLanguageLabel, useGetDeckByIdQuery } from '@/entities/deck'
 import { useGetCurrentUserQuery } from '@/entities/user'
 import { AddCardForm } from '@/features/add-card'
 import { ApiErrorPresentation, Button, PageState, Skeleton } from '@/shared/ui'
@@ -96,6 +96,8 @@ export function AddCardPage() {
     }
 
     const managePath = `/decks/${deckId}/manage`
+    const sourceLanguageLabel = getDeckLanguageLabel(deck.sourceLanguage)
+    const targetLanguageLabel = getDeckLanguageLabel(deck.targetLanguage)
 
     return (
         <div className={styles.page}>
@@ -107,11 +109,24 @@ export function AddCardPage() {
             <header className={styles.header}>
                 <span>New card</span>
                 <h1>Add Card</h1>
-                <p>Add a word and the details you want to study.</p>
+                <p>
+                    Enter a word or phrase in {sourceLanguageLabel}. AI will
+                    generate {targetLanguageLabel} translations.
+                </p>
             </header>
+
+            <nav
+                className={styles.modeNavigation}
+                aria-label="Card creation mode"
+            >
+                <span aria-current="page">Single card</span>
+                <Link to={`/decks/${deckId}/cards/bulk`}>Multiple cards</Link>
+            </nav>
 
             <AddCardForm
                 deckId={deckId}
+                sourceLanguageLabel={sourceLanguageLabel}
+                targetLanguageLabel={targetLanguageLabel}
                 onCancel={() => navigate(managePath)}
                 onSuccess={() => navigate(managePath)}
             />

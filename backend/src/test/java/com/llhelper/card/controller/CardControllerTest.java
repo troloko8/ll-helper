@@ -25,6 +25,9 @@ import com.llhelper.card.dto.request.CardRequest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
+import com.llhelper.card.dto.response.BulkCardGenerationFailure;
+import com.llhelper.card.dto.response.BulkCardGenerationFailureCode;
+import com.llhelper.card.dto.response.BulkCardGenerationResponse;
 import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.service.CardService;
@@ -272,6 +275,34 @@ class CardControllerTest {
     // --- createBulk ---
 
     @Test
+    void generateBulk_shouldReturnCreatedAndFailedCards_whenResultIsPartial() throws Exception {
+        BulkCardGenerateRequest request = new BulkCardGenerateRequest(List.of("hello", "world"), 2L);
+        CardResponse created = defaultResponse(CARD_ID, defaultRequest());
+        when(cardService.createBulk(request)).thenReturn(new BulkCardGenerationResponse(
+            List.of(created),
+            List.of(new BulkCardGenerationFailure(
+                1,
+                "world",
+                BulkCardGenerationFailureCode.INVALID_AI_TRANSLATION,
+                "AI could not generate a valid translation.",
+                true
+            ))
+        ));
+
+        mockMvc.perform(post("/api/v1/card-generations/bulk")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.created[0].id", is(CARD_ID), Long.class))
+            .andExpect(jsonPath("$.created[0].title", is(created.title())))
+            .andExpect(jsonPath("$.failed[0].inputIndex", is(1)))
+            .andExpect(jsonPath("$.failed[0].title", is("world")))
+            .andExpect(jsonPath("$.failed[0].code", is("INVALID_AI_TRANSLATION")))
+            .andExpect(jsonPath("$.failed[0].message", is("AI could not generate a valid translation.")))
+            .andExpect(jsonPath("$.failed[0].retryable", is(true)));
+    }
+
+    @Test
     void generateBulk_shouldReturn400_whenSizeExceedsLimit() throws Exception {
         BulkCardGenerateRequest request = bulkGenerateRequest(101);
 
@@ -280,5 +311,18 @@ class CardControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errors.titles").exists());
+    }
+
+    @Test
+    void generateBulk_shouldReturn400_whenTitleExceedsLimit() throws Exception {
+        BulkCardGenerateRequest request = new BulkCardGenerateRequest(List.of("a".repeat(101)), 2L);
+
+        mockMvc.perform(post("/api/v1/card-generations/bulk")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$['errors']['titles[0]']",
+                is("Title must be at most 100 characters")));
+        verifyNoInteractions(cardService);
     }
 }

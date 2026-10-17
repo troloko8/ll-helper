@@ -139,6 +139,14 @@ export const appRoutes: RouteObject[] = [
                                 },
                             },
                             {
+                                path: '/decks/:deckId/cards/bulk',
+                                lazy: async () => {
+                                    const { BulkGenerateCardsPage } =
+                                        await import('@/pages/bulk-generate-cards')
+                                    return { Component: BulkGenerateCardsPage }
+                                },
+                            },
+                            {
                                 path: '/decks/:deckId/edit',
                                 lazy: async () => {
                                     const { EditDeckPage } =

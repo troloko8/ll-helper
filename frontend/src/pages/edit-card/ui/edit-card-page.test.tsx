@@ -114,7 +114,7 @@ describe('EditCardPage', () => {
             await screen.findByRole('heading', { name: 'Edit Card' }),
         ).toBeInTheDocument()
         expect(
-            screen.getByRole('textbox', { name: 'Target word' }),
+            screen.getByRole('textbox', { name: 'Word or phrase' }),
         ).toHaveValue('hola')
         expect(screen.getByRole('textbox', { name: 'Definition' })).toHaveValue(
             'A greeting',
@@ -140,7 +140,7 @@ describe('EditCardPage', () => {
         renderPage()
 
         const title = await screen.findByRole('textbox', {
-            name: 'Target word',
+            name: 'Word or phrase',
         })
         await user.clear(title)
         await user.type(title, 'hola!')
@@ -390,14 +390,14 @@ describe('EditCardPage', () => {
         const user = userEvent.setup()
         renderPage()
         const title = await screen.findByRole('textbox', {
-            name: 'Target word',
+            name: 'Word or phrase',
         })
 
         await user.clear(title)
         await user.click(screen.getByRole('button', { name: 'Save changes' }))
 
         expect(
-            await screen.findByText('Target word is required'),
+            await screen.findByText('Word or phrase is required'),
         ).toBeInTheDocument()
         expect(updates).toBe(0)
     })
@@ -408,7 +408,9 @@ describe('EditCardPage', () => {
                 HttpResponse.json(
                     {
                         message: 'Validation failed',
-                        errors: { title: 'This target word is already used' },
+                        errors: {
+                            title: 'This word or phrase is already used',
+                        },
                     },
                     { status: 400 },
                 ),
@@ -421,7 +423,7 @@ describe('EditCardPage', () => {
         await user.click(screen.getByRole('button', { name: 'Save changes' }))
 
         expect(
-            await screen.findByText('This target word is already used'),
+            await screen.findByText('This word or phrase is already used'),
         ).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: 'Edit Card' })).toBeVisible()
     })

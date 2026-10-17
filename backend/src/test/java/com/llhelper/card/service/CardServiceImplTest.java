@@ -15,16 +15,19 @@ import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.request.GenerateCardRequest;
+import com.llhelper.card.dto.response.BulkCardGenerationFailureCode;
+import com.llhelper.card.dto.response.BulkCardGenerationResponse;
 import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
+import com.llhelper.common.exception.RateLimitExceededException;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
-import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityManager;
 import java.util.List;
@@ -33,9 +36,9 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -163,7 +166,11 @@ class CardServiceImplTest {
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(existing));
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
         doAnswer(invocation -> {
-            Mappers.getMapper(CardMapper.class).updateEntity(request, existing);
+            existing.setTitle(request.title());
+            existing.setDefinition(request.definition());
+            existing.setSynonyms(request.synonyms());
+            existing.setExamples(request.examples());
+            existing.setTranslation(request.translation());
             return null;
         }).when(cardMapper).updateEntity(request, existing);
         when(cardRepository.saveAndFlush(existing)).thenReturn(existing);
@@ -402,30 +409,131 @@ class CardServiceImplTest {
 
         BulkCardGenerateRequest request = new BulkCardGenerateRequest(List.of("hello"), DECK_ID);
 
-        List<CardResponse> results = cardService.createBulk(request);
+        BulkCardGenerationResponse result = cardService.createBulk(request);
 
-        assertThat(results).containsExactly(response);
+        assertThat(result.created()).containsExactly(response);
+        assertThat(result.failed()).isEmpty();
         verify(cardRepository).saveAndFlush(generatedCard);
         verify(entityManager).refresh(generatedCard);
         verify(cardMapper).toResponse(generatedCard);
     }
 
     @Test
-    void generateBulk_shouldSkipCard_whenTranslationIsMissingEvenWithDefinition() {
+    void generateBulk_shouldKeepCreatedCard_whenLaterAiGenerationFails() {
         Deck deck = deckOwnedBy(OWNER_ID);
         AiCardData emptyAiData = new AiCardData("Useful definition", List.of(), List.of(), "  ");
+        AiCardData validAiData = new AiCardData("Definition", List.of(), List.of(), "translation");
+        Card generatedCard = new Card();
+        generatedCard.setTitle("hello");
+        CardResponse response = new CardResponse(
+            2L, DECK_ID, "hello", validAiData.definition(), validAiData.synonyms(),
+            validAiData.examples(), validAiData.translation(), null, null
+        );
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData(
             "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenReturn(validAiData);
+        when(aiCardGenerationService.generateCardData(
+            "world", deck.getSourceLanguage(), deck.getTargetLanguage()))
             .thenReturn(emptyAiData);
+        when(cardMapper.fromAiData("hello", validAiData, deck)).thenReturn(generatedCard);
+        when(cardRepository.saveAndFlush(generatedCard)).thenReturn(generatedCard);
+        when(cardMapper.toResponse(generatedCard)).thenReturn(response);
 
-        List<CardResponse> results = cardService.createBulk(
+        BulkCardGenerationResponse result = cardService.createBulk(
+            new BulkCardGenerateRequest(List.of("hello", "world"), DECK_ID));
+
+        assertThat(result.created()).containsExactly(response);
+        assertThat(result.failed())
+            .singleElement()
+            .satisfies(failure -> {
+                assertThat(failure.inputIndex()).isEqualTo(1);
+                assertThat(failure.title()).isEqualTo("world");
+                assertThat(failure.code()).isEqualTo(
+                    BulkCardGenerationFailureCode.INVALID_AI_TRANSLATION);
+                assertThat(failure.message()).isEqualTo(
+                    "AI could not generate a valid translation.");
+                assertThat(failure.retryable()).isTrue();
+            });
+        verify(cardRepository).saveAndFlush(generatedCard);
+        verify(entityManager).refresh(generatedCard);
+    }
+
+    @Test
+    void generateBulk_shouldReturnSafeMetadata_whenProviderFailureContainsInternalDetails() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(
+            "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenThrow(new AiServiceException("provider-key=secret"));
+
+        BulkCardGenerationResponse result = cardService.createBulk(
             new BulkCardGenerateRequest(List.of("hello"), DECK_ID));
 
-        assertThat(results).isEmpty();
-        verify(cardRepository, never()).saveAndFlush(any());
+        assertThat(result.created()).isEmpty();
+        assertThat(result.failed())
+            .singleElement()
+            .satisfies(failure -> {
+                assertThat(failure.inputIndex()).isZero();
+                assertThat(failure.code()).isEqualTo(
+                    BulkCardGenerationFailureCode.AI_GENERATION_FAILED);
+                assertThat(failure.message()).isEqualTo(
+                    "AI could not generate a valid card.");
+                assertThat(failure.message()).doesNotContain("secret");
+                assertThat(failure.retryable()).isTrue();
+            });
+    }
+
+    @Test
+    void generateBulk_shouldReturnRateLimitMetadata_whenProviderLimitIsReached() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(
+            "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenThrow(new RateLimitExceededException("Too many AI requests"));
+
+        BulkCardGenerationResponse result = cardService.createBulk(
+            new BulkCardGenerateRequest(List.of("hello"), DECK_ID));
+
+        assertThat(result.created()).isEmpty();
+        assertThat(result.failed())
+            .singleElement()
+            .satisfies(failure -> {
+                assertThat(failure.code()).isEqualTo(
+                    BulkCardGenerationFailureCode.AI_RATE_LIMITED);
+                assertThat(failure.message()).isEqualTo(
+                    "AI request limit reached. Try again later.");
+                assertThat(failure.retryable()).isTrue();
+            });
+    }
+
+    @Test
+    void generateBulk_shouldPropagatePersistenceFailure_withoutReturningPartialResult() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        AiCardData aiData = new AiCardData("Definition", List.of(), List.of(), "translation");
+        Card generatedCard = new Card();
+        generatedCard.setTitle("hello");
+        when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(aiCardGenerationService.generateCardData(
+            "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
+            .thenReturn(aiData);
+        when(cardMapper.fromAiData("hello", aiData, deck)).thenReturn(generatedCard);
+        when(cardRepository.saveAndFlush(generatedCard))
+            .thenThrow(new DataIntegrityViolationException("write failed"));
+
+        assertThatThrownBy(() -> cardService.createBulk(
+            new BulkCardGenerateRequest(List.of("hello"), DECK_ID)))
+            .isInstanceOf(DataIntegrityViolationException.class)
+            .hasMessage("write failed");
+
         verify(entityManager, never()).refresh(any());
     }
 
@@ -475,9 +583,10 @@ class CardServiceImplTest {
             .toList();
         BulkCardGenerateRequest request = new BulkCardGenerateRequest(titles, DECK_ID);
 
-        List<CardResponse> results = cardService.createBulk(request);
+        BulkCardGenerationResponse result = cardService.createBulk(request);
 
-        assertThat(results).hasSize(50);
+        assertThat(result.created()).hasSize(50);
+        assertThat(result.failed()).isEmpty();
         verify(deckRepository).findWithOwnerById(DECK_ID);
     }
 }

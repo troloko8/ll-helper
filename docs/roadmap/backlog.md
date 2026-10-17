@@ -131,10 +131,6 @@
 - Реализовать расчёт `nextReviewAt`.
 - Добавить service unit test `review_shouldCalculateNextReview_basedOnDifficulty`.
 
-**AI generation DTOs:**
-- [ ] Специализированный `BulkGenerateResponse` со статусом для каждого тайтла (success/failed/reason) вместо `List<CardResponse>`. Аналогично `AiCardGenerateRequest`/`AiCardGenerateResponse` для single generation
-- [ ] Partial response для bulk failures — `BulkGenerateResponse.created[]` + `failed[]` (title + reason), вместо silent skip
-
 **User self-service API:**
 - `GET /api/v1/users/me` — implemented (Sprint 1.0 G-01; see `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.4/§0.7 and `docs/frontend/integration/BACKEND_CONTRACT_INVENTORY.md` USER-07).
 - `PUT /api/v1/me`, `DELETE /api/v1/me` — separate self-service endpoints, not part of the G-01 decision; path not normalized to `/users/me` and remains open/deferred.

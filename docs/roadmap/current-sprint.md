@@ -43,8 +43,20 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 - [x] Реализовать Creator Profile и список публичных колод автора по маршруту
   `/creators/:username`.
 - [x] Реализовать общий Progress dashboard по маршруту `/progress`.
-- [ ] Завершить bulk AI generation в Card Editor и показать частичный результат
-  без silent skip: созданные карточки отдельно от неуспешных с причиной ошибки.
+- [x] Завершить отдельный bulk AI generation flow и показать частичный результат
+  без silent skip: отдельный маршрут и feature, canonical Input/Generating/Results,
+  созданные карточки отдельно от неуспешных со стабильным кодом и безопасным
+  сообщением ошибки.
+- [ ] Сохранять контекст bulk Results при переходе к созданной карточке через
+  View или Edit: возврат должен вести к результатам генерации текущей колоды,
+  включая переходы после Save/Cancel, а прямое открытие Card Details/Edit должно
+  безопасно возвращать к deck. Добавить regression tests для обоих сценариев.
+- [ ] Добавить Retry для одного failed title и Retry all failed в bulk results;
+  CARD-02 уже возвращает `inputIndex`, `code`, `message` и `retryable`, но UI
+  retry намеренно не входит в текущую реализацию.
+- [ ] Добавить Cancel для bulk generation только вместе с backend-контрактом,
+  который реально останавливает серверную работу. Не подменять cancellation
+  frontend-abort, потому что он прекращает ожидание ответа, но не AI generation.
 
 ### 3. Покрытие состояний Stitch
 
@@ -62,6 +74,12 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 ### 4. Контракты и качество
 
+- [ ] Привести нейминг в `features/bulk-generate-cards` к
+  `frontend/NAMING.md`: заменить неоднозначный `draft` на доменное имя для
+  исходного multiline input, уточнить `parsed`, `text`, `line`, `seen` и
+  связанные props/actions/selectors, а framework-owned `data` при необходимости
+  сразу алиасить (`data: deck`, `data: currentUser`). Не менять поведение,
+  backend DTO и пользовательский flow; синхронно обновить тесты и public API.
 - [ ] Определить и внедрить единый URL-safe slug-контракт для `username`:
   допустимые символы, нормализацию и регистр, уникальность, backend validation,
   совместимость существующих данных, frontend routing, прохождение допустимых

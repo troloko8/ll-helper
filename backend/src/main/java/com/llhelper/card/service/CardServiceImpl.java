@@ -7,17 +7,21 @@ import com.llhelper.ai.service.AiCardGenerationService;
 import com.llhelper.card.dto.request.BulkCardGenerateRequest;
 import com.llhelper.card.dto.request.CardRequest;
 import com.llhelper.card.dto.request.GenerateCardRequest;
+import com.llhelper.card.dto.response.BulkCardGenerationFailure;
+import com.llhelper.card.dto.response.BulkCardGenerationFailureCode;
+import com.llhelper.card.dto.response.BulkCardGenerationResponse;
 import com.llhelper.card.dto.response.CardDetailsResponse;
 import com.llhelper.card.dto.response.CardResponse;
 import com.llhelper.card.entity.Card;
 import com.llhelper.card.mapper.CardMapper;
 import com.llhelper.card.repository.CardRepository;
-import com.llhelper.deck.entity.Deck;
-import com.llhelper.deck.repository.DeckRepository;
-import com.llhelper.deck.access.DeckAccessPolicy;
+import com.llhelper.common.exception.RateLimitExceededException;
 import com.llhelper.common.security.RateLimitAction;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.deck.access.DeckAccessPolicy;
+import com.llhelper.deck.entity.Deck;
+import com.llhelper.deck.repository.DeckRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
@@ -144,8 +148,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional
-    // TODO: probably i want that it was like partial transaction
-    public List<CardResponse> createBulk(BulkCardGenerateRequest request) {
+    public BulkCardGenerationResponse createBulk(BulkCardGenerateRequest request) {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_BULK_GENERATE);
 
@@ -156,32 +159,73 @@ public class CardServiceImpl implements CardService {
 
         validateDeckOwnership(deck);
 
-        List<CardResponse> results = new ArrayList<>();
-        List<String> failedTitles = new ArrayList<>();
+        List<CardResponse> created = new ArrayList<>();
+        List<BulkCardGenerationFailure> failed = new ArrayList<>();
 
-        for (String title : request.titles()) {
+        List<String> titles = request.titles();
+        for (int inputIndex = 0; inputIndex < titles.size(); inputIndex++) {
+            String title = titles.get(inputIndex);
+            AiCardData aiData;
+
             try {
-                AiCardData aiData = aiCardGenerationService.generateCardData(
+                aiData = aiCardGenerationService.generateCardData(
                     title,
                     deck.getSourceLanguage(),
                     deck.getTargetLanguage()
                 );
                 validateGeneratedTranslation(aiData);
-
-                Card card = cardMapper.fromAiData(title, aiData, deck);
-                results.add(saveCard(card));
-            } catch (Exception e) {
-                failedTitles.add(title);
+            } catch (AiServiceException | RateLimitExceededException e) {
+                failed.add(toBulkFailure(inputIndex, title, e));
                 log.debug("Failed to generate card for title='{}' in deckId={}", title, deck.getId(), e);
+                continue;
             }
+
+            Card card = cardMapper.fromAiData(title, aiData, deck);
+            created.add(saveCard(card));
         }
 
-        if (!failedTitles.isEmpty()) {
+        if (!failed.isEmpty()) {
             log.warn("Bulk generation completed. Created: {}, Failed: {}. Failed titles: {}",
-                results.size(), failedTitles.size(), failedTitles);
+                created.size(), failed.size(), failed.stream()
+                    .map(BulkCardGenerationFailure::title)
+                    .toList());
         }
 
-        return results;
+        return new BulkCardGenerationResponse(created, failed);
+    }
+
+    private BulkCardGenerationFailure toBulkFailure(
+        int inputIndex,
+        String title,
+        RuntimeException exception
+    ) {
+        if (exception instanceof RateLimitExceededException) {
+            return new BulkCardGenerationFailure(
+                inputIndex,
+                title,
+                BulkCardGenerationFailureCode.AI_RATE_LIMITED,
+                "AI request limit reached. Try again later.",
+                true
+            );
+        }
+
+        if ("Generated card has no translation".equals(exception.getMessage())) {
+            return new BulkCardGenerationFailure(
+                inputIndex,
+                title,
+                BulkCardGenerationFailureCode.INVALID_AI_TRANSLATION,
+                "AI could not generate a valid translation.",
+                true
+            );
+        }
+
+        return new BulkCardGenerationFailure(
+            inputIndex,
+            title,
+            BulkCardGenerationFailureCode.AI_GENERATION_FAILED,
+            "AI could not generate a valid card.",
+            true
+        );
     }
 
     @Override

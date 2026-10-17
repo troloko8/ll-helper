@@ -31,6 +31,7 @@ Frontend gates: `frontend/AGENTS.md`.
 | Backend hard gates | `backend/AGENTS.md` |
 | Frontend hard gates | `frontend/AGENTS.md` |
 | Frontend conventions | `frontend/CONVENTIONS.md` |
+| Frontend variable and function naming | `frontend/NAMING.md` |
 | Frontend FSD conventions | `frontend/.windsurf/rules/fsd-conventions.md` |
 | Frontend testing conventions | `frontend/.windsurf/rules/testing-conventions.md` |
 | Frontend design system (tokens, shell, screen registry) | `docs/frontend/DESIGN.md` |

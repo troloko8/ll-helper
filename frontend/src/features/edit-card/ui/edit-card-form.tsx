@@ -122,7 +122,7 @@ export function EditCardForm({
             <form className={styles.form} onSubmit={onSubmit} noValidate>
                 <fieldset disabled={isBusy}>
                     <FormField
-                        label="Target word"
+                        label="Word or phrase"
                         error={errors.title?.message}
                         required
                     >

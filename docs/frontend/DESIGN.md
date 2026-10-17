@@ -208,6 +208,50 @@ These are hard rules for any UI built against this contract:
 See `docs/features/learning-flow.md` for the backend-owned progress/answer
 model these boundaries are derived from.
 
+### Bulk card generation
+
+Bulk AI generation is a separate owner-only creation surface at
+`/decks/:deckId/cards/bulk`, linked bidirectionally with the single-card route
+through the `Single card` / `Multiple cards` mode navigation. It is not embedded
+inside `AddCardForm`.
+
+- **Input:** one word or phrase per line, blank lines ignored, and duplicate
+  removal reported only when duplicates exist. Show at most 10 preview rows by
+  default with an explicit show-all control; every row remains removable through
+  a touch-sized action. Keep the Generate action sticky while reviewing the
+  preview. When more than 100 unique entries are present, show the current count
+  against the limit in the error color and disable generation. Do not rely on an
+  arrow-only language pair: state explicitly that entries must be written in the
+  deck's `sourceLanguage` and AI generates translations in its `targetLanguage`.
+- **Generating:** one indeterminate batch state. Never simulate per-card
+  progress because CARD-02 returns only after the complete synchronous batch.
+  Show the submitted count and keep the submitted entries collapsed by default.
+  Explain that results appear when the whole batch is ready and that the user
+  can visit other application pages and return. Do not block internal
+  navigation or expose Cancel until backend-supported cancellation can stop the
+  work.
+- **Results:** use an outcome-specific heading for all-created, mixed and
+  all-failed responses; only the all-created state uses the success indicator.
+  Show submitted, saved and not-created counts; persisted cards and failures are
+  separate groups without repeated per-row status badges. Show filters only for
+  mixed results. Move focus to the announced result heading when generation
+  finishes, and keep View/Edit actions touch-sized. Retry-one and Retry-all
+  controls from the Stitch reference are intentionally deferred and tracked in
+  `docs/roadmap/current-sprint.md`.
+- Successful AI output is save-first: there is no draft review. Runtime deck
+  title, language pair and card content come from backend data, never prototype
+  literals.
+- Keep one latest runtime batch per deck across application route changes so
+  View/Edit and other navigation do not discard pending or completed results.
+  Reset it on `Generate more`, replace it on a new submission, clear all batches
+  on logout, and clear the affected batch when the deck is confirmed missing or
+  non-owned. Do not persist the batch in browser storage; reload and tab close
+  are accepted runtime boundaries until a backend job/history contract exists.
+
+There is no canonical mobile resource for this flow. Adapt the desktop content
+hierarchy to the canonical mobile shell with one-column panels and full-width
+actions.
+
 ## Canonical screen registry
 
 **Canonical Stitch project:** `LL Helper Design System` — resource ID
@@ -235,6 +279,9 @@ Exact Stitch screen resource IDs behind each name below are owned by
 - `deck_details_public_llhelper_refined`
 - `learning_deck_details_llhelper_refined`
 - `add_edit_card_llhelper_refined`
+- `Bulk Card Generation — Input`
+- `Bulk Card Generation — Generating`
+- `Bulk Card Generation — Results`
 - `study_english_b1_llhelper_refined`
 - `discover_llhelper_refined`
 - `creator_profile_llhelper_refined`
@@ -292,6 +339,9 @@ themed mobile screen to fill either gap.
 - Thin `ProgressBar`
 - `CardInventory` — desktop table / mobile list
 - `CardDetails` — read-only card content; responsive single-column adaptation
+- `CardCreationModeSwitch` — compact `Single card` / `Multiple cards`
+  segmented navigation in the Add Card header; the current mode is visually
+  active and the control does not replace the form's submit action
 - `Skeleton`
 - `PageState` / `InlineError` / `ApiErrorPresentation`
 - Destructive confirmation dialog

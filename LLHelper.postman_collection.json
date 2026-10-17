@@ -1429,6 +1429,24 @@
         },
         {
           "name": "Bulk Generate Cards",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Bulk result separates created and failed cards\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.created).to.be.an(\"array\");",
+                  "    pm.expect(body.failed).to.be.an(\"array\");",
+                  "    body.failed.forEach(function (failure) {",
+                  "        pm.expect(failure).to.have.all.keys(\"inputIndex\", \"title\", \"code\", \"message\", \"retryable\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
@@ -1441,6 +1459,7 @@
               ]
             },
             "method": "POST",
+            "description": "Accepts 1–100 non-blank titles of at most 100 characters each. Returns 201 with { created: CardResponse[], failed: { inputIndex, title, code, message, retryable }[] }. inputIndex is zero-based in the submitted titles array; message is safe for display. Per-title AI/provider rate-limit failures are reported in failed and processing continues. Persistence and unexpected failures abort and roll back the request; request-level validation, ownership, deck lookup, and endpoint rate-limit failures retain their normal error statuses.",
             "header": [
               {
                 "key": "Content-Type",

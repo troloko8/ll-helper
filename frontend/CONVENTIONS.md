@@ -109,6 +109,20 @@ navigation returns to Owner Deck Details. Because the Created collection also
 provides each `Deck/{deckId}` tag, the same invalidation refreshes its
 backend-provided `cardCount` after both manual and single-card AI creation.
 
+The implemented `pages/bulk-generate-cards/` slice owns
+`/decks/:deckId/cards/bulk`, verifies deck ownership, and composes the separate
+`features/bulk-generate-cards/` use case. The feature owns multiline parsing,
+duplicate reporting, CARD-02 transport, the indeterminate batch state, and the
+created/failed result. Its Redux slice keeps one latest workflow snapshot per
+`deckId` across route unmounts, including an in-flight request and its eventual
+result. `Generate more` resets that deck, a new request replaces its previous
+snapshot, logout/session invalidation clears all snapshots, and a confirmed
+missing or non-owned deck clears only its own snapshot. The state is intentionally
+runtime-only: ordinary navigation does not clear it, while reload does, and no
+`sessionStorage` persistence is used. `features/add-card/` contains no bulk state
+or mutation. Both pages link to each other through card-creation mode navigation;
+neither feature imports the other.
+
 The implemented `pages/public-deck-details/` slice owns `/decks/:deckId`, reached
 from Discover or by direct link. It consumes `DECK-02`, including its
 current-user `isEnrolled` field, renders public content without learning
@@ -160,16 +174,26 @@ slice-name/
 ├── api/      ← RTK Query endpoint injection or API hooks
 ├── model/    ← types, stores/slices, selectors, business logic
 ├── lib/      ← pure utility functions for this slice
-└── index.ts  ← public API
+├── index.ts  ← default public API
+└── store.ts  ← optional reducer-only public entry for eager store wiring
 ```
 
 ### Public APIs
 
-- Every slice that is imported by other slices must export through `index.ts`.
+- Every slice imported by other slices exposes its default API through
+  `index.ts`; the reducer-only store exception is defined below.
 - Internal implementation files should not be imported directly from outside the slice.
 - Shared layer sub-folders (`shared/ui`, `shared/lib`, etc.) each have their own `index.ts`.
+- A lazy feature may additionally expose a root-level `store.ts` public entry
+  containing only its reducer when importing the default barrel from the eager
+  app store would collapse the route split. This is a measured bundling
+  exception, not permission for arbitrary secondary or internal imports.
 
 ## Naming
+
+Variable, function, parameter, and domain-term naming is defined in
+`frontend/NAMING.md`. The structural rules below remain authoritative for files,
+directories, exports, hooks, and constants.
 
 - **Files:** `kebab-case` for all files and directories (e.g. `create-deck/`, `auth-slice.ts`).
 - **Components:** `PascalCase` export name, `kebab-case` file (e.g. `deck-summary.tsx` exports `DeckSummary`).
@@ -190,7 +214,9 @@ slice-name/
 - Alias: `@/` → `src/`.
 - Import order: external libs → shared → entities → features → widgets → relative.
 - No circular imports between slices.
-- Import from slice public API (`index.ts`), not internal files.
+- Import from the default slice public API (`index.ts`), or from its documented
+  reducer-only `store.ts` entry when wiring the eager app store. Do not import
+  internal files.
 
 ## Performance / Bundling
 
@@ -212,6 +238,10 @@ slice-name/
   a lazy page from an eager barrel, or move session/API initialization behind an
   optional UI action. Do not add manual vendor chunks without inspecting the
   resulting dependency graph and cold-route cost.
+- When a lazy feature owns Redux workflow state, expose its reducer through a
+  reducer-only root `store.ts` entry. The eager store must not import the
+  feature's default UI barrel, because doing so collapses the lazy route into
+  the entry graph.
 
 ### Measurement and dependencies
 
@@ -275,6 +305,7 @@ slice-name/
 | Server state (API data) | RTK Query | `entities/*/api/` or `features/*/api/` |
 | Runtime session state | Redux Toolkit slice | `entities/session/model/` |
 | Global client state | Redux Toolkit slice | `entities/*/model/` or `app/` |
+| Route-resilient feature workflow state | Redux Toolkit slice | `features/*/model/` |
 | Form state | React Hook Form + Zod | Component-local |
 | URL state | React Router params/search | Route-level |
 | Local UI state | `useState` / `useReducer` | Component-local |
@@ -329,12 +360,18 @@ token + GET /api/v1/users/me → 401        → clear token → anonymous
 - Do not put server data into ordinary Redux slices.
 - Do not put transient local UI state into Redux.
 - Do not store form state in Redux unless explicitly justified.
+- A synchronous mutation workflow may keep a minimal response snapshot in its
+  feature slice when the result must survive route unmount and RTK Query has no
+  backend job resource to refetch. This is not canonical server state: keep it
+  runtime-only, scope it to the workflow, define explicit reset boundaries, and
+  continue to use RTK Query for transport and cache invalidation. Bulk CARD-02
+  is the current accepted case.
 
 ## RTK Query / API
 
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
-- **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, `DECK-06`, and `DECK-07`; `entities/user` owns `USER-03` and `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices.
+- **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, `DECK-06`, and `DECK-07`; `entities/user` owns `USER-03` and `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices except for the narrowly scoped synchronous-mutation workflow snapshot documented under State Ownership.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**
@@ -444,7 +481,7 @@ app/router (protected routing)
   - `anonymous` → allow `/login` and `/register`; redirect every other route to `/login`.
   - `needsProfile` → only `/onboarding/profile` is reachable; all other product routes redirect away (target route list owned by `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md`, not duplicated here).
   - `authenticated` → render the protected application; Auth/Onboarding routes redirect directly to `/learning`.
-- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/created`, `/discover`, `/learning/:deckId`, `/decks/new`, `/decks/:deckId`, `/decks/:deckId/manage`, `/decks/:deckId/cards/new`, `/study/:deckId`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
+- `/login` and `/register` are nested under `AuthRoute`; `/onboarding/profile` is nested under `OnboardingRoute`; `/`, `/learning`, `/created`, `/discover`, `/learning/:deckId`, `/decks/new`, `/decks/:deckId`, `/decks/:deckId/manage`, `/decks/:deckId/cards/new`, `/decks/:deckId/cards/bulk`, `/study/:deckId`, and the authenticated-only wildcard/not-found route are nested under `AuthenticatedRoute` and the responsive `AppShell`.
 - `/` redirects to the implemented Learning list at `/learning`. The router provides a root route-level error surface and an explicit wildcard not-found page; the application root provides a global Error Boundary.
 - The implemented `pages/not-found/` slice owns the basic wildcard route fallback and contains no session or domain behavior.
 - **Pages do not own global router configuration.**
