@@ -147,6 +147,26 @@ enrollment state.
 > is rejected by visibility first and receives `403` regardless of enrollment
 > state.
 
+### 5.3.1 Add Card After Enrollment
+
+Manual, single-AI, and each successful bulk-AI card creation provision a
+`NEW` `UserCardProgress` row for every existing `ACTIVE` enrollment of the
+card's deck. `CardServiceImpl` performs this only on the new-card persistence
+path; updating an existing card uses a separate persistence path and does not
+repeat the lifecycle action.
+
+Provisioning is one PostgreSQL `INSERT ... SELECT` per newly created card and
+is idempotent through `ON CONFLICT (user_deck_progress_id, card_id) DO NOTHING`
+against `uk_user_card_progress_deck_card`. `PAUSED` and `ARCHIVED` enrollments
+are not changed. Card persistence and progress provisioning share the card
+creation transaction, so an unexpected provisioning failure rolls the card
+creation back.
+
+Liquibase V14 runs the equivalent idempotent backfill across existing Cards and
+ACTIVE enrollments. This repairs missing rows created before runtime
+provisioning was introduced without overwriting existing learning counters or
+statuses.
+
 ---
 
 ### 5.4 Get Study Session
@@ -282,7 +302,6 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 - Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
 - Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
 - Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
-- Adding a card after users have already enrolled does not yet create a `NEW` `UserCardProgress` row for those existing `ACTIVE` enrollments. Until the card-creation lifecycle is synchronized, the card is absent from Study queues and from Learning/Progress aggregates for those users. This is tracked in the current Sprint 1.1 quality scope and must cover manual, single-AI, and bulk-AI creation paths without duplicating progress during card updates.
 
 ---
 

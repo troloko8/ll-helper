@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: V14-1
+      author: llhelper
+      comment: Backfill NEW card progress missing from active enrollments after cards were added
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: >-
+              INSERT INTO user_card_progress (
+                  user_id,
+                  card_id,
+                  user_deck_progress_id,
+                  times_seen,
+                  times_correct,
+                  times_wrong,
+                  correct_streak,
+                  status
+              )
+              SELECT
+                  udp.user_id,
+                  c.id,
+                  udp.id,
+                  0,
+                  0,
+                  0,
+                  0,
+                  'NEW'
+              FROM user_deck_progress udp
+              JOIN cards c ON c.deck_id = udp.deck_id
+              WHERE udp.status = 'ACTIVE'
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM user_card_progress existing
+                    WHERE existing.user_deck_progress_id = udp.id
+                      AND existing.card_id = c.id
+                )
+              ON CONFLICT (user_deck_progress_id, card_id) DO NOTHING

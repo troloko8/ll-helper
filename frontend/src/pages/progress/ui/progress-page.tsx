@@ -30,8 +30,7 @@ function MetricIcon({
         new: 'M11 2h2v8h8v2h-8v8h-2v-8H3v-2h8V2Z',
         learning:
             'M12 3a9 9 0 0 1 8.7 6.75h-2.1A7 7 0 0 0 6.1 7.1L9 10H2V3l2.68 2.68A8.96 8.96 0 0 1 12 3Zm10 11v7l-2.68-2.68A9 9 0 0 1 3.3 14.25h2.1a7 7 0 0 0 12.5 2.65L15 14h7Z',
-        review:
-            'M12 2a10 10 0 1 1-7.07 2.93A9.97 9.97 0 0 1 12 2Zm0 2a8 8 0 1 0 5.66 2.34A7.98 7.98 0 0 0 12 4Zm1 3v4.59l3.2 3.2-1.41 1.42L11 12.41V7h2Z',
+        review: 'M12 2a10 10 0 1 1-7.07 2.93A9.97 9.97 0 0 1 12 2Zm0 2a8 8 0 1 0 5.66 2.34A7.98 7.98 0 0 0 12 4Zm1 3v4.59l3.2 3.2-1.41 1.42L11 12.41V7h2Z',
         mastered:
             'm12 2 2.35 2.14 3.17-.13.13 3.17L19.8 9.5 18 12.12l.77 3.08-3.08.77L14 18.65 12 21l-2-2.35-1.69-2.68-3.08-.77L6 12.12 4.2 9.5l2.15-2.32.13-3.17 3.17.13L12 2Zm-1.1 12.1 5-5-1.4-1.4-3.6 3.58-1.4-1.39-1.4 1.42 2.8 2.79Z',
     } as const
@@ -91,7 +90,13 @@ function EmptyProgressState() {
     )
 }
 
-function OverallMastery({ mastered, total }: { mastered: number; total: number }) {
+function OverallMastery({
+    mastered,
+    total,
+}: {
+    mastered: number
+    total: number
+}) {
     const percentage = calculateMastery(mastered, total)
     const formattedPercentage = formatPercentage(percentage)
 
@@ -191,7 +196,10 @@ function SummaryMetrics({ totals }: { totals: ProgressTotals }) {
     ]
 
     return (
-        <ul className={styles.metricsGrid} aria-label="Overall card distribution">
+        <ul
+            className={styles.metricsGrid}
+            aria-label="Overall card distribution"
+        >
             {metrics.map((metric) => (
                 <li
                     className={[styles.metricCard, metric.className].join(' ')}
@@ -212,13 +220,9 @@ function SummaryMetrics({ totals }: { totals: ProgressTotals }) {
                             aria-label={`${metric.label} cards`}
                             aria-valuemin={0}
                             aria-valuemax={100}
-                            aria-valuenow={Number(
-                                metric.percentage.toFixed(1),
-                            )}
+                            aria-valuenow={Number(metric.percentage.toFixed(1))}
                         >
-                            <span
-                                style={{ width: `${metric.percentage}%` }}
-                            />
+                            <span style={{ width: `${metric.percentage}%` }} />
                         </div>
                     )}
                 </li>
@@ -235,10 +239,7 @@ function DeckProgressItem({ deck }: { deck: LearningProgressDto }) {
 
     return (
         <li className={styles.deckItem}>
-            <Link
-                className={styles.deckRow}
-                to={`/learning/${deck.deckId}`}
-            >
+            <Link className={styles.deckRow} to={`/learning/${deck.deckId}`}>
                 <div className={styles.deckNameCell}>
                     <h3>{deck.title}</h3>
                     <span className={styles.mobilePercentage}>
@@ -261,19 +262,25 @@ function DeckProgressItem({ deck }: { deck: LearningProgressDto }) {
                 <span className={styles.learningCell}>
                     <small>Learn</small>
                     <strong>
-                        {numberFormatter.format(deck.cardsByStatus.learningCount)}
+                        {numberFormatter.format(
+                            deck.cardsByStatus.learningCount,
+                        )}
                     </strong>
                 </span>
                 <span className={styles.reviewCell}>
                     <small>Rev</small>
                     <strong>
-                        {numberFormatter.format(deck.cardsByStatus.reviewingCount)}
+                        {numberFormatter.format(
+                            deck.cardsByStatus.reviewingCount,
+                        )}
                     </strong>
                 </span>
                 <span className={styles.masteredCell}>
                     <small>Mast</small>
                     <strong>
-                        {numberFormatter.format(deck.cardsByStatus.masteredCount)}
+                        {numberFormatter.format(
+                            deck.cardsByStatus.masteredCount,
+                        )}
                     </strong>
                 </span>
                 <strong className={styles.desktopPercentage}>
@@ -286,7 +293,7 @@ function DeckProgressItem({ deck }: { deck: LearningProgressDto }) {
 
 export function ProgressPage() {
     const { data, error, isLoading, refetch } = useGetLearningProgressQuery()
-    
+
     const totals = (data ?? []).reduce<ProgressTotals>(
         (result, deck) => ({
             total: result.total + deck.totalCards,
@@ -357,7 +364,10 @@ export function ProgressPage() {
                         </div>
                         <ul className={styles.deckList}>
                             {data.map((deck) => (
-                                <DeckProgressItem deck={deck} key={deck.deckId} />
+                                <DeckProgressItem
+                                    deck={deck}
+                                    key={deck.deckId}
+                                />
                             ))}
                         </ul>
                     </section>

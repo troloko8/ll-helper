@@ -35,8 +35,8 @@ export function BulkGenerationResult({
         createdCount === 0
             ? 'No cards were created'
             : hasMixedResult
-                ? `${createdCount} ${createdCount === 1 ? 'card' : 'cards'} created, ${failedCount} couldn’t be created`
-                : `${createdCount} ${createdCount === 1 ? 'card' : 'cards'} created`
+              ? `${createdCount} ${createdCount === 1 ? 'card' : 'cards'} created, ${failedCount} couldn’t be created`
+              : `${createdCount} ${createdCount === 1 ? 'card' : 'cards'} created`
 
     useEffect(() => {
         resultTitleRef.current?.focus()
@@ -55,8 +55,8 @@ export function BulkGenerationResult({
                         allCreated
                             ? styles.resultHeaderIconSuccess
                             : hasMixedResult
-                                ? styles.resultHeaderIconWarning
-                                : styles.resultHeaderIconError
+                              ? styles.resultHeaderIconWarning
+                              : styles.resultHeaderIconError
                     }`}
                     aria-hidden="true"
                 >
@@ -111,8 +111,8 @@ export function BulkGenerationResult({
                             {value === 'all'
                                 ? `All (${submittedCount})`
                                 : value === 'created'
-                                    ? `Created (${createdCount})`
-                                    : `Failed (${failedCount})`}
+                                  ? `Created (${createdCount})`
+                                  : `Failed (${failedCount})`}
                         </button>
                     ))}
                 </div>

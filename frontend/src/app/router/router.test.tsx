@@ -195,16 +195,13 @@ describe('router session boundaries', () => {
         '/missing-page',
         '/discover',
         '/progress',
-    ])(
-        'redirects an anonymous user from %s to login',
-        async (path) => {
-            const { router } = renderRoute(path, 'anonymous')
+    ])('redirects an anonymous user from %s to login', async (path) => {
+        const { router } = renderRoute(path, 'anonymous')
 
-            await waitFor(() => {
-                expect(router.state.location.pathname).toBe('/login')
-            })
-        },
-    )
+        await waitFor(() => {
+            expect(router.state.location.pathname).toBe('/login')
+        })
+    })
 
     it('allows a user who needs a profile to open onboarding', async () => {
         renderRoute('/onboarding/profile', 'needsProfile')

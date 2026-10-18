@@ -3,8 +3,8 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-09-23
-> **Status:** Liquibase migrations V1–V10 applied; V11 defined for G-06; V12 creates the deck lookup index; V13 normalizes its name to `idx_cards_deck_id`.
+> **Last updated:** 2026-10-17
+> **Status:** Liquibase migrations V1–V14 are defined; V14 idempotently backfills missing card progress for ACTIVE enrollments.
 > **Remaining index gap:** `idx_ucp_next_review` (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
@@ -21,7 +21,7 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 
-**Note:** V1–V10 Liquibase migrations applied and V11–V13 are defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
+**Note:** V1–V14 Liquibase migrations are defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. V14 repairs missing Card-to-progress pairs for ACTIVE enrollments without overwriting existing rows. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -29,7 +29,7 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Current schema definition through Liquibase migration V13.
+**Scope:** Current schema definition and data repair through Liquibase migration V14.
 
 **Not in this document:**
 - Remaining index work (`idx_ucp_next_review`) — see Section 8
@@ -220,6 +220,14 @@ UserCardProgress.cardId ──N:1 (logical)──▶ Card.id
 | JPA Relation | None — stored as `Long cardId` field |
 | FK in DB | `fk_ucp_card` (added in V1 baseline) |
 | Implication | ON DELETE CASCADE — deleting a Card deletes all dependent UserCardProgress rows (delete chain established in V5) |
+
+New Cards extend this logical relationship immediately: one idempotent
+`INSERT ... SELECT` creates `NEW` progress for every ACTIVE enrollment of the
+parent Deck. The unique constraint
+`uk_user_card_progress_deck_card(user_deck_progress_id, card_id)` prevents
+duplicates. V14 applies the same rule as a one-time backfill for rows missed
+before runtime provisioning existed; PAUSED and ARCHIVED enrollments are not
+modified.
 
 ### 5.5 UserCardProgress → User (N:1 logical) — "Progress belongs to User"
 
@@ -551,6 +559,7 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- ✅ DONE (V8): Dropped duplicate index `idx_user_auth` on `users.auth_user_id` (`uk_users_auth_user_id` already provides an implicit index). Added preconditions for idempotency.
 -- ✅ DONE (V9): Migrated technical `created_at`/`updated_at` columns from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`; added `DEFAULT CURRENT_TIMESTAMP` and `BEFORE UPDATE` triggers for `updated_at`.
 -- ✅ DONE (V10): Migrated business `last_studied_at`/`last_reviewed_at`/`next_review_at` columns from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using `AT TIME ZONE 'Asia/Jerusalem'`.
+-- ✅ DONE (V14): Backfilled missing NEW user_card_progress rows for ACTIVE enrollments with idempotent INSERT ... SELECT ... ON CONFLICT DO NOTHING.
 ```
 
 ### 13.2 Pending Index
@@ -669,3 +678,4 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-13 | V10 migration created: Migrated business timestamps (`last_studied_at`, `last_reviewed_at`, `next_review_at`) from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using explicit `AT TIME ZONE 'Asia/Jerusalem'`. Entities updated to `Instant` without `insertable/updatable=false` (application-managed). Added section 6.2.1 "Timestamp Columns". |
 | 2026-07-30 | Doc audit: removed "Sprint 0.3 pending" framing. V2–V10 resolved unique constraints, FK policies, cascades, CHECK constraints, timestamp ownership, and duplicate-index cleanup. Remaining performance indexes tracked in §8 and `docs/roadmap/backlog.md`. Corrected Section 4.3/10 risk notes — FK protection already existed since V1, CASCADE finalized in V5. Header now points to `current-sprint.md`. |
 | 2026-08-30 | V11 defined: added application-managed `user_deck_progress.enrolled_at`, safely backfilled existing rows, enforced `NOT NULL`, and added `idx_user_deck_progress_user_status(user_id, status)` for the G-06 Learning Decks list. |
+| 2026-10-17 | V14 defined: idempotently backfilled missing `NEW` `user_card_progress` rows for every Card in an ACTIVE enrollment, relying on `uk_user_card_progress_deck_card` and preserving all existing progress rows. |

@@ -29,7 +29,7 @@ export function ConfirmationDialog({
 
     useEffect(() => {
         const dialog = dialogRef.current
-        
+
         if (!dialog) {
             return
         }

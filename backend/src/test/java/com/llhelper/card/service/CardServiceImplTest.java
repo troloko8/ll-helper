@@ -71,6 +71,9 @@ class CardServiceImplTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private NewCardProgressProvisioner newCardProgressProvisioner;
+
     private AiProperties aiProperties;
 
     private CardServiceImpl cardService;
@@ -86,7 +89,8 @@ class CardServiceImplTest {
             cardMapper,
             userRateLimiter,
             aiProperties,
-            new DeckAccessPolicy(securityUtils)
+            new DeckAccessPolicy(securityUtils),
+            newCardProgressProvisioner
         );
         ReflectionTestUtils.setField(cardService, "entityManager", entityManager);
     }
@@ -129,6 +133,8 @@ class CardServiceImplTest {
         var request = new GenerateCardRequest("word", DECK_ID);
         var aiData = new AiCardData(null, List.of(), List.of(), " перевод ");
         Card generated = new Card();
+        generated.setId(CARD_ID);
+        generated.setDeckId(DECK_ID);
         generated.setTranslation(aiData.translation());
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
@@ -142,6 +148,7 @@ class CardServiceImplTest {
         assertThat(generated.getTranslation()).isEqualTo("перевод");
         assertThat(generated.getDefinition()).isNull();
         verify(cardRepository).saveAndFlush(generated);
+        verify(newCardProgressProvisioner).provisionForActiveEnrollments(DECK_ID, CARD_ID);
     }
 
     @Test
@@ -185,6 +192,7 @@ class CardServiceImplTest {
         assertThat(existing.getDeckId()).isEqualTo(DECK_ID);
         verify(cardRepository).saveAndFlush(existing);
         verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
+        verify(newCardProgressProvisioner, never()).provisionForActiveEnrollments(any(), any());
     }
 
     @Test
@@ -324,6 +332,8 @@ class CardServiceImplTest {
         Deck deck = deckOwnedBy(OWNER_ID);
         CardRequest request = cardRequest();
         Card card = new Card();
+        card.setId(CARD_ID);
+        card.setDeckId(DECK_ID);
         card.setTitle(request.title());
         CardResponse response = new CardResponse(
             1L, DECK_ID, request.title(), request.definition(), request.synonyms(),
@@ -342,6 +352,7 @@ class CardServiceImplTest {
         verify(cardRepository).saveAndFlush(card);
         verify(entityManager).refresh(card);
         verify(cardMapper).toResponse(card);
+        verify(newCardProgressProvisioner).provisionForActiveEnrollments(DECK_ID, CARD_ID);
         verify(aiCardGenerationService, never()).generateCardData(any(), any(), any());
     }
 
@@ -393,6 +404,8 @@ class CardServiceImplTest {
         Deck deck = deckOwnedBy(OWNER_ID);
         AiCardData aiData = new AiCardData("def", List.of(), List.of(), "translation");
         Card generatedCard = new Card();
+        generatedCard.setId(CARD_ID);
+        generatedCard.setDeckId(DECK_ID);
         generatedCard.setTitle("hello");
         CardResponse response = new CardResponse(
             1L, DECK_ID, "hello", aiData.definition(), aiData.synonyms(),
@@ -416,6 +429,7 @@ class CardServiceImplTest {
         verify(cardRepository).saveAndFlush(generatedCard);
         verify(entityManager).refresh(generatedCard);
         verify(cardMapper).toResponse(generatedCard);
+        verify(newCardProgressProvisioner).provisionForActiveEnrollments(DECK_ID, CARD_ID);
     }
 
     @Test
@@ -424,6 +438,8 @@ class CardServiceImplTest {
         AiCardData emptyAiData = new AiCardData("Useful definition", List.of(), List.of(), "  ");
         AiCardData validAiData = new AiCardData("Definition", List.of(), List.of(), "translation");
         Card generatedCard = new Card();
+        generatedCard.setId(CARD_ID);
+        generatedCard.setDeckId(DECK_ID);
         generatedCard.setTitle("hello");
         CardResponse response = new CardResponse(
             2L, DECK_ID, "hello", validAiData.definition(), validAiData.synonyms(),
@@ -459,6 +475,7 @@ class CardServiceImplTest {
             });
         verify(cardRepository).saveAndFlush(generatedCard);
         verify(entityManager).refresh(generatedCard);
+        verify(newCardProgressProvisioner).provisionForActiveEnrollments(DECK_ID, CARD_ID);
     }
 
     @Test

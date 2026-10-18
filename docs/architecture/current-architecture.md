@@ -22,7 +22,7 @@
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
 - ✅ Mapper layer, rate limiting, ownership checks completed
-- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V12 defined; V11 adds G-06 enrollment ordering support, V12 indexes deck-card aggregation)
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V14 defined; V11 adds G-06 enrollment ordering support, V12/V13 establish the deck-card index, V14 repairs missing card progress)
 - ⏸ Additional performance indexes deferred to Level 2
 
 **Frontend (implemented vertical flow and foundations):**
@@ -327,7 +327,7 @@ CardService.save(cards)
 | `/api/v1/decks/{id}/cards` | GET | JWT | All deck cards with user progress | `List<DeckCardResponse>` |
 | `/api/v1/cards/{id}/review` | POST | JWT | Submit answer, update progress | `CardReviewResponse` |
 
-`CardGenerationController` owns both generation routes; `CardController` owns manual create and CRUD. Manual POST gets `deckId` from `/decks/{deckId}/cards`; POST and PUT share `CardRequest`, where title/translation are required and optional content is replaced on PUT. The parent deck is unchanged by PUT. `CardServiceImpl` provides separate create/generate/update methods and shared normalization/persistence. Single AI generation shares the existing `CARD_CREATE` per-user quota with manual creation. Bulk generation returns successful cards in `created` and recoverable per-title `AiServiceException` / `RateLimitExceededException` metadata in `failed`. Each failure carries its zero-based submitted `inputIndex`, stable `code`, safe user-facing `message`, and `retryable` flag; raw provider messages are not exposed. Persistence and unexpected failures propagate, abort the request, and roll back the transaction; request-level validation, ownership, and endpoint-rate-limit failures also use their ordinary non-201 statuses.
+`CardGenerationController` owns both generation routes; `CardController` owns manual create and CRUD. Manual POST gets `deckId` from `/decks/{deckId}/cards`; POST and PUT share `CardRequest`, where title/translation are required and optional content is replaced on PUT. The parent deck is unchanged by PUT. `CardServiceImpl` provides separate create/generate/update methods and separates new-card persistence from updates: manual, single-AI, and each successful bulk-AI create provision idempotent `NEW` progress for every ACTIVE enrollment through `NewCardProgressProvisioner`, while PUT does not repeat that lifecycle action. Single AI generation shares the existing `CARD_CREATE` per-user quota with manual creation. Bulk generation returns successful cards in `created` and recoverable per-title `AiServiceException` / `RateLimitExceededException` metadata in `failed`. Each failure carries its zero-based submitted `inputIndex`, stable `code`, safe user-facing `message`, and `retryable` flag; raw provider messages are not exposed. Persistence and unexpected failures propagate, abort the request, and roll back the transaction; request-level validation, ownership, and endpoint-rate-limit failures also use their ordinary non-201 statuses.
 
 `LearningProgressResponse` contains `deckId`, `title`, `sourceLanguage`, `targetLanguage`, `cardsByStatus { newCount, learningCount, reviewingCount, masteredCount }`, and `totalCards`. It is a read-only aggregate for active enrollments of the authenticated user.
 
@@ -409,14 +409,14 @@ backend/src/main/java/com/llhelper/
 ├── card/
 │   ├── controller/CardController.java
 │   ├── controller/CardGenerationController.java
-│   ├── service/CardService.java
+│   ├── service/CardService.java + NewCardProgressProvisioner.java
 │   ├── entity/Card.java
 │   ├── repository/CardRepository.java
 │   ├── mapper/CardMapper.java
 │   └── dto/{request, response}/
 ├── learning/
 │   ├── controller/LearningController.java
-│   ├── service/LearningService.java + LearningServiceImpl.java
+│   ├── service/LearningService.java + LearningServiceImpl.java + ActiveEnrollmentCardProgressProvisioner.java
 │   ├── entity/UserDeckProgress.java
 │   ├── entity/UserCardProgress.java
 │   ├── repository/UserDeckProgressRepository.java
@@ -508,6 +508,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Private deck enrollment is owner-only | `LearningServiceImpl.enrollDeck()` permits public decks and a private deck owned by the authenticated user. Another user's private deck returns `403 Forbidden`; first enrollment returns `201`, and the existing unique constraint preserves `409` for duplicates. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
 | Bulk AI generation uses a bounded partial-success strategy | Each title is attempted independently inside the bulk loop. Recoverable `AiServiceException` and `RateLimitExceededException` failures are logged and returned in `failed[]`, while previously saved cards remain in `created[]`. Persistence and unexpected failures are not swallowed: they propagate and roll back the whole transaction. |
+| New cards extend ACTIVE learning progress | Manual, single-AI, and successful bulk-AI creation use a dedicated new-card persistence path. `NewCardProgressProvisioner` executes an idempotent PostgreSQL `INSERT ... SELECT` for all ACTIVE enrollments; ordinary card updates use a separate path and do not provision progress. V14 backfills rows missed before this invariant was introduced. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
 | Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |

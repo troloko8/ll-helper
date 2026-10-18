@@ -88,7 +88,8 @@ CardGenerationController.generate(GenerateCardRequest)
         │     └── OpenAiProvider.generate() → parse response into AiCardData
         ├── Validate generated translation → 503 if missing or blank
         ├── CardMapper.fromAiData()
-        ├── Shared saveCard(): normalize, saveAndFlush, refresh
+        ├── saveNewCard(): normalize, saveAndFlush, refresh
+        ├── Provision NEW progress for every ACTIVE enrollment, idempotently
         └── Return CardResponse (201)
 ```
 
@@ -152,6 +153,7 @@ CardGenerationController.generateBulk(BulkCardGenerateRequest)
               ├── AiCardGenerationService.generateCardData(title, srcLang, tgtLang)
               ├── Create Card entity with AI-generated fields
               ├── Save Card to DB
+              ├── Provision NEW progress for every ACTIVE enrollment, idempotently
               ├── Add saved card to `created[]`
               ├── [on AI/rate-limit exception] → add `{inputIndex, title, code, message, retryable}` to `failed[]`, log, continue
               └── [on persistence/unexpected exception] → propagate and roll back the request

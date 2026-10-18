@@ -139,6 +139,70 @@ class LearningRepositoryTest {
     }
 
     @Test
+    void insertMissingForActiveEnrollments_shouldCreateNewProgressIdempotently() {
+        User owner = persistUser("owner-provisioning@example.com", "owner-provisioning");
+        User firstLearner = persistUser("first-provisioning@example.com", "first-provisioning");
+        User secondLearner = persistUser("second-provisioning@example.com", "second-provisioning");
+        User pausedLearner = persistUser("paused-provisioning@example.com", "paused-provisioning");
+        Deck deck = persistDeck(owner, "Provisioning deck");
+        UserDeckProgress firstEnrollment = persistEnrollment(
+            firstLearner, deck, UserDeckStatus.ACTIVE, Instant.EPOCH, null
+        );
+        UserDeckProgress secondEnrollment = persistEnrollment(
+            secondLearner, deck, UserDeckStatus.ACTIVE, Instant.EPOCH, null
+        );
+        UserDeckProgress pausedEnrollment = persistEnrollment(
+            pausedLearner, deck, UserDeckStatus.PAUSED, Instant.EPOCH, null
+        );
+        Card card = persistCard(deck, "new after enrollment");
+        entityManager.flush();
+
+        int inserted = userCardProgressRepository.insertMissingForActiveEnrollments(
+            deck.getId(), card.getId()
+        );
+        int insertedAgain = userCardProgressRepository.insertMissingForActiveEnrollments(
+            deck.getId(), card.getId()
+        );
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(inserted).isEqualTo(2);
+        assertThat(insertedAgain).isZero();
+        assertThat(userCardProgressRepository.findByUserDeckProgressIdAndCardId(
+            firstEnrollment.getId(), card.getId()
+        )).get()
+            .extracting(
+                UserCardProgress::getUserId,
+                UserCardProgress::getStatus,
+                UserCardProgress::getTimesSeen,
+                UserCardProgress::getTimesCorrect,
+                UserCardProgress::getTimesWrong,
+                UserCardProgress::getCorrectStreak
+            )
+            .containsExactly(
+                firstLearner.getId(), CardLearningStatus.NEW, 0, 0, 0, 0
+            );
+        assertThat(userCardProgressRepository.findByUserDeckProgressIdAndCardId(
+            secondEnrollment.getId(), card.getId()
+        )).isPresent();
+        assertThat(userCardProgressRepository.findByUserDeckProgressIdAndCardId(
+            pausedEnrollment.getId(), card.getId()
+        )).isEmpty();
+        assertThat(userCardProgressRepository.findStudyQueue(firstEnrollment.getId()))
+            .extracting(UserCardProgress::getCardId)
+            .containsExactly(card.getId());
+        assertThat(userCardProgressRepository.findAllByUserDeckProgressId(firstEnrollment.getId()))
+            .extracting(UserCardProgress::getCardId)
+            .containsExactly(card.getId());
+        assertThat(userDeckProgressRepository.findLearningProgressSummaries(firstLearner.getId()))
+            .singleElement()
+            .satisfies(summary -> {
+                assertThat(summary.getNewCount()).isOne();
+                assertThat(summary.getTotalCards()).isOne();
+            });
+    }
+
+    @Test
     void findLearningProgressSummaries_shouldCountStatusesAndOrderByNewestEnrollment() {
         User user = persistUser("progress@example.com", "progress");
         User otherUser = persistUser("other-progress@example.com", "other-progress");

@@ -74,7 +74,9 @@ describe('ProgressPage', () => {
             name: /English essentials/,
         })
         expect(deckLink).toHaveAttribute('href', '/learning/12')
-        expect(within(deckLink).getByText('English essentials')).toBeInTheDocument()
+        expect(
+            within(deckLink).getByText('English essentials'),
+        ).toBeInTheDocument()
         expect(within(deckLink).getByText('3')).toBeInTheDocument()
         expect(within(deckLink).getByText('2')).toBeInTheDocument()
         expect(within(deckLink).getByText('1')).toBeInTheDocument()

@@ -25,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/changes/V12__index_cards_by_deck.yaml
   - include:
       file: db/changelog/changes/V13__rename_cards_deck_index.yaml
+  - include:
+      file: db/changelog/changes/V14__backfill_missing_card_progress.yaml

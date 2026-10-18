@@ -45,6 +45,7 @@ public class CardServiceImpl implements CardService {
     private final UserRateLimiter userRateLimiter;
     private final AiProperties aiProperties;
     private final DeckAccessPolicy deckAccessPolicy;
+    private final NewCardProgressProvisioner newCardProgressProvisioner;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -58,7 +59,8 @@ public class CardServiceImpl implements CardService {
         CardMapper cardMapper,
         UserRateLimiter userRateLimiter,
         AiProperties aiProperties,
-        DeckAccessPolicy deckAccessPolicy
+        DeckAccessPolicy deckAccessPolicy,
+        NewCardProgressProvisioner newCardProgressProvisioner
     ) {
         this.cardRepository = cardRepository;
         this.deckRepository = deckRepository;
@@ -68,6 +70,7 @@ public class CardServiceImpl implements CardService {
         this.userRateLimiter = userRateLimiter;
         this.aiProperties = aiProperties;
         this.deckAccessPolicy = deckAccessPolicy;
+        this.newCardProgressProvisioner = newCardProgressProvisioner;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -111,7 +114,7 @@ public class CardServiceImpl implements CardService {
         Card card = cardMapper.toEntity(request);
 
         card.setDeck(deck);
-        return saveCard(card);
+        return saveNewCard(card);
     }
 
     @Override
@@ -128,14 +131,20 @@ public class CardServiceImpl implements CardService {
 
         validateGeneratedTranslation(aiData);
 
-        return saveCard(cardMapper.fromAiData(request.title(), aiData, deck));
+        return saveNewCard(cardMapper.fromAiData(request.title(), aiData, deck));
     }
 
-    // TODO: For card-creation paths, create NEW UserCardProgress rows for every
-    // ACTIVE enrollment after the card is saved. Updates must not duplicate
-    // progress. Until this lifecycle is synchronized, Progress and Study omit
-    // cards added after enrollment.
-    private CardResponse saveCard(Card card) {
+    private CardResponse saveNewCard(Card card) {
+        Card saved = persistCard(card);
+        newCardProgressProvisioner.provisionForActiveEnrollments(saved.getDeckId(), saved.getId());
+        return cardMapper.toResponse(saved);
+    }
+
+    private CardResponse saveUpdatedCard(Card card) {
+        return cardMapper.toResponse(persistCard(card));
+    }
+
+    private Card persistCard(Card card) {
         String definition = card.getDefinition();
         String translation = card.getTranslation();
         card.setDefinition(definition == null || definition.isBlank() ? null : definition.trim());
@@ -143,7 +152,7 @@ public class CardServiceImpl implements CardService {
 
         Card saved = cardRepository.saveAndFlush(card);
         entityManager.refresh(saved);
-        return cardMapper.toResponse(saved);
+        return saved;
     }
 
     @Override
@@ -181,7 +190,7 @@ public class CardServiceImpl implements CardService {
             }
 
             Card card = cardMapper.fromAiData(title, aiData, deck);
-            created.add(saveCard(card));
+            created.add(saveNewCard(card));
         }
 
         if (!failed.isEmpty()) {
@@ -260,7 +269,7 @@ public class CardServiceImpl implements CardService {
         validateCardOwnership(card);
 
         cardMapper.updateEntity(request, card);
-        return saveCard(card);
+        return saveUpdatedCard(card);
     }
 
     @Override

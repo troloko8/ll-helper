@@ -33,7 +33,7 @@ export function BulkGenerationInput({
     const [showAllEntries, setShowAllEntries] = useState(false)
 
     const limitExceeded = parsed.entries.length > BULK_MAX_TITLES
-    
+
     const visibleEntries = showAllEntries
         ? parsed.entries
         : parsed.entries.slice(0, ENTRY_PREVIEW_LIMIT)
