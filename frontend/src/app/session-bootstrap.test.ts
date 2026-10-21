@@ -88,4 +88,33 @@ describe('bootstrapSession', () => {
         expect(selectSessionStatus(store.getState())).toBe('anonymous')
         expect(store.getState()[baseApi.reducerPath].queries).toEqual({})
     })
+
+    it('moves to a retryable error when users/me has a network failure', async () => {
+        setToken('offline-token')
+        server.use(http.get('*/users/me', () => HttpResponse.error()))
+        const store = createAppStore()
+
+        await bootstrapSession(store.dispatch)
+
+        expect(selectSessionStatus(store.getState())).toBe('bootstrapError')
+        expect(getToken()).toBe('offline-token')
+    })
+
+    it('moves to a retryable error when users/me returns 5xx', async () => {
+        setToken('server-error-token')
+        server.use(
+            http.get('*/users/me', () =>
+                HttpResponse.json(
+                    { message: 'Temporary failure' },
+                    { status: 503 },
+                ),
+            ),
+        )
+        const store = createAppStore()
+
+        await bootstrapSession(store.dispatch)
+
+        expect(selectSessionStatus(store.getState())).toBe('bootstrapError')
+        expect(getToken()).toBe('server-error-token')
+    })
 })

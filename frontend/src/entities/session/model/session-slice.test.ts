@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
     sessionAuthenticated,
+    sessionBootstrapFailed,
     sessionCleared,
+    sessionInitializing,
     sessionNeedsProfile,
     sessionReducer,
 } from './session-slice'
@@ -15,6 +17,19 @@ describe('sessionReducer', () => {
     it('starts in the initializing status', () => {
         const state = sessionReducer(undefined, { type: '@@INIT' })
         expect(state.status).toBe('initializing')
+    })
+
+    it('returns to initializing when bootstrap is retried', () => {
+        const state = sessionReducer(
+            { status: 'bootstrapError' },
+            sessionInitializing(),
+        )
+        expect(state.status).toBe('initializing')
+    })
+
+    it('transitions to bootstrapError when session verification fails', () => {
+        const state = sessionReducer(undefined, sessionBootstrapFailed())
+        expect(state.status).toBe('bootstrapError')
     })
 
     it('transitions to authenticated on sessionAuthenticated', () => {
@@ -53,6 +68,9 @@ describe('session selectors', () => {
         expect(
             selectIsAuthenticated({ session: { status: 'needsProfile' } }),
         ).toBe(false)
+        expect(
+            selectIsAuthenticated({ session: { status: 'bootstrapError' } }),
+        ).toBe(false)
     })
 
     it('selectNeedsProfile is true only when profile completion is required', () => {
@@ -67,6 +85,9 @@ describe('session selectors', () => {
         )
         expect(
             selectNeedsProfile({ session: { status: 'initializing' } }),
+        ).toBe(false)
+        expect(
+            selectNeedsProfile({ session: { status: 'bootstrapError' } }),
         ).toBe(false)
     })
 })

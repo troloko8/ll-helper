@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -391,6 +391,27 @@ describe('EditDeckPage', () => {
             await screen.findByText('A deck with this title exists'),
         ).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: 'Edit Deck' })).toBeVisible()
+    })
+
+    it('locks the form while deck changes are being saved', async () => {
+        server.use(
+            http.put('http://localhost/api/v1/decks/12', async () => {
+                await delay('infinite')
+                return HttpResponse.json(deck)
+            }),
+        )
+        const user = userEvent.setup()
+        renderPage()
+        await screen.findByRole('heading', { name: 'Edit Deck' })
+
+        await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+        expect(
+            await screen.findByRole('button', { name: 'Saving deck' }),
+        ).toBeDisabled()
+        expect(
+            screen.getByRole('textbox', { name: 'Deck title' }),
+        ).toBeDisabled()
     })
 
     it('keeps update and delete failures inline', async () => {

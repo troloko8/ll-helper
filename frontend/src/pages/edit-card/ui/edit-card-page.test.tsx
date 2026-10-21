@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -426,6 +426,27 @@ describe('EditCardPage', () => {
             await screen.findByText('This word or phrase is already used'),
         ).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: 'Edit Card' })).toBeVisible()
+    })
+
+    it('locks the form while card changes are being saved', async () => {
+        server.use(
+            http.put('http://localhost/api/v1/cards/7', async () => {
+                await delay('infinite')
+                return HttpResponse.json(card)
+            }),
+        )
+        const user = userEvent.setup()
+        renderPage()
+        await screen.findByRole('heading', { name: 'Edit Card' })
+
+        await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+        expect(
+            await screen.findByRole('button', { name: 'Saving card' }),
+        ).toBeDisabled()
+        expect(
+            screen.getByRole('textbox', { name: 'Word or phrase' }),
+        ).toBeDisabled()
     })
 
     it('keeps a general update failure inline', async () => {

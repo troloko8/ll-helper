@@ -1,7 +1,9 @@
 import type { ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
 import {
     sessionAuthenticated,
+    sessionBootstrapFailed,
     sessionCleared,
+    sessionInitializing,
     sessionNeedsProfile,
 } from '@/entities/session'
 import { userApi } from '@/entities/user'
@@ -17,6 +19,8 @@ export async function bootstrapSession(
         return
     }
 
+    dispatch(sessionInitializing())
+
     const request = dispatch(
         userApi.endpoints.getCurrentUser.initiate(undefined, {
             forceRefetch: true,
@@ -26,11 +30,19 @@ export async function bootstrapSession(
     try {
         const result = await request
 
-        if (result.isSuccess) {
+        if (!getToken()) {
+            dispatch(sessionCleared())
+        } else if (result.isSuccess) {
             dispatch(sessionAuthenticated())
         } else if (isApiError(result.error) && result.error.status === 404) {
             dispatch(sessionNeedsProfile())
+        } else if (isApiError(result.error) && result.error.status === 401) {
+            dispatch(sessionCleared())
+        } else {
+            dispatch(sessionBootstrapFailed())
         }
+    } catch {
+        dispatch(sessionBootstrapFailed())
     } finally {
         request.unsubscribe()
     }

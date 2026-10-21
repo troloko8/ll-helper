@@ -437,14 +437,19 @@ entities/session/
 **Session model — current implementation:**
 
 ```text
-type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
+type SessionStatus =
+    | 'initializing'
+    | 'bootstrapError'
+    | 'anonymous'
+    | 'needsProfile'
+    | 'authenticated'
 ```
 
-`entities/session/model/session-slice.ts` implements all four accepted Level 1
-statuses and exposes explicit transitions to `anonymous`, `needsProfile`, and
-`authenticated`. The `GET /api/v1/users/me` bootstrap and session-aware route
-guards resolve persisted sessions without treating a token alone as proof that
-a `User` profile exists.
+`entities/session/model/session-slice.ts` implements all five accepted Level 1
+statuses and exposes explicit transitions for bootstrap retry/failure as well as
+`anonymous`, `needsProfile`, and `authenticated`. The `GET /api/v1/users/me`
+bootstrap and session-aware route guards resolve persisted sessions without
+treating a token alone as proof that a `User` profile exists.
 
 **Bootstrap behavior:**
 
@@ -453,7 +458,14 @@ No token                                  → anonymous
 token + GET /api/v1/users/me → 200        → authenticated
 token + GET /api/v1/users/me → 404        → needsProfile
 token + GET /api/v1/users/me → 401        → clear token → anonymous
+token + GET /api/v1/users/me → network/5xx → bootstrapError → explicit retry
 ```
+
+Retry transitions `bootstrapError` → `initializing` before issuing a fresh
+request. The retryable error keeps the persisted token; it never grants access
+to authenticated or onboarding routes. Route guards render the same terminal
+error surface on public, onboarding, and authenticated route branches, so a
+transient bootstrap failure cannot leave the application on an infinite loader.
 
 `GET /api/v1/users/me` is implemented on the backend with the `200`/`404`/controlled `401` semantics above. Its executable backend code remains authoritative; the repository-grounded frontend contract is recorded as `USER-07` in `BACKEND_CONTRACT_INVENTORY.md`.
 

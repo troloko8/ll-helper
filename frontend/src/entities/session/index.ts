@@ -1,5 +1,7 @@
 export {
     sessionReducer,
+    sessionInitializing,
+    sessionBootstrapFailed,
     sessionAuthenticated,
     sessionNeedsProfile,
     sessionCleared,

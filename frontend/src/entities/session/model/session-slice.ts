@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 
 export type SessionStatus =
     | 'initializing'
+    | 'bootstrapError'
     | 'anonymous'
     | 'needsProfile'
     | 'authenticated'
@@ -18,6 +19,12 @@ const sessionSlice = createSlice({
     name: 'session',
     initialState,
     reducers: {
+        sessionInitializing(state) {
+            state.status = 'initializing'
+        },
+        sessionBootstrapFailed(state) {
+            state.status = 'bootstrapError'
+        },
         sessionAuthenticated(state) {
             state.status = 'authenticated'
         },
@@ -30,6 +37,11 @@ const sessionSlice = createSlice({
     },
 })
 
-export const { sessionAuthenticated, sessionNeedsProfile, sessionCleared } =
-    sessionSlice.actions
+export const {
+    sessionInitializing,
+    sessionBootstrapFailed,
+    sessionAuthenticated,
+    sessionNeedsProfile,
+    sessionCleared,
+} = sessionSlice.actions
 export const sessionReducer = sessionSlice.reducer

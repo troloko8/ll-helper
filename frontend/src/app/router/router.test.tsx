@@ -6,16 +6,23 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
     sessionAuthenticated,
+    sessionBootstrapFailed,
     sessionCleared,
     sessionNeedsProfile,
 } from '@/entities/session'
+import { getToken, setToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { createAppStore } from '../store'
 import { appRoutes } from './router'
 
-type ResolvedSessionStatus = 'anonymous' | 'needsProfile' | 'authenticated'
+type ResolvedSessionStatus =
+    | 'bootstrapError'
+    | 'anonymous'
+    | 'needsProfile'
+    | 'authenticated'
 
 const sessionActions = {
+    bootstrapError: sessionBootstrapFailed,
     anonymous: sessionCleared,
     needsProfile: sessionNeedsProfile,
     authenticated: sessionAuthenticated,
@@ -54,6 +61,7 @@ function renderRoute(path: string, status?: ResolvedSessionStatus) {
 
 describe('router session boundaries', () => {
     beforeEach(() => {
+        localStorage.clear()
         server.use(
             http.get('http://localhost/api/v1/decks/mine', () =>
                 HttpResponse.json([]),
@@ -165,6 +173,44 @@ describe('router session boundaries', () => {
             }),
         ).toBeInTheDocument()
         expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    })
+
+    it.each(['/login', '/onboarding/profile', '/learning'])(
+        'shows a retryable bootstrap error on %s',
+        async (path) => {
+            renderRoute(path, 'bootstrapError')
+
+            expect(
+                await screen.findByRole('heading', {
+                    name: 'Unable to verify your session',
+                }),
+            ).toBeInTheDocument()
+            expect(
+                screen.getByRole('button', { name: 'Try again' }),
+            ).toBeInTheDocument()
+        },
+    )
+
+    it('retries bootstrap and opens the authenticated destination', async () => {
+        setToken('retry-token')
+        const user = userEvent.setup()
+        renderRoute('/learning', 'bootstrapError')
+
+        await user.click(
+            await screen.findByRole('button', { name: 'Try again' }),
+        )
+
+        expect(
+            await screen.findByRole('navigation', {
+                name: 'Primary navigation',
+            }),
+        ).toBeInTheDocument()
+        expect(
+            screen.queryByRole('heading', {
+                name: 'Unable to verify your session',
+            }),
+        ).not.toBeInTheDocument()
+        expect(getToken()).toBe('retry-token')
     })
 
     it('allows an anonymous user to open login', async () => {

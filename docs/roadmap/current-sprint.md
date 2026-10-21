@@ -31,7 +31,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   и состояниями из Stitch; исправить существенные расхождения.
 - [x] Проверить единый app shell, навигацию, адаптивность, клавиатурную
   доступность и видимость всех реализованных маршрутов из интерфейса.
-- [ ] Для существующих страниц подтвердить loading, empty/no-results, API error,
+- [x] Для существующих страниц подтвердить loading, empty/no-results, API error,
   retry, validation, submitting и conflict states там, где они предусмотрены
   manifest и реальным API-контрактом.
 
@@ -54,16 +54,16 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   сообщением ошибки.
 ### 3. Покрытие состояний Stitch
 
-- [ ] Для Learning, Created, Discover, Owner Deck Details и Progress реализовать
+- [x] Для Learning, Created, Discover, Owner Deck Details и Progress реализовать
   или подтвердить canonical loading, API error и empty/no-results states.
-- [ ] Для Create/Edit Deck и Add/Edit Card реализовать canonical validation,
+- [x] Для Create/Edit Deck и Add/Edit Card реализовать canonical validation,
   conflict, submitting и submission-error states.
-- [ ] Для Study подтвердить loading, API error, all-caught-up и
+- [x] Для Study подтвердить loading, API error, all-caught-up и
   session-complete states без изменения принятой learning-семантики.
-- [ ] Где отдельного mobile-экрана в Stitch нет, сделать адаптивную версию из
+- [x] Где отдельного mobile-экрана в Stitch нет, сделать адаптивную версию из
   desktop reference по общему design system; отсутствие mobile Edit Deck или
   Card Details не означает, что mobile experience можно пропустить.
-- [ ] Не реализовывать prototype-only social controls, ratings, likes, follows
+- [x] Не реализовывать prototype-only social controls, ratings, likes, follows
   и bookmarks без отдельного продуктового решения и API-контракта.
 
 ### 4. Sprint 1.1 integration/stability gate
@@ -91,11 +91,11 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 #### 4.2 Runtime foundation и identity contracts
 
-- [ ] Исправить startup bootstrap: success, profile `404`, auth `401`,
+- [x] Исправить startup bootstrap: success, profile `404`, auth `401`,
   network error и `5xx` должны переводить session из `initializing` в
   определённое terminal/retryable состояние. Бесконечный initial loader
   недопустим.
-- [ ] Добавить bootstrap regression tests для network error, `5xx`, retry и
+- [x] Добавить bootstrap regression tests для network error, `5xx`, retry и
   успешного восстановления без потери корректного token/session state.
 - [ ] Определить и внедрить единый URL-safe slug-контракт для `username`:
   допустимые символы, нормализацию и регистр, уникальность, backend validation,

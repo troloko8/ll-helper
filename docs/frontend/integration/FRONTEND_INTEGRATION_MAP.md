@@ -122,7 +122,7 @@ This section owns only the stable accepted sequence and dependency boundaries. C
 3. Documentation prerequisite: G-12 keeps the learning-flow contract aligned with executable behavior.
 4. Stitch prerequisite: Complete Profile desktop/mobile/base/error/submitting references registered through §0.5 and `MANIFEST.md`.
 5. Frontend minimal UI/application-boundary foundation before feature components: canonical tokens/typography, form primitives and semantics, loading/error surfaces, responsive Auth/Onboarding base, global error boundary, bootstrap state, and not-found routing. Completed Sprint 1.0 evidence: `docs/roadmap/changelog.md`; canonical UI contract: `docs/frontend/DESIGN.md`.
-6. Frontend Auth + onboarding: contract-first RTK Query integration, four-state session lifecycle (§0.7), route layouts/guards, cache-safe logout/401, and Login/Register/Complete Profile/Logout orchestration. Completed checklist and tests: `docs/roadmap/changelog.md`.
+6. Frontend Auth + onboarding: contract-first RTK Query integration, five-state session lifecycle (§0.7), route layouts/guards, cache-safe logout/401, and Login/Register/Complete Profile/Logout orchestration. Completed checklist and tests: `docs/roadmap/changelog.md`.
 7. Reduced authenticated `AppShell` before Learning screens: only the accepted Level 1 navigation subset, with no deferred destinations or dead links. Completion evidence: `docs/roadmap/changelog.md`; shell scope: `docs/frontend/DESIGN.md`.
 8. Frontend Learning list + Learning Deck Details.
 9. Frontend Create Deck + Owner Deck Details.
@@ -137,13 +137,23 @@ This section owns only the stable accepted sequence and dependency boundaries. C
 ### 0.7 Session state (accepted)
 
 ```text
-type SessionStatus = 'initializing' | 'anonymous' | 'needsProfile' | 'authenticated'
+type SessionStatus =
+    | 'initializing'
+    | 'bootstrapError'
+    | 'anonymous'
+    | 'needsProfile'
+    | 'authenticated'
 ```
 
 Implemented `GET /api/v1/users/me` bootstrap semantics:
 - `200 UserResponse` → valid JWT, profile exists → `authenticated`.
 - `404 {message}` → valid JWT, profile does not exist → `needsProfile`. No separate machine-readable error code is required for Level 1: a 404 from `GET /api/v1/users/me` specifically is unambiguous.
 - `401 {message}` → missing/invalid/expired JWT → `anonymous`.
+- Network errors and `5xx` → `bootstrapError`, preserving the token and showing a terminal error surface with explicit retry. Retry enters `initializing` only for the duration of the new request.
+
+All route-guard branches handle `bootstrapError`; none treats it as authenticated,
+onboarding-ready, or anonymous. This keeps transient infrastructure failures
+distinct from invalid authentication and prevents an infinite initial loader.
 
 The backend contract and frontend session lifecycle are implemented; completed live verification is recorded in `docs/roadmap/changelog.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
 
