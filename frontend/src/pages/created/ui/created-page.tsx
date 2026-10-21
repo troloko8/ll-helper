@@ -37,7 +37,21 @@ function EmptyCreatedState() {
             </div>
             <h2>No created decks yet</h2>
             <p>Create your first deck, then add cards from its owner page.</p>
+            <Link className={styles.emptyCreateLink} to="/decks/new">
+                Create New Deck
+            </Link>
         </section>
+    )
+}
+
+function CreateDeckItem() {
+    return (
+        <Link className={styles.createDeckTile} to="/decks/new">
+            <span className={styles.createDeckIcon} aria-hidden="true">
+                +
+            </span>
+            <span>Create New Deck</span>
+        </Link>
     )
 }
 
@@ -82,16 +96,7 @@ export function CreatedPage() {
     return (
         <div className={styles.page}>
             <header className={styles.pageHeader}>
-                <div>
-                    <p className={styles.eyebrow}>My decks</p>
-                    <h1>Created</h1>
-                    <p className={styles.subtitle}>
-                        Manage the decks and cards you have created.
-                    </p>
-                </div>
-                <Link className={styles.createDeckLink} to="/decks/new">
-                    Create New Deck
-                </Link>
+                <h1>Created</h1>
             </header>
 
             {isLoading && <CreatedDecksSkeleton />}
@@ -114,13 +119,13 @@ export function CreatedPage() {
             {!error && data && data.length > 0 && (
                 <section
                     className={styles.deckSection}
-                    aria-labelledby="created-decks-title"
+                    aria-label="Created decks"
                 >
-                    <h2 id="created-decks-title">Your decks</h2>
                     <div className={styles.deckGrid}>
                         {data.map((deck) => (
                             <CreatedDeckItem deck={deck} key={deck.id} />
                         ))}
+                        <CreateDeckItem />
                     </div>
                 </section>
             )}

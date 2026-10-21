@@ -147,7 +147,7 @@ export function OwnerDeckDetailsPage() {
                 variant="error"
                 title="Invalid deck"
                 description="This deck address is not valid."
-                action={<Link to="/learning">Back to learning</Link>}
+                action={<Link to="/created">Back to created decks</Link>}
             />
         )
     }
@@ -188,7 +188,7 @@ export function OwnerDeckDetailsPage() {
                 variant="error"
                 title="Owner access only"
                 description="This deck belongs to another user."
-                action={<Link to="/learning">Back to learning</Link>}
+                action={<Link to="/created">Back to created decks</Link>}
             />
         )
     }
@@ -211,16 +211,16 @@ export function OwnerDeckDetailsPage() {
                         </p>
                     </div>
                     <Link
-                        className={styles.addCardLink}
-                        to={`/decks/${deck.id}/cards/new`}
-                    >
-                        Add card
-                    </Link>
-                    <Link
                         className={styles.editDeckLink}
                         to={`/decks/${deck.id}/edit`}
                     >
                         Edit deck
+                    </Link>
+                    <Link
+                        className={styles.addCardLink}
+                        to={`/decks/${deck.id}/cards/new`}
+                    >
+                        Add card
                     </Link>
                 </div>
 

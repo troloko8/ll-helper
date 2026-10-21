@@ -3,32 +3,10 @@
     gap: 40px;
 }
 
-.pageHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-}
-
-.pageHeader > div {
-    display: grid;
-    max-width: 720px;
-    gap: 8px;
-}
-
-.eyebrow,
 .cardCount,
 .publicBadge,
 .privateBadge {
     font-family: var(--font-family-metadata);
-}
-
-.eyebrow {
-    color: var(--primary-container);
-    font-size: 0.75rem;
-    font-weight: 650;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
 }
 
 .pageHeader h1 {
@@ -39,12 +17,10 @@
     letter-spacing: -0.02em;
 }
 
-.subtitle,
 .languages {
     color: var(--on-surface-variant);
 }
 
-.createDeckLink,
 .openLink {
     display: inline-flex;
     min-height: 44px;
@@ -55,32 +31,13 @@
     text-decoration: none;
 }
 
-.createDeckLink {
-    flex: 0 0 auto;
-    padding: 10px 20px;
-    color: var(--on-primary);
-    background-color: var(--primary-container);
-}
-
-.createDeckLink:hover {
-    background-color: var(--surface-tint);
-}
-
-.createDeckLink:focus-visible,
 .openLink:focus-visible {
     outline: 2px solid var(--primary-container);
     outline-offset: 3px;
 }
 
 .deckSection {
-    display: grid;
-    gap: 20px;
-}
-
-.deckSection > h2 {
-    color: var(--on-surface);
-    font-size: 1.25rem;
-    font-weight: 650;
+    min-width: 0;
 }
 
 .deckGrid {
@@ -89,7 +46,8 @@
 }
 
 .deckCard,
-.skeletonCard {
+.skeletonCard,
+.createDeckTile {
     display: grid;
     min-width: 0;
     min-height: 208px;
@@ -106,6 +64,36 @@
 
 .skeletonCard {
     align-content: space-between;
+}
+
+.createDeckTile {
+    place-items: center;
+    align-content: center;
+    border-style: dashed;
+    color: var(--on-surface);
+    text-decoration: none;
+}
+
+.createDeckTile:hover {
+    border-color: var(--primary-container);
+    background-color: var(--surface-container);
+}
+
+.createDeckTile:focus-visible,
+.emptyCreateLink:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
+.createDeckIcon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 6px;
+    color: var(--on-surface);
+    background-color: var(--surface-container-highest);
+    font-size: 1.25rem;
 }
 
 .cardHeading {
@@ -222,15 +210,22 @@
     font-size: 0.875rem;
 }
 
-@media (max-width: 35rem) {
-    .pageHeader {
-        align-items: stretch;
-        flex-direction: column;
-    }
+.emptyCreateLink {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: var(--on-primary);
+    background-color: var(--primary-container);
+    font-weight: 650;
+    text-decoration: none;
+}
 
-    .createDeckLink {
-        width: 100%;
-    }
+.emptyCreateLink:hover {
+    background-color: var(--surface-tint);
 }
 
 @media (min-width: 48rem) {

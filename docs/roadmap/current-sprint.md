@@ -25,7 +25,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 ### 1. Проверка уже реализованного frontend
 
-- [ ] Сверить реализованные `/login`, `/register`, `/onboarding/profile`,
+- [x] Сверить реализованные `/login`, `/register`, `/onboarding/profile`,
   `/created`, `/discover`, `/decks/new`, owner/public Deck Details, `/learning`,
   Learning Deck Details и `/study` с соответствующими desktop/mobile экранами
   и состояниями из Stitch; исправить существенные расхождения.

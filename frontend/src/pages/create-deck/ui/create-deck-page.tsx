@@ -15,9 +15,9 @@ export function CreateDeckPage() {
 
     return (
         <div className={styles.page}>
-            <Link className={styles.backLink} to="/learning">
+            <Link className={styles.backLink} to="/created">
                 <span aria-hidden="true">←</span>
-                Back to Learning
+                Back to Created
             </Link>
 
             <section
@@ -39,7 +39,7 @@ export function CreateDeckPage() {
                         onSuccess={(deck) =>
                             navigate(`/decks/${deck.id}/manage`)
                         }
-                        onCancel={() => navigate('/learning')}
+                        onCancel={() => navigate('/created')}
                     />
                 </div>
             </section>

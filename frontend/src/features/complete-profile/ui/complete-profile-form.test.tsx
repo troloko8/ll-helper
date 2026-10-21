@@ -1,5 +1,5 @@
 import { Provider } from 'react-redux'
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -101,6 +101,28 @@ describe('CompleteProfileForm', () => {
         })
     })
 
+    it('locks the form and shows the canonical submitting state', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/users', async () => {
+                await delay('infinite')
+                return HttpResponse.json({})
+            }),
+        )
+        renderCompleteProfileForm()
+        const user = await fillValidProfile()
+
+        await user.click(
+            screen.getByRole('button', { name: 'Initialize Profile' }),
+        )
+
+        expect(
+            await screen.findByRole('button', {
+                name: 'Initializing profile',
+            }),
+        ).toBeDisabled()
+        expect(screen.getByRole('textbox', { name: 'Username' })).toBeDisabled()
+    })
+
     it('maps backend field validation errors to their controls', async () => {
         server.use(
             http.post('http://localhost/api/v1/users', () =>
@@ -168,6 +190,29 @@ describe('CompleteProfileForm', () => {
         expect(
             await screen.findByText(
                 'A profile has already been created for this account.',
+            ),
+        ).toBeInTheDocument()
+    })
+
+    it('shows the account-unavailable state when the session user is missing', async () => {
+        server.use(
+            http.post('http://localhost/api/v1/users', () =>
+                HttpResponse.json(
+                    { message: 'AuthUser not found' },
+                    { status: 404 },
+                ),
+            ),
+        )
+        renderCompleteProfileForm()
+        const user = await fillValidProfile()
+
+        await user.click(
+            screen.getByRole('button', { name: 'Initialize Profile' }),
+        )
+
+        expect(
+            await screen.findByText(
+                'We could not find the account for this session.',
             ),
         ).toBeInTheDocument()
     })

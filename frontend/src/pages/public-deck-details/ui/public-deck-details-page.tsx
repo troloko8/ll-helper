@@ -98,7 +98,7 @@ export function PublicDeckDetailsPage() {
                 variant="error"
                 title="Invalid deck"
                 description="This deck address is not valid."
-                action={<Link to="/learning">Back to learning</Link>}
+                action={<Link to="/discover">Back to discover</Link>}
             />
         )
     }
@@ -132,7 +132,7 @@ export function PublicDeckDetailsPage() {
                 variant="error"
                 title="Private deck"
                 description="This deck is not available for enrollment."
-                action={<Link to="/learning">Back to learning</Link>}
+                action={<Link to="/discover">Back to discover</Link>}
             />
         )
     }
@@ -140,6 +140,10 @@ export function PublicDeckDetailsPage() {
     const languagePair = `${getDeckLanguageLabel(deck.sourceLanguage)} → ${getDeckLanguageLabel(deck.targetLanguage)}`
     return (
         <div className={styles.page}>
+            <Link className={styles.backLink} to="/discover">
+                <span aria-hidden="true">←</span>
+                Back to Discover
+            </Link>
             <section className={styles.hero} aria-labelledby="deck-title">
                 <div className={styles.heroContent}>
                     <span className={styles.visibilityBadge}>Public</span>

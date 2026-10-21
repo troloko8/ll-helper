@@ -33,6 +33,27 @@ const createdDeck: DeckResponseDto = {
 }
 
 describe('CreateDeckPage', () => {
+    it('returns to Created from the back and cancel actions', async () => {
+        const user = userEvent.setup()
+        renderWithProviders(
+            <Routes>
+                <Route path="/decks/new" element={<CreateDeckPage />} />
+                <Route path="/created" element={<h1>Created decks</h1>} />
+            </Routes>,
+            { route: '/decks/new' },
+        )
+
+        expect(
+            screen.getByRole('link', { name: 'Back to Created' }),
+        ).toHaveAttribute('href', '/created')
+
+        await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+        expect(
+            screen.getByRole('heading', { name: 'Created decks' }),
+        ).toBeInTheDocument()
+    })
+
     it('opens Owner Deck Details after successful creation', async () => {
         server.use(
             http.post('http://localhost/api/v1/decks', () =>

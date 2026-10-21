@@ -39,6 +39,15 @@
     gap: 16px;
 }
 
+.summaryHeading {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summaryHeading > div:first-child {
+    grid-column: 1 / -1;
+}
+
 .titleLine {
     flex-wrap: wrap;
     align-items: center;
@@ -92,6 +101,11 @@
     background-color: var(--primary-container);
     font-weight: 650;
     text-decoration: none;
+}
+
+.summaryHeading > .addCardLink,
+.summaryHeading > .editDeckLink {
+    width: 100%;
 }
 
 .editDeckLink {
@@ -305,6 +319,15 @@
     .summary,
     .skeletonSummary {
         padding: 28px;
+    }
+
+    .summaryHeading {
+        display: flex;
+    }
+
+    .summaryHeading > .addCardLink,
+    .summaryHeading > .editDeckLink {
+        width: auto;
     }
 
     .metadata {

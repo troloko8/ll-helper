@@ -255,6 +255,9 @@ describe('OwnerDeckDetailsPage', () => {
         expect(
             await screen.findByRole('heading', { name: 'Owner access only' }),
         ).toBeInTheDocument()
+        expect(
+            screen.getByRole('link', { name: 'Back to created decks' }),
+        ).toHaveAttribute('href', '/created')
         expect(screen.queryByText('Hola')).not.toBeInTheDocument()
     })
 })

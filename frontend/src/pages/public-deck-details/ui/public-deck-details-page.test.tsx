@@ -475,6 +475,9 @@ describe('PublicDeckDetailsPage', () => {
             await screen.findByRole('heading', { name: 'Private deck' }),
         ).toBeInTheDocument()
         expect(
+            screen.getByRole('link', { name: 'Back to discover' }),
+        ).toHaveAttribute('href', '/discover')
+        expect(
             screen.queryByRole('button', { name: 'Start Learning' }),
         ).not.toBeInTheDocument()
         expect(

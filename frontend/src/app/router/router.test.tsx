@@ -277,7 +277,7 @@ describe('router session boundaries', () => {
             await screen.findByRole('heading', { name: 'Created' }),
         ).toBeInTheDocument()
         expect(
-            screen.getByRole('link', { name: 'Create New Deck' }),
+            await screen.findByRole('link', { name: 'Create New Deck' }),
         ).toHaveAttribute('href', '/decks/new')
     })
 

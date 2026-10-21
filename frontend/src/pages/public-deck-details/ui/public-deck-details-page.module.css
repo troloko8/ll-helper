@@ -4,6 +4,27 @@
     gap: 24px;
 }
 
+.backLink {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.backLink:hover {
+    color: var(--primary-container);
+}
+
+.backLink:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--primary-container);
+    outline-offset: 3px;
+}
+
 .hero,
 .inventory,
 .emptyState,
@@ -214,6 +235,10 @@
     .skeleton {
         gap: 24px;
         padding-top: 8px;
+    }
+
+    .backLink {
+        display: none;
     }
 
     .hero {
