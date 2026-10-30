@@ -16,6 +16,7 @@ import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.learning.enums.UserDeckStatus;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
+import com.llhelper.user.model.UsernameSlug;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
@@ -125,8 +126,11 @@ public class DeckServiceImpl implements DeckService {
     @Transactional(readOnly = true)
     public List<PublicDeckListResponse> getCreatorPublicDecks(String username) {
         Long currentUserId = securityUtils.getCurrentUserId();
-        
-        return deckRepository.findPublicDecksByOwnerUsername(currentUserId, username).stream()
+
+        return deckRepository.findPublicDecksByOwnerUsername(
+            currentUserId,
+            UsernameSlug.of(username).value()
+        ).stream()
             .map(deckMapper::toPublicListResponse)
             .toList();
     }

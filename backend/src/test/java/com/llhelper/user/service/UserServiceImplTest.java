@@ -4,16 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.auth.repository.AuthRepository;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.user.dto.request.CreateUserRequest;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.mapper.UserMapper;
+import com.llhelper.user.model.InvalidUsernameSlugException;
+import com.llhelper.user.model.UsernameSlug;
 import com.llhelper.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
@@ -64,6 +68,10 @@ class UserServiceImplTest {
         return new UpdateUserRequest("First", "Last", "en", "ru", null, "en");
     }
 
+    private static CreateUserRequest createUserRequest(String username) {
+        return new CreateUserRequest("First", "Last", username, "en", "ru", null, "en");
+    }
+
     @Test
     void getCurrentUser_shouldReturnResponse_whenProfileExists() {
         AuthUser authUser = new AuthUser();
@@ -93,6 +101,65 @@ class UserServiceImplTest {
             .hasMessage("User not found for authUserId: " + AUTH_USER_ID);
 
         verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+    }
+
+    @Test
+    void getUserByUsername_shouldUseCanonicalLookupValue() {
+        User user = userWithId(SELF_ID);
+        UserResponse response = new UserResponse(
+            SELF_ID, "polyglot-reader", "First", "Last", "en", "ru", null, "en", null, null
+        );
+        when(userRepository.findByUsername("polyglot-reader")).thenReturn(Optional.of(user));
+        when(userMapper.toResponse(user)).thenReturn(response);
+
+        UserResponse result = userService.getUserByUsername("polyglot-reader");
+
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
+    void getUserByUsername_shouldRejectNonCanonicalLookupValue() {
+        assertThatThrownBy(() -> userService.getUserByUsername("POLYGLOT-READER"))
+            .isInstanceOf(InvalidUsernameSlugException.class)
+            .hasMessage(UsernameSlug.VALIDATION_MESSAGE);
+
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void createUser_shouldPersistCanonicalUsername_whenRawValueIsCompatible() {
+        CreateUserRequest request = createUserRequest("  Jane_Doe  ");
+        AuthUser authUser = new AuthUser();
+        authUser.setId(AUTH_USER_ID);
+        User user = new User();
+        UserResponse response = new UserResponse(
+            SELF_ID, "jane_doe", "First", "Last", "en", "ru", null, "en", null, null
+        );
+        when(authRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(authUser));
+        when(userRepository.findByAuthUserId(AUTH_USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("jane_doe")).thenReturn(Optional.empty());
+        when(userMapper.toEntity(request)).thenReturn(user);
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user)).thenReturn(response);
+
+        UserResponse result = userService.createUser(USER_EMAIL, request);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(user.getUsername()).isEqualTo("jane_doe");
+        assertThat(user.getAuthUser()).isSameAs(authUser);
+        verify(userRepository).findByUsername("jane_doe");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void createUser_shouldRejectUsernameBeforeRepositoryAccess_whenRawValueIsIncompatible() {
+        CreateUserRequest request = createUserRequest("jane.doe");
+
+        assertThatThrownBy(() -> userService.createUser(USER_EMAIL, request))
+            .isInstanceOf(InvalidUsernameSlugException.class)
+            .hasMessage(UsernameSlug.VALIDATION_MESSAGE);
+
+        verifyNoInteractions(authRepository, userRepository, userMapper);
     }
 
     @Test

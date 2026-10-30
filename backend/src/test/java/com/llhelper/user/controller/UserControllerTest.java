@@ -2,9 +2,11 @@ package com.llhelper.user.controller;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,6 +20,8 @@ import com.llhelper.common.security.JwtService;
 import com.llhelper.common.security.RestAuthenticationEntryPoint;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
+import com.llhelper.user.model.InvalidUsernameSlugException;
+import com.llhelper.user.model.UsernameSlug;
 import com.llhelper.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -30,9 +34,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.net.URI;
 import java.util.List;
 
 @WebMvcTest(UserController.class)
@@ -102,6 +108,76 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users/{id}", USER_ID))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message", is("User not found with id: " + USER_ID)));
+    }
+
+    @Test
+    void getByUsername_shouldDecodeValidEncodedSlug() throws Exception {
+        UserResponse response = new UserResponse(
+            USER_ID, "polyglot_reader", "First", "Last", "en", "ru", null, "en", null, null
+        );
+        when(userService.getUserByUsername("polyglot_reader")).thenReturn(response);
+
+        mockMvc.perform(get(URI.create("/api/v1/users/username/polyglot%5Freader")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username", is("polyglot_reader")));
+    }
+
+    @Test
+    void getByUsername_shouldReturn400_whenSlugContainsReservedCharacter() throws Exception {
+        mockMvc.perform(get(URI.create("/api/v1/users/username/polyglot%2Breader")))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['getUserByUsername.username']").exists());
+    }
+
+    @Test
+    @WithMockUser(username = USER_EMAIL)
+    void create_shouldPassRawUsernameToServiceForDomainNormalization() throws Exception {
+        UserResponse response = new UserResponse(
+            USER_ID, "jane-doe", "Jane", "Doe", "en", "ru", null, "en", null, null
+        );
+        when(userService.createUser(
+            eq(USER_EMAIL),
+            argThat(request -> request.username().equals("  Jane-Doe  "))
+        )).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "firstName": "Jane",
+                      "lastName": "Doe",
+                      "username": "  Jane-Doe  ",
+                      "nativeLanguage": "en",
+                      "targetLanguage": "ru",
+                      "avatarUrl": null,
+                      "uiLanguage": "en"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username", is("jane-doe")));
+    }
+
+    @Test
+    @WithMockUser(username = USER_EMAIL)
+    void create_shouldReturn400_whenUsernameIsNotUrlSafe() throws Exception {
+        when(userService.createUser(eq(USER_EMAIL), any()))
+            .thenThrow(new InvalidUsernameSlugException(UsernameSlug.VALIDATION_MESSAGE));
+
+        mockMvc.perform(post("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "firstName": "Jane",
+                      "lastName": "Doe",
+                      "username": "jane.doe",
+                      "nativeLanguage": "en",
+                      "targetLanguage": "ru",
+                      "avatarUrl": null,
+                      "uiLanguage": "en"
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors.username").exists());
     }
 
     // --- update ---

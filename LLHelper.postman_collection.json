@@ -22,6 +22,7 @@
                   "    var ts = Date.now();",
                   "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
                   "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"encodedTestUsername\", (\"test_\" + ts).replace(\"_\", \"%5F\"));",
                   "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
                   "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
                   "    pm.environment.set(\"authUserId\", \"1\");",
@@ -63,14 +64,10 @@
             },
             "url": {
               "raw": "{{url}}/auth/register",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "auth",
                 "register"
               ]
@@ -89,6 +86,7 @@
                   "    var ts = Date.now();",
                   "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
                   "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"encodedTestUsername\", (\"test_\" + ts).replace(\"_\", \"%5F\"));",
                   "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
                   "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
                   "    pm.environment.set(\"authUserId\", \"1\");",
@@ -130,14 +128,10 @@
             },
             "url": {
               "raw": "{{url}}/auth/login",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "auth",
                 "login"
               ]
@@ -178,14 +172,10 @@
             },
             "url": {
               "raw": "{{url}}/auth/register",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "auth",
                 "register"
               ]
@@ -275,14 +265,10 @@
             },
             "url": {
               "raw": "{{url}}/users",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users"
               ]
             }
@@ -297,6 +283,7 @@
                   "    var ts = Date.now();",
                   "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
                   "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+                  "    pm.environment.set(\"encodedTestUsername\", (\"test_\" + ts).replace(\"_\", \"%5F\"));",
                   "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
                   "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
                   "    pm.environment.set(\"authUserId\", \"1\");",
@@ -372,14 +359,10 @@
             },
             "url": {
               "raw": "{{url}}/users",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users"
               ]
             },
@@ -417,14 +400,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/users/{{userId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "{{userId}}"
               ]
@@ -439,7 +418,10 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  ""
+                  "pm.test(\"Encoded username path resolves\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().username).to.eql(pm.environment.get(\"testUsername\"));",
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -461,18 +443,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/users/username/{{testUsername}}",
-              "protocol": "http",
+              "raw": "{{url}}/users/username/{{encodedTestUsername}}",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "username",
-                "{{testUsername}}"
+                "{{encodedTestUsername}}"
               ]
             }
           },
@@ -508,14 +486,10 @@
             },
             "url": {
               "raw": "{{url}}/users/{{userId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "{{userId}}"
               ]
@@ -562,14 +536,10 @@
             },
             "url": {
               "raw": "{{url}}/users/{{nonExistentUserId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "{{nonExistentUserId}}"
               ]
@@ -608,14 +578,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/users/{{nonExistentUserId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "{{nonExistentUserId}}"
               ]
@@ -641,14 +607,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/users/auth/{{authUserId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "auth",
                 "{{authUserId}}"
@@ -688,14 +650,10 @@
             },
             "url": {
               "raw": "{{url}}/decks",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks"
               ]
             }
@@ -755,14 +713,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{deckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}"
               ]
@@ -860,14 +814,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks?q=english&sourceLanguage=EN&targetLanguage=RU&enrolled=true&sort=CARD_COUNT_DESC&page=0&size=12",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks"
               ],
               "query": [
@@ -912,6 +862,7 @@
                   "    decks.forEach(function (deck) {",
                   "        pm.expect(deck).to.have.all.keys(\"id\", \"title\", \"sourceLanguage\", \"targetLanguage\", \"owner\", \"cardCount\", \"isEnrolled\");",
                   "        pm.expect(deck).to.have.nested.property(\"owner.username\");",
+                  "        pm.expect(deck.owner.username).to.eql(pm.environment.get(\"testUsername\"));",
                   "    });",
                   "});"
                 ],
@@ -933,18 +884,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{url}}/decks/creator/{{testUsername}}",
-              "protocol": "http",
+              "raw": "{{url}}/decks/creator/{{encodedTestUsername}}",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "creator",
-                "{{testUsername}}"
+                "{{encodedTestUsername}}"
               ]
             }
           },
@@ -954,7 +901,7 @@
               "originalRequest": {
                 "method": "GET",
                 "header": [],
-                "url": "{{url}}/decks/creator/{{testUsername}}"
+                "url": "{{url}}/decks/creator/{{encodedTestUsername}}"
               },
               "status": "OK",
               "code": 200,
@@ -1007,14 +954,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/mine",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "mine"
               ]
@@ -1060,14 +1003,10 @@
             },
             "url": {
               "raw": "{{url}}/decks/{{deckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}"
               ]
@@ -1135,14 +1074,10 @@
             },
             "url": {
               "raw": "{{url}}/decks/{{nonExistentDeckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{nonExistentDeckId}}"
               ]
@@ -1181,14 +1116,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{nonExistentDeckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{nonExistentDeckId}}"
               ]
@@ -1228,14 +1159,10 @@
             },
             "url": {
               "raw": "{{url}}/decks/{{deckId}}/cards",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}",
                 "cards"
@@ -1277,14 +1204,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/cards",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "cards"
               ]
             }
@@ -1308,14 +1231,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/cards/{{cardId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "cards",
                 "{{cardId}}"
               ]
@@ -1372,14 +1291,10 @@
             },
             "url": {
               "raw": "{{url}}/cards/{{cardId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "cards",
                 "{{cardId}}"
               ]
@@ -1413,14 +1328,10 @@
             },
             "url": {
               "raw": "{{url}}/card-generations",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "card-generations"
               ]
             }
@@ -1472,14 +1383,10 @@
             },
             "url": {
               "raw": "{{url}}/card-generations/bulk",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "card-generations",
                 "bulk"
               ]
@@ -1532,14 +1439,10 @@
             },
             "url": {
               "raw": "{{url}}/card-generations/bulk",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "card-generations",
                 "bulk"
               ]
@@ -1592,14 +1495,10 @@
             },
             "url": {
               "raw": "{{url}}/decks/{{nonExistentDeckId}}/cards",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{nonExistentDeckId}}",
                 "cards"
@@ -1667,14 +1566,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/learning/decks",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "learning",
                 "decks"
               ]
@@ -1722,10 +1617,8 @@
             "header": [],
             "url": {
               "raw": "{{url}}/learning/progress",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
-              "path": ["api", "v1", "learning", "progress"]
+              "host": ["{{url}}"],
+              "path": ["learning", "progress"]
             },
             "description": "Returns the authenticated learner's active deck progress with server-aggregated card statuses."
           },
@@ -1770,14 +1663,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{deckId}}/enroll",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}",
                 "enroll"
@@ -1825,14 +1714,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/learning/decks",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "learning",
                 "decks"
               ]
@@ -1883,14 +1768,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/learning/decks/{{deckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "learning",
                 "decks",
                 "{{deckId}}"
@@ -1917,14 +1798,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{deckId}}/study",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}",
                 "study"
@@ -1950,14 +1827,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{deckId}}/cards",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}",
                 "cards"
@@ -1992,14 +1865,10 @@
             },
             "url": {
               "raw": "{{url}}/cards/{{cardId}}/review",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "cards",
                 "{{cardId}}",
                 "review"
@@ -2049,14 +1918,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/learning/decks/{{deckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "learning",
                 "decks",
                 "{{deckId}}"
@@ -2342,14 +2207,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/cards/{{cardId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "cards",
                 "{{cardId}}"
               ]
@@ -2374,14 +2235,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/decks/{{deckId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "decks",
                 "{{deckId}}"
               ]
@@ -2462,14 +2319,10 @@
             "header": [],
             "url": {
               "raw": "{{url}}/users/{{userId}}",
-              "protocol": "http",
               "host": [
-                "localhost"
+                "{{url}}"
               ],
-              "port": "8080",
               "path": [
-                "api",
-                "v1",
                 "users",
                 "{{userId}}"
               ]
@@ -2489,12 +2342,16 @@
           "    var ts = Date.now();",
           "    pm.environment.set(\"testEmail\", \"test_\" + ts + \"@example.com\");",
           "    pm.environment.set(\"testUsername\", \"test_\" + ts);",
+          "    pm.environment.set(\"encodedTestUsername\", (\"test_\" + ts).replace(\"_\", \"%5F\"));",
           "    pm.environment.set(\"otherTestEmail\", \"other_\" + ts + \"@example.com\");",
           "    pm.environment.set(\"otherTestUsername\", \"other_\" + ts);",
           "    pm.environment.set(\"nonExistentUserId\", \"999999\");",
           "    pm.environment.set(\"nonExistentDeckId\", \"999999\");",
           "    pm.environment.set(\"authUserId\", \"1\");",
           "    console.log(\"Test data initialized for this run\");",
+          "}",
+          "if (pm.environment.get(\"testUsername\")) {",
+          "    pm.environment.set(\"encodedTestUsername\", pm.environment.get(\"testUsername\").replace(\"_\", \"%5F\"));",
           "}"
         ],
         "type": "text/javascript"

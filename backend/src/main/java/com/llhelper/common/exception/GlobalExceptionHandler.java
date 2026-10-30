@@ -1,6 +1,7 @@
 package com.llhelper.common.exception;
 
 import com.llhelper.ai.exception.AiServiceException;
+import com.llhelper.user.model.InvalidUsernameSlugException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -110,6 +111,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(Map.of("message", exception.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidUsernameSlugException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidUsernameSlug(InvalidUsernameSlugException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("errors", Map.of("username", exception.getMessage())));
     }
 
     @ExceptionHandler(IllegalStateException.class)

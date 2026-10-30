@@ -139,9 +139,9 @@ class DeckRepositoryTest {
     }
 
     @Test
-    void findPublicDecks_shouldSearchByOwnerUsernameCaseInsensitively_whenUsernameContainsQuery() {
+    void findPublicDecks_shouldSearchByOwnerUsername_whenCanonicalUsernameContainsQuery() {
         User currentUser = persistUser("current@example.com", "current-user");
-        User matchingOwner = persistUser("matching@example.com", "PolyGlot-Owner");
+        User matchingOwner = persistUser("matching@example.com", "polyglot-owner");
         User otherOwner = persistUser("other@example.com", "another-owner");
         persistDeck(matchingOwner, "First unrelated title", true);
         persistDeck(otherOwner, "Second unrelated title", true);
@@ -154,19 +154,19 @@ class DeckRepositoryTest {
 
         assertThat(page.getContent()).singleElement().satisfies(row -> {
             assertThat(row.getTitle()).isEqualTo("First unrelated title");
-            assertThat(row.getOwnerUsername()).isEqualTo("PolyGlot-Owner");
+            assertThat(row.getOwnerUsername()).isEqualTo("polyglot-owner");
         });
     }
 
     @Test
     void findPublicDecksByOwnerUsername_shouldReturnOnlyExactCreatorsPublicDecksWithCountsAndEnrollment() {
         User currentUser = persistUser("current@example.com", "current-user");
-        User creator = persistUser("creator@example.com", "Alice");
-        User caseCollidingCreator = persistUser("case-colliding@example.com", "alice");
+        User creator = persistUser("creator@example.com", "alice");
+        User similarCreator = persistUser("similar@example.com", "alice-2");
         User otherOwner = persistUser("other@example.com", "other-owner");
         Deck publicDeck = persistDeck(creator, "Creator public", true);
         persistDeck(creator, "Creator private", false);
-        persistDeck(caseCollidingCreator, "Case-colliding creator public", true);
+        persistDeck(similarCreator, "Similar creator public", true);
         persistDeck(otherOwner, "Other public", true);
         persistCard(publicDeck, "one");
         persistCard(publicDeck, "two");
@@ -175,12 +175,12 @@ class DeckRepositoryTest {
         entityManager.clear();
 
         List<PublicDeckListProjection> rows = deckRepository.findPublicDecksByOwnerUsername(
-            currentUser.getId(), "Alice"
+            currentUser.getId(), "alice"
         );
 
         assertThat(rows).singleElement().satisfies(row -> {
             assertThat(row.getTitle()).isEqualTo("Creator public");
-            assertThat(row.getOwnerUsername()).isEqualTo("Alice");
+            assertThat(row.getOwnerUsername()).isEqualTo("alice");
             assertThat(row.getCardCount()).isEqualTo(2);
             assertThat(row.getIsEnrolled()).isTrue();
         });

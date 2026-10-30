@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import {
+    normalizeUsername,
+    USERNAME_MAX_LENGTH,
+    USERNAME_MIN_LENGTH,
+    USERNAME_PATTERN,
+} from '@/entities/user'
 
 const LANGUAGE_CODE_PATTERN = /^[a-zA-Z]{2,3}(-[a-zA-Z]{2,4})?$/
 
@@ -18,10 +24,31 @@ const languageCodeSchema = (label: string) =>
         z.string().regex(LANGUAGE_CODE_PATTERN, `Select a valid ${label}`),
     )
 
+const usernameSlugSchema = z
+    .string()
+    .refine((username) => username.trim().length > 0, 'Username is required')
+    .transform(normalizeUsername)
+    .pipe(
+        z
+            .string()
+            .min(
+                USERNAME_MIN_LENGTH,
+                `Username must be at least ${USERNAME_MIN_LENGTH} characters`,
+            )
+            .max(
+                USERNAME_MAX_LENGTH,
+                `Username must be at most ${USERNAME_MAX_LENGTH} characters`,
+            )
+            .regex(
+                USERNAME_PATTERN,
+                'Use lowercase letters, numbers, underscores, or hyphens; start and end with a letter or number',
+            ),
+    )
+
 export const completeProfileFormSchema = z.object({
     firstName: sizedRequiredString('First name', 2, 100),
     lastName: sizedRequiredString('Last name', 2, 100),
-    username: sizedRequiredString('Username', 3, 50),
+    username: usernameSlugSchema,
     nativeLanguage: languageCodeSchema('native language'),
     targetLanguage: languageCodeSchema('target language'),
     uiLanguage: languageCodeSchema('interface language'),

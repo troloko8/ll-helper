@@ -10,6 +10,7 @@ import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.mapper.UserMapper;
+import com.llhelper.user.model.UsernameSlug;
 import com.llhelper.user.repository.UserRepository;
 import java.util.Objects;
 import jakarta.persistence.EntityNotFoundException;
@@ -58,8 +59,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + username));
+        UsernameSlug usernameSlug = UsernameSlug.of(username);
+        User user = userRepository.findByUsername(usernameSlug.value())
+            .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + usernameSlug.value()));
         return userMapper.toResponse(user);
     }
 
@@ -73,6 +75,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse createUser(String email, CreateUserRequest request) {
+        String username = UsernameSlug.fromInput(request.username()).value();
         AuthUser authUser = authRepository.findByEmail(email)
             .orElseThrow(() -> new EntityNotFoundException("AuthUser not found with email: " + email));
 
@@ -80,11 +83,12 @@ public class UserServiceImpl implements UserService {
             throw new IllegalStateException("User already exists");
         }
 
-        if (userRepository.findByUsername(request.username()).isPresent()) {
-            throw new IllegalStateException("Username already taken: " + request.username());
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new IllegalStateException("Username already taken: " + username);
         }
 
         User user = userMapper.toEntity(request);
+        user.setUsername(username);
         user.setAuthUser(authUser);
 
         User saved = userRepository.save(user);

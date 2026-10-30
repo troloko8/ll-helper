@@ -97,12 +97,12 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   недопустим.
 - [x] Добавить bootstrap regression tests для network error, `5xx`, retry и
   успешного восстановления без потери корректного token/session state.
-- [ ] Определить и внедрить единый URL-safe slug-контракт для `username`:
+- [x] Определить и внедрить единый URL-safe slug-контракт для `username`:
   допустимые символы, нормализацию и регистр, уникальность, backend validation,
   совместимость существующих данных, frontend routing, прохождение допустимых
   encoded-значений через реальные Spring endpoints, Postman и нормативные
   API-документы.
-- [ ] До добавления username constraint проверить существующие данные на
+- [x] До добавления username constraint проверить существующие данные на
   несовместимые значения и case-insensitive collisions; определить безопасную
   migration/compatibility policy.
 - [ ] Определить и реализовать политику актуальности/инвалидации `currentUser`,

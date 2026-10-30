@@ -3,12 +3,16 @@ package com.llhelper.user.controller;
 import com.llhelper.user.dto.request.CreateUserRequest;
 import com.llhelper.user.dto.request.UpdateUserRequest;
 import com.llhelper.user.dto.response.UserResponse;
+import com.llhelper.user.model.UsernameSlug;
 import com.llhelper.user.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.security.Principal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -39,7 +44,12 @@ public class UserController {
     }
 
     @GetMapping("/username/{username}")
-    public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<UserResponse> getUserByUsername(
+        @PathVariable
+        @Size(min = UsernameSlug.MIN_LENGTH, max = UsernameSlug.MAX_LENGTH)
+        @Pattern(regexp = UsernameSlug.PATTERN, message = UsernameSlug.VALIDATION_MESSAGE)
+        String username
+    ) {
         return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 

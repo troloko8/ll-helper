@@ -31,6 +31,7 @@ import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.enums.PublicDeckSort;
 import com.llhelper.deck.service.DeckService;
 import com.llhelper.user.dto.response.UserResponse;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import jakarta.persistence.EntityNotFoundException;
@@ -302,6 +303,22 @@ class DeckControllerTest {
             .andExpect(jsonPath("$[0].cardCount", is(3)))
             .andExpect(jsonPath("$[0].isEnrolled", is(true)))
             .andExpect(jsonPath("$[0].isPublic").doesNotExist());
+    }
+
+    @Test
+    void getCreatorPublicDecks_shouldDecodeValidEncodedSlug() throws Exception {
+        when(deckService.getCreatorPublicDecks("deck-owner_2")).thenReturn(List.of());
+
+        mockMvc.perform(get(URI.create("/api/v1/decks/creator/deck-owner%5F2")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void getCreatorPublicDecks_shouldReturn400_whenSlugContainsReservedCharacter() throws Exception {
+        mockMvc.perform(get(URI.create("/api/v1/decks/creator/deck%2Bowner")))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors['getCreatorPublicDecks.username']").exists());
     }
 
     // --- getCurrentUserDecks ---

@@ -17,12 +17,23 @@ describe('completeProfileFormSchema', () => {
         )
     })
 
+    it('normalizes the username before submission', () => {
+        expect(
+            completeProfileFormSchema.parse({
+                ...validProfile,
+                username: '  Jane-Doe_2  ',
+            }).username,
+        ).toBe('jane-doe_2')
+    })
+
     it.each([
         ['firstName', 'x'],
         ['firstName', 'x'.repeat(101)],
         ['lastName', ' '],
         ['username', 'ab'],
         ['username', 'x'.repeat(51)],
+        ['username', 'jane.doe'],
+        ['username', '-jane'],
     ] as const)('rejects an invalid %s boundary', (field, value) => {
         expect(
             completeProfileFormSchema.safeParse({

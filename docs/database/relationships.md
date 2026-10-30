@@ -3,8 +3,8 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-10-17
-> **Status:** Liquibase migrations V1–V14 are defined; V14 idempotently backfills missing card progress for ACTIVE enrollments.
+> **Last updated:** 2026-10-27
+> **Status:** Liquibase migrations V1–V15 are defined and runtime-verified on PostgreSQL 16 via Testcontainers. V14 idempotently backfills missing card progress for ACTIVE enrollments.
 > **Remaining index gap:** `idx_ucp_next_review` (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
@@ -20,8 +20,9 @@
 | `information_schema.columns` | ✅ Verified |
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
+| V15 runtime migration | ✅ Verified on PostgreSQL 16 via Testcontainers/Liquibase |
 
-**Note:** V1–V14 Liquibase migrations are defined. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. V14 repairs missing Card-to-progress pairs for ACTIVE enrollments without overwriting existing rows. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
+**Note:** V1–V15 Liquibase migrations are defined. V15 canonicalizes compatible usernames with `trim + lowercase` and halts before normalization when legacy values are incompatible or collide case-insensitively; all three migration scenarios are verified on PostgreSQL 16 via Testcontainers/Liquibase. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. V14 repairs missing Card-to-progress pairs for ACTIVE enrollments without overwriting existing rows. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -29,7 +30,7 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Current schema definition and data repair through Liquibase migration V14.
+**Scope:** Current schema definition and data repair through runtime-verified Liquibase migration V15.
 
 **Not in this document:**
 - Remaining index work (`idx_ucp_next_review`) — see Section 8
@@ -249,6 +250,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 
 | Entity | Constraint | Enforcement |
 |--------|------------|-------------|
+| `User` | `username` matches lowercase ASCII slug `^[a-z0-9]([a-z0-9_-]{1,48}[a-z0-9])$` | `chk_users_username_slug` (V15); migration halts before normalization if legacy values are incompatible or collide after `trim + lowercase` |
 | `UserDeckProgress` | `status IN ('ACTIVE', 'PAUSED', 'ARCHIVED')` | `chk_user_deck_progress_status` (added in V1 baseline) |
 | `UserCardProgress` | `status IN ('NEW', 'LEARNING', 'REVIEWING', 'MASTERED')` | `chk_user_card_progress_status` (added in V1 baseline) |
 | `UserCardProgress` | `times_seen >= 0` | `chk_ucp_times_seen_non_negative` (added in V7) |
@@ -267,7 +269,7 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `auth_users` | `email` | `UNIQUE`, `NOT NULL` |
 | `auth_users` | `password_hash` | `NOT NULL` |
 | `auth_users` | `role` | `NOT NULL`; entity default `"USER"` in Java field initializer (no `@ColumnDefault`) |
-| `users` | `username` | `UNIQUE`, `NOT NULL` |
+| `users` | `username` | `UNIQUE`, `NOT NULL`; canonical lowercase 3–50 character slug enforced by `chk_users_username_slug` (V15): ASCII letters/digits plus internal `_`/`-`, alphanumeric start/end |
 | `users` | `auth_user_id` | `NOT NULL` (implied) |
 | `decks` | `title` | `NOT NULL` |
 | `decks` | `source_language` | `NOT NULL`, enum CHECK (`chk_decks_source_language`), no default (V6) |

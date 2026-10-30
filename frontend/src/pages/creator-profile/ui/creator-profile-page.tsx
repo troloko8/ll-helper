@@ -4,7 +4,7 @@ import {
     type PublicDeckListResponseDto,
     useGetCreatorPublicDecksQuery,
 } from '@/entities/deck'
-import { useGetUserByUsernameQuery } from '@/entities/user'
+import { isUsernameSlug, useGetUserByUsernameQuery } from '@/entities/user'
 import { ApiErrorPresentation, Button, PageState, Skeleton } from '@/shared/ui'
 import styles from './creator-profile-page.module.css'
 
@@ -94,7 +94,7 @@ function CreatorDeckItem({ deck }: { deck: PublicDeckListResponseDto }) {
 export function CreatorProfilePage() {
     const { username: usernameParam } = useParams()
     const username = usernameParam ?? ''
-    const skip = username.length === 0
+    const skip = !isUsernameSlug(username)
     const profileQuery = useGetUserByUsernameQuery(username, { skip })
     const decksQuery = useGetCreatorPublicDecksQuery(username, { skip })
 

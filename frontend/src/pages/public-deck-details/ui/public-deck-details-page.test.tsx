@@ -128,8 +128,8 @@ describe('PublicDeckDetailsPage', () => {
         ).not.toBeInTheDocument()
     })
 
-    it('opens the creator profile with an encoded username path segment', async () => {
-        const username = 'language/coach ?#'
+    it('opens the creator profile with a canonical username path segment', async () => {
+        const username = 'language-coach_2'
         server.use(
             http.get('http://localhost/api/v1/decks/12', () =>
                 HttpResponse.json({

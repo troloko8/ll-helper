@@ -9,10 +9,13 @@ import com.llhelper.deck.dto.response.PublicDeckListResponse;
 import com.llhelper.deck.dto.response.PublicDeckPageResponse;
 import com.llhelper.deck.enums.PublicDeckSort;
 import com.llhelper.common.model.Language;
+import com.llhelper.user.model.UsernameSlug;
 import com.llhelper.deck.service.DeckService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +53,10 @@ public class DeckController {
 
     @GetMapping("/creator/{username}")
     public ResponseEntity<List<PublicDeckListResponse>> getCreatorPublicDecks(
-        @PathVariable String username
+        @PathVariable
+        @Size(min = UsernameSlug.MIN_LENGTH, max = UsernameSlug.MAX_LENGTH)
+        @Pattern(regexp = UsernameSlug.PATTERN, message = UsernameSlug.VALIDATION_MESSAGE)
+        String username
     ) {
         return ResponseEntity.ok(deckService.getCreatorPublicDecks(username));
     }

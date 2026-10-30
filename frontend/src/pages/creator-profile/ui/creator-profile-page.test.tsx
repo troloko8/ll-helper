@@ -47,6 +47,34 @@ function renderCreatorProfile(route: string) {
 }
 
 describe('CreatorProfilePage', () => {
+    it('decodes and accepts a canonical encoded username route segment', async () => {
+        const encodedCreator = { ...creator, username: 'polyglot_reader' }
+        server.use(
+            http.get(
+                'http://localhost/api/v1/users/username/polyglot_reader',
+                () => HttpResponse.json(encodedCreator),
+            ),
+            http.get(
+                'http://localhost/api/v1/decks/creator/polyglot_reader',
+                () => HttpResponse.json([]),
+            ),
+        )
+
+        renderCreatorProfile('/creators/polyglot%5Freader')
+
+        expect(
+            await screen.findByRole('heading', { name: 'Test Creator' }),
+        ).toBeInTheDocument()
+    })
+
+    it('rejects a non-canonical username without API requests', async () => {
+        renderCreatorProfile('/creators/Polyglot')
+
+        expect(
+            await screen.findByRole('heading', { name: 'Invalid creator' }),
+        ).toBeInTheDocument()
+    })
+
     it('shows profile data and only the creator public decks', async () => {
         server.use(
             http.get('http://localhost/api/v1/users/username/polyglot', () =>

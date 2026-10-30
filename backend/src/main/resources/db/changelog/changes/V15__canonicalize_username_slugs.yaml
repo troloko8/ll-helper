@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: V15-1
+      author: llhelper
+      comment: Canonicalize compatible usernames and enforce the lowercase URL-safe slug contract
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT COUNT(*)
+              FROM users
+              WHERE lower(btrim(username)) !~ '^[a-z0-9]([a-z0-9_-]{1,48}[a-z0-9])$'
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT COUNT(*)
+              FROM (
+                  SELECT lower(btrim(username))
+                  FROM users
+                  GROUP BY lower(btrim(username))
+                  HAVING COUNT(*) > 1
+              ) collisions
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: >-
+              UPDATE users
+              SET username = lower(btrim(username))
+              WHERE username IS DISTINCT FROM lower(btrim(username))
+        - sql:
+            dbms: postgresql
+            sql: >-
+              ALTER TABLE users
+              ADD CONSTRAINT chk_users_username_slug
+              CHECK (username ~ '^[a-z0-9]([a-z0-9_-]{1,48}[a-z0-9])$')
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: >-
+              ALTER TABLE users DROP CONSTRAINT chk_users_username_slug

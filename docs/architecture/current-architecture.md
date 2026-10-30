@@ -1,7 +1,7 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Last updated:** 2026-10-14
+> **Last updated:** 2026-10-22
 
 ---
 
@@ -22,7 +22,7 @@
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
 - ✅ Mapper layer, rate limiting, ownership checks completed
-- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V14 defined; V11 adds G-06 enrollment ordering support, V12/V13 establish the deck-card index, V14 repairs missing card progress)
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V15 defined; V15 canonicalizes compatible usernames and enforces the URL-safe slug constraint)
 - ⏸ Additional performance indexes deferred to Level 2
 
 **Frontend (implemented vertical flow and foundations):**
@@ -159,7 +159,7 @@ AuthUser ──1:1──▶ User ──1:N──▶ Deck ──1:N──▶ Card
 | Entity | Table | Key Fields |
 |--------|-------|------------|
 | `AuthUser` | `auth_users` | email (unique), passwordHash, role |
-| `User` | `users` | firstName, lastName, username (unique), nativeLanguage, targetLanguage, uiLanguage |
+| `User` | `users` | firstName, lastName, canonical lowercase URL-safe username slug (unique), nativeLanguage, targetLanguage, uiLanguage |
 | `Deck` | `decks` | title, description, sourceLanguage, targetLanguage, isPublic, owner → User |
 | `Card` | `cards` | title, definition, synonyms[], examples[], translation, deck → Deck |
 
@@ -306,11 +306,11 @@ CardService.save(cards)
 | `/api/v1/users` | POST | JWT | Create user profile for current auth account | `UserResponse` |
 | `/api/v1/users/me` | GET | JWT | Resolve current profile from JWT subject email; 404 if profile is not created | `UserResponse` |
 | `/api/v1/users/{id}` | GET/PUT/DELETE | JWT | User profile CRUD (PUT/DELETE require ownership) | `UserResponse` |
-| `/api/v1/users/username/{username}` | GET | JWT | Get user by username | `UserResponse` |
+| `/api/v1/users/username/{username}` | GET | JWT | Get user by canonical username slug; invalid path values return 400 | `UserResponse` |
 | `/api/v1/users/auth/{authUserId}` | GET | JWT | Get user by authUserId | `UserResponse` |
 | `/api/v1/decks` | GET | JWT | Search/filter/sort public decks by `q`, language pair, ACTIVE `enrolled`, `sort`, `page` and `size`; private decks are always excluded | `PublicDeckPageResponse { items, page, size, totalElements, totalPages, hasNext }`; each item contains owner, language pair, `cardCount` and current-user `isEnrolled` |
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
-| `/api/v1/decks/creator/{username}` | GET | JWT | List only the specified creator's public decks, ordered newest first, with aggregate content-card count and current-user enrollment state | `List<PublicDeckListResponse>`; each item contains owner, language pair, `cardCount` and `isEnrolled` |
+| `/api/v1/decks/creator/{username}` | GET | JWT | List only the canonical username slug's public decks; invalid path values return 400 | `List<PublicDeckListResponse>`; ordered newest first, each item contains owner, language pair, `cardCount` and `isEnrolled` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
 | `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
@@ -397,6 +397,7 @@ backend/src/main/java/com/llhelper/
 │   ├── entity/User.java
 │   ├── repository/UserRepository.java
 │   ├── mapper/UserMapper.java
+│   ├── model/UsernameSlug.java
 │   └── dto/{request, response}/
 ├── deck/
 │   ├── controller/DeckController.java
@@ -507,6 +508,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Deck/Card reads inherit deck visibility | `DeckAccessPolicy` permits any authenticated user to read a public deck and its cards, permits the owner to read a private deck and its cards, and returns `403 Forbidden` for another user's private content. `DeckServiceImpl.getById()` and `CardServiceImpl.getById()` apply the shared policy before DTO mapping. |
 | Private deck enrollment is owner-only | `LearningServiceImpl.enrollDeck()` permits public decks and a private deck owned by the authenticated user. Another user's private deck returns `403 Forbidden`; first enrollment returns `201`, and the existing unique constraint preserves `409` for duplicates. |
 | User operations require ownership | Only the user can update or delete their own profile. `UserServiceImpl.updateUser()` and `deleteUser()` check `Objects.equals(user.getId(), currentUserId)` via `validateUserOwnership()`; otherwise return `403 Forbidden`. |
+| Username slug invariant belongs to the domain model | `UsernameSlug.fromInput(raw)` performs `trim + lowercase` normalization and validates the canonical pattern before repository access. `CreateUserRequest` retains the raw transport value, `UserMapper` ignores it, and `UserServiceImpl` assigns only `UsernameSlug.value()` to the entity. Canonical username path values are validated at the HTTP boundary and reconstructed with `UsernameSlug.of(...)` without alias normalization. |
 | Bulk AI generation uses a bounded partial-success strategy | Each title is attempted independently inside the bulk loop. Recoverable `AiServiceException` and `RateLimitExceededException` failures are logged and returned in `failed[]`, while previously saved cards remain in `created[]`. Persistence and unexpected failures are not swallowed: they propagate and roll back the whole transaction. |
 | New cards extend ACTIVE learning progress | Manual, single-AI, and successful bulk-AI creation use a dedicated new-card persistence path. `NewCardProgressProvisioner` executes an idempotent PostgreSQL `INSERT ... SELECT` for all ACTIVE enrollments; ordinary card updates use a separate path and do not provision progress. V14 backfills rows missed before this invariant was introduced. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |

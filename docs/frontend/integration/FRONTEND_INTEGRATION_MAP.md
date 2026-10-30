@@ -47,7 +47,7 @@ and cannot substitute for manual-card acceptance. Runtime status belongs only to
 | `/created` | implemented | `created_decks_llhelper_refined_mvp` / `created_decks_mobile_with_bottom_nav` | Desktop/mobile navigation → owned public/private decks → Owner Deck Details; §0.10 |
 | `/discover` | implemented | `discover_llhelper_refined` / `discover_mobile` | Desktop/mobile shell → DECK-03 public decks with URL-backed search, language/enrollment filters, sorting and infinite load-more → Public Deck Details, §0.10. Enrollment reconciliation remains a follow-up. |
 | `/progress` | implemented | `learning_progress_llhelper_mvp` / `learning_progress_mobile_2` | JWT-protected aggregate Progress dashboard backed by LEARN-07. |
-| `/creators/:username` | implemented | `creator_profile_llhelper_refined` / `creator_profile_mobile` | JWT-protected Creator Profile: `USER-03` supplies the profile and DECK-07 supplies only that creator's public decks. Loading, profile/list error and empty-list states are implemented; follows and all other social controls remain excluded. |
+| `/creators/:username` | implemented | `creator_profile_llhelper_refined` / `creator_profile_mobile` | JWT-protected Creator Profile. `:username` must be the canonical lowercase 3–50 character slug (`a-z`, `0-9`, internal `_`/`-`); links encode the path segment and the route rejects invalid decoded values without API calls. `USER-03` supplies the profile and DECK-07 supplies only that creator's public decks. |
 | `/decks/:deckId/edit` | implemented | `edit_deck_llhelper_refined_1` / responsive mobile adaptation | Owner-only Edit Deck with prefill, validation, visibility mapping, update and destructive deletion. |
 | `/decks/:deckId/cards/:cardId/edit` | implemented | `add_edit_card_llhelper_refined` / responsive mobile adaptation | Owner-only Card Editor with prefill, shared validation, update and destructive deletion; AI creation controls are intentionally absent in edit mode. |
 
@@ -224,7 +224,7 @@ The map preserves the content/learning boundary: `Deck`/`Card` are owner-managed
 | **ready** | The screen-specific backend contract is sufficient for the intended surface. Shared platform prerequisites may still determine implementation order. |
 | **partial** | A usable contract exists, but part of the screen, an important state, or a safe lookup/navigation path is incomplete. |
 | **blocked** | The intended screen cannot be implemented safely or truthfully with the current backend contract. |
-| **deferred** | A real surface exists, but it is a candidate to remain outside the first MVP; Phase 0.4C must confirm the deferral. *(Historical status-definition text — §0.2 has since confirmed deferral for the specific surfaces listed there.)* |
+| **deferred** | Historical Phase 0.4B status for a surface that was not yet accepted. Current runtime status is owned by §0.3 and the relevant §5 screen entry. |
 
 ### Backend status
 
@@ -248,16 +248,20 @@ Statuses in this map are **screen-contract-local**: they describe whether the sc
 | G-04 | `GET /decks` previously returned every deck. | Created, Discover, Creator Profile. | ✅ Resolved: the existing endpoint now uses a repository-enforced `isPublic=true` query, and DECK-06 provides the separate owner-scoped Created collection. Richer Discover and creator-scoped contracts remain separate gaps. |
 | G-05 | `GET /decks/{id}` and `GET /cards/{id}` previously lacked owner/public visibility. | Public Deck Details, owner/edit prefill trust boundary, card edit. | ✅ Resolved by shared `DeckAccessPolicy`: public or owner-private reads succeed; another user's private content returns 403. |
 | G-06 | Learning Decks list contract. | Learning dashboard and navigation into enrolled decks. | ✅ Resolved by LEARN-05: active current-user enrollments, deterministic Continue/Start ordering, and mastered/total aggregation. |
-| G-07 | No aggregate Progress contract. | Progress. | Backend blocker. |
+| G-07 | Aggregate Progress contract. | Progress. | ✅ Resolved by LEARN-07 and the implemented `/progress` integration. |
 | G-08 | Study selection previously excluded `REVIEWING`. | Study and truthful all-caught-up state. | ✅ Resolved: `LEARNING` → `REVIEWING` → `NEW`, max 10; `MASTERED` excluded. |
-| G-09 | Bulk AI response omits failed titles/reasons. | Add/Edit Card AI partial-failure UX. | Partial gap; manual cards are not blocked. |
-| G-10 | No creator-scoped public-deck list contract. | Creator Profile. | Backend blocker if the surface enters MVP. |
+| G-09 | Bulk AI partial-failure response. | Bulk AI generation UX. | ✅ Resolved: CARD-02 returns stable `created[]` and `failed[]` entries with `inputIndex`, code, message and retryability. |
+| G-10 | Creator-scoped public-deck list contract. | Creator Profile. | ✅ Resolved by DECK-07 and the implemented `/creators/:username` flow. |
 | G-11 | `isPrivate` UI control maps inversely to wire field `isPublic`. | Create/Edit Deck. | Required frontend boundary mapping: `isPublic = !isPrivate`; not a backend gap. |
 | G-12 | Learning "not enrolled" was documented as 403 instead of the actual 409 contract. | Learning Deck Details, Study, review submission. | ✅ Resolved: learning-flow documentation and frontend integration now consistently use `409 Conflict` for missing/inactive enrollment. |
 
-Shared JWT errors on every authenticated endpoint: missing Bearer token → controlled `401 {message}`; expired/malformed token → unresolved G-03. Shared controller errors where applicable: validation `400 {errors}`, malformed body `400 {message}`, authorization `403 {message}`, missing resource `404 {message}`, state conflict `409 {message}`, rate limit `429 {error,message,timestamp}`, AI unavailable `503 {message}`, and catch-all `500 {message}`.
+Shared JWT errors on every authenticated endpoint: missing, expired or malformed Bearer token → controlled `401 {message}` (resolved G-03). Shared controller errors where applicable: validation `400 {errors}`, malformed body `400 {message}`, authorization `403 {message}`, missing resource `404 {message}`, state conflict `409 {message}`, rate limit `429 {error,message,timestamp}`, AI unavailable `503 {message}`, and catch-all `500 {message}`.
 
-## 4. Coverage summary
+## 4. Coverage summary — historical Phase 0.4B snapshot
+
+> The counts below preserve the Phase 0.4B planning baseline. They are not
+> current runtime status; implemented routes are recorded in §0.3 and the
+> corresponding §5 screen entries.
 
 | Integration status | Canonical references | Count |
 |---|---|---:|
@@ -267,7 +271,8 @@ Shared JWT errors on every authenticated endpoint: missing Bearer token → cont
 | **deferred** | Creator Profile desktop/mobile | 2 |
 | **Total** | All canonical references from the manifest | **26** |
 
-`deferred` for Creator Profile was provisional as of Phase 0.4B, not a final MVP decision at that time. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)*
+`deferred` for Creator Profile was provisional as of Phase 0.4B. Creator Profile
+is now implemented as recorded in §0.3 and §5.13.
 
 ## 5. Screen-by-screen integration map
 
@@ -629,32 +634,22 @@ Implemented required response: public-only DECK-03 returns a page of `PublicDeck
 | Field | Mapping |
 |---|---|
 | Product surface | Creator profile plus that creator's public decks; no social/follow behavior |
-| Candidate route | `/creators/:username` |
+| Route | `/creators/:username` |
 | Auth | JWT under current backend |
 | Domain owner | User profile + public Deck content |
-| Endpoint | Profile `USER-03 GET /api/v1/users/username/{username}`; creator-public-decks endpoint missing. |
-| Request / response DTO | Profile `UserResponse`; creator-scoped deck list DTO/query missing. Existing `DECK-03` is public-only but not creator-scoped. |
-| Errors | Profile 404 plus shared JWT; future collection errors unknown. |
-| Loading / error / empty | Profile loading/error; creator-decks loading/error/empty. No canonical state variants. Follow/follower states are explicitly excluded. |
-| Backend status | Profile lookup implemented; required creator-scoped deck collection remains missing (G-10). G-04 and G-05 are resolved. |
-| Candidate frontend phase | Candidate post-MVP deferral as of Phase 0.4B. *(Historical — §0.1/§0.2 has since confirmed Creator Profile as deferred.)* |
-| Blocker / gap | The visual surface cannot be completed with public creator decks. If kept in MVP, it becomes blocked rather than deferred. |
+| Endpoints | Profile: `USER-03 GET /api/v1/users/username/{username}`; public decks: `DECK-07 GET /api/v1/decks/creator/{username}` |
+| Request / response DTO | Canonical username path slug; profile `UserResponse`; creator collection `List<PublicDeckListResponse>` |
+| Errors | Shared JWT errors; `400` for a non-canonical slug; `404` when USER-03 cannot resolve the creator; independent profile/list request errors |
+| Loading / error / empty | Profile and deck-list loading/error states plus an implemented empty public-deck collection state |
+| Backend status | Implemented. USER-03 supplies the authoritative creator profile; DECK-07 returns only that creator's public decks with `cardCount` and current-user `isEnrolled`. |
+| Frontend status | Implemented. The route validates the decoded canonical slug before API calls and public-deck links encode the username path segment. |
+| Excluded scope | Follow/follower counts, ratings, likes, bookmarks and other social behavior |
+| Blocker / gap | None for the accepted Creator Profile contract |
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
 |---|---|---|---|---|
-| Desktop | `creator_profile_llhelper_refined` | See manifest | Shared page/list states. | **deferred** |
-| Mobile | `creator_profile_mobile` | See manifest | Shared page/list states. | **deferred** |
-
-**Missing DTO — minimal required shape, for Phase 0.4C reference only; does not change the `deferred` status** (read-only review of `creator_profile_llhelper_refined`, which shows the creator's `@username` and a "Public Decks" count plus per-deck language pair, card count, and a `Public` badge):
-
-| Field | Status | Note |
-|---|---|---|
-| Creator profile (`username`, name, avatar) | Existing (`UserResponse` via `USER-03`) | No new field needed. |
-| Creator's public deck list (`id`, `title`, `sourceLanguage`, `targetLanguage`) | Missing | No endpoint filters decks by a given owner plus `isPublic=true` (G-10); a future endpoint can reuse the compact public-list fields. |
-| `cardCount` per deck | Aggregate pattern exists; creator-scoped contract missing | `PublicDeckListResponse.cardCount` is available for DECK-03; a future creator-scoped endpoint can reuse the aggregate pattern without selecting full entities. |
-| Follow/follower counts, social behavior | Excluded | Forbidden per `DESIGN.md`; must not be added regardless of the 0.4C MVP decision. |
-
-Minimal required response if this surface enters MVP: existing `UserResponse` + a creator-scoped public list using the compact deck fields and `cardCount`. This sketch does not resolve the `deferred` status. *(Historical — §0.1/§0.2 has since confirmed Creator Profile remains deferred, not entering MVP.)*
+| Desktop | `creator_profile_llhelper_refined` | See manifest | Profile/list loading, error and empty states | **implemented** |
+| Mobile | `creator_profile_mobile` | See manifest | Responsive implementation of the same contract | **implemented** |
 
 ### 5.14 Progress
 
@@ -691,22 +686,22 @@ Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage,
 
 This queue was open as of Phase 0.4B. All seven items are now resolved by §0 — either accepted as a decision or resolved by explicit deferral (item 4 mixes both); each row below points to where.
 
-1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — §0.1/§0.2 (Creator Profile deferred).
+1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — Creator Profile is implemented in Sprint 1.1; see §0.2, §0.3 and §5.13.
 2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Resolved — flow accepted in §0.3/§0.7 and canonical references completed in §0.5.
 3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
-4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and optionally creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8, frontend-derived, no new DTO for Level 1) have accepted semantics. Created uses DECK-06 `List<OwnedDeckListResponse>`, and Discover uses DECK-03 `PublicDeckPageResponse`. The creator-scoped public list remains deferred with Creator Profile (§0.2).
+4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8) have accepted semantics. Created uses DECK-06 `List<OwnedDeckListResponse>`, Discover uses DECK-03 `PublicDeckPageResponse`, and Creator Profile uses USER-03 plus the DECK-07 creator-scoped `List<PublicDeckListResponse>`.
 5. ~~Confirm private-deck/card read protection as a release blocker.~~ Resolved — §0.4 (G-05 is a release/security blocker; not a vertical-implementation blocker).
 6. ~~Decide whether AI generation ships with manual Cards MVP or follows after a truthful partial-failure contract.~~ Resolved — §0.1/§0.2/§0.6: manual Add Card is the Level 1 requirement; single-card AI is a separate optional task after manual smoke; bulk AI remains deferred pending the partial-failure contract.
 7. ~~Order backend → Stitch → frontend work and update roadmap/current sprint before Phase 0.5 runtime implementation.~~ Resolved — §0.6; completed execution is recorded in `docs/roadmap/changelog.md`.
 
 ## 7. Phase 0.4B conclusion (historical, superseded by §0)
 
-> This section is the historical Phase 0.4B result, preserved as-read and not rewritten (see header note). Its counts and evidence below are historical and unchanged. Where it calls for a future decision (e.g. "Phase 0.4C must..."), that decision has since been made in §0 — this section is not the current target.
+> This section preserves the historical Phase 0.4B counts and readiness labels (see header note). Inline current-status sentences identify contracts that were implemented later; §0 and the corresponding §5 entries remain the normative runtime status. Historical calls for a future decision (e.g. "Phase 0.4C must...") have since been fulfilled.
 
 - All **26** canonical references are mapped: 14 desktop and 12 mobile.
 - Using contract-local semantics (§2), the map now identifies **8 ready**, **7 partial**, **9 blocked**, and **2 deferred** references after G-06 resolution.
-- For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. Learning, Created and the accepted bounded Discover collection contracts have since been implemented; Creator Profile deck listing and aggregate Progress remain without complete backend contracts. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
+- For the surfaces reviewed in the historical snapshot, minimal request/response field sketches were recorded (§5.3, §5.4, §5.12–§5.14), explicitly separating existing fields from missing or unresolved ones. The snapshot originally lacked Creator Profile deck listing and aggregate Progress contracts; both are now implemented by DECK-07 and LEARN-07 respectively. No social/ratings/likes/popularity/bookmark/follower/pagination contract was invented.
 - The Add/Edit Card reference (§5.10) is split into six operations; manual add/read/update/delete and single-card AI are independently `Ready`; bulk AI remains `Partial` because of G-09.
 - No existing endpoint, DTO, route, Stitch screen, or runtime implementation was changed.
-- The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-06, G-08, and `CARD-04` are resolved, including the public-only DECK-03, public-deck-only CARD-04, and owner-scoped DECK-06 contracts; the deferred aggregate Progress contract (G-07) remains open.
+- The Phase 0.4B snapshot originally identified Auth/profile orchestration, unfiltered deck/card collections, Creator Profile, and aggregate Progress as its highest-impact blockers. Current status: G-01–G-10 and `CARD-04` are resolved, including public-only DECK-03, public-deck-only CARD-04, owner-scoped DECK-06, creator-scoped public-only DECK-07, and aggregate LEARN-07 contracts.
 - Phase 0.4C must turn the candidate routes/phases, provisional deferral, and the missing-DTO sketches above into accepted product, backend, and execution decisions before Phase 0.5 begins. *(Historical requirement — already fulfilled by §0.)*
