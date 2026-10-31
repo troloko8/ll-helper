@@ -1,16 +1,20 @@
 import { useCallback } from 'react'
+import type { ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { sessionNeedsProfile, type AuthResponseDto } from '@/entities/session'
-import { setToken } from '@/shared/api'
+import { baseApi, setToken } from '@/shared/api'
+
+type RegisterSuccessDispatch = ThunkDispatch<unknown, unknown, UnknownAction>
 
 export function useRegisterSuccess() {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch<RegisterSuccessDispatch>()
     const navigate = useNavigate()
 
     return useCallback(
         (response: AuthResponseDto) => {
             setToken(response.accessToken)
+            dispatch(baseApi.util.resetApiState())
             dispatch(sessionNeedsProfile())
             navigate('/onboarding/profile', { replace: true })
         },

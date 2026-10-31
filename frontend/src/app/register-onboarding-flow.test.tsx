@@ -5,6 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { sessionCleared } from '@/entities/session'
+import { userApi, type UserResponseDto } from '@/entities/user'
 import { clearToken, getToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { appRoutes } from './router/router'
@@ -24,7 +25,7 @@ function renderRegistrationFlow() {
         </Provider>,
     )
 
-    return { router }
+    return { router, store }
 }
 
 async function fillProfile() {
@@ -69,6 +70,19 @@ describe('Register to Complete Profile orchestration', () => {
     })
 
     it('stores the token, completes the profile, and enters learning', async () => {
+        let currentUserRequestCount = 0
+        const createdProfile: UserResponseDto = {
+            id: 42,
+            username: 'jane_doe',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            nativeLanguage: 'en',
+            targetLanguage: 'ja',
+            uiLanguage: 'en',
+            avatarUrl: null,
+            createdAt: '2026-09-06T00:00:00Z',
+            updatedAt: '2026-09-06T00:00:00Z',
+        }
         server.use(
             http.post('http://localhost/api/v1/auth/register', () =>
                 HttpResponse.json({ accessToken: 'register-token' }),
@@ -78,24 +92,17 @@ describe('Register to Complete Profile orchestration', () => {
                     'Bearer register-token',
                 )
 
-                return HttpResponse.json({
-                    id: 42,
-                    username: 'jane_doe',
-                    firstName: 'Jane',
-                    lastName: 'Doe',
-                    nativeLanguage: 'en',
-                    targetLanguage: 'ja',
-                    uiLanguage: 'en',
-                    avatarUrl: null,
-                    createdAt: '2026-09-06T00:00:00Z',
-                    updatedAt: '2026-09-06T00:00:00Z',
-                })
+                return HttpResponse.json(createdProfile)
+            }),
+            http.get('http://localhost/api/v1/users/me', () => {
+                currentUserRequestCount += 1
+                return HttpResponse.json(createdProfile)
             }),
             http.get('http://localhost/api/v1/learning/decks', () =>
                 HttpResponse.json([]),
             ),
         )
-        const { router } = renderRegistrationFlow()
+        const { router, store } = renderRegistrationFlow()
         const user = userEvent.setup()
 
         await user.type(
@@ -121,6 +128,10 @@ describe('Register to Complete Profile orchestration', () => {
         await waitFor(() => {
             expect(router.state.location.pathname).toBe('/learning')
         })
+        expect(currentUserRequestCount).toBe(0)
+        expect(
+            userApi.endpoints.getCurrentUser.select()(store.getState()).data,
+        ).toEqual(createdProfile)
     })
 
     it.each([

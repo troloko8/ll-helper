@@ -8,7 +8,7 @@ import {
     type AuthResponseDto,
 } from '@/entities/session'
 import { userApi } from '@/entities/user'
-import { isApiError, setToken } from '@/shared/api'
+import { baseApi, isApiError, setToken } from '@/shared/api'
 
 type LoginOrchestrationDispatch = ThunkDispatch<unknown, unknown, UnknownAction>
 
@@ -19,6 +19,7 @@ export function useLoginOrchestration() {
     return useCallback(
         async (response: AuthResponseDto) => {
             setToken(response.accessToken)
+            dispatch(baseApi.util.resetApiState())
 
             // TODO: Extract a shared current-user session resolver and reuse it in bootstrapSession.
             const request = dispatch(

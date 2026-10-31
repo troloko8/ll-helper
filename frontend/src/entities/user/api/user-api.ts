@@ -5,6 +5,7 @@ export const userApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         getCurrentUser: builder.query<UserResponseDto, void>({
             query: () => '/users/me',
+            providesTags: ['CurrentUser'],
         }),
         getUserByUsername: builder.query<UserResponseDto, string>({
             query: (username) =>

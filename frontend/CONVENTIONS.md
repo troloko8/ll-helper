@@ -471,7 +471,10 @@ transient bootstrap failure cannot leave the application on an infinite loader.
 
 - `entities/session` owns runtime client session lifecycle state (session status).
 - User/profile data fetched from backend remains RTK Query server state and must not be duplicated into the session Redux slice.
-- Authenticated `AppShell` maintains a `useGetCurrentUserQuery()` subscription for its entire mounted lifetime. This retains the shared profile cache across route changes, including pages that do not consume the profile. Page-level consumers keep the same hook and cache key; no second profile store or prop threading is needed. Login/bootstrap data is reused when cached; otherwise the subscription fetches `/users/me`. Logout/401 still clears the cache through the existing app-level lifecycle. Cache retention does not define freshness; a future revalidation policy is tracked in `docs/roadmap/backlog.md`.
+- Authenticated `AppShell` maintains a `useGetCurrentUserQuery()` subscription for its entire mounted lifetime. This retains the shared profile cache across route changes, including pages that do not consume the profile. Page-level consumers keep the same hook and cache key; no second profile store or prop threading is needed. Login/bootstrap data is reused when cached; otherwise the subscription fetches `/users/me`.
+- `currentUser` has a five-minute maximum cache age while the authenticated shell remains mounted. Returning focus or visibility to the app revalidates only when the last successful response has reached that age; there is no periodic polling. Startup bootstrap and every successful login force a fresh `/users/me` resolution.
+- Login and registration are identity boundaries: after persisting the new token they reset the complete RTK Query cache before resolving or creating the new profile. Logout and shared `401` handling retain the same token/session/cache reset behavior. Successful Complete Profile writes the returned `UserResponse` into `getCurrentUser` before entering `authenticated`, so the prior missing-profile state cannot leak into the shell.
+- `getCurrentUser` provides the `CurrentUser` RTK Query tag. Every future profile mutation must invalidate that tag or replace the cache from its authoritative response; mutations that affect public profile/details or collection projections must additionally invalidate those owning caches.
 - Do not invent additional identity fields unless an actual backend/API contract requires them.
 
 **Ownership rules:**
@@ -589,7 +592,9 @@ app/router (protected routing)
 - `shared/api/` does not perform application-level logout, dispatch session actions, or redirect.
 - 403 / 429 / validation errors are also normalized transport errors at `shared/api/` level; user-facing behavior is owned by the appropriate higher layer.
 - Logout feature (`features/logout/`) performs the same cleanup: `tokenStorage.clearToken()` + dispatch session-cleared + `baseApi.util.resetApiState()`. Cache reset is mandatory so a later login in the same browser session cannot observe the previous user's cached server state.
+- Successful Login and Register also reset RTK Query state after storing the new token. This treats every newly issued authentication identity as a cache boundary even when the browser was not reloaded or stale data survived an abnormal prior flow.
 - Application bootstrap checks persisted-token sessions through `USER-07 GET /users/me`: `200` → `authenticated`; `404` from this endpoint only → `needsProfile`; shared `401` handling clears the token, session, and RTK Query cache → `anonymous`. Without a persisted token, bootstrap resolves directly to `anonymous` without an HTTP request. `UserResponse` remains RTK Query server state and is not copied into the session slice.
+- Successful Complete Profile seeds the canonical RTK Query `getCurrentUser` cache from the `POST /users` response before changing the runtime session to `authenticated`.
 
 ### Future target
 

@@ -105,7 +105,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 - [x] До добавления username constraint проверить существующие данные на
   несовместимые значения и case-insensitive collisions; определить безопасную
   migration/compatibility policy.
-- [ ] Определить и реализовать политику актуальности/инвалидации `currentUser`,
+- [x] Определить и реализовать политику актуальности/инвалидации `currentUser`,
   включая повторный вход, завершение профиля и будущие profile mutations.
 - [ ] После mutations корректно инвалидировать связанные списки, details,
   `currentUser` и progress; не маскировать отсутствие backend-возможности
@@ -126,9 +126,9 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 #### 4.4 Quality gate и CI
 
-- [ ] Вернуть зелёный `npm run format:check`; устранить все восемь известных
+- [x] Вернуть зелёный `npm run format:check`; устранить все восемь известных
   frontend formatting failures.
-- [ ] Вернуть чистый `git diff --check`; устранить trailing whitespace во всех
+- [x] Вернуть чистый `git diff --check`; устранить trailing whitespace во всех
   известных frontend/backend-файлах.
 - [ ] Добавить полноценный GitHub CI:
   - frontend install, test, lint, format check и production build с bundle

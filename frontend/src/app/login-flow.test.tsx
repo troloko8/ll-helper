@@ -5,7 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { sessionCleared } from '@/entities/session'
-import type { UserResponseDto } from '@/entities/user'
+import { userApi, type UserResponseDto } from '@/entities/user'
 import { clearToken, getToken } from '@/shared/api'
 import { server } from '@/shared/lib/test'
 import { appRoutes } from './router/router'
@@ -38,7 +38,7 @@ function renderLoginFlow() {
         </Provider>,
     )
 
-    return { router }
+    return { router, store }
 }
 
 async function submitLogin() {
@@ -82,6 +82,31 @@ describe('Login orchestration', () => {
             expect(router.state.location.pathname).toBe('/learning')
         })
         expect(getToken()).toBe('login-token')
+    })
+
+    it('drops a previous identity cache before resolving the signed-in user', async () => {
+        server.use(
+            http.get('http://localhost/api/v1/users/me', () =>
+                HttpResponse.json(currentUser),
+            ),
+        )
+        const { router, store } = renderLoginFlow()
+        await store.dispatch(
+            userApi.util.upsertQueryData('getCurrentUser', undefined, {
+                ...currentUser,
+                id: 7,
+                username: 'previous-user',
+            }),
+        )
+
+        await submitLogin()
+
+        await waitFor(() => {
+            expect(router.state.location.pathname).toBe('/learning')
+        })
+        expect(
+            userApi.endpoints.getCurrentUser.select()(store.getState()).data,
+        ).toEqual(currentUser)
     })
 
     it('keeps the token and opens profile onboarding when the profile is missing', async () => {

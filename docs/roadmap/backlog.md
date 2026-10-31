@@ -6,6 +6,54 @@
 
 ## Будущие этапы и отложенные задачи
 
+### Next sprint kickoff — migrate task management to GitHub Projects
+
+> **Порядок:** первая задача следующего спринта после закрытия Sprint 1.1 и до
+> выбора или реализации остального scope этого спринта. Миграция меняет только
+> управление работой и agent routing; она не добавляет продуктовый scope.
+>
+> **Контекст решения:** план согласован в Codex-чате 2026-10-30. При переносе
+> этой задачи в `current-sprint.md` приложить immutable share link исходного
+> чата, если sharing доступен; отсутствие ссылки не заменять пересказом как
+> новым нормативным владельцем.
+
+- [ ] Подготовить и согласовать migration manifest для
+  `current-sprint.md`, `backlog.md`, `roadmap.md` и `changelog.md`: каждому
+  пункту назначить одно действие `migrate`, `merge`, `keep normative`,
+  `historical`, `drop obsolete` или `needs review`; не создавать GitHub Issues
+  до проверки manifest и не импортировать дубликаты вслепую.
+- [ ] Создать личный GitHub Project `LL Helper Development`, связать его с
+  `troloko8/ll-helper`, определить минимальные поля и views для current sprint,
+  backlog, blockers, decisions и completed work, а Sprint 1.1 представить
+  milestone, не вводя фиктивные даты или iterations без реального timebox.
+- [ ] Настроить минимально необходимый доступ Codex: официальный GitHub MCP с
+  явно включёнными `issues`, `labels`, `projects`, `repos` и `pull_requests`
+  toolsets и/или GitHub CLI со scope `project`. Секреты не хранить в
+  репозитории; write/delete operations оставить подтверждаемыми.
+- [ ] Провести пилот на 5–10 открытых задачах Sprint 1.1, проверить названия,
+  acceptance criteria, статусы, поля, зависимости, связь Issue → PR → CI и
+  доступ Codex; скорректировать модель до массовой миграции.
+- [ ] После успешного пилота перенести актуальные открытые задачи текущего
+  спринта и проверенный backlog в Issues/Project. Старую историю не превращать
+  массово в созданные задним числом Issues: сохранить `changelog.md` и при
+  необходимости создать один migration ledger для ранее выполненной части
+  Sprint 1.1.
+- [ ] Выполнить cutover владельцев: оставить `current-sprint.md` коротким
+  индексом текущего спринта, цели, scope boundary и ссылок на Project/Milestone;
+  сохранить в `roadmap.md` стабильные уровни и Done Criteria; удалить из
+  Markdown только подтверждённые дубликаты task status после сверки GitHub.
+- [ ] До семантических изменений agent routing применить
+  `.agents/skills/ai-infrastructure-review/SKILL.md`, отдельно подтвердить
+  изменение владельцев и затем синхронизировать `AGENTS.md`,
+  `AGENTS.override.md`, `.agents/guidance/documentation-sync.md`, связанные
+  skills/guidance и `scripts/check-agent-context.sh`. `.windsurf/**` не менять
+  без явного запроса.
+- [ ] Завершить миграцию только после проверки, что каждая актуальная открытая
+  задача имеет ровно одного владельца, Markdown и GitHub не дублируют статус,
+  Project доступен Codex либо имеет явный fallback, agent-context validator
+  проходит, а приложение, backend, frontend, API и database behavior не
+  изменились.
+
 ### Future release gate — First Public Deployment (optional, after Full Frontend)
 
 > **Цель:** после завершения полного frontend и явного решения о публичном
@@ -140,8 +188,6 @@
 
 ### Frontend (Level 1)
 
-- [ ] Определить политику актуальности кеша `currentUser`: максимальный возраст данных и условия повторного запроса (например, возврат в приложение), обновление/инвалидация после изменения профиля. `AppShell` удерживает подписку на время авторизованной части приложения; это не TTL свежести данных и не срок действия JWT. Реализовать отдельно, без периодических запросов в текущей задаче.
-
 > Corrected Phase 0.4C — stack/architecture below previously described a stale pre-implementation plan (TanStack Query/Axios, no Redux) that no longer matches `frontend/CONVENTIONS.md`. This is a point fix of this block only, not a full backlog review.
 
 Стек: React + TypeScript + React Router 7 + RTK Query + Redux Toolkit (session state) — Axios удалён, см. `frontend/CONVENTIONS.md`.
@@ -169,6 +215,7 @@ Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRA
 
 ### Database (Level 1)
 
+- [ ] **Фиксировать успешный вход в `auth_users.last_login_at` с DB-owned timestamp.** Сейчас колонка nullable и нигде не обновляется, поэтому у всех пользователей остаётся `NULL`. После успешной проверки пароля `AuthServiceImpl.login()` должен выполнить отдельную DB-команду записи события входа, а значение времени должна вычислять PostgreSQL через `CURRENT_TIMESTAMP` (не `Instant.now()` в Java и не обычный default/row trigger, который не способен определить факт успешной аутентификации). Предпочтительно инкапсулировать обновление в специализированном repository query или DB function и не разрешать менять поле через обычный JPA `save`; `last_login_at` привести к `TIMESTAMPTZ`/`Instant`. Неуспешный логин и обычная проверка JWT не должны менять поле. Отдельно зафиксировать, считается ли выдача токена при регистрации первым входом. Покрыть тестами успешный вход, неверный пароль и выбранную семантику регистрации.
 - **Migration rollback tests** — документировать какие миграции rollback-safe (V2–V10: проверить `liquibase:rollback`, если невозможен — комментарий в migration)
 
 ### AI Workflow (Level 1)

@@ -54,6 +54,7 @@ export const baseApi = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithErrorNormalization,
     tagTypes: [
+        'CurrentUser',
         'Deck',
         'Card',
         'LearningDeck',

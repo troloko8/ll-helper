@@ -6,11 +6,22 @@ import {
     createMemoryRouter,
     RouterProvider,
 } from 'react-router-dom'
-import { act, render, screen, within } from '@testing-library/react'
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useGetCurrentUserQuery, userApi } from '@/entities/user'
+import {
+    CURRENT_USER_STALE_AFTER_MS,
+    useGetCurrentUserQuery,
+    userApi,
+} from '@/entities/user'
 import { createApiTestStore, server } from '@/shared/lib/test'
 import { AppShell } from './app-shell'
 
@@ -40,7 +51,10 @@ describe('AppShell', () => {
             ),
         )
     })
-    afterEach(() => vi.useRealTimers())
+    afterEach(() => {
+        vi.restoreAllMocks()
+        vi.useRealTimers()
+    })
 
     it('retains the bootstrap profile while routes without profile consumers are open', async () => {
         let requests = 0
@@ -89,6 +103,154 @@ describe('AppShell', () => {
         expect(requests).toBe(1)
         view.unmount()
     })
+
+    it('revalidates a stale profile when the user returns to the app', async () => {
+        let requests = 0
+        server.use(
+            http.get('http://localhost/api/v1/users/me', () => {
+                requests += 1
+                return HttpResponse.json(currentUser)
+            }),
+        )
+        const store = createApiTestStore()
+        const router = createMemoryRouter(
+            [
+                {
+                    element: <AppShell />,
+                    children: [
+                        {
+                            path: '/learning',
+                            element: <h1>Learning content</h1>,
+                        },
+                    ],
+                },
+            ],
+            { initialEntries: ['/learning'] },
+        )
+        render(
+            <Provider store={store}>
+                <RouterProvider router={router} />
+            </Provider>,
+        )
+        await waitFor(() => expect(requests).toBe(1))
+        const fulfilledTimeStamp = userApi.endpoints.getCurrentUser.select()(
+            store.getState(),
+        ).fulfilledTimeStamp
+        expect(fulfilledTimeStamp).toBeDefined()
+        vi.spyOn(Date, 'now').mockReturnValue(
+            fulfilledTimeStamp! + CURRENT_USER_STALE_AFTER_MS,
+        )
+
+        fireEvent.focus(window)
+
+        await waitFor(() => expect(requests).toBe(2))
+    })
+
+    it('does not revalidate a fresh profile when the user returns to the app', async () => {
+        let requests = 0
+        server.use(
+            http.get('http://localhost/api/v1/users/me', () => {
+                requests += 1
+                return HttpResponse.json(currentUser)
+            }),
+        )
+        const store = createApiTestStore()
+        const router = createMemoryRouter(
+            [
+                {
+                    element: <AppShell />,
+                    children: [
+                        {
+                            path: '/learning',
+                            element: <h1>Learning content</h1>,
+                        },
+                    ],
+                },
+            ],
+            { initialEntries: ['/learning'] },
+        )
+        render(
+            <Provider store={store}>
+                <RouterProvider router={router} />
+            </Provider>,
+        )
+        await waitFor(() => expect(requests).toBe(1))
+        const fulfilledTimeStamp = userApi.endpoints.getCurrentUser.select()(
+            store.getState(),
+        ).fulfilledTimeStamp
+        expect(fulfilledTimeStamp).toBeDefined()
+        vi.spyOn(Date, 'now').mockReturnValue(
+            fulfilledTimeStamp! + CURRENT_USER_STALE_AFTER_MS - 1,
+        )
+
+        await act(async () => {
+            fireEvent(document, new Event('visibilitychange'))
+            fireEvent.focus(window)
+            await Promise.resolve()
+        })
+
+        expect(requests).toBe(1)
+    })
+
+    it('deduplicates visibility and focus revalidation for a stale profile', async () => {
+        let requests = 0
+        let finishRevalidation = () => {}
+        const revalidationPending = new Promise<void>((resolve) => {
+            finishRevalidation = resolve
+        })
+        server.use(
+            http.get('http://localhost/api/v1/users/me', async () => {
+                requests += 1
+                if (requests === 2) {
+                    await revalidationPending
+                }
+                return HttpResponse.json(currentUser)
+            }),
+        )
+        const store = createApiTestStore()
+        const router = createMemoryRouter(
+            [
+                {
+                    element: <AppShell />,
+                    children: [
+                        {
+                            path: '/learning',
+                            element: <h1>Learning content</h1>,
+                        },
+                    ],
+                },
+            ],
+            { initialEntries: ['/learning'] },
+        )
+        render(
+            <Provider store={store}>
+                <RouterProvider router={router} />
+            </Provider>,
+        )
+        await waitFor(() => expect(requests).toBe(1))
+        const fulfilledTimeStamp = userApi.endpoints.getCurrentUser.select()(
+            store.getState(),
+        ).fulfilledTimeStamp
+        expect(fulfilledTimeStamp).toBeDefined()
+        vi.spyOn(Date, 'now').mockReturnValue(
+            fulfilledTimeStamp! + CURRENT_USER_STALE_AFTER_MS,
+        )
+
+        fireEvent(document, new Event('visibilitychange'))
+        fireEvent.focus(window)
+
+        await waitFor(() => expect(requests).toBe(2))
+        expect(requests).toBe(2)
+
+        finishRevalidation()
+        await waitFor(() =>
+            expect(
+                userApi.endpoints.getCurrentUser.select()(store.getState())
+                    .status,
+            ).toBe('fulfilled'),
+        )
+    })
+
     it('renders the working Learning, Created, Discover, and Progress navigation entries', () => {
         render(
             <Provider store={createApiTestStore()}>
