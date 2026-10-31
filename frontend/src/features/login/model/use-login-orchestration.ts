@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import {
     sessionAuthenticated,
     sessionNeedsProfile,
+    userScopedStateReset,
     type AuthResponseDto,
 } from '@/entities/session'
 import { userApi } from '@/entities/user'
@@ -19,6 +20,7 @@ export function useLoginOrchestration() {
     return useCallback(
         async (response: AuthResponseDto) => {
             setToken(response.accessToken)
+            dispatch(userScopedStateReset())
             dispatch(baseApi.util.resetApiState())
 
             // TODO: Extract a shared current-user session resolver and reuse it in bootstrapSession.

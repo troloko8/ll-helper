@@ -5,6 +5,7 @@ export {
     sessionAuthenticated,
     sessionNeedsProfile,
     sessionCleared,
+    userScopedStateReset,
 } from './model/session-slice'
 export type { SessionStatus, SessionState } from './model/session-slice'
 export {

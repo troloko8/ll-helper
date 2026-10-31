@@ -157,8 +157,8 @@ distinct from invalid authentication and prevents an infinite initial loader.
 
 The backend contract and frontend session lifecycle are implemented; completed live verification is recorded in `docs/roadmap/changelog.md`. An `AuthResponse` token alone is not sufficient to mark the session `authenticated`:
 
-- Register stores the token, resets any prior identity's RTK Query cache, enters `needsProfile`, completes `POST /users`, seeds `currentUser` from the returned `UserResponse`, then enters `authenticated` and navigates to `/learning`.
-- Login stores the token, resets any prior identity's RTK Query cache, and force-resolves `GET /users/me`: `200` navigates to `/learning`, `404` enters `needsProfile` and navigates to `/onboarding/profile`, and `401` clears the session and returns to `/login`.
+- Register stores the token, resets any prior identity's client workflow state and RTK Query cache, enters `needsProfile`, completes `POST /users`, seeds `currentUser` from the returned `UserResponse`, then enters `authenticated` and navigates to `/learning`.
+- Login stores the token, resets any prior identity's client workflow state and RTK Query cache, and force-resolves `GET /users/me`: `200` navigates to `/learning`, `404` enters `needsProfile` and navigates to `/onboarding/profile`, and `401` clears the session and returns to `/login`.
 - A validation or username-conflict response from Complete Profile keeps the valid token and `needsProfile` session so the user can correct and retry the form.
 - Only a `404` from `GET /users/me` has `needsProfile` semantics; other 404 responses remain ordinary feature/resource errors.
 - Level 1 logout is local: clear token, session state, and RTK Query cache, then let routing return the user to `/login`; backend logout remains deferred.

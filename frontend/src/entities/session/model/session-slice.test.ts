@@ -6,6 +6,7 @@ import {
     sessionInitializing,
     sessionNeedsProfile,
     sessionReducer,
+    userScopedStateReset,
 } from './session-slice'
 import {
     selectIsAuthenticated,
@@ -45,6 +46,14 @@ describe('sessionReducer', () => {
     it('transitions to anonymous on sessionCleared', () => {
         const state = sessionReducer(undefined, sessionCleared())
         expect(state.status).toBe('anonymous')
+    })
+
+    it('keeps the session status when user-scoped state is reset', () => {
+        const state = sessionReducer(
+            { status: 'authenticated' },
+            userScopedStateReset(),
+        )
+        expect(state.status).toBe('authenticated')
     })
 })
 

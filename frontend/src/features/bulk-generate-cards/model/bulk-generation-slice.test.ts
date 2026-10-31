@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sessionCleared } from '@/entities/session'
+import { sessionCleared, userScopedStateReset } from '@/entities/session'
 import type { BulkCardGenerationResponseDto } from './types'
 import {
     bulkGenerationDiscarded,
@@ -147,5 +147,32 @@ describe('bulkGenerationSlice', () => {
         expect(bulkGenerationReducer(state, sessionCleared()).byDeckId).toEqual(
             {},
         )
+    })
+
+    it('clears every deck workflow when the authenticated identity changes', () => {
+        let state = bulkGenerationReducer(undefined, { type: 'initial' })
+
+        state = bulkGenerationReducer(
+            state,
+            bulkGenerationRequested({
+                deckId: 12,
+                titles: ['Previous identity draft'],
+                requestId: 'previous-identity-request',
+            }),
+        )
+
+        state = bulkGenerationReducer(state, userScopedStateReset())
+
+        expect(state.byDeckId).toEqual({})
+        expect(
+            bulkGenerationReducer(
+                state,
+                bulkGenerationSucceeded({
+                    deckId: 12,
+                    requestId: 'previous-identity-request',
+                    result: secondResult,
+                }),
+            ).byDeckId,
+        ).toEqual({})
     })
 })

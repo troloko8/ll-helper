@@ -1,4 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createAction, createSlice } from '@reduxjs/toolkit'
+
+export const userScopedStateReset = createAction('session/userScopedStateReset')
 
 export type SessionStatus =
     | 'initializing'

@@ -3,7 +3,7 @@ import {
     type PayloadAction,
     type SerializedError,
 } from '@reduxjs/toolkit'
-import { sessionCleared } from '@/entities/session'
+import { sessionCleared, userScopedStateReset } from '@/entities/session'
 import type { ApiError } from '@/shared/api'
 import type { BulkCardGenerationResponseDto } from './types'
 
@@ -145,6 +145,7 @@ const bulkGenerationSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(sessionCleared, () => initialState)
+        builder.addCase(userScopedStateReset, () => initialState)
     },
 })
 
