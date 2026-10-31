@@ -14,23 +14,32 @@ export const editDeckApi = baseApi.injectEndpoints({
                 method: 'PUT',
                 body,
             }),
-            invalidatesTags: (_result, _error, { deckId }) => [
-                { type: 'Deck', id: deckId },
-                { type: 'Deck', id: 'LIST' },
-                { type: 'LearningProgress', id: 'LIST' },
-            ],
+            invalidatesTags: (_result, error, { deckId }) =>
+                error
+                    ? []
+                    : [
+                          { type: 'Deck', id: deckId },
+                          { type: 'Deck', id: 'LIST' },
+                          { type: 'LearningDeck', id: deckId },
+                          { type: 'LearningDeck', id: 'LIST' },
+                          { type: 'LearningProgress', id: 'LIST' },
+                          { type: 'StudySession', id: deckId },
+                      ],
         }),
         deleteDeck: builder.mutation<void, number>({
             query: (deckId) => ({ url: `/decks/${deckId}`, method: 'DELETE' }),
-            invalidatesTags: (_result, _error, deckId) => [
-                { type: 'Deck', id: deckId },
-                { type: 'Deck', id: 'LIST' },
-                { type: 'LearningDeck', id: deckId },
-                { type: 'LearningDeck', id: 'LIST' },
-                { type: 'LearningProgress', id: 'LIST' },
-                { type: 'LearningCards', id: deckId },
-                { type: 'StudySession', id: deckId },
-            ],
+            invalidatesTags: (_result, error, deckId) =>
+                error
+                    ? []
+                    : [
+                          { type: 'Deck', id: deckId },
+                          { type: 'Deck', id: 'LIST' },
+                          { type: 'LearningDeck', id: deckId },
+                          { type: 'LearningDeck', id: 'LIST' },
+                          { type: 'LearningProgress', id: 'LIST' },
+                          { type: 'LearningCards', id: deckId },
+                          { type: 'StudySession', id: deckId },
+                      ],
         }),
     }),
 })

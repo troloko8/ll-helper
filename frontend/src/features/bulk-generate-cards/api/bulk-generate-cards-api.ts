@@ -15,17 +15,21 @@ export const bulkGenerateCardsApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: (result, _error, { deckId }) => [
-                { type: 'Deck', id: deckId },
-                ...(result?.created.map((card) => ({
-                    type: 'Card' as const,
-                    id: card.id,
-                })) ?? [{ type: 'Card' as const, id: 'LIST' }]),
-                { type: 'LearningDeck', id: deckId },
-                { type: 'LearningProgress', id: 'LIST' },
-                { type: 'LearningCards', id: deckId },
-                { type: 'StudySession', id: deckId },
-            ],
+            invalidatesTags: (result, error, { deckId }) =>
+                error || !result?.created.length
+                    ? []
+                    : [
+                          { type: 'Deck', id: deckId },
+                          ...result.created.map((card) => ({
+                              type: 'Card' as const,
+                              id: card.id,
+                          })),
+                          { type: 'LearningDeck', id: deckId },
+                          { type: 'LearningDeck', id: 'LIST' },
+                          { type: 'LearningProgress', id: 'LIST' },
+                          { type: 'LearningCards', id: deckId },
+                          { type: 'StudySession', id: deckId },
+                      ],
         }),
     }),
 })

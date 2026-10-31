@@ -193,7 +193,15 @@ The user requested that the complete Level 1 path be executable through visible 
 - DECK-03 remains server-filtered to public decks; DECK-06 remains scoped to the current owner's public/private decks.
 - `OwnedDeckListResponse` supplies Created with `id`, title, language pair, visibility and backend `cardCount` (content cards, zero for empty decks). Owner is implied by the authenticated endpoint and is omitted.
 - `PublicDeckListResponse` supplies Discover with `id`, title, language pair, full `UserResponse owner`, `cardCount` and `isEnrolled` for the current user's ACTIVE enrollment, independent of deck ownership. Only a future compact replacement for the owner representation is deferred.
-- Create/add-card mutations must refresh affected list counts and detail caches; enrollment refreshes the public collection's enrollment state and Learning list. Do not copy server collection data into ordinary Redux slices.
+- Successful create/update/delete/review/enroll mutations refresh every affected
+  list, detail, `currentUser`, Learning, aggregate Progress, and Study projection;
+  failed mutations do not invalidate otherwise valid cache entries. Card
+  creation/removal refreshes Learning totals and progress as well as content
+  details, while deck metadata changes refresh Learning and Study titles.
+  Complete Profile writes its authoritative response directly to
+  `currentUser`. Do not copy server collection or derived progress data into
+  ordinary Redux/component state; the accepted runtime-only bulk-generation
+  workflow snapshot is not canonical server state.
 
 **Stitch evidence and supported adaptation:**
 - Canonical project metadata and Created/Discover desktop/mobile screens were retrieved via Stitch MCP; both HTML and screenshots were inspected on 2026-09-20. Exact resource IDs remain owned by `docs/frontend/design-reference/MANIFEST.md`.

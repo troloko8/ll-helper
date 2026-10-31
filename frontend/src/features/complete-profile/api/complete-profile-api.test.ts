@@ -1,5 +1,7 @@
 import { HttpResponse, http } from 'msw'
+import { waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { userApi } from '@/entities/user'
 import { clearToken, setToken } from '@/shared/api'
 import { createApiTestStore, server } from '@/shared/lib/test'
 import { completeProfileApi } from './complete-profile-api'
@@ -43,5 +45,11 @@ describe('completeProfileApi', () => {
             .unwrap()
 
         expect(result).toMatchObject({ id: 42, username: 'learner' })
+        await waitFor(() => {
+            expect(
+                userApi.endpoints.getCurrentUser.select()(store.getState())
+                    .data,
+            ).toMatchObject({ id: 42, username: 'learner' })
+        })
     })
 })

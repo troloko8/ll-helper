@@ -107,7 +107,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   migration/compatibility policy.
 - [x] Определить и реализовать политику актуальности/инвалидации `currentUser`,
   включая повторный вход, завершение профиля и будущие profile mutations.
-- [ ] После mutations корректно инвалидировать связанные списки, details,
+- [x] После mutations корректно инвалидировать связанные списки, details,
   `currentUser` и progress; не маскировать отсутствие backend-возможности
   локальным mock state.
 

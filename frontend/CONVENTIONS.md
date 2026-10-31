@@ -499,6 +499,13 @@ transient bootstrap failure cannot leave the application on an infinite loader.
 - **Single `createApi` base:** Located in `shared/api/` with `fetchBaseQuery` configured for backend base URL.
 - **Endpoint injection:** Domain endpoints inject into the base API from their respective entity/feature.
 - **Implemented endpoint injections:** feature slices own auth/profile/create/add/enroll/review plus `DECK-04/05` and `CARD-05/06`; `entities/card` owns `CARD-03`; `entities/deck` owns `DECK-02`, the infinite-query `DECK-03`, `DECK-06`, and `DECK-07`; `entities/user` owns `USER-03` and `USER-07`; `entities/learning` owns `LEARN-02/05/06`. Response DTOs remain RTK Query server data and are not copied into ordinary Redux slices except for the narrowly scoped synchronous-mutation workflow snapshot documented under State Ownership.
+- **Mutation cache policy:** successful domain mutations invalidate every affected
+  active projection: entity details, containing collections, Learning deck/list,
+  aggregate Progress, and Study where the changed content or deck metadata can
+  appear. Failed mutations return no invalidation tags. Derived learning state
+  remains server-authoritative and is refetched rather than reproduced in local
+  component or Redux state. Complete Profile is the identity exception: its
+  authoritative `UserResponse` directly replaces `getCurrentUser` cache data.
 - **Base URL:** `VITE_API_URL` environment variable, must align with backend `/api/v1`.
 - **Auth headers:** Centralized via `prepareHeaders` in `fetchBaseQuery` — reads token through a business-agnostic token-storage adapter in `shared/api/`.
 - **Error handling:**

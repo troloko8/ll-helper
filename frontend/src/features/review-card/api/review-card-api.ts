@@ -10,11 +10,14 @@ export const reviewCardApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body: { userAnswer },
             }),
-            invalidatesTags: (_result, _error, { deckId }) => [
-                { type: 'LearningCards', id: deckId },
-                { type: 'LearningDeck', id: 'LIST' },
-                { type: 'LearningProgress', id: 'LIST' },
-            ],
+            invalidatesTags: (_result, error, { deckId }) =>
+                error
+                    ? []
+                    : [
+                          { type: 'LearningCards', id: deckId },
+                          { type: 'LearningDeck', id: 'LIST' },
+                          { type: 'LearningProgress', id: 'LIST' },
+                      ],
         }),
     }),
 })

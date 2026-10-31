@@ -11,7 +11,6 @@ export const completeProfileApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body: profile,
             }),
-            invalidatesTags: ['CurrentUser'],
             async onQueryStarted(_profile, { dispatch, queryFulfilled }) {
                 let createdUser: UserResponseDto
 

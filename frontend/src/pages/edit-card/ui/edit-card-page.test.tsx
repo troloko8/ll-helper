@@ -11,6 +11,8 @@ import {
 import { useGetDeckByIdQuery } from '@/entities/deck'
 import {
     useGetLearningDeckQuery,
+    useGetLearningDecksQuery,
+    useGetLearningProgressQuery,
     useGetStudySessionQuery,
 } from '@/entities/learning'
 import type { UserResponseDto } from '@/entities/user'
@@ -49,7 +51,9 @@ function CardCacheProbe() {
 
 function CardDeletionCacheProbe() {
     useGetDeckByIdQuery(12)
+    useGetLearningDecksQuery()
     useGetLearningDeckQuery(12)
+    useGetLearningProgressQuery()
     useGetStudySessionQuery(12)
     return null
 }
@@ -193,7 +197,9 @@ describe('EditCardPage', () => {
     it('invalidates deck and learning caches after deletion', async () => {
         const requests = {
             deck: 0,
+            learningList: 0,
             learningDeck: 0,
+            progress: 0,
             study: 0,
         }
         server.use(
@@ -226,6 +232,14 @@ describe('EditCardPage', () => {
                     cards: [],
                 })
             }),
+            http.get('http://localhost/api/v1/learning/decks', () => {
+                requests.learningList += 1
+                return HttpResponse.json([])
+            }),
+            http.get('http://localhost/api/v1/learning/progress', () => {
+                requests.progress += 1
+                return HttpResponse.json([])
+            }),
             http.get('http://localhost/api/v1/decks/12/study', () => {
                 requests.study += 1
                 return HttpResponse.json({
@@ -248,7 +262,9 @@ describe('EditCardPage', () => {
         await waitFor(() => {
             expect(requests).toEqual({
                 deck: 1,
+                learningList: 1,
                 learningDeck: 1,
+                progress: 1,
                 study: 1,
             })
         })
@@ -263,7 +279,9 @@ describe('EditCardPage', () => {
         await screen.findByRole('heading', { name: 'Manage deck destination' })
         await waitFor(() => {
             expect(requests.deck).toBeGreaterThanOrEqual(2)
+            expect(requests.learningList).toBeGreaterThanOrEqual(2)
             expect(requests.learningDeck).toBeGreaterThanOrEqual(2)
+            expect(requests.progress).toBeGreaterThanOrEqual(2)
             expect(requests.study).toBeGreaterThanOrEqual(2)
         })
     })

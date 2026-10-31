@@ -54,7 +54,10 @@ function DeckCacheProbe() {
 
 function DeckUpdateCacheProbe() {
     useGetDeckByIdQuery(12)
+    useGetLearningDecksQuery()
+    useGetLearningDeckQuery(12)
     useGetLearningProgressQuery()
+    useGetStudySessionQuery(12)
     return null
 }
 
@@ -473,7 +476,10 @@ describe('EditDeckPage', () => {
 
     it('invalidates and refreshes an active deck cache after saving', async () => {
         let deckRequests = 0
+        let learningListRequests = 0
+        let learningDeckRequests = 0
         let progressRequests = 0
+        let studyRequests = 0
         server.use(
             http.get('http://localhost/api/v1/decks/12', () => {
                 deckRequests += 1
@@ -486,6 +492,31 @@ describe('EditDeckPage', () => {
                 progressRequests += 1
                 return HttpResponse.json([])
             }),
+            http.get('http://localhost/api/v1/learning/decks', () => {
+                learningListRequests += 1
+                return HttpResponse.json([])
+            }),
+            http.get('http://localhost/api/v1/learning/decks/12', () => {
+                learningDeckRequests += 1
+                return HttpResponse.json({
+                    deckId: 12,
+                    title: 'Spanish basics',
+                    sourceLanguage: 'ES',
+                    targetLanguage: 'EN',
+                    enrolledAt: '2026-09-01T10:00:00Z',
+                    lastStudiedAt: null,
+                    progress: { masteredCount: 0, totalCount: 0 },
+                    cards: [],
+                })
+            }),
+            http.get('http://localhost/api/v1/decks/12/study', () => {
+                studyRequests += 1
+                return HttpResponse.json({
+                    deckId: 12,
+                    deckTitle: 'Spanish basics',
+                    cards: [],
+                })
+            }),
         )
         const user = userEvent.setup()
         renderPage('/decks/12/edit', { keepUpdateCachesSubscribed: true })
@@ -497,6 +528,13 @@ describe('EditDeckPage', () => {
             name: 'Manage deck destination',
         })
         await waitFor(() => expect(deckRequests).toBeGreaterThanOrEqual(2))
+        await waitFor(() =>
+            expect(learningListRequests).toBeGreaterThanOrEqual(2),
+        )
+        await waitFor(() =>
+            expect(learningDeckRequests).toBeGreaterThanOrEqual(2),
+        )
         await waitFor(() => expect(progressRequests).toBeGreaterThanOrEqual(2))
+        await waitFor(() => expect(studyRequests).toBeGreaterThanOrEqual(2))
     })
 })
