@@ -163,4 +163,4 @@ credentials и tokens:
 
 Этот runbook считается проверенным только после выполнения на выбранной
 production-like платформе. До этого соответствующие пункты остаются в future
-release gate backlog и не относятся к Sprint 1.1.
+release gate backlog и не относятся к Sprint 2.1.

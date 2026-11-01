@@ -49,6 +49,8 @@ public interface UserDeckProgressRepository extends JpaRepository<UserDeckProgre
 
     boolean existsByUserIdAndDeckId(Long userId, Long deckId);
 
+    boolean existsByDeckId(Long deckId);
+
     @Query(value = """
         SELECT
             udp.deck_id AS "deckId",
@@ -57,15 +59,19 @@ public interface UserDeckProgressRepository extends JpaRepository<UserDeckProgre
             d.target_language AS "targetLanguage",
             udp.enrolled_at AS "enrolledAt",
             udp.last_studied_at AS "lastStudiedAt",
-            COUNT(*) FILTER (WHERE ucp.status = 'MASTERED') AS "masteredCount",
-            COUNT(ucp.user_deck_progress_id) AS "totalCount"
+            COUNT(c.id) FILTER (WHERE ucp.status = 'MASTERED') AS "masteredCount",
+            COUNT(c.id) AS "totalCount"
         FROM user_deck_progress udp
         JOIN decks d
             ON d.id = udp.deck_id
         LEFT JOIN user_card_progress ucp
             ON ucp.user_deck_progress_id = udp.id
+        LEFT JOIN cards c
+            ON c.id = ucp.card_id
+            AND c.deleted_at IS NULL
         WHERE udp.user_id = :userId
             AND udp.status = 'ACTIVE'
+            AND d.deleted_at IS NULL
         GROUP BY udp.id, d.id
         ORDER BY
             udp.last_studied_at DESC NULLS LAST,
@@ -83,15 +89,20 @@ public interface UserDeckProgressRepository extends JpaRepository<UserDeckProgre
             d.title AS "title",
             d.source_language AS "sourceLanguage",
             d.target_language AS "targetLanguage",
-            COUNT(ucp.id) FILTER (WHERE ucp.status = 'NEW') AS "newCount",
-            COUNT(ucp.id) FILTER (WHERE ucp.status = 'LEARNING') AS "learningCount",
-            COUNT(ucp.id) FILTER (WHERE ucp.status = 'REVIEWING') AS "reviewingCount",
-            COUNT(ucp.id) FILTER (WHERE ucp.status = 'MASTERED') AS "masteredCount",
-            COUNT(ucp.id) AS "totalCards"
+            COUNT(c.id) FILTER (WHERE ucp.status = 'NEW') AS "newCount",
+            COUNT(c.id) FILTER (WHERE ucp.status = 'LEARNING') AS "learningCount",
+            COUNT(c.id) FILTER (WHERE ucp.status = 'REVIEWING') AS "reviewingCount",
+            COUNT(c.id) FILTER (WHERE ucp.status = 'MASTERED') AS "masteredCount",
+            COUNT(c.id) AS "totalCards"
         FROM user_deck_progress udp
         JOIN decks d ON d.id = udp.deck_id
         LEFT JOIN user_card_progress ucp ON ucp.user_deck_progress_id = udp.id
-        WHERE udp.user_id = :userId AND udp.status = 'ACTIVE'
+        LEFT JOIN cards c
+            ON c.id = ucp.card_id
+            AND c.deleted_at IS NULL
+        WHERE udp.user_id = :userId
+            AND udp.status = 'ACTIVE'
+            AND d.deleted_at IS NULL
         GROUP BY udp.id, d.id
         ORDER BY udp.enrolled_at DESC, udp.id DESC
         """, nativeQuery = true)

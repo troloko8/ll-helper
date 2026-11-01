@@ -1238,7 +1238,8 @@
                 "cards",
                 "{{cardId}}"
               ]
-            }
+            },
+            "description": "Owner delete. Returns 204 in both lifecycle branches: hard delete when no UserCardProgress exists, otherwise application-managed soft delete that preserves learner progress. Deleted content is absent from active APIs; Level 1 has no restore endpoint."
           },
           "response": [
             {
@@ -1776,7 +1777,8 @@
                 "decks",
                 "{{deckId}}"
               ]
-            }
+            },
+            "description": "Owner delete. Returns 204 in both lifecycle branches: hard delete only when neither UserDeckProgress nor UserCardProgress through any Deck Card exists; otherwise application-managed soft delete preserves Cards, enrollments, and progress unchanged. Deleted content is absent from active APIs; Level 1 has no restore endpoint."
           },
           "response": []
         },

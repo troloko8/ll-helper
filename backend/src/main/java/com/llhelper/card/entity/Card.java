@@ -53,6 +53,9 @@ public class Card {
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private Instant updatedAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @Column(name = "deck_id", insertable = false, updatable = false)
     private Long deckId;
 

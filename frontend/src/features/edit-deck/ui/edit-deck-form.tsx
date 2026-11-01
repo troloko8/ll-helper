@@ -201,7 +201,7 @@ export function EditDeckForm({
             <ConfirmationDialog
                 open={confirmingDelete}
                 title="Delete this deck?"
-                description="This permanently deletes the deck, all of its cards, every enrollment, and all learner progress connected to it. This action cannot be undone."
+                description="This removes the deck and its cards from the app. Existing learner progress is preserved, but you cannot undo this action."
                 confirmLabel="Delete deck"
                 busyLabel="Deleting deck"
                 isBusy={deleteState.isLoading}

@@ -11,7 +11,30 @@ import org.springframework.data.repository.query.Param;
 public interface UserCardProgressRepository extends JpaRepository<UserCardProgress, Long> {
     Optional<UserCardProgress> findByUserDeckProgressIdAndCardId(Long userDeckProgressId, Long cardId);
 
-    List<UserCardProgress> findAllByUserDeckProgressId(Long userDeckProgressId);
+    boolean existsByCardId(Long cardId);
+
+    @Query(value = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM user_card_progress ucp
+            JOIN cards c ON c.id = ucp.card_id
+            WHERE c.deck_id = :deckId
+        )
+        """, nativeQuery = true)
+    boolean existsByCardDeckId(@Param("deckId") Long deckId);
+
+    @Query(value = """
+        SELECT ucp.*
+        FROM user_card_progress ucp
+        JOIN cards c ON c.id = ucp.card_id
+        JOIN decks d ON d.id = c.deck_id
+        WHERE ucp.user_deck_progress_id = :userDeckProgressId
+            AND c.deleted_at IS NULL
+            AND d.deleted_at IS NULL
+        """, nativeQuery = true)
+    List<UserCardProgress> findAllActiveByUserDeckProgressId(
+        @Param("userDeckProgressId") Long userDeckProgressId
+    );
 
     @Modifying
     @Query(value = """
@@ -35,6 +58,13 @@ public interface UserCardProgressRepository extends JpaRepository<UserCardProgre
             0,
             'NEW'
         FROM user_deck_progress udp
+        JOIN decks d
+            ON d.id = udp.deck_id
+            AND d.deleted_at IS NULL
+        JOIN cards c
+            ON c.id = :cardId
+            AND c.deck_id = udp.deck_id
+            AND c.deleted_at IS NULL
         WHERE udp.deck_id = :deckId
             AND udp.status = 'ACTIVE'
             AND NOT EXISTS (
@@ -53,8 +83,12 @@ public interface UserCardProgressRepository extends JpaRepository<UserCardProgre
     @Query(value = """
         SELECT ucp.*
         FROM user_card_progress ucp
+        JOIN cards c ON c.id = ucp.card_id
+        JOIN decks d ON d.id = c.deck_id
         WHERE ucp.user_deck_progress_id = :userDeckProgressId
             AND ucp.status <> 'MASTERED'
+            AND c.deleted_at IS NULL
+            AND d.deleted_at IS NULL
         ORDER BY
             CASE ucp.status
                 WHEN 'LEARNING' THEN 0

@@ -15,11 +15,13 @@ import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.learning.enums.UserDeckStatus;
+import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
 import com.llhelper.user.model.UsernameSlug;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -38,6 +40,8 @@ public class DeckServiceImpl implements DeckService {
     private final UserRateLimiter userRateLimiter;
     private final DeckAccessPolicy deckAccessPolicy;
     private final UserDeckProgressRepository userDeckProgressRepository;
+    private final UserCardProgressRepository userCardProgressRepository;
+    private final Clock clock;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -48,7 +52,9 @@ public class DeckServiceImpl implements DeckService {
         DeckMapper deckMapper,
         UserRateLimiter userRateLimiter,
         DeckAccessPolicy deckAccessPolicy,
-        UserDeckProgressRepository userDeckProgressRepository
+        UserDeckProgressRepository userDeckProgressRepository,
+        UserCardProgressRepository userCardProgressRepository,
+        Clock clock
     ) {
         this.deckRepository = deckRepository;
         this.securityUtils = securityUtils;
@@ -56,6 +62,8 @@ public class DeckServiceImpl implements DeckService {
         this.userRateLimiter = userRateLimiter;
         this.deckAccessPolicy = deckAccessPolicy;
         this.userDeckProgressRepository = userDeckProgressRepository;
+        this.userCardProgressRepository = userCardProgressRepository;
+        this.clock = clock;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -165,7 +173,7 @@ public class DeckServiceImpl implements DeckService {
     public DeckResponse update(Long id, DeckRequest request) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_UPDATE);
 
-        Deck deck = deckRepository.findWithOwnerById(id)
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         
         validateDeckOwnership(deck);
@@ -181,11 +189,18 @@ public class DeckServiceImpl implements DeckService {
     public void delete(Long id) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.DECK_DELETE);
 
-        Deck deck = deckRepository.findWithOwnerById(id)
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(id)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + id));
         
         validateDeckOwnership(deck);
         
-        deckRepository.deleteById(id);
+        if (userDeckProgressRepository.existsByDeckId(id)
+                || userCardProgressRepository.existsByCardDeckId(id)) {
+            deck.setDeletedAt(clock.instant());
+            deckRepository.save(deck);
+            return;
+        }
+
+        deckRepository.delete(deck);
     }
 }

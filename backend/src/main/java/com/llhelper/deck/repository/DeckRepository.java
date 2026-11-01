@@ -4,7 +4,6 @@ import com.llhelper.deck.entity.Deck;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
@@ -13,8 +12,27 @@ import org.springframework.data.repository.query.Param;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
 
-    @EntityGraph(attributePaths = {"owner"})
-    Optional<Deck> findWithOwnerById(Long id);
+    @Override
+    @Query(value = "SELECT d.* FROM decks d WHERE d.id = :id AND d.deleted_at IS NULL", nativeQuery = true)
+    Optional<Deck> findById(@Param("id") Long id);
+
+    @Query("""
+        SELECT d
+        FROM Deck d
+        JOIN FETCH d.owner
+        WHERE d.id = :id
+            AND d.deletedAt IS NULL
+        """)
+    Optional<Deck> findWithOwnerById(@Param("id") Long id);
+
+    @Query(value = """
+        SELECT d.*
+        FROM decks d
+        WHERE d.id = :id
+            AND d.deleted_at IS NULL
+        FOR UPDATE OF d
+        """, nativeQuery = true)
+    Optional<Deck> findActiveWithOwnerByIdForUpdate(@Param("id") Long id);
 
     @Query(value = """
         select
@@ -36,12 +54,13 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             (udp.id is not null) as "isEnrolled"
         from decks d
         join users u on u.id = d.owner_id
-        left join cards c on c.deck_id = d.id
+        left join cards c on c.deck_id = d.id and c.deleted_at is null
         left join user_deck_progress udp
             on udp.deck_id = d.id
             and udp.user_id = :userId
             and udp.status = 'ACTIVE'
         where d.is_public = true
+            and d.deleted_at is null
             and (:query is null or lower(d.title) like concat('%', :query, '%') escape '\\'
                 or lower(u.username) like concat('%', :query, '%') escape '\\')
             and (:sourceLanguage is null or d.source_language = :sourceLanguage)
@@ -65,6 +84,7 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             and udp.user_id = :userId
             and udp.status = 'ACTIVE'
         where d.is_public = true
+            and d.deleted_at is null
             and (:query is null or lower(d.title) like concat('%', :query, '%') escape '\\'
                 or lower(u.username) like concat('%', :query, '%') escape '\\')
             and (:sourceLanguage is null or d.source_language = :sourceLanguage)
@@ -103,12 +123,13 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             (udp.id is not null) as "isEnrolled"
         from decks d
         join users u on u.id = d.owner_id
-        left join cards c on c.deck_id = d.id
+        left join cards c on c.deck_id = d.id and c.deleted_at is null
         left join user_deck_progress udp
             on udp.deck_id = d.id
             and udp.user_id = :userId
             and udp.status = 'ACTIVE'
         where d.is_public = true
+            and d.deleted_at is null
             and u.username = :username
         group by d.id, u.id, udp.id
         order by d.created_at desc, d.id desc
@@ -127,8 +148,9 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
             d.is_public as "isPublic",
             count(c.id) as "cardCount"
         from decks d
-        left join cards c on c.deck_id = d.id
+        left join cards c on c.deck_id = d.id and c.deleted_at is null
         where d.owner_id = :ownerId
+            and d.deleted_at is null
         group by d.id
         """, nativeQuery = true)
     List<OwnedDeckListProjection> findOwnedDecks(@Param("ownerId") Long ownerId);

@@ -8,7 +8,7 @@
 
 ### Next sprint kickoff — migrate task management to GitHub Projects
 
-> **Порядок:** первая задача следующего спринта после закрытия Sprint 1.1 и до
+> **Порядок:** первая задача следующего спринта после закрытия Sprint 2.1 и до
 > выбора или реализации остального scope этого спринта. Миграция меняет только
 > управление работой и agent routing; она не добавляет продуктовый scope.
 >
@@ -24,20 +24,20 @@
   до проверки manifest и не импортировать дубликаты вслепую.
 - [ ] Создать личный GitHub Project `LL Helper Development`, связать его с
   `troloko8/ll-helper`, определить минимальные поля и views для current sprint,
-  backlog, blockers, decisions и completed work, а Sprint 1.1 представить
+  backlog, blockers, decisions и completed work, а Sprint 2.1 представить
   milestone, не вводя фиктивные даты или iterations без реального timebox.
 - [ ] Настроить минимально необходимый доступ Codex: официальный GitHub MCP с
   явно включёнными `issues`, `labels`, `projects`, `repos` и `pull_requests`
   toolsets и/или GitHub CLI со scope `project`. Секреты не хранить в
   репозитории; write/delete operations оставить подтверждаемыми.
-- [ ] Провести пилот на 5–10 открытых задачах Sprint 1.1, проверить названия,
+- [ ] Провести пилот на 5–10 открытых задачах Sprint 2.1, проверить названия,
   acceptance criteria, статусы, поля, зависимости, связь Issue → PR → CI и
   доступ Codex; скорректировать модель до массовой миграции.
 - [ ] После успешного пилота перенести актуальные открытые задачи текущего
   спринта и проверенный backlog в Issues/Project. Старую историю не превращать
   массово в созданные задним числом Issues: сохранить `changelog.md` и при
   необходимости создать один migration ledger для ранее выполненной части
-  Sprint 1.1.
+  Sprint 2.1.
 - [ ] Выполнить cutover владельцев: оставить `current-sprint.md` коротким
   индексом текущего спринта, цели, scope boundary и ссылок на Project/Milestone;
   сохранить в `roadmap.md` стабильные уровни и Done Criteria; удалить из
@@ -194,7 +194,7 @@
 
 Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` §0.1/§0.3/§0.10. Базовые Created/Discover, cardCount для коллекций, isEnrolled для Discover и видимый local Logout завершены в Sprint 1.0; результаты находятся в changelog и здесь повторно не планируются.
 
-В Sprint 1.1 перенесена только frontend-часть deferred scope, перечисленная в
+В Sprint 2.1 перенесена только frontend-часть deferred scope, перечисленная в
 `current-sprint.md`: основные страницы, их состояния и необходимые им API-
 контракты. Refresh token, backend logout, social-функции и прочие Level 3
 возможности остаются в backlog. Single-card AI остаётся optional и его успешная
@@ -220,9 +220,31 @@ Accepted Level 1 screens/actions — `docs/frontend/integration/FRONTEND_INTEGRA
 
 ### AI Workflow (Level 1)
 
-Level 1 закрывается проверкой существующих project skills и routing на завершённом изменении; отдельные prompt-обёртки не создаются, потому что дублируют `pre-commit-review`, `testing`, `design-decision` и documentation-sync. Специализированная дальнейшая автоматизация остаётся в Sprint 1.3.
+Level 1 закрывается проверкой существующих project skills и routing на завершённом изменении; отдельные prompt-обёртки не создаются, потому что дублируют `pre-commit-review`, `testing`, `design-decision` и documentation-sync. Специализированная дальнейшая автоматизация остаётся в Sprint 2.2.
 
 ## Level 2 — Portfolio / Interview-ready (детали)
+
+### Proposed Sprint 2.2 — Architecture Quality & AI Workflow Exploration
+
+- [ ] **Измерить cohesion текущего backend-кода:** выбрать и зафиксировать
+  воспроизводимую методику, снять baseline по релевантным классам и определить
+  кандидатов на улучшение. Метрика служит диагностикой, а не самостоятельным
+  основанием для массового рефакторинга.
+- [ ] **Выполнить точечный рефакторинг по LCOM:** использовать результаты
+  cohesion baseline, выбрать ограниченный набор классов с подтверждённой
+  проблемой ответственности, сохранить поведение regression-тестами и повторно
+  измерить результат. Не оптимизировать LCOM ценой ухудшения понятности или
+  искусственного дробления доменной логики.
+- [ ] **Исследовать spec-driven development:** сравнить актуальные подходы и
+  инструменты, практические результаты, ограничения и стоимость; определить,
+  какие элементы применимы к LLHelper, и записать явное решение `adopt`,
+  `pilot` или `reject` без внедрения нового обязательного процесса по итогам
+  одного обзора.
+- [ ] **Провести ограниченный пилот Reslop:** применить инструмент к одному
+  реальному LLHelper diff, сравнить review/plan/repair/verify с существующими
+  `pre-commit-review` и repository checks, зафиксировать пользу, риски и
+  стоимость. До положительного результата пилота не делать Reslop обязательной
+  частью workflow.
 
 **Architecture cleanup:** чистая доменная структура, clean service responsibilities, transaction boundaries, no fat controllers, no entity leakage, consistent DTOs/naming
 
@@ -342,6 +364,19 @@ Level 1 закрывается проверкой существующих proje
 - Audit log для изменений User/Deck/Card (who, what, when, old_value, new_value)
 - Отдельный admin API (`/api/v1/admin/users/{id}`, `/api/v1/admin/decks/{id}`) с отдельными правами
 - Admin role — редактирование/удаление любых ресурсов
+- [ ] **Production hard purge и повторная оценка Deck/Card FK policy:** до
+  появления admin/maintenance purge определить retention и единственный
+  привилегированный physical-delete path для soft-deleted Deck/Card. Purge
+  разрешать только после транзакционной блокировки и повторной проверки, что для
+  Deck отсутствуют любые `UserDeckProgress`, а для Card — любые
+  `UserCardProgress`; возраст `deleted_at` сам по себе не разрешает удаление
+  learner data. Зафиксировать audit event, операционное восстановление из backup
+  и поведение при concurrent enrollment/card-progress provisioning. Повторно
+  оценить, оставлять ли текущие `ON DELETE CASCADE` как механизм уже разрешённого
+  purge или заменить learning-data FK на `RESTRICT` с явным порядком очистки;
+  подтвердить выбранную схему PostgreSQL integration tests. До принятия этого
+  Level 3 решения обычные owner DELETE не должны физически удалять Deck/Card со
+  связанными learner records.
 
 **AI Level 3:** Fallback provider (optional) · Generation history · Prompt templates/versioning · Response schema validation · Retry strategy · Cost estimation
 
@@ -350,6 +385,15 @@ Level 1 закрывается проверкой существующих proje
 **DevOps:** Real deployment · Staging/prod configs · DB backup · Logs · Health checks · Basic monitoring
 
 **AI Workflow Level 3:** Pipeline-скрипт `project-review` (git diff + changed files + controllers + DTOs + migrations + tests + docs). PR template: What changed / DB changes / API changes / Tests / Postman updated? / Docs updated? / AI review done?
+
+### Proposed Sprint 3.1 — Document-driven Agent Workflow
+
+- [ ] **Исследовать и проверить document-driven разработку с длительно
+  работающими агентами:** изучить существующие подходы, затем провести
+  ограниченный LLHelper-пилот с явным документом требований, checkpoint-ами,
+  лимитом времени/стоимости, stop conditions и обязательной человеческой
+  проверкой результата. Успешный пилот может подготовить Level 4 internal AI
+  assistant, но не вводит автономную непрерывную разработку в Level 3.
 
 ## Level 4 — Product / Startup-grade (детали)
 

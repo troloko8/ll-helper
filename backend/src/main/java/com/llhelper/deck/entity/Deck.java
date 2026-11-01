@@ -20,6 +20,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class Deck {
     private Instant updatedAt;
 
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @SQLRestriction("deleted_at IS NULL")
     private List<Card> cards = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -69,4 +71,7 @@ public class Deck {
 
     @Column(nullable = false)
     private Boolean isPublic = true;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }

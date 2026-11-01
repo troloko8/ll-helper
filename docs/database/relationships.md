@@ -3,8 +3,8 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-10-27
-> **Status:** Liquibase migrations V1–V15 are defined and runtime-verified on PostgreSQL 16 via Testcontainers. V14 idempotently backfills missing card progress for ACTIVE enrollments.
+> **Last updated:** 2026-11-01
+> **Status:** Liquibase migrations V1–V16 are defined and runtime-verified on PostgreSQL 16 via Testcontainers. V14 idempotently backfills missing card progress for ACTIVE enrollments; V16 adds nullable Deck/Card lifecycle tombstones.
 > **Remaining index gap:** `idx_ucp_next_review` (Backlog).
 
 > **Schema Ownership:** All database constraints (unique, check, FK), indexes, and defaults are defined in Liquibase migrations (`backend/src/main/resources/db/changelog/`). Entity annotations describe only Java-to-DB mapping. See `docs/database/schema-ownership.md` for the full policy.
@@ -21,8 +21,9 @@
 | `information_schema.referential_constraints` | ✅ Verified |
 | `pg_indexes` | ✅ Verified |
 | V15 runtime migration | ✅ Verified on PostgreSQL 16 via Testcontainers/Liquibase |
+| V16 runtime migration | ✅ Verified on PostgreSQL 16 via Testcontainers/Liquibase |
 
-**Note:** V1–V15 Liquibase migrations are defined. V15 canonicalizes compatible usernames with `trim + lowercase` and halts before normalization when legacy values are incompatible or collide case-insensitively; all three migration scenarios are verified on PostgreSQL 16 via Testcontainers/Liquibase. `ddl-auto=validate`. CASCADE delete chains established: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. V14 repairs missing Card-to-progress pairs for ACTIVE enrollments without overwriting existing rows. Soft delete deferred to Level 1. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
+**Note:** V1–V16 Liquibase migrations are defined. V15 canonicalizes compatible usernames with `trim + lowercase` and halts before normalization when legacy values are incompatible or collide case-insensitively; all three migration scenarios are verified on PostgreSQL 16 via Testcontainers/Liquibase. `ddl-auto=validate`. CASCADE delete chains remain available for permitted physical deletion: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, `users → user_deck_progress → user_card_progress`. V14 repairs missing Card-to-progress pairs for ACTIVE enrollments without overwriting existing rows. V16 adds application-managed Deck/Card tombstones used by the Sprint 2.1 hybrid lifecycle. Remaining pending: `idx_ucp_next_review`; AuthUser–User account-deletion flow and lifecycle policy (roadmap task 13).
 
 ---
 
@@ -30,11 +31,12 @@
 
 This document describes the current database schema and entity relationships for the LLHelper project.
 
-**Scope:** Current schema definition and data repair through runtime-verified Liquibase migration V15.
+**Scope:** Current schema definition and data repair through runtime-verified Liquibase migration V16.
 
 **Not in this document:**
 - Remaining index work (`idx_ucp_next_review`) — see Section 8
-- Soft delete implementation — deferred to Level 1
+- Production purge/retention and CASCADE-vs-RESTRICT re-evaluation — see the
+  Level 3 backlog
 
 ---
 
@@ -96,7 +98,7 @@ This document describes the current database schema and entity relationships for
 │        learning→progress, establishing delete chains: Deck → Card →         │
 │        UserCardProgress; Deck → UserDeckProgress → UserCardProgress;        │
 │        User → UserDeckProgress → UserCardProgress. See §6.3 and §9.         │
-│        Soft delete strategy is deferred to Level 1.                          │
+│        Hybrid Deck/Card deletion preserves learner-linked content (V16).     │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -164,7 +166,11 @@ Deck.id ──1:N──▶ Card.deck
 
 This avoids `LazyInitializationException` in response DTOs while keeping the relationship available for ownership checks and other operations.
 
-**Note:** `CascadeType.ALL` includes `REMOVE`. Deleting a Deck deletes all its Cards through JPA, and `fk_ucp_card` (`ON DELETE CASCADE`, V5) deletes dependent `UserCardProgress` rows at the DB level too — no orphaned rows. Trade-off: this permanently destroys learner progress; soft delete (deferred to Level 1) is the planned mitigation.
+**Note:** `CascadeType.ALL` includes `REMOVE`. V16 adds application-managed
+`deleted_at` timestamps to Deck/Card, and ordinary owner DELETE uses the
+accepted hybrid lifecycle in §9.3. Physical Deck deletion still cascades to
+Cards through JPA/DB, but is selected only when neither `UserDeckProgress` for
+the Deck nor `UserCardProgress` for any of its Cards exists.
 
 ---
 
@@ -277,6 +283,8 @@ UserCardProgress.userId ──N:1 (logical)──▶ User.id
 | `decks` | `owner_id` | `NOT NULL` |
 | `cards` | `title` | `NOT NULL` |
 | `cards` | `deck_id` | `NOT NULL` |
+| `decks` | `deleted_at` | Nullable `timestamptz`; application-managed lifecycle timestamp (V16) |
+| `cards` | `deleted_at` | Nullable `timestamptz`; application-managed lifecycle timestamp (V16) |
 | `user_deck_progress` | `user_id` | `NOT NULL` |
 | `user_deck_progress` | `deck_id` | `NOT NULL` |
 | `user_deck_progress` | `status` | `NOT NULL` |
@@ -303,6 +311,9 @@ Entity mapping: `@Column(name = "created_at", nullable = false, insertable = fal
 - `user_deck_progress.last_studied_at` — set when user studies cards from deck
 - `user_card_progress.last_reviewed_at` — set when user reviews specific card
 - `user_card_progress.next_review_at` — calculated by spaced repetition algorithm
+- `decks.deleted_at`, `cards.deleted_at` — set from the injected application
+  `Clock` only when the hybrid lifecycle selects soft delete; nullable and have
+  no database default or trigger
 
 Entity mapping: `@Column(name = "last_reviewed_at")` (without `insertable=false, updatable=false`)
 
@@ -326,7 +337,7 @@ See `docs/database/schema-ownership.md` → "Business timestamps vs Technical ti
 | `fk_udp_user` | `user_deck_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 | `fk_ucp_user` | `user_card_progress` | `user_id` | `users` | `id` | CASCADE | RESTRICT |
 
-**Note:** `fk_decks_owner` and `fk_users_auth_user` remain `NO ACTION` (inline FK in V1 baseline). `fk_cards_deck`, `fk_udp_deck`, `fk_ucp_card` migrated to CASCADE in V5; V4 added `fk_udp_user`/`fk_ucp_user`/`fk_ucp_user_deck_progress` with CASCADE. Delete chains: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, and `users → user_deck_progress → user_card_progress`. Soft delete deferred to Level 1.
+**Note:** `fk_decks_owner` and `fk_users_auth_user` remain `NO ACTION` (inline FK in V1 baseline). `fk_cards_deck`, `fk_udp_deck`, `fk_ucp_card` migrated to CASCADE in V5; V4 added `fk_udp_user`/`fk_ucp_user`/`fk_ucp_user_deck_progress` with CASCADE. Delete chains remain available for permitted physical deletion: `decks → cards → user_card_progress`, `decks → user_deck_progress → user_card_progress`, and `users → user_deck_progress → user_card_progress`. The Sprint 2.1 hybrid Deck/Card lifecycle prevents these chains from deleting learner-linked content.
 
 ---
 
@@ -366,15 +377,17 @@ The repository version of V12 creates `idx_cards_deck_id` and accepts the exact 
 |-------|-------|---------|---------|--------|
 | `uk_user_deck_progress_user_deck` | `user_deck_progress` | `user_id, deck_id` | Fast lookup for enrollment check + unique constraint | ✅ Added in V2 |
 | `idx_user_deck_progress_user_status` | `user_deck_progress` | `user_id, status` | List active learning decks for current user | ✅ Added in V11 |
+| `idx_user_deck_progress_deck_id` | `user_deck_progress` | `deck_id` | Hybrid Deck deletion learner-data check and child-side FK lookup | ✅ Added in V16 |
 | `idx_ucp_user_deck` | `user_card_progress` | `user_deck_progress_id, status` | Query cards by deck progress + status | ✅ Added in V1 baseline |
 | `uk_user_card_progress_deck_card` | `user_card_progress` | `user_deck_progress_id, card_id` | Fast card lookup (unique) | ✅ Added in V3 (replaces the incorrect V1 `idx_ucp_user_card`) |
+| `idx_user_card_progress_card_id` | `user_card_progress` | `card_id` | Hybrid Card deletion learner-data check and child-side FK lookup | ✅ Added in V16 |
 | `idx_ucp_next_review` | `user_card_progress` | `user_deck_progress_id, next_review_at` | Scheduled review queries | Pending (Backlog) |
 | `idx_cards_deck_id` | `cards` | `deck_id` | Per-deck card counts, card lookup and deck deletion checks | ✅ Added in V12; renamed in V13 |
 
 **Current State:**
 - `users` table: `idx_user_username` (unique). `idx_user_auth` was a duplicate of `uk_users_auth_user_id` and was removed in V8.
-- `user_card_progress`: `idx_ucp_user_deck` (V1), `uk_user_card_progress_deck_card` (V3, unique)
-- `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique), `idx_user_deck_progress_user_status` (V11)
+- `user_card_progress`: `idx_ucp_user_deck` (V1), `uk_user_card_progress_deck_card` (V3, unique), `idx_user_card_progress_card_id` (V16)
+- `user_deck_progress`: `uk_user_deck_progress_user_deck` (V2, unique), `idx_user_deck_progress_user_status` (V11), `idx_user_deck_progress_deck_id` (V16)
 - Still pending: `idx_ucp_next_review` — tracked in `docs/roadmap/backlog.md`.
 
 ---
@@ -393,24 +406,68 @@ The repository version of V12 creates `idx_cards_deck_id` and accepts the exact 
 | Deck → UserDeckProgress | `fk_udp_deck` CASCADE | Enrollment cascade-deleted when Deck deleted (V5) |
 | Card → UserCardProgress | `fk_ucp_card` CASCADE | Card progress cascade-deleted when Card deleted (V5) |
 
-### 9.2 Delete Behavior Decisions (Sprint 0.3)
+### 9.2 Physical Delete Behavior
 
 | Scenario | Decision | Status |
 |----------|----------|--------|
 | Delete User | Progress rows cascade via V4, but `fk_decks_owner` blocks deletion while owned Decks exist | ⚠️ **Partially resolved** — account/content deletion flow remains open |
-| Delete Deck | CASCADE: Deck → Cards → UserCardProgress; Deck → UserDeckProgress → UserCardProgress (V5) | ✅ **Resolved** — CASCADE accepted for MVP; soft delete deferred to Level 1 |
-| Delete Card | CASCADE: Card → UserCardProgress (V5) | ✅ **Resolved** |
+| Physically delete Deck | CASCADE: Deck → Cards → UserCardProgress; Deck → UserDeckProgress → UserCardProgress (V5) | Available only behind the accepted hybrid lifecycle in §9.3 |
+| Physically delete Card | CASCADE: Card → UserCardProgress (V5) | Available only behind the accepted hybrid lifecycle in §9.3 |
 | Delete UserDeckProgress | CASCADE: UserDeckProgress → UserCardProgress (V4) | ✅ **Resolved** |
 | Delete AuthUser | `fk_users_auth_user` NO ACTION — no defined account-deletion flow | **Open** — roadmap task 13: deleting `AuthUser` is blocked if `User` exists; deleting `User` leaves orphaned `AuthUser` row |
 
-### 9.3 Soft Delete Option
+### 9.3 Accepted Sprint 2.1 Deck/Card Lifecycle
 
-| Entity | Soft Delete Candidate | Rationale |
-|--------|----------------------|-----------|
-| `Deck` | **Yes** | Content deletion affects enrolled users |
-| `Card` | **Yes** | Card deletion affects learning progress |
-| `User` | Maybe | User deletion affects owned content |
-| Progress entities | No | Progress is transient/resettable |
+V16 implements hybrid owner deletion as an internal data-integrity mechanism,
+not as a user-visible Trash/Restore feature:
+
+- Deck deletion locks the active Deck row. If any `UserDeckProgress` exists for
+  the Deck in any status, or any `UserCardProgress` references one of its Cards,
+  the service sets `decks.deleted_at` from the injected application `Clock`;
+  Cards, enrollments and `UserCardProgress` remain physically unchanged. The
+  Card-progress check is defense in depth for a cross-Deck reference that the
+  current independent FKs cannot reject. Only a Deck with neither kind of
+  learner reference is physically deleted through the existing CASCADE.
+- Card deletion locks the active parent Deck and Card rows. If any
+  `UserCardProgress` exists for the Card, the service sets `cards.deleted_at`;
+  otherwise the Card is physically deleted.
+- Ordinary Deck/Card reads and mutations, public/owner lists, card counts,
+  enrollment, Learning, Progress, Study and Review exclude soft-deleted content.
+  A deleted Deck makes all of its Cards unavailable even when their own
+  `deleted_at` is null.
+- Soft delete does not change enrollment status, progress status or counters.
+  Preserved rows are excluded from current active projections; a lifetime
+  history UI is deferred.
+- Both branches keep the same owner-facing `204 No Content` response. There is
+  no restore endpoint, Trash UI, scheduled purge or retention period in Sprint 2.1.
+- `ON DELETE CASCADE` remains unchanged for an already-authorized physical
+  delete. Production purge, audit/retention and a later CASCADE-vs-RESTRICT
+  review are tracked in the Level 3 backlog.
+
+#### V16 rollback and recovery expectation
+
+The V16 Liquibase rollback intentionally drops both `deleted_at` columns. It is
+not a lossless logical rollback: existing tombstones become active content
+again, while the preserved enrollment and progress rows remain in place. This
+temporary reactivation is an accepted Sprint 2.1 recovery trade-off because soft
+delete currently protects learner data rather than enforcing a moderation,
+privacy or legal-retention boundary.
+
+Before deploying a backend version that does not understand tombstones:
+
+1. take a consistent database backup;
+2. enable maintenance mode or otherwise disable owner Deck/Card DELETE;
+3. record the number of non-null Deck/Card tombstones and verify their learner
+   references;
+4. apply the schema/application rollback and verify that the expected content
+   was reactivated without losing progress.
+
+The delete freeze is required because the legacy backend uses physical DELETE;
+after tombstones are reactivated, a repeated owner deletion could execute the
+existing CASCADE chain and permanently remove the learner data that V16 was
+introduced to preserve. A forward fix is the preferred production recovery;
+rollback to the legacy lifecycle is a controlled temporary measure, not a
+user-facing restore mechanism.
 
 ---
 
@@ -435,7 +492,7 @@ private Long userDeckProgressId;  // References UserDeckProgress.id
 |--------|---------------------|-------------------|
 | **Pros** | Simple, no data duplication, instant updates | Owner can edit without affecting others, versioning possible |
 | **Cons** | Owner edits affect all learners, deletion breaks progress | Data duplication, complexity in sync/merge |
-| **Current Behavior** | Deck owner deletes card → `UserCardProgress` cascade-deleted at DB level (`fk_ucp_card ON DELETE CASCADE`, V5) | N/A (not implemented) |
+| **Current Behavior** | Owner deletion preserves `UserCardProgress` through soft delete when any Card progress exists; a never-referenced Card is physically deleted | N/A (not implemented) |
 
 ### Accepted Decision
 
@@ -445,7 +502,9 @@ private Long userDeckProgressId;  // References UserDeckProgress.id
 
 Protection strategy (implemented):
 - Service-level ownership checks (who may mutate a deck/card).
-- DB-level delete behavior: CASCADE (see Section 9), not RESTRICT — simpler for MVP; soft delete deferred to Level 1 for use cases that need to preserve progress history.
+- Hybrid Deck/Card lifecycle preserves referenced learner data through
+  application-managed soft delete; CASCADE remains only for the branch where
+  the authoritative learner-record check finds no dependent progress.
 
 ### Decision Timeline
 
@@ -453,7 +512,7 @@ Protection strategy (implemented):
 |--------|--------|
 | Design | ~~Document current state (reference by ID)~~ ✅ |
 | Design | ~~Decide strategy~~ ✅ — Reference accepted. Ownership checks enforced. |
-| Implemented | ~~Add FK constraints with delete behavior~~ ✅ — CASCADE (V1/V4/V5). Soft delete remains deferred to Level 1. |
+| Implemented | ~~Add FK constraints with delete behavior~~ ✅ — CASCADE (V1/V4/V5), guarded by the V16 hybrid lifecycle for learner-linked content. |
 
 ---
 
@@ -501,7 +560,7 @@ AuthUser (credentials)
 | ~~**No unique constraint on `(user_id, deck_id)`**~~ | ~~Duplicate enrollments possible~~ | ✅ Fixed in V2 migration |
 | ~~**No unique constraint on card progress**~~ | ~~Duplicate card progress rows possible~~ | ✅ Fixed in V3 migration |
 | ~~**Progress entities use IDs, no FK constraints**~~ | ~~Orphaned progress possible if content deleted~~ | ✅ Fixed: deck/card FKs since V1, `fk_udp_user`/`fk_ucp_user` added in V4, CASCADE finalized in V5 |
-| ~~**Deck cascade deletes Cards**~~ | ~~Deleting deck deletes cards → breaks learner progress~~ | ✅ Accepted decision — see Section 9.2 (soft delete deferred to Level 1) |
+| ~~**Deck cascade deletes Cards**~~ | ~~Deleting an enrolled deck deletes cards and learner progress~~ | ✅ Fixed by the Sprint 2.1 hybrid lifecycle — see Section 9.3; CASCADE is used only when no learner row exists |
 
 ### 12.2 High Priority
 
@@ -517,7 +576,7 @@ AuthUser (credentials)
 
 | Issue | Impact | Fix Sprint |
 |-------|--------|------------|
-| **No soft delete** | Content deletion permanently destroys learner progress (referential integrity itself is enforced via CASCADE) | Level 1 |
+| ~~**No soft delete**~~ | ~~Content deletion permanently destroys learner progress~~ | ✅ Fixed in V16 + hybrid service lifecycle |
 | **No account-deletion flow** | AuthUser → User: `NO ACTION` — deleting `User` leaves orphaned `AuthUser`; deleting `AuthUser` while `User` exists is blocked by FK. Account/profile deletion flow undefined. | Backlog (roadmap task 13) |
 | ~~**Deck Java/API naming**~~ | ~~Entity, package, controller, DTO naming should become `Deck`~~ | ✅ Done |
 | ~~**`decks` table naming**~~ | ~~DB table rename to `decks`~~ — ✅ Done manually | |
@@ -562,6 +621,7 @@ With Liquibase enabled (`ddl-auto=validate`), the following incremental migratio
 -- ✅ DONE (V9): Migrated technical `created_at`/`updated_at` columns from `timestamp` to `timestamptz` for `auth_users`, `users`, `decks`, `cards`; added `DEFAULT CURRENT_TIMESTAMP` and `BEFORE UPDATE` triggers for `updated_at`.
 -- ✅ DONE (V10): Migrated business `last_studied_at`/`last_reviewed_at`/`next_review_at` columns from `timestamp` to `timestamptz` for `user_deck_progress`, `user_card_progress` using `AT TIME ZONE 'Asia/Jerusalem'`.
 -- ✅ DONE (V14): Backfilled missing NEW user_card_progress rows for ACTIVE enrollments with idempotent INSERT ... SELECT ... ON CONFLICT DO NOTHING.
+-- ✅ DONE (V16): Added nullable application-managed decks.deleted_at/cards.deleted_at timestamptz columns plus child-side deck_id/card_id indexes for hybrid lifecycle checks.
 ```
 
 ### 13.2 Pending Index
@@ -574,7 +634,7 @@ CREATE INDEX idx_ucp_next_review ON user_card_progress(user_deck_progress_id, ne
 
 1. ~~**Copy vs Reference:** Decide and document before adding FKs~~ ✅ Reference accepted
 2. ~~**Delete behavior:** RESTRICT vs CASCADE vs SET NULL for each relationship~~ ✅ CASCADE accepted (V4/V5)
-3. **Soft delete:** Implement for Deck/Card — deferred to Level 1, independent of the CASCADE decision above
+3. ~~**Soft delete:** Implement for Deck/Card~~ ✅ Hybrid lifecycle accepted and implemented in V16; CASCADE retained for unreferenced hard delete
 
 ---
 
@@ -681,3 +741,5 @@ ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
 | 2026-07-30 | Doc audit: removed "Sprint 0.3 pending" framing. V2–V10 resolved unique constraints, FK policies, cascades, CHECK constraints, timestamp ownership, and duplicate-index cleanup. Remaining performance indexes tracked in §8 and `docs/roadmap/backlog.md`. Corrected Section 4.3/10 risk notes — FK protection already existed since V1, CASCADE finalized in V5. Header now points to `current-sprint.md`. |
 | 2026-08-30 | V11 defined: added application-managed `user_deck_progress.enrolled_at`, safely backfilled existing rows, enforced `NOT NULL`, and added `idx_user_deck_progress_user_status(user_id, status)` for the G-06 Learning Decks list. |
 | 2026-10-17 | V14 defined: idempotently backfilled missing `NEW` `user_card_progress` rows for every Card in an ACTIVE enrollment, relying on `uk_user_card_progress_deck_card` and preserving all existing progress rows. |
+| 2026-10-31 | V16 defined: added application-managed `deleted_at` to Deck/Card, child-side learner-reference indexes, and accepted hybrid deletion—hard delete only without learner records, otherwise soft delete preserving enrollment/progress; active queries exclude tombstones. |
+| 2026-11-01 | Documented the accepted V16 rollback trade-off: tombstones reactivate, backup and a legacy DELETE freeze are required, and forward fix remains the preferred production recovery. |

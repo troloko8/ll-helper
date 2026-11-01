@@ -22,9 +22,11 @@ import com.llhelper.common.security.UserRateLimiter;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
+import com.llhelper.learning.repository.UserCardProgressRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +48,8 @@ public class CardServiceImpl implements CardService {
     private final AiProperties aiProperties;
     private final DeckAccessPolicy deckAccessPolicy;
     private final NewCardProgressProvisioner newCardProgressProvisioner;
+    private final UserCardProgressRepository userCardProgressRepository;
+    private final Clock clock;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -60,7 +64,9 @@ public class CardServiceImpl implements CardService {
         UserRateLimiter userRateLimiter,
         AiProperties aiProperties,
         DeckAccessPolicy deckAccessPolicy,
-        NewCardProgressProvisioner newCardProgressProvisioner
+        NewCardProgressProvisioner newCardProgressProvisioner,
+        UserCardProgressRepository userCardProgressRepository,
+        Clock clock
     ) {
         this.cardRepository = cardRepository;
         this.deckRepository = deckRepository;
@@ -71,6 +77,8 @@ public class CardServiceImpl implements CardService {
         this.aiProperties = aiProperties;
         this.deckAccessPolicy = deckAccessPolicy;
         this.newCardProgressProvisioner = newCardProgressProvisioner;
+        this.userCardProgressRepository = userCardProgressRepository;
+        this.clock = clock;
     }
 
     private void validateDeckOwnership(Deck deck) {
@@ -78,12 +86,6 @@ public class CardServiceImpl implements CardService {
         if (!Objects.equals(deck.getOwner().getId(), currentUserId)) {
             throw new AccessDeniedException("Access denied: not deck owner");
         }
-    }
-
-    private void validateCardOwnership(Card card) {
-        Deck deck = deckRepository.findWithOwnerById(card.getDeckId())
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + card.getDeckId()));
-        validateDeckOwnership(deck);
     }
 
     private void validateBulkSize(BulkCardGenerateRequest request) {
@@ -106,7 +108,7 @@ public class CardServiceImpl implements CardService {
         String currentUserEmail = securityUtils.getCurrentUserEmail();
         userRateLimiter.checkLimitByEmail(currentUserEmail, RateLimitAction.CARD_CREATE);
 
-        Deck deck = deckRepository.findWithOwnerById(deckId)
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
         validateDeckOwnership(deck);
@@ -131,7 +133,11 @@ public class CardServiceImpl implements CardService {
 
         validateGeneratedTranslation(aiData);
 
-        return saveNewCard(cardMapper.fromAiData(request.title(), aiData, deck));
+        Deck lockedDeck = deckRepository.findActiveWithOwnerByIdForUpdate(request.deckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
+        validateDeckOwnership(lockedDeck);
+
+        return saveNewCard(cardMapper.fromAiData(request.title(), aiData, lockedDeck));
     }
 
     private CardResponse saveNewCard(Card card) {
@@ -168,7 +174,7 @@ public class CardServiceImpl implements CardService {
 
         validateDeckOwnership(deck);
 
-        List<CardResponse> created = new ArrayList<>();
+        List<GeneratedCardCandidate> generated = new ArrayList<>();
         List<BulkCardGenerationFailure> failed = new ArrayList<>();
 
         List<String> titles = request.titles();
@@ -189,8 +195,20 @@ public class CardServiceImpl implements CardService {
                 continue;
             }
 
-            Card card = cardMapper.fromAiData(title, aiData, deck);
-            created.add(saveNewCard(card));
+            generated.add(new GeneratedCardCandidate(title, aiData));
+        }
+
+        List<CardResponse> created = new ArrayList<>();
+        if (!generated.isEmpty()) {
+            Deck lockedDeck = deckRepository.findActiveWithOwnerByIdForUpdate(request.deckId())
+                .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + request.deckId()));
+            validateDeckOwnership(lockedDeck);
+            generated.stream()
+                .map(candidate -> cardMapper.fromAiData(
+                    candidate.title(), candidate.aiData(), lockedDeck
+                ))
+                .map(this::saveNewCard)
+                .forEach(created::add);
         }
 
         if (!failed.isEmpty()) {
@@ -263,10 +281,15 @@ public class CardServiceImpl implements CardService {
     public CardResponse update(Long id, CardRequest request) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_UPDATE);
 
-        Card card = cardRepository.findById(id)
+        Card foundCard = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
-        validateCardOwnership(card);
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(foundCard.getDeckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + foundCard.getDeckId()));
+        validateDeckOwnership(deck);
+
+        Card card = cardRepository.findActiveByIdForUpdate(id)
+            .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
         cardMapper.updateEntity(request, card);
         return saveUpdatedCard(card);
@@ -277,11 +300,24 @@ public class CardServiceImpl implements CardService {
     public void delete(Long id) {
         userRateLimiter.checkLimitByEmail(securityUtils.getCurrentUserEmail(), RateLimitAction.CARD_DELETE);
 
-        Card card = cardRepository.findById(id)
+        Card foundCard = cardRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
 
-        validateCardOwnership(card);
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(foundCard.getDeckId())
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + foundCard.getDeckId()));
+        validateDeckOwnership(deck);
 
-        cardRepository.deleteById(id);
+        Card card = cardRepository.findActiveByIdForUpdate(id)
+            .orElseThrow(() -> new EntityNotFoundException("Card not found: " + id));
+
+        if (userCardProgressRepository.existsByCardId(id)) {
+            card.setDeletedAt(clock.instant());
+            cardRepository.save(card);
+            return;
+        }
+
+        cardRepository.delete(card);
     }
+
+    private record GeneratedCardCandidate(String title, AiCardData aiData) {}
 }

@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -119,6 +120,47 @@ class DeckRepositoryTest {
                 assertThat(row.getCardCount()).isZero();
             });
         assertThat(ownedRows).noneMatch(row -> row.getTitle().equals("Other public"));
+    }
+
+    @Test
+    void activeDeckQueries_shouldExcludeDeletedDecksAndCards() {
+        User owner = persistUser("soft-delete-owner@example.com", "soft-delete-owner");
+        Deck activeDeck = persistDeck(owner, "Active deck", true);
+        Deck deletedDeck = persistDeck(owner, "Deleted deck", true);
+        deletedDeck.setDeletedAt(Instant.parse("2026-10-31T12:00:00Z"));
+        persistCard(activeDeck, "Active card");
+        Card deletedCard = persistCard(activeDeck, "Deleted card");
+        deletedCard.setDeletedAt(Instant.parse("2026-10-31T12:00:00Z"));
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<PublicDeckListProjection> publicDecks = findPublicDecks(
+            owner.getId(), null, null, "NEWEST", 0, 12
+        );
+        List<OwnedDeckListProjection> ownedDecks = deckRepository.findOwnedDecks(owner.getId());
+
+        Deck deckWithOwner = deckRepository.findWithOwnerById(activeDeck.getId()).orElseThrow();
+        assertThat(entityManager.getEntityManagerFactory().getPersistenceUnitUtil()
+            .isLoaded(deckWithOwner, "owner")).isTrue();
+        assertThat(deckWithOwner.getOwner().getId()).isEqualTo(owner.getId());
+        assertThat(deckRepository.findById(activeDeck.getId()))
+            .get()
+            .extracting(Deck::getCards)
+            .asInstanceOf(InstanceOfAssertFactories.list(Card.class))
+            .extracting(Card::getTitle)
+            .containsExactly("Active card");
+        assertThat(deckRepository.findActiveWithOwnerByIdForUpdate(activeDeck.getId())).isPresent();
+        assertThat(deckRepository.findById(deletedDeck.getId())).isEmpty();
+        assertThat(deckRepository.findWithOwnerById(deletedDeck.getId())).isEmpty();
+        assertThat(deckRepository.findActiveWithOwnerByIdForUpdate(deletedDeck.getId())).isEmpty();
+        assertThat(publicDecks.getContent()).singleElement().satisfies(row -> {
+            assertThat(row.getId()).isEqualTo(activeDeck.getId());
+            assertThat(row.getCardCount()).isOne();
+        });
+        assertThat(ownedDecks).singleElement().satisfies(row -> {
+            assertThat(row.getId()).isEqualTo(activeDeck.getId());
+            assertThat(row.getCardCount()).isOne();
+        });
     }
 
     @Test
@@ -352,16 +394,32 @@ class DeckRepositoryTest {
     }
 
     @Test
-    void schema_shouldContainCardsDeckIndex_whenMigrationsAreApplied() {
-        Long indexCount = jdbcTemplate.queryForObject("""
+    void schema_shouldContainLifecycleLookupIndexes_whenMigrationsAreApplied() {
+        Long cardsDeckIndexCount = jdbcTemplate.queryForObject("""
             select count(*)
             from pg_indexes
             where schemaname = 'public'
                 and tablename = 'cards'
                 and indexname = 'idx_cards_deck_id'
             """, Map.of(), Long.class);
+        Long deckProgressIndexCount = jdbcTemplate.queryForObject("""
+            select count(*)
+            from pg_indexes
+            where schemaname = 'public'
+                and tablename = 'user_deck_progress'
+                and indexname = 'idx_user_deck_progress_deck_id'
+            """, Map.of(), Long.class);
+        Long cardProgressIndexCount = jdbcTemplate.queryForObject("""
+            select count(*)
+            from pg_indexes
+            where schemaname = 'public'
+                and tablename = 'user_card_progress'
+                and indexname = 'idx_user_card_progress_card_id'
+            """, Map.of(), Long.class);
 
-        assertThat(indexCount).isOne();
+        assertThat(cardsDeckIndexCount).isOne();
+        assertThat(deckProgressIndexCount).isOne();
+        assertThat(cardProgressIndexCount).isOne();
     }
 
     private User persistUser(String email, String username) {
@@ -394,12 +452,13 @@ class DeckRepositoryTest {
         return deck;
     }
 
-    private void persistCard(Deck deck, String title) {
+    private Card persistCard(Deck deck, String title) {
         Card card = new Card();
         card.setDeck(deck);
         card.setTitle(title);
         card.setTranslation(title);
         entityManager.persist(card);
+        return card;
     }
 
     private void persistEnrollment(User user, Deck deck, UserDeckStatus status) {

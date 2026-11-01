@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.llhelper.auth.entity.AuthUser;
 import com.llhelper.card.entity.Card;
+import com.llhelper.card.repository.CardRepository;
 import com.llhelper.common.model.Language;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.learning.entity.UserCardProgress;
@@ -48,6 +49,9 @@ class LearningRepositoryTest {
 
     @Autowired
     private UserCardProgressRepository userCardProgressRepository;
+
+    @Autowired
+    private CardRepository cardRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -139,6 +143,70 @@ class LearningRepositoryTest {
     }
 
     @Test
+    void activeLearningQueries_shouldExcludeDeletedContentAndPreserveProgressRows() {
+        User user = persistUser("deleted-learning@example.com", "deleted-learning");
+        Deck deck = persistDeck(user, "Deck with deleted card");
+        UserDeckProgress enrollment = persistEnrollment(
+            user, deck, UserDeckStatus.ACTIVE, Instant.EPOCH, null
+        );
+        Card activeCard = persistCard(deck, "Active card");
+        Card deletedCard = persistCard(deck, "Deleted card");
+        persistCardProgress(user, enrollment, activeCard, CardLearningStatus.LEARNING);
+        persistCardProgress(user, enrollment, deletedCard, CardLearningStatus.MASTERED);
+        deletedCard.setDeletedAt(Instant.parse("2026-10-31T12:00:00Z"));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(userCardProgressRepository.findStudyQueue(enrollment.getId()))
+            .extracting(UserCardProgress::getCardId)
+            .containsExactly(activeCard.getId());
+        assertThat(userCardProgressRepository.findAllActiveByUserDeckProgressId(enrollment.getId()))
+            .extracting(UserCardProgress::getCardId)
+            .containsExactly(activeCard.getId());
+        assertThat(userCardProgressRepository.findAll()).hasSize(2);
+        assertThat(cardRepository.findActiveByIdForUpdate(activeCard.getId())).isPresent();
+        assertThat(cardRepository.findAllById(List.of(activeCard.getId(), deletedCard.getId())))
+            .extracting(Card::getId)
+            .containsExactly(activeCard.getId());
+        assertThat(cardRepository.findById(deletedCard.getId())).isEmpty();
+        assertThat(cardRepository.findActiveByIdForUpdate(deletedCard.getId())).isEmpty();
+        assertThat(userDeckProgressRepository.findLearningProgressSummaries(user.getId()))
+            .singleElement()
+            .satisfies(summary -> {
+                assertThat(summary.getLearningCount()).isOne();
+                assertThat(summary.getMasteredCount()).isZero();
+                assertThat(summary.getTotalCards()).isOne();
+            });
+
+        Deck persistedDeck = entityManager.find(Deck.class, deck.getId());
+        persistedDeck.setDeletedAt(Instant.parse("2026-10-31T13:00:00Z"));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(userCardProgressRepository.findStudyQueue(enrollment.getId())).isEmpty();
+        assertThat(userDeckProgressRepository.findLearningDeckSummaries(user.getId())).isEmpty();
+        assertThat(userDeckProgressRepository.findLearningProgressSummaries(user.getId())).isEmpty();
+        assertThat(userCardProgressRepository.findAll()).hasSize(2);
+    }
+
+    @Test
+    void existsByCardDeckId_shouldFindProgressEvenWhenEnrollmentReferencesAnotherDeck() {
+        User user = persistUser("cross-reference@example.com", "cross-reference");
+        Deck cardDeck = persistDeck(user, "Card deck");
+        Deck enrollmentDeck = persistDeck(user, "Enrollment deck");
+        Card card = persistCard(cardDeck, "Cross-referenced card");
+        UserDeckProgress enrollment = persistEnrollment(
+            user, enrollmentDeck, UserDeckStatus.ACTIVE, Instant.EPOCH, null
+        );
+        persistCardProgress(user, enrollment, card, CardLearningStatus.NEW);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(userCardProgressRepository.existsByCardDeckId(cardDeck.getId())).isTrue();
+        assertThat(userCardProgressRepository.existsByCardDeckId(enrollmentDeck.getId())).isFalse();
+    }
+
+    @Test
     void insertMissingForActiveEnrollments_shouldCreateNewProgressIdempotently() {
         User owner = persistUser("owner-provisioning@example.com", "owner-provisioning");
         User firstLearner = persistUser("first-provisioning@example.com", "first-provisioning");
@@ -191,7 +259,7 @@ class LearningRepositoryTest {
         assertThat(userCardProgressRepository.findStudyQueue(firstEnrollment.getId()))
             .extracting(UserCardProgress::getCardId)
             .containsExactly(card.getId());
-        assertThat(userCardProgressRepository.findAllByUserDeckProgressId(firstEnrollment.getId()))
+        assertThat(userCardProgressRepository.findAllActiveByUserDeckProgressId(firstEnrollment.getId()))
             .extracting(UserCardProgress::getCardId)
             .containsExactly(card.getId());
         assertThat(userDeckProgressRepository.findLearningProgressSummaries(firstLearner.getId()))

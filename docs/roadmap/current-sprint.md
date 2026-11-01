@@ -5,7 +5,7 @@
 > Будущие уровни, отложенные задачи и необязательный публичный релиз:
 > `docs/roadmap/backlog.md`.
 
-## Sprint 1.1 — Полный фронтенд
+## Sprint 2.1 — Полный фронтенд
 
 **Цель:** завершить основные продуктовые страницы и пользовательские состояния
 по принятому Stitch-дизайну, чтобы LLHelper был цельным локальным приложением.
@@ -19,7 +19,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 фичами автоматически.
 
 **Integration freeze:** новые продуктовые экраны и функции не добавляются, пока
-не закрыт раздел 4 «Sprint 1.1 integration/stability gate». Допустимы только
+не закрыт раздел 4 «Sprint 2.1 integration/stability gate». Допустимы только
 исправления целостности данных, runtime foundation, контрактов, quality gates,
 документации и обнаруженных регрессий текущего scope.
 
@@ -66,7 +66,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 - [x] Не реализовывать prototype-only social controls, ratings, likes, follows
   и bookmarks без отдельного продуктового решения и API-контракта.
 
-### 4. Sprint 1.1 integration/stability gate
+### 4. Sprint 2.1 integration/stability gate
 
 Следующие пункты являются release blockers для закрытия спринта. Новый
 продуктовый scope не добавлять до их завершения.
@@ -113,16 +113,16 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
 
 #### 4.3 Deck/Card lifecycle
 
-- [ ] Принять и записать одно явное Level 1 решение для удаления Deck/Card:
-  accepted hard delete, запрет удаления при learner data или soft delete.
-  Зафиксировать влияние на cards, ACTIVE enrollments и `UserCardProgress`,
-  ожидаемые HTTP errors и recovery expectations.
-- [ ] Привести backend behavior, database constraints, confirmation copy,
+- [x] Принять и записать одно явное решение Sprint 2.1 для удаления Deck/Card:
+  гибридное удаление — hard delete без learner data, иначе application-managed
+  soft delete. Зафиксировать влияние на cards, enrollments любого статуса и
+  `UserCardProgress`, ожидаемые HTTP errors и отсутствие recovery UI/API.
+- [x] Привести backend behavior, database constraints, confirmation copy,
   regression tests и нормативные architecture/database/API документы к
   выбранному lifecycle. Не оставлять UI hard delete при неоднозначном контракте.
-- [ ] Если для Sprint 1.1 принимается hard delete, явно ограничить решение
-  текущим Level 1 scope и не объявлять soft delete реализованным или бесследно
-  отложенным.
+- [x] Ограничить решение границами Sprint 2.1: restore и production purge не
+  реализуются; CASCADE остаётся только для разрешённой physical-delete ветки,
+  а purge/retention/audit и CASCADE-vs-RESTRICT review перенесены в Level 3.
 
 #### 4.4 Quality gate и CI
 
@@ -174,7 +174,7 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   `showOwner`, едиными Public/Enrolled badges, языками, card count, detail-link,
   стилями и тестами; page-specific grid и request states оставить в страницах.
 - [ ] Добавлять только те backend endpoints, DTO и validation, которые нужны
-  уже принятому Sprint 1.1 scope; новые продуктовые функции не добавлять.
+  уже принятому Sprint 2.1 scope; новые продуктовые функции не добавлять.
 - [ ] Добавить соразмерные frontend/backend regression tests для исправленных
   пользовательских сценариев.
 
@@ -286,7 +286,7 @@ Redux actions и их consumers обновлять атомарно.
 - [ ] Записать проверенные браузеры/viewports и найденные исключения в sprint
   evidence; непроверенное поведение не отмечать завершённым.
 
-## ✅ Критерии завершения Sprint 1.1
+## ✅ Критерии завершения Sprint 2.1
 
 - [ ] Каждая принятая canonical страница и состояние Stitch либо реализованы и
   проверены, либо явно исключены отдельным продуктовым решением.
@@ -294,11 +294,11 @@ Redux actions и их consumers обновлять атомарно.
   адаптивное поведение, loading/empty/error states и честный API-контракт.
 - [ ] Создание и редактирование колод/карточек, Discover, Creator Profile,
   aggregate Progress и Study работают как цельный пользовательский продукт.
-- [ ] Все пункты Sprint 1.1 integration/stability gate закрыты: learning data
+- [ ] Все пункты Sprint 2.1 integration/stability gate закрыты: learning data
   согласованы, bootstrap имеет terminal/retryable outcomes, lifecycle и username
   contracts приняты, quality gates воспроизводятся в CI, нормативные документы
   синхронизированы.
 - [ ] Автоматические проверки и ручная desktop/mobile регрессия проходят на
   чистом checkout; frontend/backend/nginx/agent-context jobs зелёные в CI.
 - [ ] После закрытия спринта отдельно решено, нужен ли публичный release gate;
-  незавершённый deployment не мешает закрытию Sprint 1.1.
+  незавершённый deployment не мешает закрытию Sprint 2.1.

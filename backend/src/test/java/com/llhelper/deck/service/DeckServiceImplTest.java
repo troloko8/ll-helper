@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.llhelper.common.model.Language;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.common.support.TestData;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.dto.request.DeckRequest;
 import com.llhelper.deck.dto.request.PublicDeckQuery;
@@ -28,10 +29,12 @@ import com.llhelper.deck.repository.DeckRepository.OwnedDeckListProjection;
 import com.llhelper.deck.repository.DeckRepository.PublicDeckListProjection;
 import com.llhelper.learning.entity.UserDeckProgress;
 import com.llhelper.learning.enums.UserDeckStatus;
+import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.learning.repository.UserDeckProgressRepository;
 import com.llhelper.user.entity.User;
 import com.llhelper.user.dto.response.UserResponse;
 import jakarta.persistence.EntityManager;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -71,6 +74,11 @@ class DeckServiceImplTest {
     @Mock
     private UserDeckProgressRepository userDeckProgressRepository;
 
+    @Mock
+    private UserCardProgressRepository userCardProgressRepository;
+
+    private final Clock clock = TestData.fixedClock();
+
     private DeckServiceImpl deckService;
 
     @BeforeEach
@@ -82,7 +90,9 @@ class DeckServiceImplTest {
             deckMapper,
             userRateLimiter,
             deckAccessPolicy,
-            userDeckProgressRepository
+            userDeckProgressRepository,
+            userCardProgressRepository,
+            clock
         );
         ReflectionTestUtils.setField(deckService, "entityManager", entityManager);
     }
@@ -307,7 +317,7 @@ class DeckServiceImplTest {
     void update_shouldThrowForbidden_whenUserIsNotOwner() {
         Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         assertThatThrownBy(() -> deckService.update(DECK_ID, deckRequest()))
             .isInstanceOf(AccessDeniedException.class)
@@ -322,13 +332,14 @@ class DeckServiceImplTest {
     void delete_shouldThrowForbidden_whenUserIsNotOwner() {
         Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         assertThatThrownBy(() -> deckService.delete(DECK_ID))
             .isInstanceOf(AccessDeniedException.class)
             .hasMessageContaining("not deck owner");
 
-        verify(deckRepository, never()).deleteById(DECK_ID);
+        verify(deckRepository, never()).delete(any());
+        verify(deckRepository, never()).save(any());
     }
 
     @Test
@@ -340,7 +351,7 @@ class DeckServiceImplTest {
             request.targetLanguage(), null, null, null, request.isPublic(), List.of()
         );
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(deckRepository.saveAndFlush(deck)).thenReturn(deck);
         when(deckMapper.toResponse(deck)).thenReturn(response);
 
@@ -354,13 +365,42 @@ class DeckServiceImplTest {
     }
 
     @Test
-    void delete_shouldSucceed_whenUserIsOwner() {
+    void delete_shouldHardDelete_whenUserIsOwnerAndDeckHasNoLearnerRecords() {
         Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         deckService.delete(DECK_ID);
 
-        verify(deckRepository).deleteById(DECK_ID);
+        verify(deckRepository).delete(deck);
+        verify(deckRepository, never()).save(any());
+    }
+
+    @Test
+    void delete_shouldSoftDeleteAtFixedTime_whenDeckHasEnrollmentHistory() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
+        when(userDeckProgressRepository.existsByDeckId(DECK_ID)).thenReturn(true);
+
+        deckService.delete(DECK_ID);
+
+        assertThat(deck.getDeletedAt()).isEqualTo(clock.instant());
+        verify(deckRepository).save(deck);
+        verify(deckRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_shouldSoftDeleteAtFixedTime_whenOnlyDeckCardsHaveProgress() {
+        Deck deck = deckOwnedBy(OWNER_ID);
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
+        when(userCardProgressRepository.existsByCardDeckId(DECK_ID)).thenReturn(true);
+
+        deckService.delete(DECK_ID);
+
+        assertThat(deck.getDeletedAt()).isEqualTo(clock.instant());
+        verify(deckRepository).save(deck);
+        verify(deckRepository, never()).delete(any());
     }
 }

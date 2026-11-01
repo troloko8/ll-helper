@@ -166,8 +166,9 @@ describe('EditDeckPage', () => {
         await user.click(screen.getByRole('button', { name: 'Delete deck' }))
 
         const dialog = screen.getByRole('dialog', { name: 'Delete this deck?' })
-        expect(dialog).toHaveTextContent('every enrollment')
-        expect(dialog).toHaveTextContent('all learner progress')
+        expect(dialog).toHaveTextContent(
+            'Existing learner progress is preserved',
+        )
         await user.click(
             within(dialog).getByRole('button', { name: 'Delete deck' }),
         )

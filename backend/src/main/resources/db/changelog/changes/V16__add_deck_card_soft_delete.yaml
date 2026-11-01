@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: V16-1
+      author: llhelper
+      comment: Add application-managed soft-delete timestamps for Deck and Card lifecycle
+      changes:
+        - addColumn:
+            tableName: decks
+            columns:
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - addColumn:
+            tableName: cards
+            columns:
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP WITH TIME ZONE
+      # This rollback is intentionally semantic rather than lossless: after the
+      # columns are dropped, existing tombstones become active content again.
+      # Before rolling back the application, take a backup and disable owner
+      # Deck/Card DELETE so the legacy hard-delete flow cannot cascade learner data.
+      rollback:
+        - dropColumn:
+            tableName: cards
+            columnName: deleted_at
+        - dropColumn:
+            tableName: decks
+            columnName: deleted_at
+
+  - changeSet:
+      id: V16-2
+      author: llhelper
+      comment: Index learner-reference lookups used by hybrid Deck and Card deletion
+      changes:
+        - createIndex:
+            tableName: user_deck_progress
+            indexName: idx_user_deck_progress_deck_id
+            columns:
+              - column:
+                  name: deck_id
+        - createIndex:
+            tableName: user_card_progress
+            indexName: idx_user_card_progress_card_id
+            columns:
+              - column:
+                  name: card_id
+      rollback:
+        - dropIndex:
+            tableName: user_card_progress
+            indexName: idx_user_card_progress_card_id
+        - dropIndex:
+            tableName: user_deck_progress
+            indexName: idx_user_deck_progress_deck_id

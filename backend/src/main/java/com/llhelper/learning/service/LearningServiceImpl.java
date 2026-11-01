@@ -88,7 +88,7 @@ public class LearningServiceImpl implements LearningService {
     public EnrollResponse enrollDeck(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
 
-        Deck deck = deckRepository.findById(deckId)
+        Deck deck = deckRepository.findActiveWithOwnerByIdForUpdate(deckId)
             .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
         if (!Boolean.TRUE.equals(deck.getIsPublic())
@@ -127,11 +127,11 @@ public class LearningServiceImpl implements LearningService {
     @Transactional(readOnly = true)
     public StudySessionResponse getStudySession(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
+        Deck deck = deckRepository.findById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
         UserDeckProgress deckProgress = requireEnrollment(userId, deckId);
         List<UserCardProgress> studyQueue = userCardProgressRepository.findStudyQueue(deckProgress.getId());
         DeckCardsData data = loadCardsWithProgress(studyQueue);
-        Deck deck = deckRepository.findById(deckId)
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
 
         List<DeckCardResponse> cards = toDeckCardResponses(data);
         return new StudySessionResponse(deck.getId(), deck.getTitle(), cards);
@@ -141,11 +141,11 @@ public class LearningServiceImpl implements LearningService {
     @Transactional(readOnly = true)
     public LearningDeckDetailsResponse getLearningDeck(Long deckId) {
         Long userId = securityUtils.getCurrentUserId();
+        Deck deck = deckRepository.findById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
         UserDeckProgress deckProgress = userDeckProgressRepository
             .findByUserIdAndDeckIdAndStatus(userId, deckId, UserDeckStatus.ACTIVE)
             .orElseThrow(() -> new IllegalStateException("Deck not enrolled. Please enroll first."));
-        Deck deck = deckRepository.findById(deckId)
-            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
         DeckCardsData data = loadDeckCardsWithProgress(deckProgress);
         List<DeckCardResponse> cards = toDeckCardResponses(data);
         long masteredCount = data.allCardProgress().stream()
@@ -162,6 +162,8 @@ public class LearningServiceImpl implements LearningService {
     @Override
     @Transactional(readOnly = true)
     public List<DeckCardResponse> getDeckCards(Long deckId) {
+        deckRepository.findById(deckId)
+            .orElseThrow(() -> new EntityNotFoundException("Deck not found: " + deckId));
         DeckCardsData data = loadDeckCardsWithProgress(deckId);
 
         return toDeckCardResponses(data);
@@ -226,7 +228,8 @@ public class LearningServiceImpl implements LearningService {
     }
 
     private DeckCardsData loadDeckCardsWithProgress(UserDeckProgress deckProgress) {
-        List<UserCardProgress> allCardProgress = userCardProgressRepository.findAllByUserDeckProgressId(deckProgress.getId());
+        List<UserCardProgress> allCardProgress = userCardProgressRepository
+            .findAllActiveByUserDeckProgressId(deckProgress.getId());
         return loadCardsWithProgress(allCardProgress);
     }
 
@@ -234,6 +237,10 @@ public class LearningServiceImpl implements LearningService {
         List<Long> cardIds = allCardProgress.stream()
             .map(UserCardProgress::getCardId)
             .collect(Collectors.toList());
+
+        if (cardIds.isEmpty()) {
+            return new DeckCardsData(allCardProgress, Map.of());
+        }
 
         Map<Long, Card> cardMap = cardRepository.findAllById(cardIds).stream()
             .collect(Collectors.toMap(Card::getId, card -> card));

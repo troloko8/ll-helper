@@ -63,6 +63,7 @@ public interface DeckMapper {
     @Mapping(target = "cards", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     Deck toEntity(DeckRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -70,6 +71,7 @@ public interface DeckMapper {
     @Mapping(target = "cards", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "isPublic", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(DeckRequest request, @MappingTarget Deck deck);
 }

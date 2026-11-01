@@ -171,7 +171,7 @@ class LearningServiceImplTest {
     void enroll_shouldCreateProgress_whenNotEnrolled() {
         Deck deck = publicDeck(card("hello"));
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         UserDeckProgress deckProgress = deckProgressWithId();
         when(learningMapper.toUserDeckProgress(USER_ID, DECK_ID, clock.instant())).thenReturn(deckProgress);
@@ -193,7 +193,7 @@ class LearningServiceImplTest {
     void enroll_shouldCreateProgress_whenPrivateDeckOwnedByCurrentUser() {
         Deck deck = privateDeck(USER_ID, card("hello"));
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         UserDeckProgress deckProgress = deckProgressWithId();
         when(learningMapper.toUserDeckProgress(USER_ID, DECK_ID, clock.instant())).thenReturn(deckProgress);
@@ -213,7 +213,7 @@ class LearningServiceImplTest {
     void enroll_shouldThrowForbidden_whenPrivateDeckOwnedByAnotherUser() {
         Deck deck = privateDeck(99L, card("hello"));
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         assertThatThrownBy(() -> learningService.enrollDeck(DECK_ID))
             .isInstanceOf(AccessDeniedException.class)
@@ -227,7 +227,7 @@ class LearningServiceImplTest {
     void enroll_shouldThrowConflict_whenAlreadyEnrolled() {
         Deck deck = publicDeck(card("hello"));
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         UserDeckProgress deckProgress = defaultDeckProgress();
         when(learningMapper.toUserDeckProgress(eq(USER_ID), eq(DECK_ID), any(Instant.class))).thenReturn(deckProgress);
@@ -247,7 +247,7 @@ class LearningServiceImplTest {
     @Test
     void enroll_shouldThrowNotFound_whenDeckDoesNotExist() {
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.empty());
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> learningService.enrollDeck(DECK_ID))
             .isInstanceOf(EntityNotFoundException.class)
@@ -345,7 +345,7 @@ class LearningServiceImplTest {
         when(userDeckProgressRepository.findByUserIdAndDeckIdAndStatus(USER_ID, DECK_ID, UserDeckStatus.ACTIVE))
             .thenReturn(Optional.of(deckProgress));
         when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
-        when(userCardProgressRepository.findAllByUserDeckProgressId(USER_DECK_PROGRESS_ID))
+        when(userCardProgressRepository.findAllActiveByUserDeckProgressId(USER_DECK_PROGRESS_ID))
             .thenReturn(progressRows);
         when(cardRepository.findAllById(List.of(3L, 4L))).thenReturn(cards);
         when(learningMapper.toDeckCardResponse(cards.get(0), mastered)).thenReturn(cardResponses.get(0));
@@ -358,14 +358,16 @@ class LearningServiceImplTest {
 
     @Test
     void getLearningDeck_shouldRejectMissingOrInactiveEnrollment() {
+        Deck deck = publicDeck();
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
         when(userDeckProgressRepository.findByUserIdAndDeckIdAndStatus(USER_ID, DECK_ID, UserDeckStatus.ACTIVE))
             .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> learningService.getLearningDeck(DECK_ID))
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("Deck not enrolled. Please enroll first.");
-        verifyNoInteractions(deckRepository, cardRepository, userCardProgressRepository);
+        verifyNoInteractions(cardRepository, userCardProgressRepository);
     }
 
     // --- getStudySession ---
@@ -463,7 +465,7 @@ class LearningServiceImplTest {
         assertThat(result).hasSize(10);
         assertThat(result).extracting(DeckCardResponse::id)
             .containsExactly(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L);
-        verify(userCardProgressRepository, never()).findAllByUserDeckProgressId(any());
+        verify(userCardProgressRepository, never()).findAllActiveByUserDeckProgressId(any());
     }
 
     @Test
@@ -486,11 +488,6 @@ class LearningServiceImplTest {
 
     @Test
     void getStudySession_shouldThrowNotFound_whenDeckDoesNotExist() {
-        when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
-        when(userDeckProgressRepository.findByUserIdAndDeckId(USER_ID, DECK_ID))
-            .thenReturn(Optional.of(deckProgressWithId()));
-        when(userCardProgressRepository.findStudyQueue(USER_DECK_PROGRESS_ID))
-            .thenReturn(List.of());
         when(deckRepository.findById(DECK_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> learningService.getStudySession(DECK_ID))
@@ -500,12 +497,14 @@ class LearningServiceImplTest {
 
     @Test
     void getStudySession_shouldRejectAccess_whenNotEnrolled() {
+        Deck deck = publicDeck();
         when(securityUtils.getCurrentUserId()).thenReturn(USER_ID);
+        when(deckRepository.findById(DECK_ID)).thenReturn(Optional.of(deck));
 
         assertThatThrownBy(() -> learningService.getStudySession(DECK_ID))
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("Deck not enrolled. Please enroll first.");
-        verifyNoInteractions(deckRepository, cardRepository, userCardProgressRepository);
+        verifyNoInteractions(cardRepository, userCardProgressRepository);
     }
 
     private static DeckCardResponse deckCardResponse(Card card, UserCardProgress progress) {

@@ -3,7 +3,7 @@
 > **Project:** LLHelper — AI Language Cards
 > **Current level:** Level 0 — Stable Backend Foundation
 > **Current sprint:** see `docs/roadmap/current-sprint.md`
-> **Last updated:** 2026-09-09
+> **Last updated:** 2026-11-01
 > **Status:** Reflects current `LearningServiceImpl` implementation
 
 ---
@@ -167,6 +167,30 @@ ACTIVE enrollments. This repairs missing rows created before runtime
 provisioning was introduced without overwriting existing learning counters or
 statuses.
 
+### 5.3.2 Deck/Card Deletion and Learning Data
+
+Owner DELETE uses one hybrid lifecycle and always returns `204 No Content`:
+
+- A Deck is physically deleted only when it has neither `UserDeckProgress` nor
+  `UserCardProgress` referencing any of its Cards. Any such learner reference
+  selects `deleted_at` instead, and all Cards, enrollments and progress rows
+  remain physically intact. The Card-progress check also protects against a
+  cross-Deck reference that the current independent FKs cannot reject.
+- A Card without any `UserCardProgress` is physically deleted. If any progress
+  row exists, the Card receives `deleted_at` and all progress rows remain
+  unchanged.
+- Deck deletion, enrollment and content mutations serialize on the active Deck
+  row so the learner-record check cannot race a new enrollment and a late
+  update/create cannot write into a deleted Deck. Card update/delete then lock
+  the active Card in the same Deck-first order.
+- Soft-deleted content is absent from Learning lists/details, aggregate
+  Progress, Study queues and Review. A deleted Deck also makes Cards with a null
+  Card `deleted_at` unavailable. Preserved enrollment/progress statuses and
+  counters are not rewritten.
+- Sprint 2.1 has no restore endpoint, Trash UI, retention period or automatic
+  purge. Preserved learner rows are for referential integrity and future
+  history decisions, not a current user-visible recovery feature.
+
 ---
 
 ### 5.4 Get Study Session
@@ -299,8 +323,12 @@ userAnswer.trim().equalsIgnoreCase(card.title.trim())
 
 ## 11. Known Open Risks
 
-- Deleting a Deck or Card cascade-deletes dependent `UserCardProgress` / `UserDeckProgress` records at the DB level (V4/V5 `ON DELETE CASCADE`) — no orphans, but progress is permanently lost. Soft delete (mitigation) deferred to Level 1.
-- Copy vs reference: reference model accepted for MVP (see `docs/database/relationships.md` §10); soft delete is the only remaining open item there.
+- CASCADE remains available for the physical-delete branch. Production
+  admin/maintenance purge, audit/retention and a later CASCADE-vs-RESTRICT
+  defense-in-depth review are deferred to Level 3.
+- Copy vs reference: reference model accepted for MVP (see
+  `docs/database/relationships.md` §10); hybrid deletion preserves current
+  references, while a future copy/fork model remains deferred.
 - Duplicate enrollment is enforced only by the DB unique constraint `uk_user_deck_progress_user_deck` — relies on catching `DataIntegrityViolationException` and matching the constraint name in its message, which is fragile across DB drivers/locales (see FIXME in `LearningServiceImpl.enrollDeck()`).
 
 ---

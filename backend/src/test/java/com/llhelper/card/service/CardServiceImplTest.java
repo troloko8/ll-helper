@@ -25,11 +25,14 @@ import com.llhelper.card.repository.CardRepository;
 import com.llhelper.common.exception.RateLimitExceededException;
 import com.llhelper.common.security.SecurityUtils;
 import com.llhelper.common.security.UserRateLimiter;
+import com.llhelper.common.support.TestData;
 import com.llhelper.deck.access.DeckAccessPolicy;
 import com.llhelper.deck.entity.Deck;
 import com.llhelper.deck.repository.DeckRepository;
+import com.llhelper.learning.repository.UserCardProgressRepository;
 import com.llhelper.user.entity.User;
 import jakarta.persistence.EntityManager;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -74,6 +77,11 @@ class CardServiceImplTest {
     @Mock
     private NewCardProgressProvisioner newCardProgressProvisioner;
 
+    @Mock
+    private UserCardProgressRepository userCardProgressRepository;
+
+    private final Clock clock = TestData.fixedClock();
+
     private AiProperties aiProperties;
 
     private CardServiceImpl cardService;
@@ -90,7 +98,9 @@ class CardServiceImplTest {
             userRateLimiter,
             aiProperties,
             new DeckAccessPolicy(securityUtils),
-            newCardProgressProvisioner
+            newCardProgressProvisioner,
+            userCardProgressRepository,
+            clock
         );
         ReflectionTestUtils.setField(cardService, "entityManager", entityManager);
     }
@@ -138,6 +148,7 @@ class CardServiceImplTest {
         generated.setTranslation(aiData.translation());
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData("word", deck.getSourceLanguage(), deck.getTargetLanguage()))
             .thenReturn(aiData);
         when(cardMapper.fromAiData("word", aiData, deck)).thenReturn(generated);
@@ -171,7 +182,9 @@ class CardServiceImplTest {
         var request = new CardRequest("new title", null, null, null, " new translation ");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(existing));
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID))
+            .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        when(cardRepository.findActiveByIdForUpdate(CARD_ID)).thenReturn(Optional.of(existing));
         doAnswer(invocation -> {
             existing.setTitle(request.title());
             existing.setDefinition(request.definition());
@@ -199,7 +212,8 @@ class CardServiceImplTest {
     void update_shouldRejectNonOwner_withoutSaving() {
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID))
+            .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
         assertThatThrownBy(() -> cardService.update(CARD_ID,
             new CardRequest("word", null, null, null, "translation")))
             .isInstanceOf(AccessDeniedException.class);
@@ -208,28 +222,49 @@ class CardServiceImplTest {
     }
 
     @Test
-    void delete_shouldDeleteCard_whenUserIsDeckOwner() {
+    void delete_shouldHardDelete_whenUserIsDeckOwnerAndCardHasNoLearnerRecords() {
+        Card card = card();
+        Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
-        when(deckRepository.findWithOwnerById(DECK_ID))
-            .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
+        when(cardRepository.findActiveByIdForUpdate(CARD_ID)).thenReturn(Optional.of(card));
 
         cardService.delete(CARD_ID);
 
-        verify(cardRepository).deleteById(CARD_ID);
+        verify(cardRepository).delete(card);
+        verify(cardRepository, never()).save(any());
     }
 
     @Test
     void delete_shouldRejectNonOwner_withoutDeleting() {
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
         when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card()));
-        when(deckRepository.findWithOwnerById(DECK_ID))
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID))
             .thenReturn(Optional.of(deckOwnedBy(OWNER_ID)));
 
         assertThatThrownBy(() -> cardService.delete(CARD_ID))
             .isInstanceOf(AccessDeniedException.class);
 
-        verify(cardRepository, never()).deleteById(any());
+        verify(cardRepository, never()).delete(any());
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    void delete_shouldSoftDeleteAtFixedTime_whenCardHasLearnerRecords() {
+        Card card = card();
+        Deck deck = deckOwnedBy(OWNER_ID);
+        when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
+        when(cardRepository.findById(CARD_ID)).thenReturn(Optional.of(card));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
+        when(cardRepository.findActiveByIdForUpdate(CARD_ID)).thenReturn(Optional.of(card));
+        when(userCardProgressRepository.existsByCardId(CARD_ID)).thenReturn(true);
+
+        cardService.delete(CARD_ID);
+
+        assertThat(card.getDeletedAt()).isEqualTo(clock.instant());
+        verify(cardRepository).save(card);
+        verify(cardRepository, never()).delete(any());
     }
 
     @Test
@@ -299,7 +334,7 @@ class CardServiceImplTest {
         Deck deck = deckOwnedBy(OWNER_ID);
         when(securityUtils.getCurrentUserEmail()).thenReturn("other@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OTHER_USER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
 
         assertThatThrownBy(() -> cardService.create(DECK_ID, cardRequest()))
             .isInstanceOf(AccessDeniedException.class)
@@ -341,7 +376,7 @@ class CardServiceImplTest {
         );
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(cardMapper.toEntity(request)).thenReturn(card);
         when(cardRepository.saveAndFlush(card)).thenReturn(card);
         when(cardMapper.toResponse(card)).thenReturn(response);
@@ -367,7 +402,7 @@ class CardServiceImplTest {
         CardResponse response = cardResponse();
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
-        when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(cardMapper.toEntity(request)).thenReturn(card);
         when(cardRepository.saveAndFlush(card)).thenReturn(card);
         when(cardMapper.toResponse(card)).thenReturn(response);
@@ -414,6 +449,7 @@ class CardServiceImplTest {
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData("hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
             .thenReturn(aiData);
         when(cardMapper.fromAiData("hello", aiData, deck)).thenReturn(generatedCard);
@@ -448,6 +484,7 @@ class CardServiceImplTest {
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData(
             "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
             .thenReturn(validAiData);
@@ -539,6 +576,7 @@ class CardServiceImplTest {
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData(
             "hello", deck.getSourceLanguage(), deck.getTargetLanguage()))
             .thenReturn(aiData);
@@ -590,6 +628,7 @@ class CardServiceImplTest {
         when(securityUtils.getCurrentUserEmail()).thenReturn("owner@example.com");
         when(securityUtils.getCurrentUserId()).thenReturn(OWNER_ID);
         when(deckRepository.findWithOwnerById(DECK_ID)).thenReturn(Optional.of(deck));
+        when(deckRepository.findActiveWithOwnerByIdForUpdate(DECK_ID)).thenReturn(Optional.of(deck));
         when(aiCardGenerationService.generateCardData(any(), any(), any())).thenReturn(aiData);
         when(cardMapper.fromAiData(any(), any(), any())).thenReturn(generatedCard);
         when(cardRepository.saveAndFlush(generatedCard)).thenReturn(generatedCard);

@@ -170,7 +170,8 @@
 
 ### Backend
 - StudySession / StudySessionAnswer modeling
-- History tables, soft delete, pagination everywhere
+- History tables, production purge/retention for tombstones, additional
+  soft-delete policies, pagination everywhere
 - Refresh token flow, rate limiting
 - Logging, health checks, monitoring basics, backup strategy
 
@@ -331,8 +332,9 @@ Login проверяется отдельно, как повторный вхо�
 **Цель:** завершить продуктовый frontend и довести проект до состояния, которое можно показывать как доказательство уровня Middle/Strong Middle. После этого отдельным решением можно открыть optional release gate и выполнить первый публичный deployment.
 
 Level — это milestone готовности продукта, а sprint — ограниченный набор текущих
-работ. Sprint 1.1 закрывает frontend-часть этого milestone, но сам по себе не
-означает, что весь Level 2 уже активирован или завершён.
+работ внутри него. Номер спринта следует формату `Sprint <Level>.<порядковый
+номер внутри Level>`. Sprint 2.1 закрывает frontend-часть этого milestone, но
+сам по себе не означает, что весь Level 2 завершён.
 
 Детальные задачи Level 2 (Architecture cleanup, Database quality, Security Standards, Rate Limiting Advanced, Testing, CI, API Docs, DevOps, Frontend, AI Workflow) — см. `docs/roadmap/backlog.md`.
 

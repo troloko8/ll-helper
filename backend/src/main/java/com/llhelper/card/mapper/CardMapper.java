@@ -31,6 +31,7 @@ public interface CardMapper {
     @Mapping(target = "deck", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deckId", ignore = true)
     Card toEntity(CardRequest request);
 
@@ -39,6 +40,7 @@ public interface CardMapper {
     @Mapping(target = "deckId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     void updateEntity(CardRequest request, @MappingTarget Card card);
 
     @Mapping(target = "id", ignore = true)
@@ -50,6 +52,7 @@ public interface CardMapper {
     @Mapping(target = "deck", source = "deck")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deckId", ignore = true)
     Card fromAiData(String title, AiCardData aiCardData, Deck deck);
 }

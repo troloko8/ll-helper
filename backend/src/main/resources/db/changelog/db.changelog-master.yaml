@@ -29,3 +29,5 @@ databaseChangeLog:
       file: db/changelog/changes/V14__backfill_missing_card_progress.yaml
   - include:
       file: db/changelog/changes/V15__canonicalize_username_slugs.yaml
+  - include:
+      file: db/changelog/changes/V16__add_deck_card_soft_delete.yaml

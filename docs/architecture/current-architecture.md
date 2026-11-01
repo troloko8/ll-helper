@@ -1,7 +1,7 @@
 # Current Architecture
 
 > **Project:** LLHelper — AI Language Cards
-> **Last updated:** 2026-10-22
+> **Last updated:** 2026-11-01
 
 ---
 
@@ -22,7 +22,7 @@
 - ✅ AI card generation via OpenAI API
 - ✅ Learning Flow: enroll, study, review with progress tracking
 - ✅ Mapper layer, rate limiting, ownership checks completed
-- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V15 defined; V15 canonicalizes compatible usernames and enforces the URL-safe slug constraint)
+- ✅ Liquibase schema control and Level 0 integrity constraints/cascades (V1–V16 defined; V15 canonicalizes compatible usernames and enforces the URL-safe slug constraint, V16 adds Deck/Card lifecycle tombstones)
 - ⏸ Additional performance indexes deferred to Level 2
 
 **Frontend (implemented vertical flow and foundations):**
@@ -193,7 +193,13 @@ User ──1:N──▶ UserDeckProgress ──1:N──▶ UserCardProgress
 | **Mutability** | Modified by owner | Modified on review |
 | **Access control** | Public/private via `isPublic` | Enrolled users only |
 
-**Current delete behavior:** hard delete with database-level `ON DELETE CASCADE` for Deck/Card and related progress records, implemented in V4/V5. Soft delete is deferred to Level 1.
+**Current delete behavior:** V16 implements hybrid owner deletion. A Deck with
+any `UserDeckProgress` or any `UserCardProgress` attached to one of its Cards,
+and a Card with any `UserCardProgress`, receives an application-managed
+`deleted_at` timestamp and disappears from active product flows while learner
+rows remain unchanged. Content with no learner references is physically deleted
+through the existing V4/V5 CASCADE path. Both branches return `204`; user
+restore/purge is not part of Sprint 2.1.
 
 Progress entities must not modify content entities.
 
@@ -312,11 +318,11 @@ CardService.save(cards)
 | `/api/v1/decks/mine` | GET | JWT | List every deck owned by the current user with public/private visibility and aggregate content-card count | `List<OwnedDeckListResponse>`: id, title, language pair, `isPublic`, `cardCount` |
 | `/api/v1/decks/creator/{username}` | GET | JWT | List only the canonical username slug's public decks; invalid path values return 400 | `List<PublicDeckListResponse>`; ordered newest first, each item contains owner, language pair, `cardCount` and `isEnrolled` |
 | `/api/v1/decks` | POST | JWT | Create deck | `DeckResponse` |
-| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
+| `/api/v1/decks/{id}` | GET/PUT/DELETE | JWT | Deck CRUD; GET allows public decks or the private deck owner, otherwise 403, and computes current-user ACTIVE enrollment state; DELETE hard-deletes only when neither Deck enrollment history nor progress for any of its Cards exists, and otherwise soft-deletes it while preserving learner data | GET: `DeckDetailsResponse` (with cards and `isEnrolled`); PUT: `DeckResponse`; DELETE: 204 |
 | `/api/v1/cards` | GET | JWT | List cards from public decks; private-deck cards are filtered in the repository query | `List<CardResponse>` (includes `deckId`) |
 | `/api/v1/decks/{deckId}/cards` | POST | JWT | Manually create card in an owned deck; translation required, definition optional | `CardResponse` (includes `deckId`) |
 | `/api/v1/cards/{id}` | GET | JWT | Card details; inherits public/private visibility from the parent deck and includes owner identity for frontend ownership guards | `CardDetailsResponse` (card fields plus `deckId`, `deckOwnerId`) |
-| `/api/v1/cards/{id}` | PUT/DELETE | JWT | Update or delete an owned card | PUT: `CardResponse`; DELETE: 204 |
+| `/api/v1/cards/{id}` | PUT/DELETE | JWT | Update an active owned Card; DELETE hard-deletes only without `UserCardProgress` and otherwise soft-deletes while preserving progress | PUT: `CardResponse`; DELETE: 204 |
 | `/api/v1/card-generations` | POST | JWT | AI generate one card (`GenerateCardRequest`: title, deckId) | `CardResponse` |
 | `/api/v1/card-generations/bulk` | POST | JWT | AI generate cards and report recoverable per-title AI/rate-limit failures without hiding successful cards | `BulkCardGenerationResponse { created: CardResponse[], failed: { inputIndex, title, code, message, retryable }[] }` |
 | `/api/v1/learning/decks` | GET | JWT | List current user's active enrolled decks with aggregate progress and Continue/Start ordering | `List<LearningDeckResponse>` |
@@ -511,8 +517,9 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 | Username slug invariant belongs to the domain model | `UsernameSlug.fromInput(raw)` performs `trim + lowercase` normalization and validates the canonical pattern before repository access. `CreateUserRequest` retains the raw transport value, `UserMapper` ignores it, and `UserServiceImpl` assigns only `UsernameSlug.value()` to the entity. Canonical username path values are validated at the HTTP boundary and reconstructed with `UsernameSlug.of(...)` without alias normalization. |
 | Bulk AI generation uses a bounded partial-success strategy | Each title is attempted independently inside the bulk loop. Recoverable `AiServiceException` and `RateLimitExceededException` failures are logged and returned in `failed[]`, while previously saved cards remain in `created[]`. Persistence and unexpected failures are not swallowed: they propagate and roll back the whole transaction. |
 | New cards extend ACTIVE learning progress | Manual, single-AI, and successful bulk-AI creation use a dedicated new-card persistence path. `NewCardProgressProvisioner` executes an idempotent PostgreSQL `INSERT ... SELECT` for all ACTIVE enrollments; ordinary card updates use a separate path and do not provision progress. V14 backfills rows missed before this invariant was introduced. |
+| Deck/Card hybrid deletion preserves learner data | Owner DELETE locks the active Deck lifecycle. Any Deck enrollment or Card progress selects application-managed soft delete; otherwise existing CASCADE performs physical cleanup. All active content/learning queries exclude tombstones, while enrollment/progress rows and counters remain unchanged. |
 | Answer checking remains automatic for MVP | Current MVP keeps `trim().equalsIgnoreCase()` answer validation. Self-check flow (`Again / Hard / Good / Easy`) is accepted as future direction but not implemented. |
-| Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. Protection against delete/orphaned progress is resolved via `ON DELETE CASCADE` FK constraints (V4/V5) — see `docs/database/relationships.md`. |
+| Enrolled deck progress uses reference model | `UserDeckProgress` / `UserCardProgress` reference original deck/cards by ID. Copy/fork model is deferred. V16 hybrid deletion preserves referenced content as tombstones whenever learner rows exist; CASCADE remains for unreferenced physical deletion — see `docs/database/relationships.md`. |
 | MapStruct for mapper layer | Interface-based mappers with `@Mapper(componentModel = "spring")`. MapStruct processor runs after Lombok. Each module has `mapper/` package. |
 | SQL-first custom data access | New joins, aggregations, reporting, and non-trivial filtered reads use PostgreSQL SQL. Static feature-local queries stay in the existing Spring Data repository through `@Query(nativeQuery = true)` and return minimal scalar interface projections. `NamedParameterJdbcTemplate` is reserved for dynamic SQL, batch/reporting workloads, or bespoke result mapping. Do not add JPQL/HQL or `select new` constructor projections. Native SQL behavior is verified against PostgreSQL with Testcontainers. |
 | Register → Complete Profile flow (Phase 0.4C) | `POST /auth/register` continues to create only `AuthUser`. The frontend routes the new JWT holder to `/onboarding/profile`, which calls `POST /users` to create the `User` profile before any authenticated product action. `GET /api/v1/users/me` bootstraps session state (`needsProfile` vs `authenticated`) — implemented (Sprint 1.0 G-01). See `docs/roadmap/changelog.md` for the completed Sprint 1.0 evidence and `docs/roadmap/roadmap.md` for the stable Level 1 scope. |
@@ -522,7 +529,7 @@ MapStruct 1.6.3 is integrated. Each module has a `mapper/` package with interfac
 
 | Question | Context | Status |
 |----------|---------|--------|
-| Soft delete for Card / Deck | Add `deleted_at` column or hard delete? | Planned in `IMPROVEMENTS.md` |
+| Deck/Card restore and production purge | Hybrid deletion is implemented; no user restore, retention or scheduled purge exists | Level 3 purge/FK review is tracked in backlog |
 | Synonyms/examples as separate tables | Currently PostgreSQL `text[]` arrays inside `Card` entity | Deferred |
 | Self-check UX for answers | Direction accepted (Again / Hard / Good / Easy), implementation deferred | Backlog |
 

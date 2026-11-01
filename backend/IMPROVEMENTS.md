@@ -76,13 +76,14 @@
   Найдено в code review `LearningServiceImplTest` (см. FIXME в коде)
   Файлы: `LearningServiceImpl.java`
 
-- [ ] **Реализовать soft delete для дек (Deck) и карточек (Card)**
-  Добавить поле `deleted_at` (TIMESTAMP, nullable) в таблицы `decks` и `cards`
-  При удалении — устанавливать `deleted_at = CURRENT_TIMESTAMP` вместо физического удаления
-  Все запросы на получение списков фильтровать по `deleted_at IS NULL`
-  Добавить endpoint для восстановления (undo delete) или полного удаления (hard delete)
-  Файлы: `Deck.java`, `Card.java`, `DeckRepository.java`, `CardRepository.java`, `DeckServiceImpl.java`, `CardServiceImpl.java`
-  Уровень: Level 1 (сейчас удаление — CASCADE, см. `docs/database/relationships.md` §9)
+- [x] **Реализовать гибридное удаление Deck/Card**
+  V16 добавляет nullable `deleted_at` (`timestamptz`) в `decks` и `cards`.
+  Owner DELETE физически удаляет только контент без learner rows; при наличии
+  `UserDeckProgress`/`UserCardProgress` устанавливает application-managed
+  `deleted_at` и сохраняет прогресс неизменным. Активные product/learning
+  запросы исключают tombstones. Restore UI/API и production purge не входят в
+  Sprint 2.1; полный контракт и отложенные задачи описаны в
+  `docs/database/relationships.md` §9 и `docs/roadmap/backlog.md`.
 
 ## AI Features
 

@@ -246,7 +246,7 @@ export function EditCardForm({
             <ConfirmationDialog
                 open={confirmingDelete}
                 title="Delete this card?"
-                description="This permanently deletes the card and every learner's progress for it. This action cannot be undone."
+                description="This removes the card from the app. Existing learner progress is preserved, but you cannot undo this action."
                 confirmLabel="Delete card"
                 busyLabel="Deleting card"
                 isBusy={deleteState.isLoading}

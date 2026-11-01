@@ -4,7 +4,7 @@
 
 ## Sprint 1.0 — Vertical Flow ✅ ЗАВЕРШЁН
 
-**Завершён:** 2026-10-08. **Следующий спринт:** Sprint 1.1 — Полный
+**Завершён:** 2026-10-08. **Следующий спринт:** Sprint 2.1 — Полный
 фронтенд. Ранее запланированный немедленный deployment перенесён в отдельный
 необязательный release gate после завершения frontend.
 
@@ -91,7 +91,7 @@
 
 ## AI Infrastructure Reorganization — 2026-07-30 ✅ COMPLETE
 
-Проведено вне исходного порядка (изначально планировалось как Sprint 1.3, после Level 1 vertical flow), по решению пользователя.
+Проведено вне исходного порядка (изначально планировалось после Level 1 vertical flow), по решению пользователя.
 
 - Создан минимальный root `AGENTS.md` (repo-wide hard gates + documentation-sync gate + roadmap pointers)
 - `backend/AGENTS.md` сокращён до backend-specific hard gates + таблица навигации

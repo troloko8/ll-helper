@@ -16,14 +16,14 @@ Login, Register, Complete Profile, Learning list, Created Decks list, Create Dec
 
 ### 0.2 Post-Level-1 surfaces/functions
 
-Sprint 1.1 — Full Frontend includes Discover search/filter/sort/load-more;
+Sprint 2.1 — Full Frontend includes Discover search/filter/sort/load-more;
 Creator Profile; aggregate Progress dashboard; Edit Deck; read-only Card Details
 and Edit Card; bulk AI generation with an actionable partial-failure UX; and
 the pagination contracts required by those screens. Basic Created and Discover
 lists were completed in Level 1 (§0.10).
 
 Refresh token, backend logout, social/ratings/likes/bookmarks and pagination not
-required by a Sprint 1.1 screen remain deferred. Single-card AI remains optional
+required by a Sprint 2.1 screen remain deferred. Single-card AI remains optional
 and cannot substitute for manual-card acceptance. Runtime status belongs only to
 `docs/roadmap/current-sprint.md`.
 
@@ -97,7 +97,7 @@ G-05 was **not** a vertical-implementation necessity for the local single-user s
 - Aggregate Progress and the bulk AI failed-titles response are implemented.
   Discover search/filter/sort/pagination and creator-public-decks are also implemented.
 - Refresh token, backend logout and unrelated pagination remain deferred beyond
-  Sprint 1.1.
+  Sprint 2.1.
 - Collection `cardCount`, public-list owner and `isEnrolled` are implemented.
   Replacing the full public-list `UserResponse owner` with a compact
   representation is a follow-up. DECK-06 supplies the owner-scoped base
@@ -554,7 +554,9 @@ AI creation sends only title and deckId to `POST /card-generations`;
 the backend rejects a generated result without a non-blank translation; dedicated pending and `429`/`503` error states remain in place.
 Both add paths save immediately, invalidate the deck cache, and return to Owner
 Deck Details. Edit preloads the shared card form, updates through CARD-05, and
-deletes through CARD-06 after native-dialog confirmation. Edit intentionally has
+deletes through CARD-06 after native-dialog confirmation that the content is
+removed from the app, learner progress is preserved, and there is no current
+undo action. Edit intentionally has
 no AI action because the AI endpoint creates a new card. Bulk AI remains deferred.
 
 | Platform | Canonical reference | Stitch ID | State references | Integration status |
@@ -695,7 +697,7 @@ Minimal required response: `List<{deckId, title, sourceLanguage, targetLanguage,
 
 This queue was open as of Phase 0.4B. All seven items are now resolved by §0 — either accepted as a decision or resolved by explicit deferral (item 4 mixes both); each row below points to where.
 
-1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — Creator Profile is implemented in Sprint 1.1; see §0.2, §0.3 and §5.13.
+1. ~~Confirm the MVP surfaces and whether Creator Profile remains deferred.~~ Resolved — Creator Profile is implemented in Sprint 2.1; see §0.2, §0.3 and §5.13.
 2. ~~Accept the separate `/onboarding/profile` flow ... and add its canonical Stitch references.~~ Resolved — flow accepted in §0.3/§0.7 and canonical references completed in §0.5.
 3. ~~Approve the exact route map, including owner/public detail separation and `/study` entry behavior.~~ Resolved — §0.3 (`/decks/:deckId` public, `/decks/:deckId/manage` owner, `/study/:deckId` contextual only).
 4. ~~Define the response shapes for current user, Created, Discover, Learning list, Progress aggregate, and creator-public-decks.~~ Resolved: current-user (`GET /api/v1/users/me`, §0.7) and Progress (§0.8) have accepted semantics. Created uses DECK-06 `List<OwnedDeckListResponse>`, Discover uses DECK-03 `PublicDeckPageResponse`, and Creator Profile uses USER-03 plus the DECK-07 creator-scoped `List<PublicDeckListResponse>`.
