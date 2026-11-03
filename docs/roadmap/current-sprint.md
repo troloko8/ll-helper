@@ -140,6 +140,13 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   Maven Central недоступны: такой job должен завершаться явной ошибкой.
 - [ ] Подтвердить frontend и backend checks на чистом checkout, а не только в
   локальном рабочем дереве.
+- [ ] Очистить обязательный frontend test run от известных неожиданных
+  `stderr`-предупреждений: добавить отсутствующие MSW handlers для
+  `GET /api/v1/learning/decks` в onboarding error-сценариях, корректно ожидать
+  асинхронные обновления `RouterProvider`/`BulkGenerateCardsPage` через RTL и
+  устранить предупреждение о отсутствующем `HydrateFallback` в router error
+  test setup. Критерий закрытия: `npm run test:run` проходит без этих
+  предупреждений и без blanket-подавления `console`.
 
 #### 4.5 Документальная консистентность
 

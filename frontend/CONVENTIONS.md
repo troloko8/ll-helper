@@ -373,6 +373,11 @@ them, for example `const { data: deck, error: deckError } = query`.
   duplicate package versions/modules and unexpected sharing; the report is
   ignored and outside deployment output. `npm run test:bundle` tests the budget
   graph/checking logic. Do not raise Vite's warning threshold to hide regressions.
+- The production build keeps the React runtime/DOM and React Router in two
+  explicit vendor groups. This prevents bundler heuristic changes from merging
+  both frameworks into one oversized raw chunk while preserving separate cache
+  boundaries and the existing route boundaries. Add or change groups only with
+  a fresh bundle report and passing entry, cold-route and per-chunk budgets.
 - Before adding a dependency, consider platform APIs and existing dependencies;
   check maintained/supported versions, tree-shaking, duplication and actual
   production size after integration. Import only supported public entry points;
@@ -677,6 +682,8 @@ app/router (protected routing)
 
 ## Environment / Configuration
 
+- Node.js 24 is the local-development and CI runtime baseline.
+  `frontend/.node-version` is the source of truth for the selected major version.
 - `VITE_API_URL` — backend API base URL (must point to `/api/v1` prefix).
 - `.env.example` — documents required environment variables.
 - Vite dev proxy for `/api` → backend (`http://localhost:8080`).
