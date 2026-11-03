@@ -44,9 +44,9 @@ Production frontend собирается в multi-stage Dockerfile, а `frontend
 Dockerfile и Compose ещё не реализованы. После их появления этот раздел должен
 содержать точные команды build, start, health check, migration и rollback.
 
-Синтаксис текущего Nginx-конфига автоматически проверяет GitHub Actions
-(`.github/workflows/nginx-config.yml`) в закреплённом официальном image. Локально
-тот же check запускается из корня репозитория:
+Синтаксис текущего Nginx-конфига проверяет job `Nginx config` в общем GitHub
+Actions workflow (`.github/workflows/ci.yml`) в закреплённом официальном image.
+Локально тот же check запускается из корня репозитория:
 
 ```bash
 bash deploy/check-nginx-config.sh
@@ -114,8 +114,8 @@ sudo nginx -t
 
 Перед reload/restart требуется успешный `nginx -t` именно с финальным конфигом
 на выбранном сервере. Репозиторный check проверяет базовый draft: он выполнен
-локально в Docker, а CI workflow добавлен; успешный CI run и проверка финального
-deployment-конфига ещё не подтверждены.
+локально в Docker, а CI workflow подготовлен в репозитории; успешный hosted CI
+run и проверка финального deployment-конфига ещё не подтверждены.
 
 ## Проверка после deployment
 

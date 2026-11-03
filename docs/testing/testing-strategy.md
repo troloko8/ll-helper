@@ -410,17 +410,22 @@ void reset_shouldClearBucket_whenCalled() {
 
 **Disabled тест** должен иметь ссылку на issue и не жить так бесконечно. Лучший вариант — сначала исправить баг, потом написать зелёный тест.
 
-## Разделение Unit/Slice и Integration тестов (Level 2)
+## Текущее выполнение тестов и будущее разделение Integration (Level 2)
 
-**Naming:** unit и slice-тесты (`@ExtendWith(MockitoExtension.class)`, `@WebMvcTest`) — суффикс `*Test`. Integration-тесты (`@SpringBootTest` + Testcontainers) — суффикс `*IT`.
+Сейчас все backend-тесты имеют суффикс `*Test` и запускаются Maven Surefire.
+Сюда входят unit и controller slice tests, а также существующие PostgreSQL
+Testcontainers tests. Maven Failsafe пока не подключён, файлов `*IT` в
+репозитории нет, поэтому текущий `verify` не является отдельной стадией
+integration tests.
 
-```
-LearningServiceImplTest       ← unit, Surefire
-LearningControllerTest        ← @WebMvcTest slice, Surefire
-LearningFlowIntegrationIT     ← integration, Failsafe
-```
+| Команда | Что запускает сейчас | Дополнительный lifecycle |
+|---------|----------------------|--------------------------|
+| `./mvnw test` | Все `*Test` через Surefire | Нет |
+| `./mvnw verify` | Те же `*Test` через Surefire | Packaging и остальные проверки до Maven phase `verify` |
 
-**Maven Failsafe plugin** — запускает только `*IT` классы, отдельно от Surefire (`*Test`):
+Когда появится отдельный integration suite, unit и slice tests сохранят суффикс
+`*Test`, а `@SpringBootTest` integration tests получат суффикс `*IT` и будут
+запускаться Maven Failsafe отдельно от Surefire:
 
 ```xml
 <plugin>
@@ -437,30 +442,33 @@ LearningFlowIntegrationIT     ← integration, Failsafe
 </plugin>
 ```
 
-**Команды:**
-
-| Команда | Что запускает | Testcontainers |
-|---------|---------------|-----------------|
-| `./mvnw test` | `*Test` (Surefire) — unit + slice | Нет (кроме `ApplicationContextLoadsTest`, Level 0 smoke) |
-| `./mvnw verify` | `*Test` + `*IT` (Surefire + Failsafe) | Да |
-
-Локально во время разработки/дебага — запуск отдельного метода/класса из IDE. Полный набор — только через Maven/CI.
+Это будущая структура, а не описание текущего `pom.xml`. До её внедрения
+локально можно запускать отдельный метод/класс из IDE, а полный backend gate —
+`./mvnw verify`.
 
 ## CI (GitHub Actions) — порядок и оптимизация (Level 2)
 
-**Триггеры:** `push` и `pull_request` на `main`.
+**Триггеры:** `pull_request` в `master`, `push` в `master` и ручной
+`workflow_dispatch`.
 
-**Порядок job'ов (fail-fast):**
-1. Build (`./mvnw compile`)
-2. Unit/slice tests (`./mvnw test`) — быстрые, без Testcontainers
-3. Integration tests (`./mvnw verify`, Testcontainers) — запускаются только после успешных unit-тестов
-4. Отчёт об успехе/ошибке — обязательный статус для merge (branch protection)
+Текущий backend job выполняет один полный `./mvnw verify`. Отдельные
+`compile`/`test` jobs не добавляются: Maven `verify` уже проходит предыдущие
+phases, а Failsafe suite пока отсутствует. Часть существующих `*Test` использует
+PostgreSQL Testcontainers, поэтому job запускается на Linux runner с Docker.
 
 **Оптимизация:**
-- Кэшировать `~/.m2/repository` между запусками (по хэшу `pom.xml`)
-- Независимые группы тестов (по модулям) — параллельно внутри unit-стадии
-- Integration-тесты — всегда после unit, не параллельно с ними
-- E2E — только для PR в `main` или перед деплоем, не на каждый push
+- `actions/setup-java` кэширует Maven dependencies и Wrapper distribution по
+  `pom.xml` и wrapper properties; pull requests используют cache read-only.
+- Недоступная обязательная dependency или Maven distribution завершает job
+  ошибкой; ошибки нельзя скрывать через `continue-on-error`, `|| true` или
+  пропуск тестов. Валидный cache hit остаётся допустимым источником dependency.
+- Независимые frontend, backend, agent-context и Nginx jobs выполняются
+  параллельно. Старый run той же ветки или PR отменяется после нового push.
+- E2E остаётся отдельным будущим gate и не добавляется в базовый Sprint 2.1 CI.
+
+После первого успешного hosted run jobs `Frontend`, `Backend`, `Agent context`
+и `Nginx config` нужно сделать required checks для `master` через GitHub branch
+ruleset. Эта настройка хранится на GitHub, а не в репозитории.
 
 **Quality gates (после стабилизации CI):**
 - JaCoCo coverage threshold
