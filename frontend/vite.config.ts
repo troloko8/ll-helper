@@ -16,7 +16,27 @@ export default defineConfig(async ({ mode }) => ({
               ]
             : []),
     ],
-    build: { manifest: true },
+    build: {
+        manifest: true,
+        rolldownOptions: {
+            output: {
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'react-vendor',
+                            test: /node_modules[\\/](?:react|react-dom|scheduler)[\\/]/,
+                            priority: 20,
+                        },
+                        {
+                            name: 'router-vendor',
+                            test: /node_modules[\\/](?:react-router|react-router-dom)[\\/]/,
+                            priority: 10,
+                        },
+                    ],
+                },
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),

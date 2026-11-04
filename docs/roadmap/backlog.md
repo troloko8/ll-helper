@@ -245,6 +245,15 @@ Level 1 закрывается проверкой существующих proje
   `pre-commit-review` и repository checks, зафиксировать пользу, риски и
   стоимость. До положительного результата пилота не делать Reslop обязательной
   частью workflow.
+- [ ] **Провести ограниченный пилот `/grill-me` перед планированием одной
+  неоднозначной Level 2 задачи:** использовать проектный skill
+  `.agents/skills/grill-me/SKILL.md` до написания spec или implementation plan и
+  сравнить с обычным planning flow. Зафиксировать число найденных существенных
+  допущений или изменённых решений, количество раундов и вопросов, затраченное
+  время, нерелевантные вопросы и последующую requirement-related переделку.
+  После пилота принять решение `adopt`, `adjust` или `reject`; до этого не
+  делать интервью обязательным и не считать количество вопросов метрикой
+  качества само по себе.
 
 **Architecture cleanup:** чистая доменная структура, clean service responsibilities, transaction boundaries, no fat controllers, no entity leakage, consistent DTOs/naming
 
