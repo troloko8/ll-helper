@@ -130,16 +130,20 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   frontend formatting failures.
 - [x] Вернуть чистый `git diff --check`; устранить trailing whitespace во всех
   известных frontend/backend-файлах.
-- [ ] Добавить полноценный GitHub CI:
+- [x] Добавить полноценный GitHub CI (подтверждено hosted-запусками
+  [PR](https://github.com/troloko8/ll-helper/actions/runs/41607400596) и
+  [master](https://github.com/troloko8/ll-helper/actions/runs/41864798148)):
   - frontend install, test, lint, format check и production build с bundle
     budgets;
   - backend `./mvnw verify`;
   - agent-context validator;
   - существующий nginx check.
-- [ ] CI не должен считать backend проверенным, если Maven dependencies или
+- [x] CI не должен считать backend проверенным, если Maven dependencies или
   Maven Central недоступны: такой job должен завершаться явной ошибкой.
-- [ ] Подтвердить frontend и backend checks на чистом checkout, а не только в
-  локальном рабочем дереве.
+- [x] Подтвердить frontend и backend checks на чистом checkout, а не только в
+  локальном рабочем дереве: hosted
+  [PR](https://github.com/troloko8/ll-helper/actions/runs/41607400596) и
+  [master](https://github.com/troloko8/ll-helper/actions/runs/41864798148).
 - [ ] Очистить обязательный frontend test run от известных неожиданных
   `stderr`-предупреждений: добавить отсутствующие MSW handlers для
   `GET /api/v1/learning/decks` в onboarding error-сценариях, корректно ожидать
@@ -147,6 +151,11 @@ Stitch, а `docs/frontend/integration/FRONTEND_INTEGRATION_MAP.md` — прин�
   устранить предупреждение о отсутствующем `HydrateFallback` в router error
   test setup. Критерий закрытия: `npm run test:run` проходит без этих
   предупреждений и без blanket-подавления `console`.
+- [ ] После CI закрыть остатки аудита без нового product scope: подготовить
+  required PR/checks для `master` (применять только после согласования), убрать
+  frontend warnings, проверить сценарии из §§5.1/6 и disabled rate-limiter test,
+  синхронизировать §4.5; CI artifacts оценить без повышения bundle budgets.
+  Повторно пройти все frontend/backend/agent-context/nginx gates.
 
 #### 4.5 Документальная консистентность
 

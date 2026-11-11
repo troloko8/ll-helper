@@ -448,6 +448,30 @@ integration tests.
 
 ## CI (GitHub Actions) — порядок и оптимизация (Level 2)
 
+Для полного локального quality gate перед коммитом запусти из корня:
+
+```bash
+bash scripts/check-all.sh
+```
+
+Скрипт проверяет Node по `frontend/.node-version`, Java 21 и доступность Docker,
+затем выполняет `git diff --check` для staged/unstaged изменений и все команды
+четырёх CI jobs последовательно. При первой ошибке он завершается с ненулевым
+кодом и указывает этап; оставшиеся проверки считаются невыполненными.
+`npm ci` переустанавливает `frontend/node_modules`, сборки создают локальные
+артефакты. Нужны доступные npm/Maven dependencies и container images (из cache
+или по сети). Скрипт использует активные Node/Java и Docker context, не
+переключает версии и не запускает Docker автоматически.
+
+Codex skill `pre-commit-review` запускает этот gate перед verdict и допускает
+`Ready to commit` только после полного успешного прогона на проверяемых файлах.
+Анализ diff, безопасности, документации и достаточности тестов выполняется
+дополнительно. Вызов skill и скрипта добровольный: Git hooks не установлены,
+обычный commit/push сам их не запускает. После push GitHub CI повторяет проверки
+на отдельном Linux runner; локальный успех не подтверждает hosted run.
+При изменении набора CI-команд синхронизируй `.github/workflows/ci.yml` и
+`scripts/check-all.sh`.
+
 **Триггеры:** `pull_request` в `master`, `push` в `master` и ручной
 `workflow_dispatch`.
 
