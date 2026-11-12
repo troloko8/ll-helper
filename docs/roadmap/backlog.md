@@ -393,6 +393,11 @@ Level 1 закрывается проверкой существующих proje
 
 **DevOps:** Real deployment · Staging/prod configs · DB backup · Logs · Health checks · Basic monitoring
 
+- [ ] **Изучить теорию CI/CD:** уметь объяснить pipeline/job/step, триггеры
+  `pull_request` и `push`, отличие запуска workflow от branch protection и
+  required checks, а также назначение cache, artifacts, secrets и deployment
+  gates; сопоставить теорию с CI LLHelper.
+
 **AI Workflow Level 3:** Pipeline-скрипт `project-review` (git diff + changed files + controllers + DTOs + migrations + tests + docs). PR template: What changed / DB changes / API changes / Tests / Postman updated? / Docs updated? / AI review done?
 
 ### Proposed Sprint 3.1 — Document-driven Agent Workflow

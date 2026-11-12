@@ -59,6 +59,19 @@ Apply the warning gate in root `AGENTS.md` to the diff. If it triggers, show the
 
 ## Verdict
 
+Before the verdict, run `bash scripts/check-all.sh` from the repository root.
+Inspect a changed gate script and its invoked scripts before execution. This
+gate installs frontend dependencies and creates local build/test artifacts;
+prerequisites and execution details are in `docs/testing/testing-strategy.md`.
+Report the command, exit status and any failed or unexecuted stage. Never treat
+an environment blocker, skipped stage or partial run as a successful gate.
+
+Use `✅ Ready to commit` only after the full gate succeeds on the reviewed
+contents and no required review fixes remain. If checks fail, are blocked or
+were not run, use `❌ Not ready to commit` and explain what must be resolved.
+If review fixes change the checked contents, rerun the gate after those fixes.
+The successful gate does not replace the semantic review above.
+
 Return exactly one readiness level:
 
 - `✅ Ready to commit`
